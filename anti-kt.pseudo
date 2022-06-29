@@ -1,0 +1,53 @@
+# the anti-kt algorithm in julia-inspired pseudocode
+
+# parameters
+p = -1
+R = 1
+
+# recombination (a functional parameter)
+recombine = function (i, j)
+    i + j # in case + operation is defined
+end
+
+# d_{ij}
+function dist(i, j)
+    Δ = (i.y - j.y)^2 + (i.ϕ - j.ϕ)^2
+    min(i.kt^(2p), j.kt^(2p))*Δ/(R^2)
+end
+
+# d_{iB}
+function dist(i)
+    i.kt^(2p)
+end
+
+# anti-kt algorithm
+function anti_kt(objects)
+    # there should also be a conversion from (E, x, y, z) points to (y, ϕ, kt)
+    jets = []
+
+    while objects
+        mindist_p = nothing # either [i, j] or [i] depending on the type of the minimal found distance
+        mindist = ∞
+        for i in objects, j in objects # in the actual implementation this loop should be coded way more efficiently
+            d = dist(i, j)
+            if d < mindist
+                mindist = d
+                mindist_p = [i, j]
+            end
+            d = dist(i)
+            if d < mindist
+                mindist = d
+                mindist_p = [i]
+            end
+        end
+
+        filter!(e -> e ∉ mindist_p, objects) # or deleteat!
+        if length(mindist_p) == 1 #if min is d_{iB}
+            push!(jets, mindist_p[1])
+        else #if min is d_{ij}
+            push!(objects, recombine(mindist_p...))
+        end
+    end
+
+    jets
+end
