@@ -4,9 +4,9 @@ Jet reconstruction (reclustering) in Julia.
 module JetReconstruction
 
 # particle type definition
-# include("Particle.jl")
-# using .Particle
-# export ParticleVector, PVec, energy, px, py, pz, pt, phi, mass, eta
+include("Particle.jl")
+using .Particle
+export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
 
 # algorithmic part
 include("Algo.jl")

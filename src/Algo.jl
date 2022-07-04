@@ -3,16 +3,12 @@ This module defines the anti-kt algorithm and similar jet reconstruction algorit
 """
 module Algo
 
-#using StaticArrays
-include("Particle.jl")
-
 export anti_kt!, anti_kt #, sequential_jet_reconstruct!, sequential_jet_reconstruct
 
-function sequential_jet_reconstruct!(objects::AbstractArray{T}; p=-1, R=1, recombine=((i,j)->i+j)) where T
-    #global pt, eta, phi
+function sequential_jet_reconstruct!(objects::AbstractArray{T}; p=-1, R=1, recombine=+) where T
 
     jets = T[] # result
-    cyl = [[pt(obj), eta(obj), phi(obj)] for obj in objects] # cylindrical objects SHOULD WE CALCULATE THEM HERE OR LATER? Maybe switch to StaticVector
+    cyl = [[Main.pt(obj), Main.eta(obj), Main.phi(obj)] for obj in objects] # cylindrical objects SHOULD WE CALCULATE THEM HERE OR LATER? Maybe switch to StaticVector (or only if installed)
 
     # d_{ij}
     function dist(i, j)
@@ -48,7 +44,7 @@ function sequential_jet_reconstruct!(objects::AbstractArray{T}; p=-1, R=1, recom
         else #if min is d_{ij}
             pseudojet = recombine(objects[mindist_idx[1]], objects[mindist_idx[2]])
             push!(objects, pseudojet)
-            push!(cyl, [pt(pseudojet), eta(pseudojet), phi(pseudojet)])
+            push!(cyl, [Main.pt(pseudojet), Main.eta(pseudojet), Main.phi(pseudojet)])
         end
         deleteat!(objects, mindist_idx)
         deleteat!(cyl, mindist_idx)
@@ -57,15 +53,15 @@ function sequential_jet_reconstruct!(objects::AbstractArray{T}; p=-1, R=1, recom
     jets#, tree
 end
 
-function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1, recombine=((i,j)->i+j)) where T
-    new_objects = copy(objects)
+function sequential_jet_reconstruct(objects; p=-1, R=1, recombine=+)
+    new_objects = [obj for obj in objects] # copies & converts to Vector
     sequential_jet_reconstruct!(new_objects, p=p, R=R, recombine=recombine)
 end
 
-anti_kt!(objects; R=1) = sequential_jet_reconstruct!(objects, R=R)
+anti_kt!(objects; R=1, recombine=+) = sequential_jet_reconstruct!(objects, R=R, recombine=recombine)
 
-anti_kt(objects; R=1) = sequential_jet_reconstruct(objects, R=R)
+anti_kt(objects; R=1, recombine=+) = sequential_jet_reconstruct(objects, R=R, recombine=recombine)
 
-#function reversed_kt(objects; R=1) end
+# TODO: function reversed_kt(objects; R=1) end
 
 end
