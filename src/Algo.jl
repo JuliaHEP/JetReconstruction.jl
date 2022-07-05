@@ -13,7 +13,7 @@ function sequential_jet_reconstruct!(objects::AbstractArray{T}; p=-1, R=1, recom
     # d_{ij}
     function dist(i, j)
         Δ = (cyl[i][2] - cyl[j][2])^2 + (cyl[i][3] - cyl[j][3])^2
-        min(cyl[i][1]^(2p), cyl[i][1]^(2p))*Δ/(R^2)
+        min(cyl[i][1]^(2p), cyl[j][1]^(2p))*Δ/(R^2)
     end
 
     # d_{iB}

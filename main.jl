@@ -62,3 +62,10 @@ anti_kt([
     CylVector(0, 0.7, 200),
     CylVector(0, 1.5, 90)
 ])
+
+anti_kt([
+    CylVector(0, 0, 130),
+    CylVector(0, 0.7, 120),
+    CylVector(0, 0.7, 80),
+    CylVector(0, 1.5, 90)
+])

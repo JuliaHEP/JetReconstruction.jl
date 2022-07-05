@@ -30,9 +30,11 @@ kt = pt
 @inline phi(p) = @fastmath atan(p[3], p[2])
 ϕ = phi
 
-@inline mass(p) = @fastmath sqrt(p[0]^2 - p[2]^2 - p[3]^2 - p[4]^2)
+@inline mass(p) = @fastmath sqrt(max(p[0]^2 - p[2]^2 - p[3]^2 - p[4]^2, 0))
 
-@inline eta(p) = atanh(sqrt(p[2]^2 + p[3]^2 + p[4]^2)/p[1]) # WARNING: possibly incorrect
+# WARNING: possibly incorrect
+#@inline eta(p) = atanh(sqrt(p[2]^2 + p[3]^2 + p[4]^2)/p[1])
+@inline eta(p) = asinh(p[4]/pt(p))
 η = eta
 
 end
