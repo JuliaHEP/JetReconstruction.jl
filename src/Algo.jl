@@ -3,10 +3,12 @@ This module defines the anti-kt algorithm and similar jet reconstruction algorit
 """
 module Algo
 
+# TODO: recombination tree, choose better data structures, add better documentation
+# TODO: function reversed_kt(objects; R=1) end
+
 export anti_kt!, anti_kt #, sequential_jet_reconstruct!, sequential_jet_reconstruct
 
 function sequential_jet_reconstruct!(objects::AbstractArray{T}; p=-1, R=1, recombine=+) where T
-
     jets = T[] # result
     cyl = [[Main.pt(obj), Main.eta(obj), Main.phi(obj)] for obj in objects] # cylindrical objects SHOULD WE CALCULATE THEM HERE OR LATER? Maybe switch to StaticVector (or only if installed)
 
@@ -58,10 +60,18 @@ function sequential_jet_reconstruct(objects; p=-1, R=1, recombine=+)
     sequential_jet_reconstruct!(new_objects, p=p, R=R, recombine=recombine)
 end
 
-anti_kt!(objects; R=1, recombine=+) = sequential_jet_reconstruct!(objects, R=R, recombine=recombine)
+"""
+`anti_kt!(objects::AbstractArray{T} where T; R=1, recombine=(x, y)->(x + y)) -> Vector{T}`
 
+Runs the anti-kt jet reconstruction algorithm but empties the given array of objects. See `anti_kt` for the non-mutating version.
+"""
+anti_kt!(objects::AbstractArray{T} where T; R=1, recombine=+) = sequential_jet_reconstruct!(objects, R=R, recombine=recombine)
+
+"""
+`anti_kt(objects; R=1, recombine=(x, y)->(x + y)) -> Vector`
+
+Runs the anti-kt jet reconstruction algorithm. See `anti_kt!` for the mutating and thus slightly more efficient version.
+"""
 anti_kt(objects; R=1, recombine=+) = sequential_jet_reconstruct(objects, R=R, recombine=recombine)
-
-# TODO: function reversed_kt(objects; R=1) end
 
 end
