@@ -12,7 +12,7 @@ You can define your own specific data type to represent physical objects. For th
 """
 module Particle
 
-# TODO: add built-in integration with LorentzVector and LorentzVectorHEP and write about it
+# TODO: add built-in integration with LorentzVector and LorentzVectorHEP and write about it in the docstring
 
 export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
 
@@ -32,8 +32,6 @@ kt = pt
 
 @inline mass(p) = @fastmath sqrt(max(p[0]^2 - p[2]^2 - p[3]^2 - p[4]^2, 0))
 
-# WARNING: possibly incorrect
-#@inline eta(p) = atanh(sqrt(p[2]^2 + p[3]^2 + p[4]^2)/p[1])
 @inline eta(p) = asinh(p[4]/pt(p))
 η = eta
 

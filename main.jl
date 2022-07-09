@@ -57,15 +57,30 @@ function Base.:+(x::CylVector, y::CylVector)
     return CylVector(pt,eta,phi,mass)
 end
 
-anti_kt([
-    CylVector(0, 0, 130),
-    CylVector(0, 0.7, 200),
-    CylVector(0, 1.5, 90)
-])
-
-anti_kt([
+@time anti_kt([
     CylVector(0, 0, 130),
     CylVector(0, 0.7, 120),
     CylVector(0, 0.7, 80),
     CylVector(0, 1.5, 90)
+])
+@time anti_kt([
+    CylVector(0, 0, 130),
+    CylVector(0, 0.7, 200),
+    CylVector(0, 1.5, 90)
+])
+@time anti_kt([
+    CylVector(0, 1, 130),
+    CylVector(0, 0.7, 120),
+    CylVector(0, 0.01, 80),
+    CylVector(0, 0.01, 90),
+    CylVector(0, 0.11, 81),
+    CylVector(0, 0.02, 90),
+    CylVector(0, 0.02, 80),
+    CylVector(0, 0.03, 90),
+    CylVector(0, 0.04, 83),
+    CylVector(0, 0.05, 90)
+])
+@time anti_kt([
+    CylVector(0, 3rand(), 200rand())
+    for _ in 1:100000
 ])
