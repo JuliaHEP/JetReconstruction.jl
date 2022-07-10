@@ -80,7 +80,3 @@ end
     CylVector(0, 0.04, 83),
     CylVector(0, 0.05, 90)
 ])
-@time anti_kt([
-    CylVector(0, 3rand(), 200rand())
-    for _ in 1:100000
-])
