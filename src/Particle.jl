@@ -8,7 +8,17 @@ obj[4] # pz
 ```
 Therefore, a simple vector [E, x, y, z] or a [static array](https://github.com/JuliaArrays/StaticArrays.jl) will do fine.
 
-You can define your own specific data type to represent physical objects. For the anti-kt algorithm to work with a data type, for instance, it only needs to have `pt`, `phi`, `eta`, and `+` operations defined.
+You can define your own specific data type to represent physical objects. For the anti-kt algorithm to work with a data type, for instance, it only needs to have `pt`, `phi`, `eta`, and `+` operations defined. Be sure, however, to define those functions as extentions to the already existing `JetReconstruction.pt`, `JetReconstruction.phi`, `JetReconstruction.eta` and `Base.:+` respectively:
+```
+import JetReconstruction
+
+JetReconstruction.eta(x::YourType) = # your eta definition
+JetReconstruction.phi(x::YourType) = # your phi definition
+JetReconstruction.pt(x::YourType) = # your pt definition
+
+Base.:+(x::YourType, y::YourType) = # your + definition (only used as a recombination function)
+```
+Since `+` is only used in recombination, you can leave it undefined, if you use a custom recombination routine.
 """
 module Particle
 
