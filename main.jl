@@ -1,22 +1,55 @@
 # A temporary file to run some quick tests
 
-using StaticArrays
-
+# choose one:
+# this
+#=
 include("src/JetReconstruction.jl")
 using .JetReconstruction
-# using JetReconstruction
+=#
+# or this
+using Revise; import Pkg
+Pkg.activate(".")
+using JetReconstruction
 
-## Unrealistic tests
-anti_kt([
-    SVector(π, 0, 0, 1)
-])
+## Realistic test
+using StaticArrays
 
-anti_kt([
-    SVector(π, 0, 0, 1),
-    SVector(π, 0, 2, 0),
-    SVector(1, 1, 0, 0),
-    SVector(1, 0, 1, 0),
-])
+data = [SVector{4, Float64}[] for _ in 1:10]
+test_number = 1
+for line in eachline("test/data/Pythia-PtMin1000-LHC-10ev.dat")
+    if line == "#END"
+        test_number += 1
+    elseif line[1] != '#'
+        px, py, pz, E = (parse(Float64, x) for x in split(line))
+        vec = SVector(E, px, py, pz)
+        push!(data[test_number], vec)
+    end
+end
+
+precompile(anti_kt, (typeof(data[1]),))
+precompile(anti_kt_alt, (typeof(data[1]),))
+
+@time anti_kt(data[1])
+@time anti_kt(data[2])
+@time anti_kt(data[3])
+@time anti_kt(data[4])
+@time anti_kt(data[5])
+@time anti_kt(data[6])
+@time anti_kt(data[7])
+@time anti_kt(data[8])
+@time anti_kt(data[9])
+@time anti_kt(data[10])
+
+@time anti_kt_alt(data[1])
+@time anti_kt_alt(data[2])
+@time anti_kt_alt(data[3])
+@time anti_kt_alt(data[4])
+@time anti_kt_alt(data[5])
+@time anti_kt_alt(data[6])
+@time anti_kt_alt(data[7])
+@time anti_kt_alt(data[8])
+@time anti_kt_alt(data[9])
+@time anti_kt_alt(data[10])
 
 ## Developer convenience test (running the algo on a custom data structure)
 import .JetReconstruction # no need to import Particle

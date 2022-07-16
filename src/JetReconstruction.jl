@@ -11,6 +11,6 @@ export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
 # algorithmic part
 include("Algo.jl")
 using .Algo
-export anti_kt, anti_kt!
+export anti_kt, anti_kt_alt
 
 end
