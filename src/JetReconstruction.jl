@@ -13,4 +13,8 @@ include("Algo.jl")
 using .Algo
 export anti_kt, anti_kt_alt
 
+# jet serialisation (saving to file)
+include("Serialize.jl")
+export savejets
+
 end

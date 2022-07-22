@@ -41,6 +41,10 @@ for i in 1:datalen
     push!(objectidxarrs, components)
 end
 
+## Save data
+
+savejets("jetsavetest.dat", data[1], format="px py pz E")
+
 ## Visualisation
 include("src/JetVis.jl")
 
@@ -64,6 +68,7 @@ CylVector(y, ϕ, pt) = CylVector(y, ϕ, pt, 0)
 JetReconstruction.eta(x::CylVector) = x.y
 JetReconstruction.phi(x::CylVector) = x.ϕ
 JetReconstruction.pt(x::CylVector) = x.pt
+JetReconstruction.mass(x::CylVector) = x.mass
 function Base.:+(x::CylVector, y::CylVector)
     px(v::CylVector) = v.pt * cos(v.ϕ)
     py(v::CylVector) = v.pt * sin(v.ϕ)
@@ -100,7 +105,7 @@ end
     CylVector(0, 0.7, 200),
     CylVector(0, 1.5, 90)
 ])
-@time anti_kt([
+cyljets, _ = @time anti_kt([
     CylVector(0, 1, 130),
     CylVector(0, 0.7, 120),
     CylVector(0, 0.01, 80),
@@ -112,3 +117,6 @@ end
     CylVector(0, 0.04, 83),
     CylVector(0, 0.05, 90)
 ])
+
+
+savejets("jetsavetest2.dat", cyljets, format="kt eta phi m")
