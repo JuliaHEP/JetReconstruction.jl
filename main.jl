@@ -13,8 +13,9 @@ using JetReconstruction
 
 ## Realistic test
 using StaticArrays
+datalen = 10
 
-data = [SVector{4, Float64}[] for _ in 1:10]
+data = [SVector{4, Float64}[] for _ in 1:datalen]
 test_number = 1
 for line in eachline("test/data/Pythia-PtMin1000-LHC-10ev.dat")
     if line == "#END"
@@ -29,27 +30,25 @@ end
 precompile(anti_kt, (typeof(data[1]),))
 precompile(anti_kt_alt, (typeof(data[1]),))
 
-@time anti_kt(data[1])
-@time anti_kt(data[2])
-@time anti_kt(data[3])
-@time anti_kt(data[4])
-@time anti_kt(data[5])
-@time anti_kt(data[6])
-@time anti_kt(data[7])
-@time anti_kt(data[8])
-@time anti_kt(data[9])
-@time anti_kt(data[10])
+jetarrs = []
+objectidxarrs = Vector{Vector{Int}}[]
+for i in 1:datalen
+    jetarr, components = anti_kt(data[i])
+    softs = [j for j in 1:length(components) if (length(components[j]) == 1 || jetarr[j][1] < 2)]
+    deleteat!(jetarr, softs)
+    deleteat!(components, softs)
+    push!(jetarrs, jetarr)
+    push!(objectidxarrs, components)
+end
 
-@time anti_kt_alt(data[1])
-@time anti_kt_alt(data[2])
-@time anti_kt_alt(data[3])
-@time anti_kt_alt(data[4])
-@time anti_kt_alt(data[5])
-@time anti_kt_alt(data[6])
-@time anti_kt_alt(data[7])
-@time anti_kt_alt(data[8])
-@time anti_kt_alt(data[9])
-@time anti_kt_alt(data[10])
+## Visualisation
+include("src/JetVis.jl")
+
+index = 10
+img = jetsplot(data[index], objectidxarrs[index])
+
+#display(img) # for Juno Plots window
+#PyPlot.show() # for terminal usage
 
 ## Developer convenience test (running the algo on a custom data structure)
 import .JetReconstruction # no need to import Particle
