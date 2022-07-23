@@ -42,12 +42,9 @@ for i in 1:datalen
 end
 
 ## Save data
-
 savejets("jetsavetest.dat", data[1], format="px py pz E")
 
 ## Visualisation
-include("src/JetVis.jl")
-
 index = 10
 img = jetsplot(data[index], objectidxarrs[index])
 

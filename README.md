@@ -14,3 +14,8 @@ include("src/JetReconstruction.jl")
 using .JetReconstruction
 ```
 There is some documentation provided for functions and submodules. Once everything is working properly and efficiently, this `README.md` will contain more details on usage and the module might get registered.
+
+## Plotting
+![illustration](img/illustration.jpeg)
+
+To visualise the clustered jets as a 3d bar plot (see illustration above) the `PyPlot` package is used (for now), as native Julia plotting libraries do not provide easy access to such functionality. Since the code is in the early development stage, `PyPlot` has not been added to dependencies yet. Use the `jetsplot` function. See its documentation for more.
