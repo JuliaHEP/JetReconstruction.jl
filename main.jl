@@ -41,8 +41,12 @@ for i in 1:1#datalen
     push!(objectidxarrs, components)
 end
 
-## Save data
-savejets("jetsavetest.dat", data[1], format="px py pz E")
+## Save or load data
+savejets("jetsavetest.dat", data[1])
+
+somedata = loadjets("jetsavetest.dat", constructor=SVector)
+
+somedata == data[1]
 
 ## Visualisation
 index = 10
@@ -88,10 +92,10 @@ function Base.:+(x::CylVector, y::CylVector)
     eta = asinh(sumpz/pt)
     phi = atan(sumpy, sumpx)
     mass = sqrt(max(muladd(m1, m1, m2^2) + 2*e1*e2 - 2*(muladd(px1, px2, py1*py2) + pz1*pz2), 0))
-    return CylVector(pt,eta,phi,mass)
+    return CylVector(eta,phi,pt,mass)
 end
 
-@time anti_kt([
+cyljets, _ = @time anti_kt([
     CylVector(0, 0, 130),
     CylVector(0, 0.7, 120),
     CylVector(0, 0.7, 80),
@@ -115,5 +119,6 @@ cyljets, _ = @time anti_kt([
     CylVector(0, 0.05, 90)
 ])
 
-
-savejets("jetsavetest2.dat", cyljets, format="kt eta phi m")
+savejets("jetsavetest2.dat", cyljets, format="eta phi kt m")
+somedata2 = loadjets("jetsavetest2.dat", constructor=CylVector)
+somedata2 == cyljets
