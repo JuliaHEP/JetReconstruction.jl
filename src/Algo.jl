@@ -3,16 +3,17 @@ This module defines the anti-kt algorithm and similar jet reconstruction algorit
 """
 module Algo
 
+import ..JetReconstruction
+
 # TODO: recombination sequences (fix the seeds?), choose better data structures, add better documentation
 # TODO: function reversed_kt(objects; R=1) end
-# TODO: check whether we should use Main.pt(obj), Main.eta(obj), Main.phi(obj) or JetReconstruction.pt(obj), JetReconstruction.eta(obj), JetReconstruction.phi(obj) in sequential_jet_reconstruct!
 
 export anti_kt!, anti_kt, anti_kt_alt #, sequential_jet_reconstruct!, sequential_jet_reconstruct
 
 function sequential_jet_reconstruct!(objects::AbstractArray{T}; p=-1, R=1, recombine=+) where T
     jets = T[] # result
     sequences = Vector{Int}[] # recombination sequences, WARNING: first index in the sequence is not necessarily the seed
-    cyl = [[Main.pt(obj), Main.eta(obj), Main.phi(obj)] for obj in objects] # cylindrical objects
+    cyl = [[JetReconstruction.pt(obj), JetReconstruction.eta(obj), JetReconstruction.phi(obj)] for obj in objects] # cylindrical objects
     tmp_sequences = Vector{Int}[[i] for i in 1:length(objects)] # temporary sequences indexed according to objects
 
     # d_{ij}
@@ -51,7 +52,7 @@ function sequential_jet_reconstruct!(objects::AbstractArray{T}; p=-1, R=1, recom
             pseudojet = recombine(objects[mindist_idx[1]], objects[mindist_idx[2]])
             newseq = cat(tmp_sequences[mindist_idx[2]], tmp_sequences[mindist_idx[1]], dims=1) # WARNING: first index in the sequence is not necessarily the seed
             push!(objects, pseudojet)
-            push!(cyl, [Main.pt(pseudojet), Main.eta(pseudojet), Main.phi(pseudojet)])
+            push!(cyl, [JetReconstruction.pt(pseudojet), JetReconstruction.eta(pseudojet), JetReconstruction.phi(pseudojet)])
             push!(tmp_sequences, newseq)
         end
         deleteat!(objects, mindist_idx)
@@ -112,7 +113,7 @@ end
 function sequential_jet_reconstruct_alt!(objects::AbstractArray{T}; p=-1, R=1, recombine=+) where T
     jets = T[] # result
     sequences = Vector{Int}[] # recombination sequences, WARNING: first index in the sequence is not necessarily the seed
-    pseudojets = [JetData(Main.pt(objects[i]), Main.eta(objects[i]), Main.phi(objects[i]), [i]) for i in 1:length(objects)]
+    pseudojets = [JetData(JetReconstruction.pt(objects[i]), JetReconstruction.eta(objects[i]), JetReconstruction.phi(objects[i]), [i]) for i in 1:length(objects)]
 
     while !isempty(objects)
         mindist_idx::Vector{Int64} = Int64[1, 0] # either [j, i] or [i, 0] depending on the type of the minimal found distance
@@ -143,7 +144,7 @@ function sequential_jet_reconstruct_alt!(objects::AbstractArray{T}; p=-1, R=1, r
             pseudojet = recombine(objects[mindist_idx[1]], objects[mindist_idx[2]])
             newseq = cat(pseudojets[mindist_idx[2]].seq, pseudojets[mindist_idx[1]].seq, dims=1) # WARNING: first index in the sequence is not necessarily the seed
             push!(objects, pseudojet)
-            push!(pseudojets, JetData(Main.pt(pseudojet), Main.eta(pseudojet), Main.phi(pseudojet), newseq))
+            push!(pseudojets, JetData(JetReconstruction.pt(pseudojet), JetReconstruction.eta(pseudojet), JetReconstruction.phi(pseudojet), newseq))
             deleteat!(objects, mindist_idx)
             deleteat!(pseudojets, mindist_idx)
         end

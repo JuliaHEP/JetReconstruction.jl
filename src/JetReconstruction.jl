@@ -15,7 +15,8 @@ export anti_kt, anti_kt_alt
 
 # jet serialisation (saving to file)
 include("Serialize.jl")
-export savejets
+using .Serialize
+export savejets, loadjets
 
 # jet visualisation (uses PyPlot)
 include("JetVis.jl")

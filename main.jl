@@ -32,7 +32,7 @@ precompile(anti_kt_alt, (typeof(data[1]),))
 
 jetarrs = []
 objectidxarrs = Vector{Vector{Int}}[]
-for i in 1:datalen
+for i in 1:1#datalen
     jetarr, components = anti_kt(data[i])
     softs = [j for j in 1:length(components) if (length(components[j]) == 1 || jetarr[j][1] < 2)]
     deleteat!(jetarr, softs)
@@ -52,7 +52,7 @@ img = jetsplot(data[index], objectidxarrs[index])
 #PyPlot.show() # for terminal usage
 
 ## Developer convenience test (running the algo on a custom data structure)
-import .JetReconstruction # no need to import Particle
+import JetReconstruction # no need to import Particle
 
 struct CylVector
     y::Float64
