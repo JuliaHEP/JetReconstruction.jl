@@ -18,4 +18,4 @@ There is some documentation provided for functions and submodules. Once everythi
 ## Plotting
 ![illustration](img/illustration.jpeg)
 
-To visualise the clustered jets as a 3d bar plot (see illustration above) the `PyPlot` package is used (for now), as native Julia plotting libraries do not provide easy access to such functionality. Since the code is in the early development stage, `PyPlot` has not been added to dependencies yet. Use the `jetsplot` function. See its documentation for more.
+To visualise the clustered jets as a 3d bar plot (see illustration above) the `PyPlot` package is used (for now), as native Julia plotting libraries do not provide easy access to such functionality. Use the `jetsplot` function. See its documentation for more.
