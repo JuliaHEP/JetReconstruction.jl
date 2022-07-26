@@ -4,7 +4,7 @@ authors = ["Atell Krasnopolski <delta_atell@protonmail.com>"]
 version = "0.0.1"
 
 [deps]
-PyPlot = "d330b81b-6aea-500a-939a-2ce795aea3ee"
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 
 [compat]
 julia = "1"

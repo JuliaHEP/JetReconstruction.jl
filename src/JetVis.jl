@@ -1,6 +1,7 @@
 ## Jet visualisation
 
-using PyPlot
+using CairoMakie
+#CairoMakie.activate!(type = "svg")
 
 """
 `jetsplot(objects, idx_arrays; barsize=0.1)`
@@ -13,19 +14,25 @@ jetsplot([object1, object2, object3], [[1], [2, 3]])
 The example above plots `object1` as a separate jet in one colour and `object2` and `object3` together in another colour.
 """
 function jetsplot(objects, idx_arrays; barsize=0.1)
-    phidata = phi.(objects)
-    etadata = eta.(objects)
-    ktdata = pt.(objects)
+	cs = fill(0, length(objects))
+	for i in 1:length(idx_arrays), j in idx_arrays[i]
+		cs[j] = i
+	end
 
-    fig = figure()
-    ax = fig.add_subplot(projection="3d")
+	pts = pt.(objects)
 
-    ax.set_ylabel("η")
-    ax.set_xlabel("ϕ")
-    ax.set_zlabel("kt")
-    for idx in idx_arrays
-        ax.bar3d(phidata[idx], etadata[idx], 0ktdata[idx], barsize, barsize, ktdata[idx])
-    end
-
-    PyPlot.gcf()
+	meshscatter(
+		Point3f.(phi.(objects), eta.(objects), 0pts);
+	  	color = cs,
+		markersize = Vec3f.(barsize, barsize, pts),
+		colormap = :Spectral_7,
+		marker = Rect3f(Vec3f(0), Vec3f(1)),
+	 	figure = (resolution=(700,600),),
+		axis = (
+			type = Axis3, perspectiveness = 0.5, azimuth = 2.6, elevation=0.5,
+                        xlabel = "ϕ", ylabel = "η", zlabel = "kt",
+		        limits = (nothing, nothing, nothing, nothing, 0, findmax(pts)[1]+10)
+		),
+	    shading=false
+	)
 end

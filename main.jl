@@ -39,7 +39,7 @@ precompile(anti_kt_alt, (typeof(data[1]),))
 
 jetarrs = []
 objectidxarrs = Vector{Vector{Int}}[]
-for i in 1:1#datalen
+for i in 1:datalen
     jetarr, components = anti_kt(data[i])
     softs = [j for j in 1:length(components) if (length(components[j]) == 1 || jetarr[j][1] < 2)]
     deleteat!(jetarr, softs)
@@ -54,7 +54,7 @@ somedata = loadjets("jetsavetest.dat", constructor=SVector)
 somedata == data[1]
 
 ## Visualisation
-index = 10
+index = 2
 img = jetsplot(data[index], objectidxarrs[index])
 
 #display(img) # for Juno Plots window
@@ -127,3 +127,11 @@ cyljets, _ = @time anti_kt([
 savejets("jetsavetest2.dat", cyljets, format="eta phi kt m")
 somedata2 = loadjets("jetsavetest2.dat", constructor=CylVector)
 somedata2 == cyljets
+
+
+##
+using Profile
+
+@profile anti_kt(data[2])
+Juno.profiler()
+Profile.print()
