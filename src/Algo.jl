@@ -18,13 +18,15 @@ function sequential_jet_reconstruct!(objects::AbstractArray{T}; p=-1, R=1, recom
 
     # d_{ij}
     function dist(i, j)
-        Δ = (cyl[i][2] - cyl[j][2])^2 + (cyl[i][3] - cyl[j][3])^2
-        min(cyl[i][1]^(2p), cyl[j][1]^(2p))*Δ/(R^2)
+        d2 = cyl[i][2] - cyl[j][2]
+        d3 = cyl[i][3] - cyl[j][3]
+        Δ = d2*d2 + d3*d3
+        @fastmath min(cyl[i][1]^(2p), cyl[j][1]^(2p))*Δ/(R*R)
     end
 
     # d_{iB}
     function dist(i)
-        cyl[i][1]^(2p)
+        @fastmath cyl[i][1]^(2p)
     end
 
     while !isempty(objects)
@@ -89,6 +91,8 @@ function anti_kt(objects; R=1, recombine=+)
 end
 
 ## EXPERIMENTAL ZONE
+# alternative funcitons defined to try other approaches
+# and test them together with the current one
 
 # d_{ij}
 function dist_alt(i, j, cyl, p, R)
