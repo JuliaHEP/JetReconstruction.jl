@@ -27,6 +27,13 @@ for line in eachline("test/data/Pythia-PtMin1000-LHC-10ev.dat")
     end
 end
 
+for i in 1:datalen
+    savejets("test/data/"*string(i)*".dat", data[i], format="px py pz E")
+end
+
+loadjets("test/data/1-fj-result.dat", constructor=(x,y,z,E)->[E,x,y,z])
+anti_kt(data[1])[1]
+
 precompile(anti_kt, (typeof(data[1]),))
 precompile(anti_kt_alt, (typeof(data[1]),))
 
@@ -43,9 +50,7 @@ end
 
 ## Save or load data
 savejets("jetsavetest.dat", data[1])
-
 somedata = loadjets("jetsavetest.dat", constructor=SVector)
-
 somedata == data[1]
 
 ## Visualisation

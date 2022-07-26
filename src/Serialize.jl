@@ -62,7 +62,7 @@ function loadjets!(filename, jets; splitby=isspace, constructor=(E,x,y,z)->[E,x,
         for line in eachline(file)
             if line[1] != '#'
                 jet = constructor(
-                    (parse(dtype, x) for x in split(line, splitby))...
+                    (parse(dtype, x) for x in split(line, splitby) if x != "")...
                 )
                 push!(jets, jet)
             end

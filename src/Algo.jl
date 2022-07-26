@@ -32,13 +32,13 @@ function sequential_jet_reconstruct!(objects::AbstractArray{T}; p=-1, R=1, recom
         mindist = Inf
         for i in 1:length(objects)
             d = dist(i)
-            if d < mindist
+            if d <= mindist
                 mindist = d
                 mindist_idx = Int64[i]
             end
             for j in 1:(i-1)
                 d = dist(i, j)
-                if d < mindist
+                if d <= mindist
                     mindist = d
                     mindist_idx = Int64[j, i]
                 end
@@ -63,11 +63,6 @@ function sequential_jet_reconstruct!(objects::AbstractArray{T}; p=-1, R=1, recom
     jets, sequences
 end
 
-function sequential_jet_reconstruct(objects; p=-1, R=1, recombine=+)
-    new_objects = [obj for obj in objects] # copies & converts to Vector
-    sequential_jet_reconstruct!(new_objects, p=p, R=R, recombine=recombine)
-end
-
 """
 `anti_kt!(objects::AbstractArray{T} where T; R=1, recombine=(x, y)->(x + y)) -> Vector{T}, Vector{Vector{Int}}`
 
@@ -88,7 +83,10 @@ Returns:
     `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
     `sequences` - a vector of vectors of indeces in `objects`. For all `i`, `sequences[i]` gives a sequence of indeces of objects that have been combined into the i-th jet (`jets[i]`).
 """
-anti_kt(objects; R=1, recombine=+) = sequential_jet_reconstruct(objects, R=R, recombine=recombine)
+function anti_kt(objects; R=1, recombine=+)
+    new_objects = [obj for obj in objects] # copies & converts to Vector
+    sequential_jet_reconstruct!(new_objects, R=R, recombine=recombine)
+end
 
 ## EXPERIMENTAL ZONE
 
@@ -120,14 +118,14 @@ function sequential_jet_reconstruct_alt!(objects::AbstractArray{T}; p=-1, R=1, r
         mindist = Inf
         for i in 1:length(objects)
             d = dist_alt(i, pseudojets, p, R)
-            if d < mindist
+            if d <= mindist
                 mindist = d
                 mindist_idx[1] = i
                 mindist_idx[2] = 0
             end
             for j in 1:(i-1)
                 d = dist_alt(i, j, pseudojets, p, R)
-                if d < mindist
+                if d <= mindist
                     mindist = d
                     mindist_idx[1] = j
                     mindist_idx[2] = i
