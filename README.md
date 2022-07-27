@@ -18,4 +18,4 @@ There is some documentation provided for functions and submodules. Once everythi
 ## Plotting
 ![illustration](img/illustration.jpeg)
 
-To visualise the clustered jets as a 3d bar plot (see illustration above) we now use `CairoMakie.jl`. Use the `jetsplot` function. See its documentation for more. 
+To visualise the clustered jets as a 3d bar plot (see illustration above) we now use `Makie.jl`. See the `jetsplot` function and its documentation for more. 
