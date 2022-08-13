@@ -2,12 +2,13 @@
 # not a submodule
 
 """
-`jetsplot(objects, idx_arrays; barsize=0.1, colormap=:glasbey_hv_n256, Module=Main)`
+`jetsplot(objects, idx_arrays; barsize_phi=0.1, barsize_eta=0.1, colormap=:glasbey_hv_n256, Module=Main)`
 
 Plots a 3d bar chart that represents jets. Takes an `objects` array of objects to display and `idx_arrays`, an array of arrays with indeces, where `idx_arrays[i]` gives indeces of `objects` that form the jet number `i`.
 
 Optional arguments:
-`barsize::Real` — the width of the individual bars;
+`barsize_phi::Real` — width of a bar along the ϕ axis;
+`barsize_eta::Real` — width of a bar along the η axis;
 `colormap::Symbol` — Makie colour map;
 `Module` — the module where you have your Makie (see below);
 ```
@@ -30,7 +31,7 @@ using WGLMakie
 jetsplot(my_objects, my_colour_arrays, Module=Main) #default
 ```
 """
-function jetsplot(objects, idx_arrays; barsize=0.1, colormap=:glasbey_hv_n256, Module=Main)
+function jetsplot(objects, idx_arrays; barsize_phi=0.1, barsize_eta=0.1, colormap=:glasbey_hv_n256, Module=Main)
 	cs = fill(0, length(objects))
 	for i in 1:length(idx_arrays), j in idx_arrays[i]
 		cs[j] = i
@@ -41,7 +42,7 @@ function jetsplot(objects, idx_arrays; barsize=0.1, colormap=:glasbey_hv_n256, M
 	Module.meshscatter(
 		Module.Point3f.(phi.(objects), eta.(objects), 0pts);
 	  	color = cs,
-		markersize = Module.Vec3f.(barsize, barsize, pts),
+		markersize = Module.Vec3f.(barsize_phi, barsize_eta, pts),
 		colormap = colormap,
 		marker = Module.Rect3f(Module.Vec3f(0), Module.Vec3f(1)),
 	 	figure = (resolution=(700,600),),
