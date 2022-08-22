@@ -8,11 +8,11 @@ import ..JetReconstruction
 export savejets, loadjets!, loadjets
 
 """
-`savejets(filename, jets; format="E px py pz")`
+`savejets(filename, jets; format="px py pz E")`
 
 Saves the given `jets` into a file with the given `filename`. Each line contains information about a single jet and is formatted according to the `format` string which defaults to `"E px py pz"` but can also contain other values in any order: `"pt"` or `"kt"` for transverse momentum, `"phi"` for azimuth, `"eta"` for pseudorapidity, `"m"` for mass. It is strongly NOT recommended to put something other than values and (possibly custom) separators in the `format` string.
 """
-function savejets(filename, jets; format="E px py pz")
+function savejets(filename, jets; format="px py pz E")
     symbols = Dict(
         "E" => JetReconstruction.energy,
         "px" => JetReconstruction.px,
@@ -45,9 +45,9 @@ function savejets(filename, jets; format="E px py pz")
 end
 
 """
-`loadjets!(filename, jets; splitby=isspace, constructor=(E,px,py,pz)->[E,px,py,pz], dtype=Float64) -> jets`
+`loadjets!(filename, jets; splitby=isspace, constructor=(px,py,pz,E)->[px,py,pz,E], dtype=Float64) -> jets`
 
-Loads the `jets` from a file. Ignores lines that start with `'#'`. Each line gets processed in the following way: the line is split using `split(line, splitby)` or simply `split(line)` by default. Every value in this line is then converted to the `dtype` (which is `Float64` by default). These values are then used as arguments for the `constructor` function which should produce individual jets. By default, the `constructor` constructs vectors of the form `[E,px,py,pz]`.
+Loads the `jets` from a file. Ignores lines that start with `'#'`. Each line gets processed in the following way: the line is split using `split(line, splitby)` or simply `split(line)` by default. Every value in this line is then converted to the `dtype` (which is `Float64` by default). These values are then used as arguments for the `constructor` function which should produce individual jets. By default, the `constructor` constructs vectors of the form `[px,py,pz,E]`.
 
 Everything that was already in `jets` is not affected as we only use `push!` on it.
 ```julia
@@ -57,7 +57,7 @@ loadjets!("myjets1.dat", jets)
 loadjets!("myjets2.dat", jets)
 ```
 """
-function loadjets!(filename, jets; splitby=isspace, constructor=(E,x,y,z)->[E,x,y,z], dtype=Float64)
+function loadjets!(filename, jets; splitby=isspace, constructor=(x,y,z,E)->[x,y,z,E], dtype=Float64)
     open(filename, "r") do file
         for line in eachline(file)
             if line[1] != '#'
@@ -73,16 +73,16 @@ function loadjets!(filename, jets; splitby=isspace, constructor=(E,x,y,z)->[E,x,
 end
 
 """
-`loadjets(filename; splitby=isspace, constructor=(E,px,py,pz)->[E,px,py,pz], dtype=Float64) -> jets`
+`loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->[px,py,pz,E], dtype=Float64) -> jets`
 
-Loads the `jets` from a file. Ignores lines that start with `'#'`. Each line gets processed in the following way: the line is split using `split(line, splitby)` or simply `split(line)` by default. Every value in this line is then converted to the `dtype` (which is `Float64` by default). These values are then used as arguments for the `constructor` function which should produce individual jets. By default, the `constructor` constructs vectors of the form `[E,px,py,pz]`.
+Loads the `jets` from a file. Ignores lines that start with `'#'`. Each line gets processed in the following way: the line is split using `split(line, splitby)` or simply `split(line)` by default. Every value in this line is then converted to the `dtype` (which is `Float64` by default). These values are then used as arguments for the `constructor` function which should produce individual jets. By default, the `constructor` constructs vectors of the form `[px,py,pz,E]`.
 
 ```julia
 # example
 jets = loadjets("myjets1.dat")
 ```
 """
-function loadjets(filename; splitby=isspace, constructor=(E,x,y,z)->[E,x,y,z], dtype=Float64)
+function loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->[px,py,pz,E], dtype=Float64)
     loadjets!(filename, [], splitby=splitby, constructor=constructor, dtype=dtype)
 end
 

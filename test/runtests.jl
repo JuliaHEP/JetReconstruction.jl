@@ -21,12 +21,12 @@ const NUMBER_OF_TESTS = 11 # number of test files in the data folder
     # additional simple test
     @test arrcompare(
         anti_kt([
-            [100, 99.0, 0.1, 0],
-            [5.0, 4.0, -0.1, 0],
-            [99., -99, 0., 0.0]
+            [99.0, 0.1, 0, 100],
+            [4.0, -0.1, 0, 5.0],
+            [-99., 0., 0.0, 99]
         ], R=0.7)[1],
 
-        [[105.0, 103.0, 0.0, 0.0], [99.0, -99.0, 0.0, 0.0]]
+        [[103.0, 0.0, 0.0, 105.0], [-99.0, 0.0, 0.0, 99.0]]
     )
 
     # actual testing
@@ -34,13 +34,13 @@ const NUMBER_OF_TESTS = 11 # number of test files in the data folder
         istr = string(i)
 
         @test arrcompare(
-                sort(anti_kt(loadjets(
-                    "data/"*istr*".dat", constructor=(x,y,z,E)->[E,x,y,z]
-                ), R=1)[1], lt=(a,b) -> (pt(a) > pt(b))),
+                sort(
+                    anti_kt(
+                        loadjets("data/"*istr*".dat"), R=1
+                    )[1], lt=(a,b)->(pt(a)>pt(b))
+                ),
 
-                loadjets(
-                    "data/"*istr*"-fj-result.dat", constructor=(x,y,z,E)->[E,x,y,z]
-                )
+                loadjets("data/"*istr*"-fj-result.dat")
             )
     end
 end

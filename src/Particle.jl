@@ -1,12 +1,12 @@
 """
 This module defines the basic approach to particle and pseudojet representation. That is, in the form of an indexable (either mutable or immutable) object `obj` where
 ```
-obj[1] # energy
-obj[2] # px
-obj[3] # py
-obj[4] # pz
+obj[1] # px
+obj[2] # py
+obj[3] # pz
+obj[4] # energy
 ```
-Therefore, a simple vector [E, x, y, z] or a [static array](https://github.com/JuliaArrays/StaticArrays.jl) will do fine.
+Therefore, a simple vector [x, y, z, E] or a [static array](https://github.com/JuliaArrays/StaticArrays.jl) will do fine.
 
 You can define your own specific data type to represent physical objects. For the anti-kt algorithm to work with a data type, for instance, it only needs to have `pt`, `phi`, `eta`, and `+` operations defined. Be sure, however, to define those functions as extentions to the already existing `JetReconstruction.pt`, `JetReconstruction.phi`, `JetReconstruction.eta` and `Base.:+` respectively:
 ```
@@ -26,13 +26,13 @@ module Particle
 
 export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
 
-@inline energy(p) = p[1]
+@inline energy(p) = p[4]
 
-@inline px(p) = p[2]
+@inline px(p) = p[1]
 
-@inline py(p) = p[3]
+@inline py(p) = p[2]
 
-@inline pz(p) = p[4]
+@inline pz(p) = p[3]
 
 @inline pt(p) = @fastmath sqrt(px(p)^2 + py(p)^2)
 kt = pt
