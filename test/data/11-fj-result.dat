@@ -1,0 +1,24 @@
+#--------------------------------------------------------------------------
+#                         FastJet release 3.4.0
+#                 M. Cacciari, G.P. Salam and G. Soyez                  
+#     A software package for jet finding and analysis at colliders      
+#                           http://fastjet.fr                           
+#	                                                                      
+# Please cite EPJC72(2012)1896 [arXiv:1111.6097] if you use this package
+# for scientific work and optionally PLB641(2006)57 [hep-ph/0512210].   
+#                                                                       
+# FastJet is provided without warranty under the GNU GPL v2 or higher.  
+# It uses T. Chan's closest pair algorithm, S. Fortune's Voronoi code
+# and 3rd party plugin jet algorithms. See COPYING file for details.
+#--------------------------------------------------------------------------
+# clustering with Longitudinally invariant generalised kt algorithm with R = 1, p = -1 and E scheme recombination
+# this took 239 ms
+#format is:
+# px py pz E
+ 1.76484 3.20501 -21.0606 21.4423
+ -1.4503 -1.5959 -215.974 215.994
+ 0.68211 1.90473 -79.3866 79.4232
+ -1.00605 -0.924872 -2.22064 2.64549
+ 0.427455 -0.498108 -56.6361 56.6509
+ 0.335549 0.0516403 -0.834654 0.911804
+ 0.239681 -0.0786237 -1.9341 1.95546

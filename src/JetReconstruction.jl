@@ -18,7 +18,7 @@ include("Serialize.jl")
 using .Serialize
 export savejets, loadjets!, loadjets
 
-# jet visualisation (uses PyPlot)
+# jet visualisation
 include("JetVis.jl")
 export jetsplot
 

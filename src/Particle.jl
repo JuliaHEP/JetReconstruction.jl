@@ -1,5 +1,5 @@
 """
-This module defines the basic approach to representing particles and pseudojets. That is, in the form of an indexable (either mutable or immutable) object `obj` where
+This module defines the basic approach to particle and pseudojet representation. That is, in the form of an indexable (either mutable or immutable) object `obj` where
 ```
 obj[1] # energy
 obj[2] # px
@@ -34,15 +34,26 @@ export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
 
 @inline pz(p) = p[4]
 
-@inline pt(p) = @fastmath sqrt(p[2]^2 + p[3]^2)
+@inline pt(p) = @fastmath sqrt(px(p)^2 + py(p)^2)
 kt = pt
 
-@inline phi(p) = @fastmath atan(p[3], p[2])
+@inline phi(p) = @fastmath atan(py(p), px(p))
 ϕ = phi
 
-@inline mass(p) = @fastmath sqrt(max(p[1]^2 - p[2]^2 - p[3]^2 - p[4]^2, 0))
+@inline mass(p) = @fastmath sqrt(max(energy(p)^2 - px(p)^2 - py(p)^2 - pz(p)^2, 0))
 
-@inline eta(p) = asinh(p[4]/pt(p))
+#@inline pseudorap(p) = asinh(pz(p)/pt(p)) # pseudorapidity
+
+function eta(p) # rapidity
+    kt2 = px(p)^2 + py(p)^2
+    abspz = abs(pz(p))
+    if (energy(p) == abspz && kt2 == 0)
+        return (-1)^(pz(p) < 0)*(1e5 + abspz) # a very large value that depends on pz
+    end
+
+    m2 = max(energy(p)^2 - kt2 - pz(p)^2, 0) # mass^2
+    return (-1)^(pz(p) > 0)*0.5*log((kt2 + m2)/(energy(p)+abspz)^2)
+end
 η = eta
 
 end
