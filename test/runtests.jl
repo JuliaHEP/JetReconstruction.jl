@@ -4,7 +4,7 @@ using Test
 """
 A function for test comparison
 """
-function arrcompare(y, yt; eps=0.01)
+function arrcompare(y, yt; eps=0.1)
     for i in 1:length(y)
         if !(sum(abs.(y[i] .- yt[i]) .< eps) == length(y[i]))
             return false
@@ -13,7 +13,7 @@ function arrcompare(y, yt; eps=0.01)
     true
 end
 
-const NUMBER_OF_TESTS = 11 # number of test files in the data folder
+const NUMBER_OF_TESTS = 12 # number of test files in the data folder
 
 @testset "JetReconstruction.jl" begin
     # @test anti_kt(X) == Y

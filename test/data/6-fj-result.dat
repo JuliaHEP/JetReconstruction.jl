@@ -11,7 +11,8 @@
 # It uses T. Chan's closest pair algorithm, S. Fortune's Voronoi code
 # and 3rd party plugin jet algorithms. See COPYING file for details.
 #--------------------------------------------------------------------------
-# clustering with Longitudinally invariant anti-kt algorithm with R = 1 and E scheme recombination
+# clustering with Longitudinally invariant generalised kt algorithm with R = 1, p = -1 and E scheme recombination
+# this took 320 microseconds
 #format is:
 # px py pz E
  -990.892 654.929 2290.25 2582.37
@@ -52,4 +53,3 @@
  -0.0902877 -0.0743477 1.34128 1.34637
  0.100041 -0.0256397 0.203542 0.228243
  -0.00169897 -0.0232543 11.8047 11.8056
-#END
