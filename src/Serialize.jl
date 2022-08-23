@@ -57,7 +57,7 @@ loadjets!("myjets1.dat", jets)
 loadjets!("myjets2.dat", jets)
 ```
 """
-function loadjets!(filename, jets; splitby=isspace, constructor=(x,y,z,E)->[x,y,z,E], dtype=Float64)
+function loadjets!(filename, jets; splitby=isspace, constructor=(x,y,z,E)->Float64[x,y,z,E], dtype=Float64)
     open(filename, "r") do file
         for line in eachline(file)
             if line[1] != '#'
@@ -73,7 +73,7 @@ function loadjets!(filename, jets; splitby=isspace, constructor=(x,y,z,E)->[x,y,
 end
 
 """
-`loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->[px,py,pz,E], dtype=Float64) -> jets`
+`loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->Float64[px,py,pz,E], dtype=Float64) -> jets`
 
 Loads the `jets` from a file. Ignores lines that start with `'#'`. Each line gets processed in the following way: the line is split using `split(line, splitby)` or simply `split(line)` by default. Every value in this line is then converted to the `dtype` (which is `Float64` by default). These values are then used as arguments for the `constructor` function which should produce individual jets. By default, the `constructor` constructs vectors of the form `[px,py,pz,E]`.
 
@@ -82,8 +82,8 @@ Loads the `jets` from a file. Ignores lines that start with `'#'`. Each line get
 jets = loadjets("myjets1.dat")
 ```
 """
-function loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->[px,py,pz,E], dtype=Float64)
-    loadjets!(filename, [], splitby=splitby, constructor=constructor, dtype=dtype)
+function loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->Float64[px,py,pz,E], dtype=Float64)
+    loadjets!(filename, [], splitby=splitby, constructor=constructor)
 end
 
 end
