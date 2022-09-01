@@ -1,32 +1,25 @@
-"""
-This module defines the anti-kt algorithm and similar jet reconstruction algorithms.
-"""
-module Algo
+import IfElse
 
-import ..JetReconstruction
-
-export anti_kt, anti_kt_alt #, sequential_jet_reconstruct
-
-function _dist(i::Int, j::Int, _eta, _phi)::Float64
-    @inbounds deta::Float64 = @fastmath _eta[i] - _eta[j]
-    @inbounds dphi::Float64 = @fastmath abs(_phi[i] - _phi[j])
-    dphi > 3.141592 && (dphi = @fastmath 6.283184 - dphi);
-    @fastmath muladd(deta, deta, dphi*dphi)
+@inline function _dist(i, j, _eta, _phi)
+    deta = _eta[i] - _eta[j]
+    dphi = abs(_phi[i] - _phi[j])
+    dphi = IfElse.ifelse(dphi > pi, 2pi - dphi, dphi)
+    muladd(deta, deta, dphi*dphi)
 end
 
 # d_{ij} distance with i's NN (times R^2)
-function dij(i::Int, _kt2, _nn, _nndist)::Float64
+function dij(i, _kt2, _nn, _nndist)
     j = _nn[i]
     d = _nndist[i]
-    @fastmath d*min(_kt2[i], _kt2[j])
+    d*min(_kt2[i], _kt2[j])
 end
 
 # finds new nn for i and checks everyone additionally
 function _upd_nn_crosscheck!(i::Int, from::Int, to::Int, _eta, _phi, _R2, _nndist, _nn)
     nndist = _R2
     nn = i
-    @inbounds for j::Int in from:to
-        Δ2::Float64 = _dist(i, j, _eta, _phi)
+    @inbounds for j in from:to
+        Δ2 = _dist(i, j, _eta, _phi)
         if Δ2 < nndist
             nn = j
             nndist = Δ2
@@ -43,22 +36,19 @@ end
 
 # finds new nn for i
 function _upd_nn_nocross!(i::Int, from::Int, to::Int, _eta, _phi, _R2, _nndist, _nn)
-    nndist::Float64 = _R2
+    nndist = _R2
     nn = i
-    Δ2::Float64 = 0.0
-    for j::Int in from:(i-1)
+    @turbo for j in from:(i-1)
         Δ2 = _dist(i, j, _eta, _phi)
-        if Δ2 <= nndist
-            nn = j
-            nndist = Δ2
-        end
+        f = Δ2 <= nndist
+        nn = ifelse(f, j, nn)
+        nndist = ifelse(f, Δ2, nndist)
     end
-    for j::Int in (i+1):to
+    @turbo for j in (i+1):to
         Δ2 = _dist(i, j, _eta, _phi)
-        if Δ2 <= nndist
-            nn = j
-            nndist = Δ2
-        end
+        f = Δ2 <= nndist
+        nn = ifelse(f, j, nn)
+        nndist = ifelse(f, Δ2, nndist)
     end
     _nndist[i] = nndist
     _nn[i] = nn
@@ -66,18 +56,18 @@ function _upd_nn_nocross!(i::Int, from::Int, to::Int, _eta, _phi, _R2, _nndist, 
 end
 
 # entire NN update step
-function _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi, _R2, _nndist, _nn, _nndij)
-    @inbounds nnk = _nn[k]
+Base.@propagate_inbounds function _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi, _R2, _nndist, _nn, _nndij)
+    nnk = _nn[k]
     Δ2::Float64 = 0.0
     if nnk == i || nnk == j
         _upd_nn_nocross!(k, 1, N, _eta, _phi, _R2, _nndist, _nn) # update dist and nn
-        @inbounds _nndij[k] = dij(k, _kt2, _nn, _nndist)
-        @inbounds nnk = _nn[k]
+        _nndij[k] = dij(k, _kt2, _nn, _nndist)
+        nnk = _nn[k]
     end
 
     if j != i && k != i #
         Δ2 = _dist(i, k, _eta, _phi)
-        @inbounds if Δ2 < _nndist[k]
+        if Δ2 < _nndist[k]
             _nndist[k] = Δ2
             nnk = _nn[k] = i
             _nndij[k] = dij(k, _kt2, _nn, _nndist)
@@ -89,7 +79,7 @@ function _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi, _R2, _nndist, _nn, _nnd
     end
 
     if nnk == Nn
-        @inbounds _nn[k] = j
+        _nn[k] = j
     end
 end
 
@@ -102,7 +92,7 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1, recomb
     sequences = Vector{Int}[] # recombination sequences, WARNING: first index in the sequence is not necessarily the seed
 
     # params
-    _R2::Float64 = R*R
+    _R2 = R*R
     _p = (round(p) == p) ? Int(p) : p # integer p if possible
     ap = abs(_p); # absolute p
 
@@ -111,18 +101,18 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1, recomb
     _kt2 = (JetReconstruction.pt.(_objects) .^ 2) .^ _p
     _phi = JetReconstruction.phi.(_objects)
     _eta = JetReconstruction.eta.(_objects)
-    _nn = Vector(1:N) # nearest neighbours
+    _nn = collect(1:N) # nearest neighbours
     _nndist = fill(float(_R2), N) # distances to the nearest neighbour
     _sequences = Vector{Int}[[x] for x in 1:N]
 
     # initialize _nn
-    @inbounds for i::Int in 1:N
+    for i in 1:N
         _upd_nn_crosscheck!(i, 1, i-1, _eta, _phi, _R2, _nndist, _nn)
     end
 
     # diJ table *_R2
     _nndij = zeros(N)
-    @inbounds for i::Int in 1:N
+    for i in 1:N
         _nndij[i] = dij(i, _kt2, _nn, _nndist)
     end
 
@@ -130,14 +120,13 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1, recomb
         # findmin
         i::Int = 1
         dij_min = _nndij[1]
-        @inbounds for k::Int in 2:N
-            if _nndij[k] < dij_min
-                dij_min = _nndij[k]
-                i = k
-            end
+        for k in 2:N
+            f = _nndij[k] < dij_min
+            dij_min = ifelse(f, _nndij[k], dij_min)
+            i = ifelse(f, k, i)
         end
 
-        j::Int = _nn[i]
+        j = _nn[i]
         dij_min /= _R2
 
         if i != j
@@ -147,15 +136,15 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1, recomb
             end
 
             # update ith jet, replacing it with the new one
-            @inbounds _objects[i] = recombine(_objects[i], _objects[j])
-            @inbounds _phi[i] = JetReconstruction.phi(_objects[i])
-            @inbounds _eta[i] = JetReconstruction.eta(_objects[i])
-            @inbounds _kt2[i] = (JetReconstruction.pt(_objects[i])^2)^_p
+            _objects[i] = recombine(_objects[i], _objects[j])
+            _phi[i] = JetReconstruction.phi(_objects[i])
+            _eta[i] = JetReconstruction.eta(_objects[i])
+            _kt2[i] = (JetReconstruction.pt(_objects[i])^2)^_p
 
             _nndist[i] = _R2
             _nn[i] = i
 
-            @inbounds for x in _sequences[j] # WARNING: first index in the sequence is not necessarily the seed
+            for x in _sequences[j] # WARNING: first index in the sequence is not necessarily the seed
                 push!(_sequences[i], x)
             end
         else # i == j
@@ -164,16 +153,16 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1, recomb
         end
 
         # copy jet N to j
-        @inbounds _objects[j] = _objects[N]
+        _objects[j] = _objects[N]
 
-        @inbounds _phi[j] = _phi[N]
-        @inbounds _eta[j] = _eta[N]
-        @inbounds _kt2[j] = _kt2[N]
-        @inbounds _nndist[j] = _nndist[N]
-        @inbounds _nn[j] = _nn[N]
-        @inbounds _nndij[j] = _nndij[N]
+        _phi[j] = _phi[N]
+        _eta[j] = _eta[N]
+        _kt2[j] = _kt2[N]
+        _nndist[j] = _nndist[N]
+        _nn[j] = _nn[N]
+        _nndij[j] = _nndij[N]
 
-        @inbounds _sequences[j] = _sequences[N]
+        _sequences[j] = _sequences[N]
 
         Nn::Int = N
         N -= 1
@@ -228,13 +217,13 @@ function sequential_jet_reconstruct_alt(objects::AbstractArray{T}; p=-1, R=1, re
     _sequences = Vector{Int}[[x] for x in 1:N]
 
     # initialize _nn
-    @inbounds for i::Int in 1:N
+    for i::Int in 1:N
         _upd_nn_crosscheck!(i, 1, i-1, _eta, _phi, _R2, _nndist, _nn)
     end
 
     # diJ table *_R2
     _nndij = zeros(N)
-    @inbounds for i::Int in 1:N
+    for i::Int in 1:N
         _nndij[i] = dij(i, _kt2, _nn, _nndist)
     end
 
@@ -242,7 +231,7 @@ function sequential_jet_reconstruct_alt(objects::AbstractArray{T}; p=-1, R=1, re
         # findmin
         i::Int = 1
         dij_min = _nndij[1]
-        @inbounds for k::Int in 2:N
+        for k::Int in 2:N
             if _nndij[k] < dij_min
                 dij_min = _nndij[k]
                 i = k
@@ -259,15 +248,15 @@ function sequential_jet_reconstruct_alt(objects::AbstractArray{T}; p=-1, R=1, re
             end
 
             # update ith jet, replacing it with the new one
-            @inbounds _objects[i] = recombine(_objects[i], _objects[j])
-            @inbounds _phi[i] = JetReconstruction.phi(_objects[i])
-            @inbounds _eta[i] = JetReconstruction.eta(_objects[i])
-            @inbounds _kt2[i] = (JetReconstruction.pt(_objects[i])^2)^_p
+            _objects[i] = recombine(_objects[i], _objects[j])
+            _phi[i] = JetReconstruction.phi(_objects[i])
+            _eta[i] = JetReconstruction.eta(_objects[i])
+            _kt2[i] = (JetReconstruction.pt(_objects[i])^2)^_p
 
             _nndist[i] = _R2
             _nn[i] = i
 
-            @inbounds for x in _sequences[j] # WARNING: first index in the sequence is not necessarily the seed
+            for x in _sequences[j] # WARNING: first index in the sequence is not necessarily the seed
                 push!(_sequences[i], x)
             end
         else # i == j
@@ -276,16 +265,16 @@ function sequential_jet_reconstruct_alt(objects::AbstractArray{T}; p=-1, R=1, re
         end
 
         # copy jet N to j
-        @inbounds _objects[j] = _objects[N]
+        _objects[j] = _objects[N]
 
-        @inbounds _phi[j] = _phi[N]
-        @inbounds _eta[j] = _eta[N]
-        @inbounds _kt2[j] = _kt2[N]
-        @inbounds _nndist[j] = _nndist[N]
-        @inbounds _nn[j] = _nn[N]
-        @inbounds _nndij[j] = _nndij[N]
+        _phi[j] = _phi[N]
+        _eta[j] = _eta[N]
+        _kt2[j] = _kt2[N]
+        _nndist[j] = _nndist[N]
+        _nn[j] = _nn[N]
+        _nndij[j] = _nndij[N]
 
-        @inbounds _sequences[j] = _sequences[N]
+        _sequences[j] = _sequences[N]
 
         Nn::Int = N
         N -= 1
@@ -306,6 +295,4 @@ Not for usage. Use `anti_kt` instead. Correctness is not guaranteed.
 """
 function anti_kt_alt(objects; p=-1, R=1, recombine=+)
     sequential_jet_reconstruct_alt(objects, p=p, R=R, recombine=recombine)
-end
-
 end

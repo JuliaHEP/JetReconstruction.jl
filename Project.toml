@@ -4,10 +4,12 @@ authors = ["Atell Krasnopolski <delta_atell@protonmail.com>"]
 version = "0.1.0"
 
 [deps]
+IfElse = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
+LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
 LorentzVectorHEP = "f612022c-142a-473f-8cfd-a09cf3793c6c"
 
 [compat]
-julia = "1"
+julia = "1.6"
 
 [extras]
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
