@@ -83,7 +83,7 @@ jets = loadjets("myjets1.dat")
 ```
 """
 function loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->Float64[px,py,pz,E], dtype=Float64)
-    loadjets!(filename, [], splitby=splitby, constructor=constructor)
+    loadjets!(filename, Vector{Float64}[], splitby=splitby, constructor=constructor)
 end
 
 end
