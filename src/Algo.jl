@@ -1,16 +1,14 @@
-"""
-This module defines the anti-kt algorithm and similar jet reconstruction algorithms.
-"""
+import IfElse
 
-function _dist(i, j, _eta, _phi)
+@inline function _dist(i, j, _eta, _phi)
     deta = _eta[i] - _eta[j]
     dphi = abs(_phi[i] - _phi[j])
-    dphi = ifelse(dphi > pi, 2pi - dphi, dphi)
+    dphi = IfElse.ifelse(dphi > pi, 2pi - dphi, dphi)
     muladd(deta, deta, dphi*dphi)
 end
 
 # d_{ij} distance with i's NN (times R^2)
-function dij(i::Int, _kt2, _nn, _nndist)
+function dij(i, _kt2, _nn, _nndist)
     j = _nn[i]
     d = _nndist[i]
     d*min(_kt2[i], _kt2[j])
