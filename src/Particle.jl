@@ -22,8 +22,6 @@ Since `+` is only used in recombination, you can leave it undefined, if you use 
 """
 module Particle
 
-# TODO: add built-in integration with LorentzVector and LorentzVectorHEP and write about it in the docstring
-
 export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
 
 @inline energy(p) = p[4]
@@ -35,10 +33,10 @@ export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
 @inline pz(p) = p[3]
 
 @inline pt(p) = @fastmath sqrt(px(p)^2 + py(p)^2)
-kt = pt
+const kt = pt
 
 @inline phi(p) = @fastmath atan(py(p), px(p))
-ϕ = phi
+const ϕ = phi
 
 @inline mass(p) = @fastmath sqrt(max(energy(p)^2 - px(p)^2 - py(p)^2 - pz(p)^2, 0))
 
@@ -54,6 +52,6 @@ function eta(p) # rapidity
     m2 = max(energy(p)^2 - kt2 - pz(p)^2, 0) # mass^2
     return (-1)^(pz(p) > 0)*0.5*log((kt2 + m2)/(energy(p)+abspz)^2)
 end
-η = eta
+const η = eta
 
 end

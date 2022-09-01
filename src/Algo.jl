@@ -7,142 +7,185 @@ import ..JetReconstruction
 
 export anti_kt, anti_kt_alt #, sequential_jet_reconstruct
 
+function _dist(i::Int, j::Int, _eta, _phi)::Float64
+    @inbounds deta::Float64 = @fastmath _eta[i] - _eta[j]
+    @inbounds dphi::Float64 = @fastmath abs(_phi[i] - _phi[j])
+    dphi > 3.141592 && (dphi = @fastmath 6.283184 - dphi);
+    @fastmath muladd(deta, deta, dphi*dphi)
+end
+
+# d_{ij} distance with i's NN (times R^2)
+function dij(i::Int, _kt2, _nn, _nndist)::Float64
+    j = _nn[i]
+    d = _nndist[i]
+    @fastmath d*min(_kt2[i], _kt2[j])
+end
+
+# finds new nn for i and checks everyone additionally
+function _upd_nn_crosscheck!(i::Int, from::Int, to::Int, _eta, _phi, _R2, _nndist, _nn)
+    nndist = _R2
+    nn = i
+    @inbounds for j::Int in from:to
+        Δ2::Float64 = _dist(i, j, _eta, _phi)
+        if Δ2 < nndist
+            nn = j
+            nndist = Δ2
+        end
+        if Δ2 < _nndist[j]
+            _nndist[j] = Δ2
+            _nn[j] = i
+        end
+    end
+    _nndist[i] = nndist
+    _nn[i] = nn
+    nothing
+end
+
+# finds new nn for i
+function _upd_nn_nocross!(i::Int, from::Int, to::Int, _eta, _phi, _R2, _nndist, _nn)
+    nndist::Float64 = _R2
+    nn = i
+    Δ2::Float64 = 0.0
+    for j::Int in from:(i-1)
+        Δ2 = _dist(i, j, _eta, _phi)
+        if Δ2 <= nndist
+            nn = j
+            nndist = Δ2
+        end
+    end
+    for j::Int in (i+1):to
+        Δ2 = _dist(i, j, _eta, _phi)
+        if Δ2 <= nndist
+            nn = j
+            nndist = Δ2
+        end
+    end
+    _nndist[i] = nndist
+    _nn[i] = nn
+    nothing
+end
+
+# entire NN update step
+function _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi, _R2, _nndist, _nn, _nndij)
+    @inbounds nnk = _nn[k]
+    Δ2::Float64 = 0.0
+    if nnk == i || nnk == j
+        _upd_nn_nocross!(k, 1, N, _eta, _phi, _R2, _nndist, _nn) # update dist and nn
+        @inbounds _nndij[k] = dij(k, _kt2, _nn, _nndist)
+        @inbounds nnk = _nn[k]
+    end
+
+    if j != i && k != i #
+        Δ2 = _dist(i, k, _eta, _phi)
+        @inbounds if Δ2 < _nndist[k]
+            _nndist[k] = Δ2
+            nnk = _nn[k] = i
+            _nndij[k] = dij(k, _kt2, _nn, _nndist)
+        end
+        if Δ2 < _nndist[i]
+            _nndist[i] = Δ2
+            _nn[i] = k
+        end
+    end
+
+    if nnk == Nn
+        @inbounds _nn[k] = j
+    end
+end
+
 function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1, recombine=+) where T
+    # bounds
+    N::Int = length(objects)
+
     # returned values
     jets = T[] # result
     sequences = Vector{Int}[] # recombination sequences, WARNING: first index in the sequence is not necessarily the seed
 
-    # caches
-    tmp_sequences = Vector{Int}[] # temporary sequences indexed according to objects
-    dB = Float64[] # caches d_{iB} distances
-    dp = Vector{Float64}[] # caches d_{ij} distances
-
     # params
-    _R2 = R*R
+    _R2::Float64 = R*R
     _p = (round(p) == p) ? Int(p) : p # integer p if possible
     ap = abs(_p); # absolute p
-    N = length(objects)
 
     # data
     _objects = copy(objects)
-    _kt2 = JetReconstruction.pt.(_objects) .^ 2
+    _kt2 = (JetReconstruction.pt.(_objects) .^ 2) .^ _p
     _phi = JetReconstruction.phi.(_objects)
     _eta = JetReconstruction.eta.(_objects)
+    _nn = Vector(1:N) # nearest neighbours
+    _nndist = fill(float(_R2), N) # distances to the nearest neighbour
+    _sequences = Vector{Int}[[x] for x in 1:N]
 
-    # d_{iB} distance times R^2
-    function dist(i)
-        if _p < 0
-            return @fastmath _R2/(_kt2[i]^ap)
-        end
-        @fastmath (_kt2[i]^ap)*_R2
+    # initialize _nn
+    @inbounds for i::Int in 1:N
+        _upd_nn_crosscheck!(i, 1, i-1, _eta, _phi, _R2, _nndist, _nn)
     end
 
-    # d_{ij} distance times R^2
-    function dist(i, j)
-        deta = abs(_eta[i] - _eta[j])
-        dphi = abs(_phi[i] - _phi[j])
-        if dphi > π
-            dphi = 2π - dphi
-        end
-        Δ2 = muladd(deta, deta, dphi*dphi)
-        if p < 0
-            return @fastmath Δ2/max(_kt2[i]^ap, _kt2[j]^ap)
-        end
-        @fastmath Δ2*min(_kt2[i]^ap, _kt2[j]^ap)
+    # diJ table *_R2
+    _nndij = zeros(N)
+    @inbounds for i::Int in 1:N
+        _nndij[i] = dij(i, _kt2, _nn, _nndist)
     end
 
-    # a function to remove objects from the d_{ij} distance cache
-    function remove_dp(i)
-        #print(dp)
-        deleteat!(dp, i)
-        @inbounds for j in 1:(i-1)
-            deleteat!(dp[j], i-j)
-        end
-        nothing
-    end
-
-    # prepare the caches
-    @inbounds for i in 1:N
-        obj = _objects[i]
-        push!(tmp_sequences, [i])
-        push!(dB, dist(i))
-
-        di = fill(0.0, N-i)
-        @inbounds for j in (i+1):N
-            di[j-i] = dist(i, j)
-        end
-        push!(dp, di)
-    end
-
-    # main iteration
     while N != 0
-        mindist_idx::Vector{Int64} = Int64[0, 0] # either [i, j] or [i, 0] depending on the type of the minimal found distance
-        mindist::Float64 = Inf
-        d::Float64 = 0.0
-        @inbounds for i in 1:N
-            @inbounds for j in 1:(N-i)
-                d = dp[i][j] # dist(i, j)
-                if d < mindist
-                    mindist = d
-                    # j > i
-                    mindist_idx[1] = i
-                    mindist_idx[2] = j+i
-                end
-            end
-
-            d = dB[i] # dist(i)
-            if d < mindist
-                mindist = d
-                mindist_idx[1] = i
-                mindist_idx[2] = 0
+        # findmin
+        i::Int = 1
+        dij_min = _nndij[1]
+        @inbounds for k::Int in 2:N
+            if _nndij[k] < dij_min
+                dij_min = _nndij[k]
+                i = k
             end
         end
 
-        if mindist_idx[2] == 0 #if min is d_{iB}
-            push!(jets, _objects[mindist_idx[1]])
-            push!(sequences, tmp_sequences[mindist_idx[1]])
-            deleteat!(_objects, mindist_idx[1])
-            deleteat!(_phi, mindist_idx[1])
-            deleteat!(_eta, mindist_idx[1])
-            deleteat!(_kt2, mindist_idx[1])
-            deleteat!(tmp_sequences, mindist_idx[1])
-            deleteat!(dB, mindist_idx[1])
-            remove_dp(mindist_idx[1])
-            N -= 1
-        else #if min is d_{ij}
-            # put the new recombined object to index mindist_idx[1] and remove mindist_idx[2];
-            _objects[mindist_idx[1]] = recombine(_objects[mindist_idx[1]], _objects[mindist_idx[2]])
+        j::Int = _nn[i]
+        dij_min /= _R2
 
-            for x in tmp_sequences[mindist_idx[2]] # WARNING: first index in the sequence is not necessarily the seed
-                push!(tmp_sequences[mindist_idx[1]], x)
+        if i != j
+            # swap if needed
+            if j < i
+                i, j = j, i
             end
-            _phi[mindist_idx[1]] = JetReconstruction.phi(_objects[mindist_idx[1]])
-            _eta[mindist_idx[1]] = JetReconstruction.eta(_objects[mindist_idx[1]])
-            _kt2[mindist_idx[1]] = JetReconstruction.pt(_objects[mindist_idx[1]])^2
 
-            deleteat!(_objects, mindist_idx[2])
-            deleteat!(_phi, mindist_idx[2])
-            deleteat!(_eta, mindist_idx[2])
-            deleteat!(_kt2, mindist_idx[2])
-            deleteat!(tmp_sequences, mindist_idx[2])
-            deleteat!(dB, mindist_idx[2])
-            remove_dp(mindist_idx[2])
+            # update ith jet, replacing it with the new one
+            @inbounds _objects[i] = recombine(_objects[i], _objects[j])
+            @inbounds _phi[i] = JetReconstruction.phi(_objects[i])
+            @inbounds _eta[i] = JetReconstruction.eta(_objects[i])
+            @inbounds _kt2[i] = (JetReconstruction.pt(_objects[i])^2)^_p
 
-            N -= 1
+            _nndist[i] = _R2
+            _nn[i] = i
 
-            # update dB after we have the kt2, phi and eta values
-            dB[mindist_idx[1]] = dist(mindist_idx[1])
-            # update dp
-            @inbounds for k in 1:(mindist_idx[1]-1)
-                dp[k][mindist_idx[1]-k] = dist(k, mindist_idx[1])
+            @inbounds for x in _sequences[j] # WARNING: first index in the sequence is not necessarily the seed
+                push!(_sequences[i], x)
             end
-            @inbounds for k in (mindist_idx[1]+1):N
-                dp[mindist_idx[1]][k-mindist_idx[1]] = dist(k, mindist_idx[1])
-            end
+        else # i == j
+            push!(jets, _objects[i])
+            push!(sequences, _sequences[i])
         end
+
+        # copy jet N to j
+        @inbounds _objects[j] = _objects[N]
+
+        @inbounds _phi[j] = _phi[N]
+        @inbounds _eta[j] = _eta[N]
+        @inbounds _kt2[j] = _kt2[N]
+        @inbounds _nndist[j] = _nndist[N]
+        @inbounds _nn[j] = _nn[N]
+        @inbounds _nndij[j] = _nndij[N]
+
+        @inbounds _sequences[j] = _sequences[N]
+
+        Nn::Int = N
+        N -= 1
+
+        # update nearest neighbours step
+        for k::Int in 1:N
+            _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi, _R2, _nndist, _nn, _nndij)
+        end
+
+        _nndij[i] = dij(i, _kt2, _nn, _nndist)
     end
 
-    # return the result
     jets, sequences
 end
 
@@ -163,153 +206,98 @@ end
 # typically sequential_jet_reconstruct_alt is used when developing an alternative (possibly better) way of reclustureing to keep the previous working version intact
 
 function sequential_jet_reconstruct_alt(objects::AbstractArray{T}; p=-1, R=1, recombine=+) where T
+    # bounds
+    N::Int = length(objects)
+
     # returned values
     jets = T[] # result
     sequences = Vector{Int}[] # recombination sequences, WARNING: first index in the sequence is not necessarily the seed
 
-    # caches
-    tmp_sequences = Vector{Int}[] # temporary sequences indexed according to objects
-    dB = Float64[] # caches d_{iB} distances
-    dp = Vector{Float64}[] # caches d_{ij} distances between points
-    dm = Vector{Bool}[] # mask for the d_{ij} distances between points
-
     # params
-    _R2 = R*R
+    _R2::Float64 = R*R
     _p = (round(p) == p) ? Int(p) : p # integer p if possible
     ap = abs(_p); # absolute p
-    N = length(objects)
 
     # data
     _objects = copy(objects)
-    _kt2 = JetReconstruction.pt.(_objects) .^ 2
+    _kt2 = (JetReconstruction.pt.(_objects) .^ 2) .^ _p
     _phi = JetReconstruction.phi.(_objects)
     _eta = JetReconstruction.eta.(_objects)
+    _nn = Vector(1:N) # nearest neighbours
+    _nndist = fill(float(_R2), N) # distances to the nearest neighbour
+    _sequences = Vector{Int}[[x] for x in 1:N]
 
-    # d_{iB} distance times R^2
-    function dist(i)
-        if _p < 0
-            return @fastmath _R2/(_kt2[i]^ap)
-        end
-        @fastmath (_kt2[i]^ap)*_R2
+    # initialize _nn
+    @inbounds for i::Int in 1:N
+        _upd_nn_crosscheck!(i, 1, i-1, _eta, _phi, _R2, _nndist, _nn)
     end
 
-    # d_{ij} distance times R^2
-    function dist(i, j)
-        deta = abs(_eta[i] - _eta[j])
-        dphi = abs(_phi[i] - _phi[j])
-        if dphi > π
-            dphi = 2π - dphi
-        end
-        Δ2 = @fastmath muladd(deta, deta, dphi*dphi)
-        if Δ2 >= _R2 # exit earlier if the distance is irrelevant
-            dm[i][j-i] = false
-            return Inf
-        end
-        if p < 0
-            return @fastmath Δ2/max(_kt2[i]^ap, _kt2[j]^ap)
-        end
-        @fastmath Δ2*min(_kt2[i]^ap, _kt2[j]^ap)
+    # diJ table *_R2
+    _nndij = zeros(N)
+    @inbounds for i::Int in 1:N
+        _nndij[i] = dij(i, _kt2, _nn, _nndist)
     end
 
-    # a function to remove objects from dp and dm arrays
-    function remove_from_cache(d, i)
-        deleteat!(d, i)
-        @inbounds for j in 1:(i-1)
-            deleteat!(d[j], i-j)
-        end
-        nothing
-    end
-
-    # prepare the caches
-    @inbounds for i in 1:N
-        obj = _objects[i]
-        push!(tmp_sequences, [i])
-        push!(dB, dist(i))
-
-        dmi = fill(true, N-i)
-        push!(dm, dmi)
-
-        di = fill(0.0, N-i)
-        @inbounds for j in (i+1):N
-            di[j-i] = dist(i, j)
-        end
-        push!(dp, di)
-    end
-
-    # main iteration
     while N != 0
-        mindist_idx::Vector{Int64} = Int64[0, 0] # either [i, j] or [i, 0] depending on the type of the minimal found distance
-        mindist::Float64 = Inf
-        d::Float64 = 0.0
-        @inbounds for i in 1:N
-            @inbounds for j in 1:(N-i)
-                if !dm[i][j]
-                    continue
-                end
-                d = dp[i][j] # dist(i, j)
-                if d < mindist
-                    mindist = d
-                    # j > i
-                    mindist_idx[1] = i
-                    mindist_idx[2] = j+i
-                end
-            end
-
-            d = dB[i] # dist(i)
-            if d < mindist
-                mindist = d
-                mindist_idx[1] = i
-                mindist_idx[2] = 0
+        # findmin
+        i::Int = 1
+        dij_min = _nndij[1]
+        @inbounds for k::Int in 2:N
+            if _nndij[k] < dij_min
+                dij_min = _nndij[k]
+                i = k
             end
         end
 
-        if mindist_idx[2] == 0 #if min is d_{iB}
-            push!(jets, _objects[mindist_idx[1]])
-            push!(sequences, tmp_sequences[mindist_idx[1]])
-            deleteat!(_objects, mindist_idx[1])
-            deleteat!(_phi, mindist_idx[1])
-            deleteat!(_eta, mindist_idx[1])
-            deleteat!(_kt2, mindist_idx[1])
-            deleteat!(tmp_sequences, mindist_idx[1])
-            deleteat!(dB, mindist_idx[1])
-            remove_from_cache(dp, mindist_idx[1])
-            remove_from_cache(dm, mindist_idx[1])
-            N -= 1
-        else #if min is d_{ij}
-            # put the new recombined object to index mindist_idx[1] and remove mindist_idx[2];
-            _objects[mindist_idx[1]] = recombine(_objects[mindist_idx[1]], _objects[mindist_idx[2]])
+        j::Int = _nn[i]
+        dij_min /= _R2
 
-            for x in tmp_sequences[mindist_idx[2]] # WARNING: first index in the sequence is not necessarily the seed
-                push!(tmp_sequences[mindist_idx[1]], x)
+        if i != j
+            # swap if needed
+            if j < i
+                i, j = j, i
             end
-            _phi[mindist_idx[1]] = JetReconstruction.phi(_objects[mindist_idx[1]])
-            _eta[mindist_idx[1]] = JetReconstruction.eta(_objects[mindist_idx[1]])
-            _kt2[mindist_idx[1]] = JetReconstruction.pt(_objects[mindist_idx[1]])^2
 
-            deleteat!(_objects, mindist_idx[2])
-            deleteat!(_phi, mindist_idx[2])
-            deleteat!(_eta, mindist_idx[2])
-            deleteat!(_kt2, mindist_idx[2])
-            deleteat!(tmp_sequences, mindist_idx[2])
-            deleteat!(dB, mindist_idx[2])
-            remove_from_cache(dp, mindist_idx[2])
-            remove_from_cache(dm, mindist_idx[2])
+            # update ith jet, replacing it with the new one
+            @inbounds _objects[i] = recombine(_objects[i], _objects[j])
+            @inbounds _phi[i] = JetReconstruction.phi(_objects[i])
+            @inbounds _eta[i] = JetReconstruction.eta(_objects[i])
+            @inbounds _kt2[i] = (JetReconstruction.pt(_objects[i])^2)^_p
 
-            N -= 1
+            _nndist[i] = _R2
+            _nn[i] = i
 
-            # update dB after we have the kt2, phi and eta values
-            dB[mindist_idx[1]] = dist(mindist_idx[1])
-            # update dp (dm gets updated automatically)
-            @inbounds for k in 1:(mindist_idx[1]-1)
-                dp[k][mindist_idx[1]-k] = dist(k, mindist_idx[1])
+            @inbounds for x in _sequences[j] # WARNING: first index in the sequence is not necessarily the seed
+                push!(_sequences[i], x)
             end
-            @inbounds for k in (mindist_idx[1]+1):N
-                dp[mindist_idx[1]][k-mindist_idx[1]] = dist(mindist_idx[1], k)
-            end
+        else # i == j
+            push!(jets, _objects[i])
+            push!(sequences, _sequences[i])
         end
+
+        # copy jet N to j
+        @inbounds _objects[j] = _objects[N]
+
+        @inbounds _phi[j] = _phi[N]
+        @inbounds _eta[j] = _eta[N]
+        @inbounds _kt2[j] = _kt2[N]
+        @inbounds _nndist[j] = _nndist[N]
+        @inbounds _nn[j] = _nn[N]
+        @inbounds _nndij[j] = _nndij[N]
+
+        @inbounds _sequences[j] = _sequences[N]
+
+        Nn::Int = N
+        N -= 1
+
+        # update nearest neighbours step
+        for k::Int in 1:N
+            _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi, _R2, _nndist, _nn, _nndij)
+        end
+
+        _nndij[i] = dij(i, _kt2, _nn, _nndist)
     end
 
-    # return the result
     jets, sequences
 end
 

@@ -12,28 +12,36 @@ Pkg.activate(".")
 using JetReconstruction
 
 ## Realistic test
-using StaticArrays
 datalen = 10
 
-data = [SVector{4, Float64}[] for _ in 1:datalen]
+data = [Vector{Float64}[] for _ in 1:datalen]
 test_number = 1
 for line in eachline("test/data/Pythia-PtMin1000-LHC-10ev.dat")
     if line == "#END"
         test_number += 1
     elseif line[1] != '#'
         px, py, pz, E = (parse(Float64, x) for x in split(line))
-        vec = SVector(E, px, py, pz)
+        vec = [px, py, pz, E]
         push!(data[test_number], vec)
     end
 end
 
+#
 for i in 1:datalen
-    savejets("test/data/"*string(i)*".dat", data[i], format="px py pz E")
+    savejets("test/data/"*string(i)*".dat", data[i])
 end
 
-loadjets("test/data/1-fj-result.dat", constructor=(x,y,z,E)->[E,x,y,z])
-anti_kt(data[1])[1]
+newdata = Vector{Vector{Float64}}(loadjets("test/data/11.dat"))
+fj = Vector{Vector{Float64}}(loadjets("test/data/11-fj-result.dat"))
+j, s = anti_kt(newdata)
 
+img = jetsplot(newdata, s, Module=CairoMakie)
+
+length.(data)
+
+j, s = anti_kt(data[1])
+ja, sa = anti_kt_alt(data[1])
+##
 precompile(anti_kt, (typeof(data[1]),))
 precompile(anti_kt_alt, (typeof(data[1]),))
 
@@ -41,21 +49,31 @@ jetarrs = []
 objectidxarrs = Vector{Vector{Int}}[]
 for i in 1:datalen
     jetarr, components = anti_kt(data[i])
-    softs = [j for j in 1:length(components) if (length(components[j]) == 1 || jetarr[j][1] < 2)]
-    deleteat!(jetarr, softs)
-    deleteat!(components, softs)
     push!(jetarrs, jetarr)
     push!(objectidxarrs, components)
 end
 
+## check energies
+index = 1
+resE = sum(energy.(anti_kt(data[index])[1]))
+fjtE = sum(energy.(loadjets("test/data/"*string(index)*"-fj-result.dat")))
+altE = sum(energy.(anti_kt_alt(data[index])[1]))
+
+resE - truE
+
 ## Save or load data
-savejets("jetsavetest.dat", data[1])
+savejets("jetsavetest.dat", jetarrs[1])
 somedata = loadjets("jetsavetest.dat", constructor=SVector)
-somedata == data[1]
+somedata == jetarrs[1]
 
 ## Visualisation
 index = 2
-img = jetsplot(data[index], objectidxarrs[index])
+import CairoMakie
+img = jetsplot(data[index], objectidxarrs[index], Module=CairoMakie)
+
+index = 3
+using GLMakie
+img = jetsplot(data[index], objectidxarrs[index], Module=GLMakie)
 
 #display(img) # for Juno Plots window
 #PyPlot.show() # for terminal usage
@@ -100,7 +118,7 @@ function Base.:+(x::CylVector, y::CylVector)
     return CylVector(eta,phi,pt,mass)
 end
 
-cyljets, _ = @time anti_kt([
+cyljets, _ = anti_kt([
     CylVector(0, 0, 130),
     CylVector(0, 0.7, 120),
     CylVector(0, 0.7, 80),
@@ -132,6 +150,17 @@ somedata2 == cyljets
 ##
 using Profile
 
-@profile anti_kt(data[2])
+@profile anti_kt(data[1])
+for _ in 1:20; @profile anti_kt_alt(data[10]); end
 Juno.profiler()
-Profile.print()
+Profile.clear()
+Profile.clear_malloc_data()
+
+using Traceur
+@trace JetReconstruction.Algo._upd_nn_step!
+##
+using LorentzVectorHEP
+
+d = loadjets("test/data/2.dat", constructor=(x,y,z,E)->JetReconstruction.Particle.LorentzVectorHEP.LorentzVector(E,x,y,z))
+
+anti_kt_alt(d)

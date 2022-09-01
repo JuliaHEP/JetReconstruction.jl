@@ -1,7 +1,10 @@
 name = "JetReconstruction"
 uuid = "44e8cb2c-dfab-4825-9c70-d4808a591196"
 authors = ["Atell Krasnopolski <delta_atell@protonmail.com>"]
-version = "0.0.1"
+version = "0.1.0"
+
+[deps]
+LorentzVectorHEP = "f612022c-142a-473f-8cfd-a09cf3793c6c"
 
 [compat]
 julia = "1"
