@@ -1,13 +1,4 @@
 """
-Defines `savejets`, `loadjets`, `loadjets!`.
-"""
-module Serialize
-
-import ..JetReconstruction
-
-export savejets, loadjets!, loadjets
-
-"""
 `savejets(filename, jets; format="px py pz E")`
 
 Saves the given `jets` into a file with the given `filename`. Each line contains information about a single jet and is formatted according to the `format` string which defaults to `"E px py pz"` but can also contain other values in any order: `"pt"` or `"kt"` for transverse momentum, `"phi"` for azimuth, `"eta"` for pseudorapidity, `"m"` for mass. It is strongly NOT recommended to put something other than values and (possibly custom) separators in the `format` string.
@@ -84,6 +75,4 @@ jets = loadjets("myjets1.dat")
 """
 function loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->Float64[px,py,pz,E], dtype=Float64)
     loadjets!(filename, Vector{Float64}[], splitby=splitby, constructor=constructor)
-end
-
 end

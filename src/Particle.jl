@@ -20,10 +20,6 @@ Base.:+(x::YourType, y::YourType) = # your + definition (only used as a recombin
 ```
 Since `+` is only used in recombination, you can leave it undefined, if you use a custom recombination routine.
 """
-module Particle
-
-export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
-
 @inline energy(p) = p[4]
 
 @inline px(p) = p[1]
@@ -53,5 +49,3 @@ function eta(p) # rapidity
     return (-1)^(pz(p) > 0)*0.5*log((kt2 + m2)/(energy(p)+abspz)^2)
 end
 const η = eta
-
-end
