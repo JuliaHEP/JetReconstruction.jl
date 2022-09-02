@@ -9,6 +9,7 @@ LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
 LorentzVectorHEP = "f612022c-142a-473f-8cfd-a09cf3793c6c"
 
 [compat]
+LoopVectorization = "0.12"
 julia = "1.6"
 
 [extras]
