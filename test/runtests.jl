@@ -20,7 +20,7 @@ const NUMBER_OF_TESTS = 12 # number of test files in the data folder
 
     # additional simple test
     @test arrcompare(
-        anti_kt([
+        anti_kt_algo([
             [99.0, 0.1, 0, 100],
             [4.0, -0.1, 0, 5.0],
             [-99., 0., 0.0, 99]
@@ -35,7 +35,7 @@ const NUMBER_OF_TESTS = 12 # number of test files in the data folder
 
         @test arrcompare(
                 sort(
-                    anti_kt(
+                    anti_kt_algo(
                         loadjets("data/"*istr*".dat"), R=1
                     )[1], lt=(a,b)->(pt(a)>pt(b))
                 ),
