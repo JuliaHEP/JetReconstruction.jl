@@ -92,7 +92,7 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1, recomb
     sequences = Vector{Int}[] # recombination sequences, WARNING: first index in the sequence is not necessarily the seed
 
     # params
-    _R2 = R*R
+    _R2::Float64 = R*R
     _p = (round(p) == p) ? Int(p) : p # integer p if possible
     ap = abs(_p); # absolute p
 
@@ -101,18 +101,18 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1, recomb
     _kt2 = (JetReconstruction.pt.(_objects) .^ 2) .^ _p
     _phi = JetReconstruction.phi.(_objects)
     _eta = JetReconstruction.eta.(_objects)
-    _nn = collect(1:N) # nearest neighbours
+    _nn = Vector(1:N) # nearest neighbours
     _nndist = fill(float(_R2), N) # distances to the nearest neighbour
     _sequences = Vector{Int}[[x] for x in 1:N]
 
     # initialize _nn
-    for i in 1:N
+    for i::Int in 1:N
         _upd_nn_crosscheck!(i, 1, i-1, _eta, _phi, _R2, _nndist, _nn)
     end
 
     # diJ table *_R2
     _nndij = zeros(N)
-    for i in 1:N
+    for i::Int in 1:N
         _nndij[i] = dij(i, _kt2, _nn, _nndist)
     end
 
@@ -120,13 +120,14 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1, recomb
         # findmin
         i::Int = 1
         dij_min = _nndij[1]
-        for k in 2:N
-            f = _nndij[k] < dij_min
-            dij_min = ifelse(f, _nndij[k], dij_min)
-            i = ifelse(f, k, i)
+        for k::Int in 2:N
+            if _nndij[k] < dij_min
+                dij_min = _nndij[k]
+                i = k
+            end
         end
 
-        j = _nn[i]
+        j::Int = _nn[i]
         dij_min /= _R2
 
         if i != j
