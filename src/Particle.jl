@@ -20,6 +20,9 @@ Base.:+(x::YourType, y::YourType) = # your + definition (only used as a recombin
 ```
 Since `+` is only used in recombination, you can leave it undefined, if you use a custom recombination routine.
 """
+
+"""
+"""
 @inline energy(p) = p[4]
 
 @inline px(p) = p[1]

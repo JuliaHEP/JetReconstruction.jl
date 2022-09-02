@@ -8,7 +8,7 @@ import IfElse
 end
 
 # d_{ij} distance with i's NN (times R^2)
-function dij(i, _kt2, _nn, _nndist)
+function _dij(i, _kt2, _nn, _nndist)
     j = _nn[i]
     d = _nndist[i]
     d*min(_kt2[i], _kt2[j])
@@ -61,7 +61,7 @@ Base.@propagate_inbounds function _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi
     Δ2::Float64 = 0.0
     if nnk == i || nnk == j
         _upd_nn_nocross!(k, 1, N, _eta, _phi, _R2, _nndist, _nn) # update dist and nn
-        _nndij[k] = dij(k, _kt2, _nn, _nndist)
+        _nndij[k] = _dij(k, _kt2, _nn, _nndist)
         nnk = _nn[k]
     end
 
@@ -70,7 +70,7 @@ Base.@propagate_inbounds function _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi
         if Δ2 < _nndist[k]
             _nndist[k] = Δ2
             nnk = _nn[k] = i
-            _nndij[k] = dij(k, _kt2, _nn, _nndist)
+            _nndij[k] = _dij(k, _kt2, _nn, _nndist)
         end
         if Δ2 < _nndist[i]
             _nndist[i] = Δ2
@@ -113,7 +113,7 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1, recomb
     # diJ table *_R2
     _nndij = zeros(N)
     for i::Int in 1:N
-        _nndij[i] = dij(i, _kt2, _nn, _nndist)
+        _nndij[i] = _dij(i, _kt2, _nn, _nndist)
     end
 
     while N != 0
@@ -128,7 +128,6 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1, recomb
         end
 
         j::Int = _nn[i]
-        dij_min /= _R2
 
         if i != j
             # swap if needed
@@ -173,14 +172,14 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1, recomb
             _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi, _R2, _nndist, _nn, _nndij)
         end
 
-        _nndij[i] = dij(i, _kt2, _nn, _nndist)
+        _nndij[i] = _dij(i, _kt2, _nn, _nndist)
     end
 
     jets, sequences
 end
 
 """
-`anti_kt(objects; R=1, recombine=(x, y)->(x + y)) -> Vector, Vector{Vector{Int}}`
+`anti_kt_algo(objects; R=1, recombine=(x, y)->(x + y)) -> Vector, Vector{Vector{Int}}`
 
 Runs the anti-kt jet reconstruction algorithm. `objects` can be any collection of *unique* elements.
 
@@ -188,7 +187,20 @@ Returns:
     `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
     `sequences` - a vector of vectors of indeces in `objects`. For all `i`, `sequences[i]` gives a sequence of indeces of objects that have been combined into the i-th jet (`jets[i]`).
 """
-function anti_kt(objects; p=-1, R=1, recombine=+)
+function anti_kt_algo(objects; p=-1, R=1, recombine=+)
+    sequential_jet_reconstruct(objects, p=p, R=R, recombine=recombine)
+end
+
+"""
+`kt_algo(objects; R=1, recombine=(x, y)->(x + y)) -> Vector, Vector{Vector{Int}}`
+
+Runs the kt jet reconstruction algorithm. `objects` can be any collection of *unique* elements.
+
+Returns:
+    `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
+    `sequences` - a vector of vectors of indeces in `objects`. For all `i`, `sequences[i]` gives a sequence of indeces of objects that have been combined into the i-th jet (`jets[i]`).
+"""
+function kt_algo(objects; p=1, R=1, recombine=+)
     sequential_jet_reconstruct(objects, p=p, R=R, recombine=recombine)
 end
 
@@ -225,7 +237,7 @@ function sequential_jet_reconstruct_alt(objects::AbstractArray{T}; p=-1, R=1, re
     # diJ table *_R2
     _nndij = zeros(N)
     for i::Int in 1:N
-        _nndij[i] = dij(i, _kt2, _nn, _nndist)
+        _nndij[i] = _dij(i, _kt2, _nn, _nndist)
     end
 
     while N != 0
@@ -240,7 +252,6 @@ function sequential_jet_reconstruct_alt(objects::AbstractArray{T}; p=-1, R=1, re
         end
 
         j::Int = _nn[i]
-        dij_min /= _R2
 
         if i != j
             # swap if needed
@@ -285,15 +296,15 @@ function sequential_jet_reconstruct_alt(objects::AbstractArray{T}; p=-1, R=1, re
             _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi, _R2, _nndist, _nn, _nndij)
         end
 
-        _nndij[i] = dij(i, _kt2, _nn, _nndist)
+        _nndij[i] = _dij(i, _kt2, _nn, _nndist)
     end
 
     jets, sequences
 end
 
 """
-Not for usage. Use `anti_kt` instead. Correctness is not guaranteed.
+Not for usage. Use `anti_kt_algo` instead. Correctness is not guaranteed.
 """
-function anti_kt_alt(objects; p=-1, R=1, recombine=+)
+function anti_kt_algo_alt(objects; p=-1, R=1, recombine=+)
     sequential_jet_reconstruct_alt(objects, p=p, R=R, recombine=recombine)
 end

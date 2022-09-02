@@ -1,5 +1,3 @@
-# A temporary file to run some quick tests
-
 # choose one:
 # this
 #=
@@ -11,156 +9,71 @@ using Revise; import Pkg
 Pkg.activate(".")
 using JetReconstruction
 
-## Realistic test
-datalen = 10
+using CairoMakie
 
-data = [Vector{Float64}[] for _ in 1:datalen]
-test_number = 1
-for line in eachline("test/data/Pythia-PtMin1000-LHC-10ev.dat")
-    if line == "#END"
-        test_number += 1
-    elseif line[1] != '#'
-        px, py, pz, E = (parse(Float64, x) for x in split(line))
-        vec = [px, py, pz, E]
-        push!(data[test_number], vec)
-    end
-end
+## array constructor
+makejet(pt, ϕ, y) = [pt*cos(ϕ), pt*sin(ϕ), pt*sinh(y), sqrt((pt*cos(ϕ))^2 + (pt*sin(ϕ))^2 + (pt*sinh(y))^2)]
 
-#
-for i in 1:datalen
-    savejets("test/data/"*string(i)*".dat", data[i])
-end
+## choose a data sample and save it
+smalldata = [
+    makejet(25, 1.2, 0),
+    makejet(0.1, 1, 0),
+    makejet(20, 0, 0)
+]
+smalldata = [
+    makejet(25, 1.2, 0),
+    makejet(0.1, 0.6, 0),
+    makejet(20, 0, 0)
+]
+smalldata = [
+    makejet(5, 0.8, 0),
+    makejet(2, 0, 0.8),
+]
+smalldata = [
+    makejet(30, -0.5, -2.5),
+    makejet(30, -0.5, -3.5)
+]
+smalldata = [
+    makejet(30, 0.5, -2.5),
+    makejet(30, 0.5, -3.5),
+    makejet(30, -0.5, -2.5),
+    makejet(30, -0.5, -3.5),
+    makejet(0.1, 0, -3),
+]
+smalldata = [
+    [0.2839991726, -0.4668202293, -49.6978846131, 49.709744138],
+    [0.1434555273, -0.0312880942, -6.9382351613, 6.9411919273],
+]
+smalldata = [
+    makejet(0.8, 0.8, 0.1),
+    makejet(0.1, 0.1, 0.8),
+]
 
-newdata = Vector{Vector{Float64}}(loadjets("test/data/11.dat"))
-fj = Vector{Vector{Float64}}(loadjets("test/data/11-fj-result.dat"))
-j, s = anti_kt(newdata)
+smalldata = [
+    [-0.8807412236, -1.2331262152, -157.431315651, 157.4393822839],
+    [-0.0051712611, 0.23815508, -9.7396045662, 9.7435168946], # 2
+    [0.0362280943, 0.2694752057, -6.9243427525, 6.9310844534], # 3
+    [-0.2206628664, -0.1438198985, -0.6838608666, 0.7460038429],
+    [1.2716787521, 1.0422298083, -6.1740167274, 6.3907254797], # 5
+    [-0.5695590845, -0.3627761836, -58.5430479911, 58.5544811606],
+    [0.2839991726, -0.4668202293, -49.6978846131, 49.709744138],
+    [0.6510530003, 1.3970949413, -62.7226079598, 62.7485783532], # 8
+    [0.1434555273, -0.0312880942, -6.9382351613, 6.9411919273],
+    [0.4931562547, 2.1627817414, -14.8865871635, 15.0516040711], # 10
+    [0.2396813608, -0.0786236784, -1.9340954697, 1.9554625817],
+    [0.3355486441, 0.0516402769, -0.8346540063, 0.9118040941],
+    [-0.7853865645, -0.7810520475, -1.5367790662, 1.8994852039],
+]
+smalldata = [
+    [1.2716787521, 1.0422298083, -6.1740167274, 6.3907254797],
+    [0.4931562547, 2.1627817414, -14.8865871635, 15.0516040711],
+    [0.3355486441, 0.0516402769, -0.8346540063, 0.9118040941],
+]
 
-img = jetsplot(newdata, s, Module=CairoMakie)
+savejets("small.dat", smalldata, format="px py pz E")
+## run
+smalljets, smallind = anti_kt_algo(smalldata, R=1); img = jetsplot(smalldata, smallind, Module=CairoMakie)
 
-length.(data)
+smalljets, smallind = anti_kt_algo_alt(smalldata, R=1); img = jetsplot(smalldata, smallind, Module=CairoMakie)
 
-j, s = anti_kt(data[1])
-ja, sa = anti_kt_alt(data[1])
-##
-precompile(anti_kt, (typeof(data[1]),))
-precompile(anti_kt_alt, (typeof(data[1]),))
-
-jetarrs = []
-objectidxarrs = Vector{Vector{Int}}[]
-for i in 1:datalen
-    jetarr, components = anti_kt(data[i])
-    push!(jetarrs, jetarr)
-    push!(objectidxarrs, components)
-end
-
-## check energies
-index = 1
-resE = sum(energy.(anti_kt(data[index])[1]))
-fjtE = sum(energy.(loadjets("test/data/"*string(index)*"-fj-result.dat")))
-altE = sum(energy.(anti_kt_alt(data[index])[1]))
-
-resE - truE
-
-## Save or load data
-savejets("jetsavetest.dat", jetarrs[1])
-somedata = loadjets("jetsavetest.dat", constructor=SVector)
-somedata == jetarrs[1]
-
-## Visualisation
-index = 2
-import CairoMakie
-img = jetsplot(data[index], objectidxarrs[index], Module=CairoMakie)
-
-index = 3
-using GLMakie
-img = jetsplot(data[index], objectidxarrs[index], Module=GLMakie)
-
-#display(img) # for Juno Plots window
-#PyPlot.show() # for terminal usage
-
-## Developer convenience test (running the algo on a custom data structure)
-import JetReconstruction # no need to import Particle
-
-struct CylVector
-    y::Float64
-    ϕ::Float64
-    pt::Float64
-    mass::Float64
-end
-CylVector(y, ϕ, pt) = CylVector(y, ϕ, pt, 0)
-
-JetReconstruction.eta(x::CylVector) = x.y
-JetReconstruction.phi(x::CylVector) = x.ϕ
-JetReconstruction.pt(x::CylVector) = x.pt
-JetReconstruction.mass(x::CylVector) = x.mass
-function Base.:+(x::CylVector, y::CylVector)
-    px(v::CylVector) = v.pt * cos(v.ϕ)
-    py(v::CylVector) = v.pt * sin(v.ϕ)
-    pz(v::CylVector) = v.pt * sinh(v.y)
-    energy(v::CylVector) = sqrt(px(v)^2 + py(v)^2 + pz(v)^2 + v.mass^2)
-    m1, m2 = max(x.mass, 0), max(y.mass, 0)
-
-    px1, px2 = px(x), px(y)
-    py1, py2 = py(x), py(y)
-    pz1, pz2 = pz(x), pz(y)
-    e1 = sqrt(px1^2 + py1^2 + pz1^2 + m1^2)
-    e2 = sqrt(px2^2 + py2^2 + pz2^2 + m2^2)
-
-    sumpx = px1+px2
-    sumpy = py1+py2
-    sumpz = pz1+pz2
-
-    ptsq = sumpx^2 + sumpy^2
-    pt = sqrt(ptsq)
-    eta = asinh(sumpz/pt)
-    phi = atan(sumpy, sumpx)
-    mass = sqrt(max(muladd(m1, m1, m2^2) + 2*e1*e2 - 2*(muladd(px1, px2, py1*py2) + pz1*pz2), 0))
-    return CylVector(eta,phi,pt,mass)
-end
-
-cyljets, _ = anti_kt([
-    CylVector(0, 0, 130),
-    CylVector(0, 0.7, 120),
-    CylVector(0, 0.7, 80),
-    CylVector(0, 1.5, 90)
-])
-@time anti_kt([
-    CylVector(0, 0, 130),
-    CylVector(0, 0.7, 200),
-    CylVector(0, 1.5, 90)
-])
-cyljets, _ = @time anti_kt([
-    CylVector(0, 1, 130),
-    CylVector(0, 0.7, 120),
-    CylVector(0, 0.01, 80),
-    CylVector(0, 0.01, 90),
-    CylVector(0, 0.11, 81),
-    CylVector(0, 0.02, 90),
-    CylVector(0, 0.02, 80),
-    CylVector(0, 0.03, 90),
-    CylVector(0, 0.04, 83),
-    CylVector(0, 0.05, 90)
-])
-
-savejets("jetsavetest2.dat", cyljets, format="eta phi kt m")
-somedata2 = loadjets("jetsavetest2.dat", constructor=CylVector)
-somedata2 == cyljets
-
-
-##
-using Profile
-
-@profile anti_kt(data[1])
-for _ in 1:20; @profile anti_kt_alt(data[10]); end
-Juno.profiler()
-Profile.clear()
-Profile.clear_malloc_data()
-
-using Traceur
-@trace JetReconstruction.Algo._upd_nn_step!
-##
-using LorentzVectorHEP
-
-d = loadjets("test/data/2.dat", constructor=(x,y,z,E)->JetReconstruction.Particle.LorentzVectorHEP.LorentzVector(E,x,y,z))
-
-anti_kt_alt(d)
+smalljets, smallind = kt_algo(smalldata, R=1); img = jetsplot(smalldata, smallind, Module=CairoMakie)
