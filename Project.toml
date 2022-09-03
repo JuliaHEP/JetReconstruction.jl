@@ -10,6 +10,7 @@ LorentzVectorHEP = "f612022c-142a-473f-8cfd-a09cf3793c6c"
 
 [compat]
 LoopVectorization = "0.12"
+LorentzVectorHEP = "0.1"
 julia = "1.6"
 
 [extras]
