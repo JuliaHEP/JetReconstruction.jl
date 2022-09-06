@@ -1,6 +1,6 @@
 import IfElse
 
-@inline function _dist(i, j, _eta, _phi)
+Base.@propagate_inbounds function _dist(i, j, _eta, _phi)
     deta = _eta[i] - _eta[j]
     dphi = abs(_phi[i] - _phi[j])
     dphi = IfElse.ifelse(dphi > pi, 2pi - dphi, dphi)
@@ -8,17 +8,17 @@ import IfElse
 end
 
 # d_{ij} distance with i's NN (times R^2)
-function _dij(i, _kt2, _nn, _nndist)
+Base.@propagate_inbounds function _dij(i, _kt2, _nn, _nndist)
     j = _nn[i]
     d = _nndist[i]
     d*min(_kt2[i], _kt2[j])
 end
 
 # finds new nn for i and checks everyone additionally
-function _upd_nn_crosscheck!(i::Int, from::Int, to::Int, _eta, _phi, _R2, _nndist, _nn)
+Base.@propagate_inbounds function _upd_nn_crosscheck!(i::Int, from::Int, to::Int, _eta, _phi, _R2, _nndist, _nn)
     nndist = _R2
     nn = i
-    @inbounds for j in from:to
+    @inbounds @simd for j in from:to
         Δ2 = _dist(i, j, _eta, _phi)
         if Δ2 < nndist
             nn = j
@@ -31,20 +31,20 @@ function _upd_nn_crosscheck!(i::Int, from::Int, to::Int, _eta, _phi, _R2, _nndis
     end
     _nndist[i] = nndist
     _nn[i] = nn
-    nothing
+    #nothing
 end
 
 # finds new nn for i
-function _upd_nn_nocross!(i::Int, from::Int, to::Int, _eta, _phi, _R2, _nndist, _nn)
+Base.@propagate_inbounds function _upd_nn_nocross!(i::Int, from::Int, to::Int, _eta, _phi, _R2, _nndist, _nn)
     nndist = _R2
     nn = i
-    @turbo for j in from:(i-1)
+    @inbounds @simd for j in from:(i-1)
         Δ2 = _dist(i, j, _eta, _phi)
         f = Δ2 <= nndist
         nn = IfElse.ifelse(f, j, nn)
         nndist = IfElse.ifelse(f, Δ2, nndist)
     end
-    @turbo for j in (i+1):to
+    @inbounds @simd for j in (i+1):to
         Δ2 = _dist(i, j, _eta, _phi)
         f = Δ2 <= nndist
         nn = IfElse.ifelse(f, j, nn)
@@ -52,7 +52,7 @@ function _upd_nn_nocross!(i::Int, from::Int, to::Int, _eta, _phi, _R2, _nndist, 
     end
     _nndist[i] = nndist
     _nn[i] = nn
-    nothing
+    #nothing
 end
 
 # entire NN update step
@@ -73,11 +73,11 @@ Base.@propagate_inbounds function _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi
         end
 
         cond = Δ2 < _nndist[i]
-        _nndist[i] = IfElse.ifelse(cond, Δ2, _nndist[i])
-        _nn[i] = IfElse.ifelse(cond, k, _nn[i])
+        _nndist[i], _nn[i] = IfElse.ifelse(cond, (Δ2,k), (_nndist[i],_nn[i]))
     end
 
     nnk == Nn && (_nn[k] = j)
+    #nothing
 end
 
 function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1., recombine=+) where T
@@ -103,13 +103,13 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1., recom
     _sequences = Vector{Int}[[x] for x in 1:N]
 
     # initialize _nn
-    for i in 1:N
+    @simd for i in 1:N
         _upd_nn_crosscheck!(i, 1, i-1, _eta, _phi, _R2, _nndist, _nn)
     end
 
     # diJ table *_R2
     _nndij = zeros(N)
-    for i in 1:N
+    @inbounds @simd for i in 1:N
         _nndij[i] = _dij(i, _kt2, _nn, _nndist)
     end
 
@@ -117,11 +117,9 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1., recom
         # findmin
         i = 1
         dij_min = _nndij[1]
-        for k in 2:N
-            if _nndij[k] < dij_min
-                dij_min = _nndij[k]
-                i = k
-            end
+        @inbounds @simd for k in 2:N
+            cond =  _nndij[k] < dij_min
+            dij_min, i = IfElse.ifelse(cond, (_nndij[k], k), (dij_min, i))
         end
 
         j::Int = _nn[i]
@@ -141,7 +139,7 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1., recom
             _nndist[i] = _R2
             _nn[i] = i
 
-            for x in _sequences[j] # WARNING: first index in the sequence is not necessarily the seed
+            @inbounds for x in _sequences[j] # WARNING: first index in the sequence is not necessarily the seed
                 push!(_sequences[i], x)
             end
         else # i == j
@@ -165,7 +163,7 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1., recom
         N -= 1
 
         # update nearest neighbours step
-        for k::Int in 1:N
+        @inbounds @simd for k in 1:N
             _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi, _R2, _nndist, _nn, _nndij)
         end
 

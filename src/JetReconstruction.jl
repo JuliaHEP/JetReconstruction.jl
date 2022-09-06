@@ -2,7 +2,6 @@
 Jet reconstruction (reclustering) in Julia.
 """
 module JetReconstruction
-using LoopVectorization
 
 # particle type definition
 include("Particle.jl")
