@@ -9,7 +9,7 @@ export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
 
 # algorithmic part
 include("Algo.jl")
-export kt_algo, anti_kt_algo, anti_kt_algo_alt
+export sequential_jet_reconstruct, kt_algo, anti_kt_algo, anti_kt_algo_alt, cambridge_aachen_algo
 
 # jet serialisation (saving to file)
 include("Serialize.jl")

@@ -30,7 +30,7 @@ Base.@propagate_inbounds function _upd_nn_crosscheck!(i::Int, from::Int, to::Int
         end
     end
     _nndist[i] = nndist
-    _nn[i] = nn
+    _nn[i] = nn;
     #nothing
 end
 
@@ -51,7 +51,7 @@ Base.@propagate_inbounds function _upd_nn_nocross!(i::Int, from::Int, to::Int, _
         nndist = IfElse.ifelse(f, Δ2, nndist)
     end
     _nndist[i] = nndist
-    _nn[i] = nn
+    _nn[i] = nn;
     #nothing
 end
 
@@ -76,7 +76,7 @@ Base.@propagate_inbounds function _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi
         _nndist[i], _nn[i] = IfElse.ifelse(cond, (Δ2,k), (_nndist[i],_nn[i]))
     end
 
-    nnk == Nn && (_nn[k] = j)
+    nnk == Nn && (_nn[k] = j);
     #nothing
 end
 
@@ -91,7 +91,6 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1., recom
     # params
     _R2 = R*R
     _p = (round(p) == p) ? Int(p) : p # integer p if possible
-    ap = abs(_p); # absolute p
 
     # data
     _objects = copy(objects)
@@ -182,8 +181,8 @@ Returns:
     `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
     `sequences` - a vector of vectors of indeces in `objects`. For all `i`, `sequences[i]` gives a sequence of indeces of objects that have been combined into the i-th jet (`jets[i]`).
 """
-function anti_kt_algo(objects; p=-1, R=1., recombine=+)
-    sequential_jet_reconstruct(objects, p=p, R=R, recombine=recombine)
+function anti_kt_algo(objects; R=1., recombine=+)
+    sequential_jet_reconstruct(objects, p=-1, R=R, recombine=recombine)
 end
 
 """
@@ -195,8 +194,21 @@ Returns:
     `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
     `sequences` - a vector of vectors of indeces in `objects`. For all `i`, `sequences[i]` gives a sequence of indeces of objects that have been combined into the i-th jet (`jets[i]`).
 """
-function kt_algo(objects; p=1, R=1., recombine=+)
-    sequential_jet_reconstruct(objects, p=p, R=R, recombine=recombine)
+function kt_algo(objects; R=1., recombine=+)
+    sequential_jet_reconstruct(objects, p=1, R=R, recombine=recombine)
+end
+
+"""
+`cambridge_aachen_algo(objects; R=1, recombine=(x, y)->(x + y)) -> Vector, Vector{Vector{Int}}`
+
+Runs the Cambridge/Aachen jet reconstruction algorithm. `objects` can be any collection of *unique* elements.
+
+Returns:
+    `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
+    `sequences` - a vector of vectors of indeces in `objects`. For all `i`, `sequences[i]` gives a sequence of indeces of objects that have been combined into the i-th jet (`jets[i]`).
+"""
+function cambridge_aachen_algo(objects; R=1., recombine=+)
+    sequential_jet_reconstruct(objects, p=0, R=R, recombine=recombine)
 end
 
 ## EXPERIMENTAL ZONE
