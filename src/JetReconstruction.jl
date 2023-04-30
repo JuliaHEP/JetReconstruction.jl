@@ -7,6 +7,10 @@ module JetReconstruction
 include("Particle.jl")
 export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
 
+# Philipp's pseudojet
+include("pseudojet.jl")
+export PseudoJet
+
 # algorithmic part
 include("Algo.jl")
 export sequential_jet_reconstruct, kt_algo, anti_kt_algo, anti_kt_algo_alt, cambridge_aachen_algo

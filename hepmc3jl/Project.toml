@@ -1,0 +1,4 @@
+name = "HepMC3"
+uuid = "423f2d09-83c6-4bed-945f-581c3d5a0e70"
+authors = ["Philippe Gras <philippe.gras@cern.ch>"]
+version = "0.1.0"
