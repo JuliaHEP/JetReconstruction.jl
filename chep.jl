@@ -80,13 +80,14 @@ in_mem_process(events::Vector{Vector{PseudoJet}}, nsamples::Integer=1, dump::Boo
         end
     end
 
+    GC.gc()
+    gcoff && GC.enable(false)
+
     # Now setup timers and run the loop
     cummulative_time = 0.0
     cummulative_time2 = 0.0
     for irun in 1:nsamples
         print("$(irun)/$(nsamples) ")
-        GC.gc()
-        gcoff && GC.enable(false)
         t_start = time_ns()
         for (ievt, event) in enumerate(event_vector)
             finaljets, finalind = anti_kt_algo(event, R=0.4)
@@ -94,12 +95,14 @@ in_mem_process(events::Vector{Vector{PseudoJet}}, nsamples::Integer=1, dump::Boo
             if dump && irun==1 push!(jet_collection, FinalJets(ievt, fj)) end
         end
         t_stop = time_ns()
-        gcoff && GC.enable(true)
         dt_μs = convert(Float64, t_stop-t_start) * 1.e-3
         println(dt_μs)
         cummulative_time += dt_μs
         cummulative_time2 += dt_μs^2
     end
+
+    gcoff && GC.enable(true)
+
     mean = cummulative_time / nsamples
     cummulative_time2 /= nsamples
     if nsamples>1
