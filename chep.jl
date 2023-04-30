@@ -34,33 +34,78 @@ read_events(fname, maxevents=-1, skipevents = 0) = begin
     events
 end
 
+pseudojets2vectors(events::Vector{Vector{PseudoJet}}) = begin
+    """Convert events in PseudoJets into deep vectors"""
+    event_vector = Vector{Vector{Vector{Float64}}}(undef, size(events)[1])
+    for (ievent, event) in enumerate(events)
+        jet_struct = Vector{Vector{Float64}}(undef, size(event)[1])
+        for (ipart, initial_particle) in enumerate(event)
+            jet_struct[ipart] = [initial_particle.px, initial_particle.py, initial_particle.pz, initial_particle.E]
+        end
+        event_vector[ievent] = jet_struct
+    end
+    event_vector
+end
+
 final_jets(jets::Vector{Vector{Float64}}, ptmin::AbstractFloat) = begin
     count = 0
     for jet in jets
-        dcut = ptmin*ptmin
+        dcut = ptmin^2
         p = PseudoJet(jet[1], jet[2], jet[3], jet[4])
         if p._pt2 > dcut
             count += 1
-            println(p)
+            # println(p)
             # println("$(count), $(rap(p)), $(phi(p)), $(pt2(p))")
         end
     end
+    count
 end
  
-in_mem_process(events::Vector{Vector{PseudoJet}}) = begin
+in_mem_process(events::Vector{Vector{PseudoJet}}, nsamples::Integer=1, dump::Bool=false, gcoff::Bool=true) = begin
     println("Will process $(size(events)) events")
-    for event in events
-        # Perhaps inefficient to use Vector of Vectors? (Matrix instead?)
-        jet_struct = Vector{Vector{Float64}}(undef, size(event)[1])
-        for (ipart, initial_particle) in enumerate(event)
-            particle_data = [initial_particle.px, initial_particle.py, initial_particle.pz, initial_particle.E]
-            jet_struct[ipart] = particle_data
+
+    # First, convert all events into the Vector of Vectors that Atell's
+    # code likes
+    event_vector = pseudojets2vectors(events)
+
+    # Warmup code if we are doing a multi-sample timing run
+    if nsamples > 1
+        println("Doing initial warm-up run")
+        for event in event_vector
+            anti_kt_algo(event, R=0.4)
         end
-        smalljets, smallind = anti_kt_algo(jet_struct, R=0.4)
-        # println(smalljets, smallind)
-        println(typeof(smalljets))
-        final_jets(smalljets, ptmin)
     end
+
+    # Now setup timers and run the loop
+    cummulative_time = 0.0
+    cummulative_time2 = 0.0
+    for irun in 1:nsamples
+        print("$(irun)/$(nsamples) ")
+        GC.gc()
+        gcoff && GC.enable(false)
+        t_start = time_ns()
+        for event in event_vector
+            finaljets, finalind = anti_kt_algo(event, R=0.4)
+            final_jets(finaljets, ptmin)
+        end
+        t_stop = time_ns()
+        gcoff && GC.enable(true)
+        dt_μs = convert(Float64, t_stop-t_start) * 1.e-3
+        println(dt_μs)
+        cummulative_time += dt_μs
+        cummulative_time2 += dt_μs^2
+    end
+    mean = cummulative_time / nsamples
+    cummulative_time2 /= nsamples
+    if nsamples>1
+        sigma = sqrt(nsamples/(nsamples-1) * (cummulative_time2 - mean^2))
+    else
+        sigma = 0.0
+    end
+    mean /= length(events)
+    sigma /= length(events)
+    println("Processed $(length(events)) events $(nsamples) times")
+    println("Time per event $(mean) ± $(sigma) μs")
 end
 
 parse_command_line(args) = begin
@@ -106,7 +151,8 @@ end
 main() = begin
     args = parse_command_line(ARGS)
     events::Vector{Vector{PseudoJet}} = read_events(args[:file], args[:maxevents], args[:skip])
-    in_mem_process(events)
+    in_mem_process(events, args[:nsamples], args[:dump],
+                    args[:gcoff])
     nothing
 end
 
