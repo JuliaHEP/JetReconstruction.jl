@@ -9,6 +9,26 @@ using ArgParse
 
 using JetReconstruction
 
+using JSON3
+using StructTypes
+
+"Simple structures to capture the state of a final jet output
+from the algorithm"
+struct FinalJet
+    rap::Float64
+    phi::Float64
+    pt::Float64
+end
+
+struct FinalJets
+    jetid::Int64
+    jets::Vector{FinalJet}
+end
+
+# Register types to be able to dump to JSON
+StructTypes.StructType(::Type{FinalJet}) = StructTypes.Struct()
+StructTypes.StructType(::Type{FinalJets}) = StructTypes.Struct()
+
 const R = 0.4
 const ptmin = 5.0
 
@@ -49,24 +69,28 @@ end
 
 final_jets(jets::Vector{Vector{Float64}}, ptmin::AbstractFloat) = begin
     count = 0
+    final_jets = Vector{FinalJet}()
+    sizehint!(final_jets, 6)
     for jet in jets
         dcut = ptmin^2
         p = PseudoJet(jet[1], jet[2], jet[3], jet[4])
         if p._pt2 > dcut
             count += 1
-            # println(p)
-            # println("$(count), $(rap(p)), $(phi(p)), $(pt2(p))")
+            push!(final_jets, FinalJet(rap(p), phi(p), sqrt(pt2(p))))
         end
     end
-    count
+    final_jets
 end
  
-in_mem_process(events::Vector{Vector{PseudoJet}}, nsamples::Integer=1, dump::Bool=false, gcoff::Bool=true) = begin
+in_mem_process(events::Vector{Vector{PseudoJet}}, nsamples::Integer=1, dump::Bool=false, gcoff::Bool=false) = begin
     println("Will process $(size(events)) events")
 
     # First, convert all events into the Vector of Vectors that Atell's
     # code likes
     event_vector = pseudojets2vectors(events)
+
+    # If we are dumping the results, setup the JSON structure
+    if dump jet_collection = FinalJets[] end
 
     # Warmup code if we are doing a multi-sample timing run
     if nsamples > 1
@@ -84,9 +108,10 @@ in_mem_process(events::Vector{Vector{PseudoJet}}, nsamples::Integer=1, dump::Boo
         GC.gc()
         gcoff && GC.enable(false)
         t_start = time_ns()
-        for event in event_vector
+        for (ievt, event) in enumerate(event_vector)
             finaljets, finalind = anti_kt_algo(event, R=0.4)
-            final_jets(finaljets, ptmin)
+            fj = final_jets(finaljets, ptmin)
+            if dump && irun==1 push!(jet_collection, FinalJets(ievt, fj)) end
         end
         t_stop = time_ns()
         gcoff && GC.enable(true)
@@ -106,6 +131,12 @@ in_mem_process(events::Vector{Vector{PseudoJet}}, nsamples::Integer=1, dump::Boo
     sigma /= length(events)
     println("Processed $(length(events)) events $(nsamples) times")
     println("Time per event $(mean) ± $(sigma) μs")
+
+    if dump
+        open("jet_collections.json", "w") do io
+            JSON3.pretty(io, jet_collection)
+        end
+    end
 end
 
 parse_command_line(args) = begin

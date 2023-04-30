@@ -9,7 +9,7 @@ export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
 
 # Philipp's pseudojet
 include("pseudojet.jl")
-export PseudoJet
+export PseudoJet, rap, phi, pt2
 
 # algorithmic part
 include("Algo.jl")
