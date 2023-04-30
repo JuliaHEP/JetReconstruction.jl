@@ -23,4 +23,8 @@ export savejets, loadjets!, loadjets
 include("JetVis.jl")
 export jetsplot
 
+# JSON results
+include("JSONresults.jl")
+export FinalJet, FinalJets, JSON3
+
 end

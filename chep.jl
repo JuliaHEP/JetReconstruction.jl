@@ -9,26 +9,6 @@ using ArgParse
 
 using JetReconstruction
 
-using JSON3
-using StructTypes
-
-"Simple structures to capture the state of a final jet output
-from the algorithm"
-struct FinalJet
-    rap::Float64
-    phi::Float64
-    pt::Float64
-end
-
-struct FinalJets
-    jetid::Int64
-    jets::Vector{FinalJet}
-end
-
-# Register types to be able to dump to JSON
-StructTypes.StructType(::Type{FinalJet}) = StructTypes.Struct()
-StructTypes.StructType(::Type{FinalJets}) = StructTypes.Struct()
-
 const R = 0.4
 const ptmin = 5.0
 
@@ -133,7 +113,7 @@ in_mem_process(events::Vector{Vector{PseudoJet}}, nsamples::Integer=1, dump::Boo
     println("Time per event $(mean) ± $(sigma) μs")
 
     if dump
-        open("jet_collections.json", "w") do io
+        open("jet_collections_julia_basic.json", "w") do io
             JSON3.pretty(io, jet_collection)
         end
     end
