@@ -26,7 +26,6 @@ read_events(fname, maxevents=-1, skipevents = 0) = begin
             end
         end
         push!(events, input_particles)
-        println("PseudoJet number $ipart: ", length(input_particles))
         ipart += 1
     end
 
