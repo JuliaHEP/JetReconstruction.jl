@@ -3,3 +3,5 @@
 /demo.jl
 .vscode
 *.json
+/notebooks/*
+/statprof/*
