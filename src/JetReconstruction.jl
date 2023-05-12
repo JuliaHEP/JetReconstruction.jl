@@ -8,8 +8,12 @@ include("Particle.jl")
 export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
 
 # Philipp's pseudojet
-include("pseudojet.jl")
+include("Pseudojet.jl")
 export PseudoJet, rap, phi, pt2
+
+# Simple HepMC3 reader
+include("HepMC3.jl")
+export HepMC3
 
 # algorithmic part
 include("Algo.jl")

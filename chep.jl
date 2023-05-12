@@ -4,7 +4,6 @@ Wrapper to run jet reco code feeding in the standard set of HepMC events that
 are used for benchmarking jet reco.
 """
 
-import HepMC3
 import FlameGraphs
 import ProfileSVG
 
