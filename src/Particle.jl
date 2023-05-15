@@ -31,24 +31,38 @@ Since `+` is only used in recombination, you can leave it undefined, if you use 
 
 @inline pz(p) = p[3]
 
-@inline pt(p) = @fastmath sqrt(px(p)^2 + py(p)^2)
+@inline pt2(p) = @fastmath px(p)^2 + py(p)^2
+@inline pt(p) = @fastmath sqrt(pt2(p))
 const kt = pt
 
-@inline phi(p) = @fastmath atan(py(p), px(p))
+# @inline phi(p) = @fastmath atan(py(p), px(p))
+# Fix to return in range [0, 2π)
+phi(p) = begin
+    if pt2(p) == 0.0
+        phi = 0.0
+    else
+        phi = atan(py(p), px(p))
+    end
+    if phi < 0.0
+        phi += 2π
+    end
+    phi
+end
 const ϕ = phi
 
 @inline mass(p) = @fastmath sqrt(max(energy(p)^2 - px(p)^2 - py(p)^2 - pz(p)^2, 0))
 
 #@inline pseudorap(p) = asinh(pz(p)/pt(p)) # pseudorapidity
 
-function eta(p) # rapidity
-    kt2 = px(p)^2 + py(p)^2
-    abspz = abs(pz(p))
-    if (energy(p) == abspz && kt2 == 0)
-        return (-1)^(pz(p) < 0)*(1e5 + abspz) # a very large value that depends on pz
+# Rapidity
+eta(p) = begin
+    _pt2 = pt2(p)
+    _abspz = abs(pz(p))
+    if (energy(p) == _abspz) && (_pt2 == 0.0)
+        return (-1)^(pz(p) < 0)*(1e5 + _abspz) # a very large value that depends on pz
     end
-
-    m2 = max(energy(p)^2 - kt2 - pz(p)^2, 0) # mass^2
-    return (-1)^(pz(p) > 0)*0.5*log((kt2 + m2)/(energy(p)+abspz)^2)
+    _m2 = max((energy(p) + pz(p))*(energy(p) - pz(p)) - _pt2, 0.0) # mass^2
+    E_plus_z = energy(p) + _abspz
+    return (-1)^(pz(p) > 0) * 0.5*log((_pt2 + _m2)/(E_plus_z^2))
 end
 const η = eta
