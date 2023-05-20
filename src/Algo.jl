@@ -1,9 +1,8 @@
-import IfElse
 
 Base.@propagate_inbounds function _dist(i, j, _eta, _phi)
     deta = _eta[i] - _eta[j]
     dphi = abs(_phi[i] - _phi[j])
-    dphi = IfElse.ifelse(dphi > pi, 2pi - dphi, dphi)
+    dphi = ifelse(dphi > pi, 2pi - dphi, dphi)
     muladd(deta, deta, dphi*dphi)
 end
 
@@ -40,15 +39,16 @@ Base.@propagate_inbounds function _upd_nn_nocross!(i::Int, from::Int, to::Int, _
     nn = i
     @inbounds @simd for j in from:(i-1)
         Δ2 = _dist(i, j, _eta, _phi)
-        f = Δ2 <= nndist
-        nn = IfElse.ifelse(f, j, nn)
-        nndist = IfElse.ifelse(f, Δ2, nndist)
+        if Δ2 <= nndist
+            nn = j
+            nndist = Δ2
+        end
     end
     @inbounds @simd for j in (i+1):to
         Δ2 = _dist(i, j, _eta, _phi)
         f = Δ2 <= nndist
-        nn = IfElse.ifelse(f, j, nn)
-        nndist = IfElse.ifelse(f, Δ2, nndist)
+        nn = ifelse(f, j, nn)
+        nndist = ifelse(f, Δ2, nndist)
     end
     _nndist[i] = nndist
     _nn[i] = nn;
@@ -73,14 +73,14 @@ Base.@propagate_inbounds function _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi
         end
 
         cond = Δ2 < _nndist[i]
-        _nndist[i], _nn[i] = IfElse.ifelse(cond, (Δ2,k), (_nndist[i],_nn[i]))
+        _nndist[i], _nn[i] = ifelse(cond, (Δ2,k), (_nndist[i],_nn[i]))
     end
 
     nnk == Nn && (_nn[k] = j);
     #nothing
 end
 
-function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1., recombine=+) where T
+function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1.0, R=1., recombine=+) where T
     # bounds
     N::Int = length(objects)
 
@@ -95,6 +95,7 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1., recom
     # data
     _objects = copy(objects)
     _kt2 = (JetReconstruction.pt.(_objects) .^ 2) .^ _p
+    # _kt2 = 1.0 ./ (JetReconstruction.pt.(_objects) .^ 2) <- Demo code for antikt talks (i.e., _p = -1)
     _phi = JetReconstruction.phi.(_objects)
     _eta = JetReconstruction.eta.(_objects)
     _nn = Vector(1:N) # nearest neighbours
@@ -118,7 +119,7 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1, R=1., recom
         dij_min = _nndij[1]
         @inbounds @simd for k in 2:N
             cond =  _nndij[k] < dij_min
-            dij_min, i = IfElse.ifelse(cond, (_nndij[k], k), (dij_min, i))
+            dij_min, i = ifelse(cond, (_nndij[k], k), (dij_min, i))
         end
 
         j::Int = _nn[i]
@@ -179,7 +180,7 @@ Runs the anti-kt jet reconstruction algorithm. `objects` can be any collection o
 
 Returns:
     `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
-    `sequences` - a vector of vectors of indeces in `objects`. For all `i`, `sequences[i]` gives a sequence of indeces of objects that have been combined into the i-th jet (`jets[i]`).
+    `sequences` - a vector of vectors of indices in `objects`. For all `i`, `sequences[i]` gives a sequence of indices of objects that have been combined into the i-th jet (`jets[i]`).
 """
 function anti_kt_algo(objects; R=1., recombine=+)
     sequential_jet_reconstruct(objects, p=-1, R=R, recombine=recombine)
@@ -192,7 +193,7 @@ Runs the kt jet reconstruction algorithm. `objects` can be any collection of *un
 
 Returns:
     `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
-    `sequences` - a vector of vectors of indeces in `objects`. For all `i`, `sequences[i]` gives a sequence of indeces of objects that have been combined into the i-th jet (`jets[i]`).
+    `sequences` - a vector of vectors of indices in `objects`. For all `i`, `sequences[i]` gives a sequence of indices of objects that have been combined into the i-th jet (`jets[i]`).
 """
 function kt_algo(objects; R=1., recombine=+)
     sequential_jet_reconstruct(objects, p=1, R=R, recombine=recombine)
@@ -205,7 +206,7 @@ Runs the Cambridge/Aachen jet reconstruction algorithm. `objects` can be any col
 
 Returns:
     `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
-    `sequences` - a vector of vectors of indeces in `objects`. For all `i`, `sequences[i]` gives a sequence of indeces of objects that have been combined into the i-th jet (`jets[i]`).
+    `sequences` - a vector of vectors of indices in `objects`. For all `i`, `sequences[i]` gives a sequence of indices of objects that have been combined into the i-th jet (`jets[i]`).
 """
 function cambridge_aachen_algo(objects; R=1., recombine=+)
     sequential_jet_reconstruct(objects, p=0, R=R, recombine=recombine)
