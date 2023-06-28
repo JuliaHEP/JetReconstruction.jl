@@ -113,6 +113,7 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1.0, R=1., rec
         _nndij[i] = _dij(i, _kt2, _nn, _nndist)
     end
 
+    iteration::Int = 1
     while N != 0
         # findmin
         i = 1
@@ -123,6 +124,11 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1.0, R=1., rec
         end
 
         j::Int = _nn[i]
+
+        ## Needed for certain tricky debugging situations
+        # if iteration==1
+        #     debug_jets(_nn, _nndist, _nndij)
+        # end
 
         if i != j
             # swap if needed
@@ -161,6 +167,7 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1.0, R=1., rec
 
         Nn::Int = N
         N -= 1
+        iteration += 1
 
         # update nearest neighbours step
         @inbounds @simd for k in 1:N
@@ -315,4 +322,13 @@ Not for usage. Use `anti_kt_algo` instead. Correctness is not guaranteed.
 """
 function anti_kt_algo_alt(objects; p=-1, R=1, recombine=+)
     sequential_jet_reconstruct_alt(objects, p=p, R=R, recombine=recombine)
+end
+
+"""
+Jet state debugger
+"""
+function debug_jets(nn, nndist, dijdist)
+    for ijet ∈ eachindex(nn)
+        println("$ijet: $(nn[ijet]); $(nndist[ijet]); $(dijdist[ijet])")
+    end
 end
