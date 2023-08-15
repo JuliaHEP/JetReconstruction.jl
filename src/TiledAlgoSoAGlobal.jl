@@ -96,7 +96,6 @@ function suppress_flatjet!(jets::FlatJets, n::Int)
     pop!(jets.nearest_neighbour)
     pop!(jets.nn_distance)
     pop!(jets.dij_distance)
-    # @debug ilast tainted_index n
     tainted_index
 end
 
@@ -229,12 +228,8 @@ Complete scan over all tiles to setup the nearest neighbour mappings at the begi
 """
 function find_all_tiled_nearest_neighbours!(tiles, flatjets::FlatJets, tiling_setup::TilingDef, R2)
     # Iterate tile by tile...
-    # tile_jet_list = Vector{Int}()
     for itile ∈ eachindex(tiles)
         itile_cartesian = get_tile_cartesian_indices(tiling_setup, itile)
-        ## Debug for checking that my index calculations are correct
-        # @assert itile_cartesian[1] == tiling_setup._tile_cartesian_indexes[itile][1] "$itile_cartesian -- $(tiling_setup._tile_cartesian_indexes[itile])"
-        # @assert itile_cartesian[2] == tiling_setup._tile_cartesian_indexes[itile][2] "$itile_cartesian -- $(tiling_setup._tile_cartesian_indexes[itile])"
 
         ijet = tiles[itile]
         while ijet!= 0
@@ -434,7 +429,7 @@ end
 """
 Tiled jet reconstruction
 """
-function tiled_jet_reconstruct(objects::AbstractArray{T}; p = -1, R = 1.0, recombine = +) where T
+function tiled_jet_reconstruct_soa_global(objects::AbstractArray{T}; p = -1, R = 1.0, recombine = +) where T
 	# bounds
 	N::Int = length(objects)
 	@debug "Initial particles: $(N)"
@@ -449,11 +444,9 @@ function tiled_jet_reconstruct(objects::AbstractArray{T}; p = -1, R = 1.0, recom
 	_phi = JetReconstruction.phi.(objects)
 	_eta = JetReconstruction.eta.(objects)
 	_jet_index = collect(1:N) # Initial jets are just numbered 1:N, mapping directly to jet_objects
-    # println(_jet_index)
 
 	# Each jet stores which tile it is in, so need the usual container for that
 	_tile_index = zeros(Int, N)
-	# sizehint!(tile_index, N * 2)
 
 	# Linked list: this is the index of the next/previous jet for this tile (0 = the end/beginning)
 	_next_jet = zeros(Int, N)

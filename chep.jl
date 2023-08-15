@@ -75,10 +75,10 @@ function jet_process(
 	# Strategy
 	if (strategy == N2Plain)
 		jet_reconstruction = sequential_jet_reconstruct
-	elseif (strategy == N2Tiled)
-		jet_reconstruction = tiled_jet_reconstruct
-	elseif (strategy == N2TiledSoA)
-		jet_reconstruction = tiled_jet_reconstruct_soa
+	elseif (strategy == N2TiledSoAGlobal)
+		jet_reconstruction = tiled_jet_reconstruct_soa_global
+	elseif (strategy == N2TiledSoATile)
+		jet_reconstruction = tiled_jet_reconstruct_soa_tile
 	else
 		throw(ErrorException("Strategy not yet implemented"))
 	end
@@ -193,7 +193,7 @@ parse_command_line(args) = begin
 		default = -1
 
 		"--strategy"
-		help = "Strategy for the algorithm, valid values: Best, N2Basic, N2Tiled"
+		help = "Strategy for the algorithm, valid values: Best, N2Plain, N2TiledLL, N2TiledSoAGlobal, N2TiledSoATile"
 		arg_type = JetRecoStrategy
 		default = N2Plain
 
@@ -236,12 +236,14 @@ end
 function ArgParse.parse_item(::Type{JetRecoStrategy}, x::AbstractString)
 	if (x == "Best")
 		return JetRecoStrategy(0)
-	elseif (x == "N2Basic")
+	elseif (x == "N2Plain")
 		return JetRecoStrategy(1)
-	elseif (x == "N2Tiled")
+	elseif (x == "N2TiledLL")
 		return JetRecoStrategy(2)
-	elseif (x == "N2TiledSoA")
+	elseif (x == "N2TiledSoAGlobal")
 		return JetRecoStrategy(3)
+	elseif (x == "N2TiledSoATile")
+		return JetRecoStrategy(4)
 	else
 		throw(ErrorException("Invalid value for strategy: $(x)"))
 	end

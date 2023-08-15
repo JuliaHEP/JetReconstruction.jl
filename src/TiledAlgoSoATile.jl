@@ -1,5 +1,7 @@
 ### Tiled Jet Reconstruction, SoA
 
+include("TiledUtilsSoA.jl")
+
 using Logging
 
 """
@@ -163,7 +165,7 @@ end
 """
 Tiled jet reconstruction
 """
-function tiled_jet_reconstruct_soa(objects::AbstractArray{T}; p = -1, R = 1.0, recombine = +) where T
+function tiled_jet_reconstruct_soa_tile(objects::AbstractArray{T}; p = -1, R = 1.0, recombine = +) where T
 	# bounds
 	N::Int = length(objects)
 	@debug "Initial particles: $(N)"
