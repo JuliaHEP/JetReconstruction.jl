@@ -1,4 +1,26 @@
-# Common functions for Tiled reconstruction algorithms
+# Common functions and structures for Tiled reconstruction algorithms
+
+"""Tiling definition parameters"""
+struct TilingDef
+	_tiles_eta_min::Float64  # Minimum rapidity
+	_tiles_eta_max::Float64  # Maximum rapidity
+	_tile_size_eta::Float64  # Size of a tile in rapidity (usually R^2)
+	_tile_size_phi::Float64  # Size of a tile in phi (usually a bit more than R^2)
+	_n_tiles_eta::Int   # Number of tiles across rapidity
+	_n_tiles_phi::Int   # Number of tiles across phi
+	_n_tiles::Int       # Total number of tiles
+	_tiles_ieta_min::Int # Min_rapidity / rapidity tile size (needed?)
+	_tiles_ieta_max::Int # Max_rapidity / rapidity tile size (needed?)
+	
+	# Use an inner constructor as _n_tiles and _tile_linear_indexes 
+	# are defined by the other values
+	function TilingDef(_tiles_eta_min, _tiles_eta_max, _tile_size_eta, _tile_size_phi,
+		_n_tiles_eta, _n_tiles_phi, _tiles_ieta_min, _tiles_ieta_max)
+		new(_tiles_eta_min, _tiles_eta_max, _tile_size_eta, _tile_size_phi,
+		_n_tiles_eta, _n_tiles_phi, _n_tiles_eta*_n_tiles_phi, _tiles_ieta_min, _tiles_ieta_max,
+		)
+	end
+end
 
 """
 Determine an extent for the rapidity tiles, by binning in 
@@ -88,7 +110,7 @@ end
 """
 Setup the tiling parameters for this recontstruction
 """
-function setup_tiling(_eta::Vector{T}, Rparam::AbstractFloat) where T <: AbstractFloat
+function setup_tiling(eta::Vector{T}, Rparam::AbstractFloat) where T <: AbstractFloat
 	# First decide tile sizes (with a lower bound to avoid huge memory use with
 	# very small R)
 	tile_size_eta = max(0.1, Rparam)
@@ -99,7 +121,7 @@ function setup_tiling(_eta::Vector{T}, Rparam::AbstractFloat) where T <: Abstrac
 	n_tiles_phi   = max(3, floor(Int, 2π / tile_size_eta))
 	tile_size_phi = 2π / n_tiles_phi # >= Rparam and fits in 2pi
 
-	tiles_eta_min, tiles_eta_max = determine_rapidity_extent(_eta)
+	tiles_eta_min, tiles_eta_max = determine_rapidity_extent(eta)
 
 	# now adjust the values
 	tiles_ieta_min = floor(Int, tiles_eta_min / tile_size_eta)
@@ -232,76 +254,4 @@ function Base.iterate(t::neighbour_tiles, state=1)
         return (η,ϕ), state+1
     end
     return nothing
-end
-
-"""
-Populate tiling structure with our initial jets and setup neighbour tile caches
-"""
-function populate_tiles!(tile_jets::Array{TiledJetSoA, 2}, tiling_setup::TilingDef,
-	flat_jets::FlatJetSoA, R2::AbstractFloat)
-	# This is a special case, where the initial particles are all
-	# "linear" in the flat_jets structure, so we scan through that
-	# and match each jet to a tile, so that we can assign correct size
-	# vectors in the tiled jets structure
-	tile_jet_count = Array{Vector{Int}, 2}(undef, tiling_setup._n_tiles_eta, tiling_setup._n_tiles_phi)
-	# Using fill() doesn't work as we fill all tiles with the same vector!
-	@inbounds for itile in eachindex(tile_jet_count)
-		tile_jet_count[itile] = Int[]
-	end
-
-	# Find out where each jet lives, then push its index value to the correct tile
-	@inbounds for ijet in 1:flat_jets._size
-		ieta, iphi = get_tile(tiling_setup, eta(flat_jets, ijet), phi(flat_jets, ijet))
-		push!(tile_jet_count[ieta, iphi], index(flat_jets, ijet))
-	end
-
-	# Now use the cached indexes to assign and fill the tiles
-	@inbounds for itile in eachindex(tile_jet_count)
-		ijets = tile_jet_count[itile]
-		this_tile_jets = TiledJetSoA(length(ijets))
-		@inbounds for (itilejet, ijet) in enumerate(ijets)
-			set_kt2!(this_tile_jets, itilejet, kt2(flat_jets, ijet))
-			set_eta!(this_tile_jets, itilejet, eta(flat_jets, ijet))
-			set_phi!(this_tile_jets, itilejet, phi(flat_jets, ijet))
-			set_index!(this_tile_jets, itilejet, index(flat_jets, ijet))
-			set_nn!(this_tile_jets, itilejet, TiledSoACoord(0,0))
-			set_nndist!(this_tile_jets, itilejet, R2)
-		end
-		tile_jets[itile] = this_tile_jets
-	end
-	populate_tile_cache!(tile_jets, tiling_setup)
-end
-
-"""
-For each tile, populate a cache of the nearest tile neighbours
-"""
-function populate_tile_cache!(tile_jets::Array{TiledJetSoA, 2}, tiling_setup::TilingDef)
-	# To help with later iterations, we now find and cache neighbour tile indexes
-	@inbounds for ieta in 1:tiling_setup._n_tiles_eta
-		@inbounds for iphi in 1:tiling_setup._n_tiles_phi
-			# Clamping ensures we don't go beyond the limits of the eta tiling (which do not wrap)
-			@inbounds for jeta in clamp(ieta - 1, 1, tiling_setup._n_tiles_eta):clamp(ieta + 1, 1, tiling_setup._n_tiles_eta)
-				δeta = jeta - ieta
-				@inbounds for jphi in iphi-1:iphi+1
-					if (jeta == ieta && jphi == iphi)
-						continue
-					end
-					# Phi tiles wrap around to meet each other
-					δphi = jphi - iphi # Hold this unwrapped value for rightmost comparison
-					if (jphi == 0)
-						jphi = tiling_setup._n_tiles_phi
-					elseif (jphi == tiling_setup._n_tiles_phi + 1)
-						jphi = 1
-					end
-					# Tile is a neighbour
-					tile_index = get_tile_linear_index(tiling_setup, jeta, jphi)
-					push!(tile_jets[ieta, iphi]._nntiles, tile_index)
-					# Only the tile directly above or to the right are _righttiles
-					if (((δeta == -1) && (δphi == 0)) || (δphi == 1))
-						push!(tile_jets[ieta, iphi]._righttiles, tile_index)
-					end
-				end
-			end
-		end
-	end
 end
