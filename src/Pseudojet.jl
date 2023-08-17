@@ -58,7 +58,7 @@ mutable struct PseudoJet<:FourMomentum
     _inv_pt2::Float64
     _rap::Float64
     _phi::Float64
-    end
+end
 
     
 PseudoJet(px::Float64, py::Float64, pz::Float64, E::Float64,

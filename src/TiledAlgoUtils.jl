@@ -28,8 +28,8 @@ rapidity and collapsing the outer bins until they have about
 1/4 the number of particles as the maximum bin. This is the 
 heuristic which is used by FastJet.
 """
-function determine_rapidity_extent(_eta::Vector{T}) where T <: AbstractFloat
-	length(_eta) == 0 && return 0.0, 0.0
+function determine_rapidity_extent(eta::Vector{T}) where T <: AbstractFloat
+	length(eta) == 0 && return 0.0, 0.0
 
 	nrap = 20
 	nbins = 2 * nrap
@@ -38,10 +38,9 @@ function determine_rapidity_extent(_eta::Vector{T}) where T <: AbstractFloat
 	# Get the minimum and maximum rapidities and at the same time bin
 	# the multiplicities as a function of rapidity to help decide how
 	# far out it's worth going
-	minrap = floatmax(T)
-	maxrap = -floatmax(T)
+	minrap = maxrap = eta[1]
 	ibin = 0
-	for y in _eta
+	for y in eta
 		minrap = min(minrap, y)
 		maxrap = max(maxrap, y)
 

@@ -68,10 +68,6 @@ function jet_process(
 )
 	@info "Will process $(size(events)[1]) events"
 
-	# First, convert all events into the Vector of Vectors that Atell's
-	# code likes
-	event_vector = pseudojets2vectors(events)
-
 	# Strategy
 	if (strategy == N2Plain)
 		jet_reconstruction = sequential_jet_reconstruct
@@ -79,8 +75,18 @@ function jet_process(
 		jet_reconstruction = tiled_jet_reconstruct_soa_global
 	elseif (strategy == N2TiledSoATile)
 		jet_reconstruction = tiled_jet_reconstruct_soa_tile
+	elseif (strategy == N2TiledLL)
+		jet_reconstruction = tiled_jet_reconstruct_ll
 	else
 		throw(ErrorException("Strategy not yet implemented"))
+	end
+
+	# The N2TiledLL algorithm uses PseudoJets so pass these directly
+	if strategy == N2TiledLL
+		event_vector = events
+	else
+		# The other algorithms swallow 4-vectors instead
+		event_vector = pseudojets2vectors(events)
 	end
 
 	# If we are dumping the results, setup the JSON structure
@@ -90,14 +96,12 @@ function jet_process(
 
 	# Warmup code if we are doing a multi-sample timing run
 	if nsamples > 1 || profile
-		@debug "Doing initial warm-up run"
+		@info "Doing initial warm-up run"
 		for event in event_vector
-			jet_reconstruction(event, R = 0.4)
+			finaljets, _ = jet_reconstruction(event, R = distance, p = power)
+			final_jets(finaljets, ptmin)
 		end
 	end
-
-	GC.gc()
-	gcoff && GC.enable(false)
 
 	if profile
 		profile_code(jet_reconstruction, event_vector, nsamples)
@@ -108,14 +112,17 @@ function jet_process(
         println("Memory allocation statistics:")
         @timev for event in event_vector
             finaljets, _ = jet_reconstruction(event, R = distance, p = power)
+			final_jets(finaljets, ptmin)
         end
         return nothing
     end
 
 	# Now setup timers and run the loop
+	GC.gc()
 	cummulative_time = 0.0
 	cummulative_time2 = 0.0
 	for irun ∈ 1:nsamples
+		gcoff && GC.enable(false)
 		t_start = time_ns()
 		for (ievt, event) in enumerate(event_vector)
 			finaljets, _ = jet_reconstruction(event, R = distance, p = power)
@@ -135,6 +142,7 @@ function jet_process(
 			end
 		end
 		t_stop = time_ns()
+		gcoff && GC.enable(true)
 		dt_μs = convert(Float64, t_stop - t_start) * 1.e-3
         if nsamples > 1
 			@info "$(irun)/$(nsamples) $(dt_μs)"
@@ -142,8 +150,6 @@ function jet_process(
 		cummulative_time += dt_μs
 		cummulative_time2 += dt_μs^2
 	end
-
-	gcoff && GC.enable(true)
 
 	mean = cummulative_time / nsamples
 	cummulative_time2 /= nsamples
