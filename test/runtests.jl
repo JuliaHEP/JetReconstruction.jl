@@ -32,6 +32,7 @@ function main()
     do_jet_test(N2Plain, fastjet_jets)
     do_jet_test(N2TiledSoAGlobal, fastjet_jets)
     do_jet_test(N2TiledSoATile, fastjet_jets)
+    do_jet_test(N2TiledLL, fastjet_jets)
 
     # Atell's original test
     original_tests()
@@ -52,13 +53,23 @@ function do_jet_test(strategy::JetRecoStrategy, fastjet_jets;
 	elseif (strategy == N2TiledSoATile)
 		jet_reconstruction = tiled_jet_reconstruct_soa_tile
         strategy_name = "N2TiledSoATile"
+    elseif (strategy == N2TiledLL)
+		jet_reconstruction = tiled_jet_reconstruct_ll
+        strategy_name = "N2TiledLL"
 	else
 		throw(ErrorException("Strategy not yet implemented"))
 	end
 
     # Now run our jet reconstruction...
     events::Vector{Vector{PseudoJet}} = read_final_state_particles("test/data/events.hepmc3")
-    event_vector = pseudojets2vectors(events)
+    if strategy == N2TiledLL
+		event_vector = events
+	else
+		# First, convert all events into the Vector of Vectors that Atell's
+		# code likes
+		event_vector = pseudojets2vectors(events)
+	end
+    # event_vector = pseudojets2vectors(events)
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(event_vector)
         finaljets, _ = jet_reconstruction(event, R=distance, p=power)

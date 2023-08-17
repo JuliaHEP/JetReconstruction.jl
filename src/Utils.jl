@@ -43,6 +43,7 @@ function pseudojets2vectors(events::Vector{Vector{PseudoJet}})
 	event_vector
 end
 
+"""Return the list of jets passing a pt cut"""
 function final_jets(jets::Vector{Vector{Float64}}, ptmin::AbstractFloat)
 	count = 0
 	final_jets = Vector{FinalJet}()
@@ -53,6 +54,20 @@ function final_jets(jets::Vector{Vector{Float64}}, ptmin::AbstractFloat)
 		if p._pt2 > dcut
 			count += 1
 			push!(final_jets, FinalJet(rap(p), phi(p), sqrt(pt2(p))))
+		end
+	end
+	final_jets
+end
+
+function final_jets(jets::Vector{PseudoJet}, ptmin::AbstractFloat)
+	count = 0
+	final_jets = Vector{FinalJet}()
+	sizehint!(final_jets, 6)
+	for jet in jets
+		dcut = ptmin^2
+		if pt2(jet) > dcut
+			count += 1
+			push!(final_jets, FinalJet(rap(jet), phi(jet), sqrt(pt2(jet))))
 		end
 	end
 	final_jets
