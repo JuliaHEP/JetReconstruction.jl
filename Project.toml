@@ -1,6 +1,6 @@
 name = "JetReconstruction"
 uuid = "44e8cb2c-dfab-4825-9c70-d4808a591196"
-authors = ["Atell Krasnopolski <delta_atell@protonmail.com>", "Graeme A Stewart <graeme.andrew.stewart@cern.ch"]
+authors = ["Atell Krasnopolski <delta_atell@protonmail.com>", "Graeme A Stewart <graeme.andrew.stewart@cern.ch", "Philippe Gras <philippe.gras@cern.ch>"]
 version = "0.1.0"
 
 [deps]
