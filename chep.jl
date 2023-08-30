@@ -75,14 +75,14 @@ function jet_process(
 		jet_reconstruction = tiled_jet_reconstruct_soa_global
 	elseif (strategy == N2TiledSoATile)
 		jet_reconstruction = tiled_jet_reconstruct_soa_tile
-	elseif (strategy == N2TiledLL)
+	elseif (strategy == N2Tiled)
 		jet_reconstruction = tiled_jet_reconstruct_ll
 	else
 		throw(ErrorException("Strategy not yet implemented"))
 	end
 
-	# The N2TiledLL algorithm uses PseudoJets so pass these directly
-	if strategy == N2TiledLL
+	# The N2Tiled algorithm uses PseudoJets so pass these directly
+	if strategy == N2Tiled
 		event_vector = events
 	else
 		# The other algorithms swallow 4-vectors instead
@@ -199,7 +199,7 @@ parse_command_line(args) = begin
 		default = -1
 
 		"--strategy"
-		help = "Strategy for the algorithm, valid values: Best, N2Plain, N2TiledLL, N2TiledSoAGlobal, N2TiledSoATile"
+		help = "Strategy for the algorithm, valid values: Best, N2Plain, N2Tiled, N2TiledSoAGlobal, N2TiledSoATile"
 		arg_type = JetRecoStrategy
 		default = N2Plain
 
@@ -244,7 +244,7 @@ function ArgParse.parse_item(::Type{JetRecoStrategy}, x::AbstractString)
 		return JetRecoStrategy(0)
 	elseif (x == "N2Plain")
 		return JetRecoStrategy(1)
-	elseif (x == "N2TiledLL")
+	elseif (x == "N2Tiled")
 		return JetRecoStrategy(2)
 	elseif (x == "N2TiledSoAGlobal")
 		return JetRecoStrategy(3)
