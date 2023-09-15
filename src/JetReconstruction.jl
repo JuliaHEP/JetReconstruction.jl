@@ -24,14 +24,6 @@ export sequential_jet_reconstruct, kt_algo, anti_kt_algo, anti_kt_algo_alt, camb
 # Common pieces
 include("TiledAlgoUtils.jl")
 
-# Algorithmic part, tiled reconstruction strategy with SoA per tile
-include("TiledAlgoSoATile.jl")
-export tiled_jet_reconstruct_soa_tile
-
-# Algorithmic part, tiled reconstruction strategy with global SoA
-include("TiledAlgoSoAGlobal.jl")
-export tiled_jet_reconstruct_soa_global
-
 # Algorithmic part, tiled reconstruction strategy with linked list jet objects
 include("TiledAlgoLL.jl")
 export tiled_jet_reconstruct_ll
@@ -53,7 +45,7 @@ include("JSONresults.jl")
 export FinalJet, FinalJets, JSON3
 
 # Strategy to be used
-@enum JetRecoStrategy Best N2Plain N2Tiled N2TiledSoAGlobal N2TiledSoATile
-export JetRecoStrategy, Best, N2Plain, N2Tiled, N2TiledSoAGlobal, N2TiledSoATile
+@enum JetRecoStrategy Best N2Plain N2Tiled
+export JetRecoStrategy, Best, N2Plain, N2Tiled
 
 end

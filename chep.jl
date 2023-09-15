@@ -71,11 +71,7 @@ function jet_process(
 	# Strategy
 	if (strategy == N2Plain)
 		jet_reconstruction = sequential_jet_reconstruct
-	elseif (strategy == N2TiledSoAGlobal)
-		jet_reconstruction = tiled_jet_reconstruct_soa_global
-	elseif (strategy == N2TiledSoATile)
-		jet_reconstruction = tiled_jet_reconstruct_soa_tile
-	elseif (strategy == N2Tiled)
+	elseif (strategy == N2Tiled || stragegy == Best)
 		jet_reconstruction = tiled_jet_reconstruct_ll
 	else
 		throw(ErrorException("Strategy not yet implemented"))
@@ -121,6 +117,7 @@ function jet_process(
 	GC.gc()
 	cummulative_time = 0.0
 	cummulative_time2 = 0.0
+	lowest_time = typemax(Float64)
 	for irun ∈ 1:nsamples
 		gcoff && GC.enable(false)
 		t_start = time_ns()
@@ -149,6 +146,7 @@ function jet_process(
 		end
 		cummulative_time += dt_μs
 		cummulative_time2 += dt_μs^2
+		lowest_time = dt_μs < lowest_time ? dt_μs : lowest_time
 	end
 
 	mean = cummulative_time / nsamples
@@ -160,8 +158,17 @@ function jet_process(
 	end
 	mean /= length(events)
 	sigma /= length(events)
+	lowest_time /= length(events)
+	# Why also record the lowest time? 
+	# 
+	# The argument is that on a "busy" machine, the run time of an application is
+	# always TrueRunTime+Overheads, where Overheads is a nuisance parameter that
+	# adds jitter, depending on the other things the machine is doing. Therefore
+	# the minimum value is (a) more stable and (b) reflects better the intrinsic
+	# code performance.
 	println("Processed $(length(events)) events $(nsamples) times")
-	println("Time per event $(mean) ± $(sigma) μs")
+	println("Average time per event $(mean) ± $(sigma) μs")
+	println("Lowest time per event $lowest_time μs")
 
 	if !isnothing(dump)
 		open(dump, "w") do io
@@ -246,10 +253,6 @@ function ArgParse.parse_item(::Type{JetRecoStrategy}, x::AbstractString)
 		return JetRecoStrategy(1)
 	elseif (x == "N2Tiled")
 		return JetRecoStrategy(2)
-	elseif (x == "N2TiledSoAGlobal")
-		return JetRecoStrategy(3)
-	elseif (x == "N2TiledSoATile")
-		return JetRecoStrategy(4)
 	else
 		throw(ErrorException("Invalid value for strategy: $(x)"))
 	end
@@ -274,12 +277,9 @@ main() = begin
 	nothing
 end
 
-# The issue is that running through the debugger in VS Code actually has
+# Running through the debugger in VS Code actually has
 # ARGS[0] = "/some/path/.vscode/extensions/julialang.language-julia-1.47.2/scripts/debugger/run_debugger.jl",
 # so then the program does nothing at all if it only tests for abspath(PROGRAM_FILE) == @__FILE__
-# In addition, deep debugging with Infiltrator needs to start in an interactive session
-#
-# (Really, one starts to wonder if main() should be executed unconditionally!)
-if (abspath(PROGRAM_FILE) == @__FILE__) || (basename(PROGRAM_FILE) == "run_debugger.jl" || isinteractive())
-	main()
-end
+# In addition, deep debugging with Infiltrator needs to start in an interactive session,
+# so execute main() unconditionally
+main()
