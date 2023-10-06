@@ -14,6 +14,7 @@ using StatProfilerHTML
 using Logging
 using JSON
 
+using LorentzVectorHEP
 using JetReconstruction
 
 function profile_code(jet_reconstruction, events, niters)
@@ -55,7 +56,7 @@ function profile_code(jet_reconstruction, events, niters)
 end
 
 function jet_process(
-	events::Vector{Vector{PseudoJet}};
+	events::Vector{Vector{LorentzVector}};
 	ptmin::Float64 = 5.0,
 	distance::Float64 = 0.4,
 	power::Integer = -1,
@@ -77,13 +78,14 @@ function jet_process(
 		throw(ErrorException("Strategy not yet implemented"))
 	end
 
+	# Change of tactic - we adapt all interfaces to swallow LorentzVectors directly
 	# The N2Tiled algorithm uses PseudoJets so pass these directly
-	if strategy == N2Tiled
-		event_vector = events
-	else
-		# The other algorithms swallow 4-vectors instead
-		event_vector = pseudojets2vectors(events)
-	end
+	# if strategy == N2Tiled
+	# 	event_vector = events
+	# else
+	# 	# The other algorithms swallow 4-vectors instead
+	# 	event_vector = pseudojets2vectors(events)
+	# end
 
 	# If we are dumping the results, setup the JSON structure
 	if !isnothing(dump)
@@ -93,20 +95,20 @@ function jet_process(
 	# Warmup code if we are doing a multi-sample timing run
 	if nsamples > 1 || profile
 		@info "Doing initial warm-up run"
-		for event in event_vector
+		for event in events
 			finaljets, _ = jet_reconstruction(event, R = distance, p = power)
 			final_jets(finaljets, ptmin)
 		end
 	end
 
 	if profile
-		profile_code(jet_reconstruction, event_vector, nsamples)
+		profile_code(jet_reconstruction, events, nsamples)
 		return nothing
 	end
 
     if alloc
         println("Memory allocation statistics:")
-        @timev for event in event_vector
+        @timev for event in events
             finaljets, _ = jet_reconstruction(event, R = distance, p = power)
 			final_jets(finaljets, ptmin)
         end
@@ -121,7 +123,7 @@ function jet_process(
 	for irun ∈ 1:nsamples
 		gcoff && GC.enable(false)
 		t_start = time_ns()
-		for (ievt, event) in enumerate(event_vector)
+		for (ievt, event) in enumerate(events)
 			finaljets, _ = jet_reconstruction(event, R = distance, p = power)
 			fj = final_jets(finaljets, ptmin)
 			# Only print the jet content once
@@ -268,8 +270,10 @@ main() = begin
 		logger = ConsoleLogger(stdout, Logging.Warn)
 	end
 	global_logger(logger)
-	events::Vector{Vector{PseudoJet}} =
-		read_final_state_particles(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
+	# events::Vector{Vector{PseudoJet}} =
+	# 	read_final_state_particles(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
+	events::Vector{Vector{LorentzVector}} =
+		read_final_state_particles_lv(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
 	jet_process(events, ptmin = args[:ptmin], distance = args[:distance], 
         power = args[:power], strategy = args[:strategy],
 		nsamples = args[:nsamples], gcoff = args[:gcoff], profile = args[:profile],

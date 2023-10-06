@@ -1,6 +1,6 @@
 # Utility functions, which can be used by different top level scripts
 
-"""Read HepMC3 event and keep final state particles"""
+"""Read HepMC3 event and keep final state particles (return PseudoJets)"""
 function read_final_state_particles(fname; maxevents = -1, skipevents = 0)
 	f = open(fname)
 
@@ -22,6 +22,33 @@ function read_final_state_particles(fname; maxevents = -1, skipevents = 0)
 	end
 
 	@info "Total Events: $(length(events))"
+	@debug events
+	events
+end
+
+"""Read HepMC3 event and keep final state particles (return LorentzVectors)"""
+function read_final_state_particles_lv(fname; maxevents = -1, skipevents = 0)
+	f = open(fname)
+
+	events = Vector{LorentzVector{Float64}}[]
+
+	ipart = 1
+	HepMC3.read_events(f, maxevents = maxevents, skipevents = skipevents) do parts
+		input_particles = LorentzVector{Float64}[]
+		for p in parts
+			if p.status == 1
+				push!(
+					input_particles,
+					LorentzVector(p.momentum.t, p.momentum.x, p.momentum.y, p.momentum.z),
+				)
+			end
+		end
+		push!(events, input_particles)
+		ipart += 1
+	end
+
+	@info "Total Events: $(length(events))"
+	@debug events
 	events
 end
 
@@ -68,6 +95,20 @@ function final_jets(jets::Vector{PseudoJet}, ptmin::AbstractFloat)
 		if pt2(jet) > dcut
 			count += 1
 			push!(final_jets, FinalJet(rap(jet), phi(jet), sqrt(pt2(jet))))
+		end
+	end
+	final_jets
+end
+
+function final_jets(jets::Vector{LorentzVector}, ptmin::AbstractFloat)
+	count = 0
+	final_jets = Vector{FinalJet}()
+	sizehint!(final_jets, 6)
+	dcut = ptmin^2
+	for jet in jets
+		if LorentzVectorHEP.pt(jet)^2 > dcut
+			count += 1
+			push!(final_jets, FinalJet(LorentzVectorHEP.eta(jet), LorentzVectorHEP.phi(jet), LorentzVectorHEP.pt(jet)))
 		end
 	end
 	final_jets
