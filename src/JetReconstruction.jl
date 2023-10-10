@@ -6,12 +6,13 @@ module JetReconstruction
 using LorentzVectorHEP
 
 # particle type definition
-include("Particle.jl")
-export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
+# include("Particle.jl")
+# export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
 
 # Philipp's pseudojet
 include("Pseudojet.jl")
-export PseudoJet, rap, phi, pt2
+## As this is an internal EDM class, we perhaps shouldn't export this stuff...
+# export PseudoJet, rap, phi, pt, pt2, px, py, pz, pt, phi, mass, eta
 
 # Simple HepMC3 reader
 include("HepMC3.jl")
@@ -47,6 +48,7 @@ include("JSONresults.jl")
 export FinalJet, FinalJets, JSON3
 
 # Strategy to be used
+## Maybe an enum is not the best idea, use type dispatch instead?
 @enum JetRecoStrategy Best N2Plain N2Tiled
 export JetRecoStrategy, Best, N2Plain, N2Tiled
 

@@ -18,7 +18,7 @@ Returns the history and the total event energy.
 function initial_history(particles)
     # reserve sufficient space for everything
     history = Vector{HistoryElement}(undef, length(particles))
-    sizehint!(history, 2*length(particles))
+    sizehint!(history, 2 * length(particles))
 
     Qtot::Float64 = 0
 
@@ -39,7 +39,7 @@ between two jets."""
 _tj_dist(jetA, jetB) = begin
     dphi = π - abs(π - abs(jetA.phi - jetB.phi))
     deta = jetA.eta - jetB.eta
-    return dphi*dphi + deta*deta
+    return dphi * dphi + deta * deta
 end
 
 _tj_diJ(jet) = begin
@@ -57,17 +57,17 @@ tile_index(tiling_setup, eta::Float64, phi::Float64) = begin
     # - eta can be out of range by construction (open end bins)
     # - phi is protection against bad rounding
     ieta = clamp(1 + unsafe_trunc(Int, (eta - tiling_setup._tiles_eta_min) / tiling_setup._tile_size_eta), 1, tiling_setup._n_tiles_eta)
-    iphi = clamp(unsafe_trunc(Int, phi  / tiling_setup._tile_size_phi), 0, tiling_setup._n_tiles_phi)
+    iphi = clamp(unsafe_trunc(Int, phi / tiling_setup._tile_size_phi), 0, tiling_setup._n_tiles_phi)
     return iphi * tiling_setup._n_tiles_eta + ieta
 end
 
 
 """Initialise a tiled jet from a PseudoJet (using an index into our ClusterSequence)"""
 tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, jets_index, R2) = begin
-    @inbounds jet.eta  = rap(clusterseq.jets[jets_index])
-    @inbounds jet.phi  = phi_02pi(clusterseq.jets[jets_index])
-    @inbounds jet.kt2  = pt2(clusterseq.jets[jets_index]) > 1.e-300 ? 1. / pt2(clusterseq.jets[jets_index]) : 1.e300
-    jet.jets_index = jets_index
+    @inbounds jet.eta = rap(clusterseq.jets[jets_index])
+    @inbounds jet.phi = phi_02pi(clusterseq.jets[jets_index])
+    @inbounds jet.kt2 = pt2(clusterseq.jets[jets_index]) > 1.e-300 ? 1.0 / pt2(clusterseq.jets[jets_index]) : 1.e300
+    jet.jets_index    = jets_index
     # Initialise NN info as well
     jet.NN_dist = R2
     jet.NN      = noTiledJet
@@ -78,7 +78,9 @@ tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, jets_index, R2
     # Insert it into the tile's linked list of jets (at the beginning)
     jet.previous = noTiledJet
     @inbounds jet.next = clusterseq.tiling.tiles[jet.tile_index]
-    if isvalid(jet.next) jet.next.previous = jet; end
+    if isvalid(jet.next)
+        jet.next.previous = jet
+    end
     @inbounds clusterseq.tiling.tiles[jet.tile_index] = jet
     nothing
 end
@@ -91,7 +93,9 @@ function set_nearest_neighbours!(clusterseq::ClusterSequence, tiledjets::Vector{
         isvalid(tile) || continue
         for jetA in tile
             for jetB in tile
-                if jetB == jetA break; end
+                if jetB == jetA
+                    break
+                end
                 dist = _tj_dist(jetA, jetB)
                 if (dist < jetA.NN_dist)
                     jetA.NN_dist = dist
@@ -134,7 +138,7 @@ function set_nearest_neighbours!(clusterseq::ClusterSequence, tiledjets::Vector{
         diJ[i] = _tj_diJ(jetA) # kt distance * R^2
         # our compact diJ table will not be in one-to-one corresp. with non-compact jets,
         # so set up bi-directional correspondence here.
-        @inbounds NNs[i] = jetA  
+        @inbounds NNs[i] = jetA
         jetA.dij_posn = i
     end
     NNs, diJ
@@ -160,7 +164,7 @@ do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij) = begi
     hist_j = clusterseq.jets[jet_j]._cluster_hist_index
 
     add_step_to_history!(clusterseq, minmax(hist_i, hist_j)...,
-                         newjet_k, dij)
+        newjet_k, dij)
 
     newjet_k
 end
@@ -170,14 +174,14 @@ jet_i with the beam (i.e., finalising the jet)"""
 do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB) = begin
     # Recombine the jet with the beam
     add_step_to_history!(clusterseq, clusterseq.jets[jet_i]._cluster_hist_index, BeamJet,
-                         Invalid, diB)
+        Invalid, diB)
 end
 
 """Add a new jet's history into the recombination sequence"""
 add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, dij) = begin
     max_dij_so_far = max(dij, clusterseq.history[end].max_dij_so_far)
     push!(clusterseq.history, HistoryElement(parent1, parent2, Invalid,
-                                     jetp_index, dij, max_dij_so_far))
+        jetp_index, dij, max_dij_so_far))
 
     local_step = length(clusterseq.history)
 
@@ -196,7 +200,10 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
     clusterseq.history[parent1] = @set hist_elem.child = local_step
 
     if parent2 >= 1
-        clusterseq.history[parent2].child == Invalid || error("Internal error. Trying to recombine an object that has previsously been recombined.  Parent " * string(parent2) * "'s child index " * string(clusterseq.history[parent1].child) * ". Parent jet index: " * string(clusterseq.history[parent2].jetp_index) * ".")
+        clusterseq.history[parent2].child == Invalid || error(
+            "Internal error. Trying to recombine an object that has previsously been recombined.  Parent " * string(parent2) * "'s child index " * string(clusterseq.history[parent1].child) * ". Parent jet index: " *
+            string(clusterseq.history[parent2].jetp_index) * ".",
+        )
         hist_elem = clusterseq.history[parent2]
         clusterseq.history[parent2] = @set hist_elem.child = local_step
     end
@@ -215,8 +222,8 @@ you go along. When a neighbour is added its tagged status is set to true.
 
 Returns the updated number of near_tiles."""
 function add_untagged_neighbours_to_tile_union(center_index,
-                                                tile_union, n_near_tiles,
-                                                tiling)
+    tile_union, n_near_tiles,
+    tiling)
     for tile_index in surrounding(center_index, tiling)
         @inbounds if !tiling.tags[tile_index]
             n_near_tiles += 1
@@ -238,15 +245,15 @@ Updates tile_union and returns n_near_tiles
 """
 function find_tile_neighbours!(tile_union, jetA, jetB, oldB, tiling)
     n_near_tiles = add_untagged_neighbours_to_tile_union(jetA.tile_index,
-                                                            tile_union, 0, tiling)
+        tile_union, 0, tiling)
     if isvalid(jetB)
         if jetB.tile_index != jetA.tile_index
             n_near_tiles = add_untagged_neighbours_to_tile_union(jetB.tile_index,
-                                                                    tile_union, n_near_tiles, tiling)
+                tile_union, n_near_tiles, tiling)
         end
         if oldB.tile_index != jetA.tile_index && oldB.tile_index != jetB.tile_index
             n_near_tiles = add_untagged_neighbours_to_tile_union(oldB.tile_index,
-                                                                    tile_union, n_near_tiles, tiling)
+                tile_union, n_near_tiles, tiling)
         end
     end
     n_near_tiles
@@ -268,9 +275,9 @@ end
 
 
 """Return all inclusive jets of a ClusterSequence with pt > ptmin"""
-function inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.)
-    dcut = ptmin*ptmin
-    jets_local = Vector{PseudoJet}(undef, 0)
+function inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
+    dcut = ptmin * ptmin
+    jets_local = Vector{LorentzVectorCyl}(undef, 0)
     # sizehint!(jets_local, length(clusterseq.jets))
     # For inclusive jets with a plugin algorithm, we make no
     # assumptions about anything (relation of dij to momenta,
@@ -281,7 +288,8 @@ function inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.)
         iparent_jet = clusterseq.history[elt.parent1].jetp_index
         jet = clusterseq.jets[iparent_jet]
         if pt2(jet) >= dcut
-            push!(jets_local, jet)
+            push!(jets_local, LorentzVectorCyl(pt(jet), rap(jet), phi(jet), mass(jet)))
+            # push!(jets_local, jet)
         end
     end
     jets_local
@@ -290,23 +298,35 @@ end
 """
 Main jet reconstruction algorithm
 """
+function tiled_jet_reconstruct_ll(particles::Vector{LorentzVector}; p = -1, R = 1.0, recombine = +, ptmin = 0.0)
+    # Here we need to populate the vector of PseudoJets that are the internal
+    # EDM for the main algorithm, then we call the reconstruction
+    pseudojets = Vector{PseudoJet}(undef, length(particles))
+    for (i, particle) in enumerate(particles)
+        pseudojets[i] = PseudoJet(LorentzVectorHEP.px(particle), LorentzVectorHEP.py(particle),
+            LorentzVectorHEP.pz(particle), LorentzVectorHEP.energy(particle))
+    end
+    tiled_jet_reconstruct_ll(pseudojets, p = p, R = R, recombine = recombine, ptmin = ptmin)
+end
+
+
 function tiled_jet_reconstruct_ll(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +, ptmin = 0.0)
     # Bounds
-	N::Int = length(particles)
-	# @debug "Initial particles: $(N)"
+    N::Int = length(particles)
+    # @debug "Initial particles: $(N)"
 
-	# Algorithm parameters
-	R2::Float64 = R * R
-	p = (round(p) == p) ? Int(p) : p # integer p if possible
+    # Algorithm parameters
+    R2::Float64 = R * R
+    p = (round(p) == p) ? Int(p) : p # integer p if possible
 
     # This will be used quite deep inside loops, but declare it here so that
     # memory (de)allocation gets done only once
-    tile_union = Vector{Int}(undef, 3*_n_tile_neighbours)
+    tile_union = Vector{Int}(undef, 3 * _n_tile_neighbours)
 
     # Container for pseudojets, sized for all initial particles, plus all of the
     # merged jets that can be created during reconstruction
     jets = PseudoJet[]
-    sizehint!(jets, N*2)
+    sizehint!(jets, N * 2)
     resize!(jets, N)
 
     # Copy input data into the jets container
@@ -343,7 +363,7 @@ function tiled_jet_reconstruct_ll(particles::Vector{PseudoJet}; p = -1, R = 1.0,
     for iteration in 1:N
         # Last slot holds the index of the final valid entry in the
         # compact NNs and dij arrays
-        ilast = N - (iteration-1)
+        ilast = N - (iteration - 1)
         # Search for the lowest value of min_dij_ijet
         dij_min, ibest = find_lowest(dij, ilast)
         @inbounds jetA = NNs[ibest]
@@ -361,7 +381,7 @@ function tiled_jet_reconstruct_ll(particles::Vector{PseudoJet}; p = -1, R = 1.0,
             # the new jet that is added as jetB is inserted in a position that
             # has a future!
             if jetA.id < jetB.id
-                jetA, jetB = jetB, jetA;
+                jetA, jetB = jetB, jetA
             end
 
             # Recombine jetA and jetB and retrieves the new index, nn
@@ -371,7 +391,7 @@ function tiled_jet_reconstruct_ll(particles::Vector{PseudoJet}; p = -1, R = 1.0,
 
             tiledjet_remove_from_tiles!(clusterseq.tiling, jetB)
             tiledjet_set_jetinfo!(jetB, clusterseq, nn, R2) # cause jetB to become _jets[nn]
-            #                                  (in addition, registers the jet in the tiling)
+        #                                  (in addition, registers the jet in the tiling)
         else
             # Jet-beam recombination
             do_iB_recombination_step!(clusterseq, jetA.jets_index, dij_min)
@@ -392,7 +412,7 @@ function tiled_jet_reconstruct_ll(particles::Vector{PseudoJet}; p = -1, R = 1.0,
         # other particles.
         # Run over all tiles in our union
         for itile in 1:n_near_tiles
-            @inbounds tile = tiling.tiles[ @inbounds tile_union[itile]] #TAKES 5μs
+            @inbounds tile = tiling.tiles[@inbounds tile_union[itile]] #TAKES 5μs
             @inbounds tiling.tags[tile_union[itile]] = false # reset tag, since we're done with unions
 
             isvalid(tile) || continue #Probably not required
@@ -416,14 +436,14 @@ function tiled_jet_reconstruct_ll(particles::Vector{PseudoJet}; p = -1, R = 1.0,
                             end
                         end # next jetJ
                     end # next near_tile
-                    dij[jetI.dij_posn]  = _tj_diJ(jetI) # update diJ kt-dist
+                    dij[jetI.dij_posn] = _tj_diJ(jetI) # update diJ kt-dist
                 end #jetI.NN == jetA || (jetI.NN == jetB && !isnothing(jetB))
 
                 # check whether new jetB is closer than jetI's current NN and
                 # if jetI is closer than jetB's current (evolving) nearest
                 # neighbour. Where relevant update things.
                 if isvalid(jetB)
-                    dist = _tj_dist(jetI,jetB)
+                    dist = _tj_dist(jetI, jetB)
                     if dist < jetI.NN_dist
                         if jetI != jetB
                             jetI.NN_dist = dist
