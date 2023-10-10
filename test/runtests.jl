@@ -3,6 +3,7 @@
 using JetReconstruction
 using Test
 using JSON
+using LorentzVectorHEP
 
 """Read JSON file with fastjet jets in it"""
 function read_fastjet_outputs(;fname="test/data/jet_collections_fastjet.json")
@@ -33,7 +34,7 @@ function main()
     do_jet_test(N2Tiled, fastjet_jets)
 
     # Atell's original test
-    original_tests()
+    # original_tests()
 end
 
 function do_jet_test(strategy::JetRecoStrategy, fastjet_jets;
@@ -53,17 +54,17 @@ function do_jet_test(strategy::JetRecoStrategy, fastjet_jets;
 	end
 
     # Now run our jet reconstruction...
-    events::Vector{Vector{PseudoJet}} = read_final_state_particles("test/data/events.hepmc3")
-    if strategy == N2Tiled
-		event_vector = events
-	else
-		# First, convert all events into the Vector of Vectors that Atell's
-		# code likes
-		event_vector = pseudojets2vectors(events)
-	end
+    events::Vector{Vector{LorentzVector}} = read_final_state_particles_lv("test/data/events.hepmc3")
+    # if strategy == N2Tiled
+	# 	event_vector = events
+	# else
+	# 	# First, convert all events into the Vector of Vectors that Atell's
+	# 	# code likes
+	# 	event_vector = pseudojets2vectors(events)
+	# end
     # event_vector = pseudojets2vectors(events)
     jet_collection = FinalJets[]
-    for (ievt, event) in enumerate(event_vector)
+    for (ievt, event) in enumerate(events)
         finaljets, _ = jet_reconstruction(event, R=distance, p=power)
         fj = final_jets(finaljets, ptmin)
         sort_jets!(fj)

@@ -77,7 +77,7 @@ show(io::IO, jet::PseudoJet) = begin
 end
 
 
-set_momentum(j::PseudoJet, px, py, pz, E) = begin
+set_momentum!(j::PseudoJet, px, py, pz, E) = begin
     j.px = px
     j.py = py
     j.pz = pz
@@ -144,6 +144,11 @@ m(p::PseudoJet) = begin
     x = m2(p)
     x < 0. ? -sqrt(-x) : sqrt(x)
 end
+
+px(p::PseudoJet) = p.px
+py(p::PseudoJet) = p.py
+pz(p::PseudoJet) = p.pz
+mass(p::PseudoJet) = m(p)
 
 import Base.+;
 

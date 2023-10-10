@@ -2,14 +2,14 @@ Base.@propagate_inbounds function _dist(i, j, _eta, _phi)
     deta = _eta[i] - _eta[j]
     dphi = abs(_phi[i] - _phi[j])
     dphi = ifelse(dphi > pi, 2pi - dphi, dphi)
-    muladd(deta, deta, dphi*dphi)
+    muladd(deta, deta, dphi * dphi)
 end
 
 # d_{ij} distance with i's NN (times R^2)
 Base.@propagate_inbounds function _dij(i, _kt2, _nn, _nndist)
     j = _nn[i]
     d = _nndist[i]
-    d*min(_kt2[i], _kt2[j])
+    d * min(_kt2[i], _kt2[j])
 end
 
 # finds new nn for i and checks everyone additionally
@@ -28,8 +28,7 @@ Base.@propagate_inbounds function _upd_nn_crosscheck!(i::Int, from::Int, to::Int
         end
     end
     _nndist[i] = nndist
-    _nn[i] = nn;
-    #nothing
+    _nn[i] = nn
 end
 
 # finds new nn for i
@@ -50,15 +49,14 @@ Base.@propagate_inbounds function _upd_nn_nocross!(i::Int, from::Int, to::Int, _
         nndist = ifelse(f, Δ2, nndist)
     end
     _nndist[i] = nndist
-    _nn[i] = nn;
-    #nothing
+    _nn[i] = nn
 end
 
 # entire NN update step
 # Base.@propagate_inbounds function _upd_nn_step!(i::Int, j::Int, k::Int, N::Int, Nn::Int, 
 #     _kt2::Vector{Float64}, _eta::Vector{Float64}, _phi::Vector{Float64}, _R2::Float64, _nndist::Vector{Float64}, _nn::Vector{Int}, _nndij::Vector{Float64})
 Base.@propagate_inbounds function _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi, _R2, _nndist, _nn, _nndij)
-        nnk = _nn[k]
+    nnk = _nn[k]
     if nnk == i || nnk == j
         _upd_nn_nocross!(k, 1, N, _eta, _phi, _R2, _nndist, _nn) # update dist and nn
         _nndij[k] = _dij(k, _kt2, _nn, _nndist)
@@ -74,24 +72,23 @@ Base.@propagate_inbounds function _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi
         end
 
         cond = Δ2 < _nndist[i]
-        _nndist[i], _nn[i] = ifelse(cond, (Δ2,k), (_nndist[i],_nn[i]))
+        _nndist[i], _nn[i] = ifelse(cond, (Δ2, k), (_nndist[i], _nn[i]))
     end
 
-    nnk == Nn && (_nn[k] = j);
-    #nothing
+    nnk == Nn && (_nn[k] = j)
 end
 
 
-function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1.0, R=1., recombine=+) where T
+function sequential_jet_reconstruct(objects::AbstractArray{T}; p = -1.0, R = 1.0, recombine = +) where T
     # Bounds
     N::Int = length(objects)
 
     # Returned values
-    jets = T[] # result
+    jets = T[]
     sequences = Vector{Int}[] # recombination sequences, WARNING: first index in the sequence is not necessarily the seed
 
     # Parameters
-    _R2 = R*R
+    _R2 = R * R
     _p = (round(p) == p) ? Int(p) : p # integer p if possible
 
     # Data
@@ -99,14 +96,14 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1.0, R=1., rec
     ## When working with LorentzVectorHEP we make sure these arrays are type stable
     _kt2::Vector{Float64} = (LorentzVectorHEP.pt.(_objects) .^ 2) .^ _p
     _phi::Vector{Float64} = LorentzVectorHEP.phi.(_objects)
-    _eta::Vector{Float64} = LorentzVectorHEP.eta.(_objects)
+    _eta::Vector{Float64} = LorentzVectorHEP.rap.(_objects)
     _nn = Vector(1:N) # nearest neighbours
     _nndist = fill(float(_R2), N) # distances to the nearest neighbour
     _sequences = Vector{Int}[[x] for x in 1:N]
 
     # initialize _nn
     @simd for i in 1:N
-        _upd_nn_crosscheck!(i, 1, i-1, _eta, _phi, _R2, _nndist, _nn)
+        _upd_nn_crosscheck!(i, 1, i - 1, _eta, _phi, _R2, _nndist, _nn)
     end
 
     # diJ table *_R2
@@ -121,7 +118,7 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1.0, R=1., rec
         i = 1
         dij_min = _nndij[1]
         @inbounds @simd for k in 2:N
-            cond =  _nndij[k] < dij_min
+            cond = _nndij[k] < dij_min
             dij_min, i = ifelse(cond, (_nndij[k], k), (dij_min, i))
         end
 
@@ -141,7 +138,7 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1.0, R=1., rec
             # update ith jet, replacing it with the new one
             _objects[i] = recombine(_objects[i], _objects[j])
             _phi[i] = LorentzVectorHEP.phi(_objects[i])
-            _eta[i] = LorentzVectorHEP.eta(_objects[i])
+            _eta[i] = LorentzVectorHEP.rap(_objects[i])
             _kt2[i] = (LorentzVectorHEP.pt(_objects[i])^2)^_p
 
             _nndist[i] = _R2
@@ -151,6 +148,8 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p=-1.0, R=1., rec
                 push!(_sequences[i], x)
             end
         else # i == j
+            # push!(jets, LorentzVectorCyl(LorentzVectorHEP.pt(_objects[i]), LorentzVectorHEP.eta(_objects[i]),
+            #     LorentzVectorHEP.phi(_objects[i]), LorentzVectorHEP.mt(_objects[i])))
             push!(jets, _objects[i])
             push!(sequences, _sequences[i])
         end
@@ -192,8 +191,8 @@ Returns:
     `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
     `sequences` - a vector of vectors of indices in `objects`. For all `i`, `sequences[i]` gives a sequence of indices of objects that have been combined into the i-th jet (`jets[i]`).
 """
-function anti_kt_algo(objects; R=1., recombine=+)
-    sequential_jet_reconstruct(objects, p=-1, R=R, recombine=recombine)
+function anti_kt_algo(objects; R = 1.0, recombine = +)
+    sequential_jet_reconstruct(objects, p = -1, R = R, recombine = recombine)
 end
 
 """
@@ -205,8 +204,8 @@ Returns:
     `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
     `sequences` - a vector of vectors of indices in `objects`. For all `i`, `sequences[i]` gives a sequence of indices of objects that have been combined into the i-th jet (`jets[i]`).
 """
-function kt_algo(objects; R=1., recombine=+)
-    sequential_jet_reconstruct(objects, p=1, R=R, recombine=recombine)
+function kt_algo(objects; R = 1.0, recombine = +)
+    sequential_jet_reconstruct(objects, p = 1, R = R, recombine = recombine)
 end
 
 """
@@ -218,6 +217,6 @@ Returns:
     `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
     `sequences` - a vector of vectors of indices in `objects`. For all `i`, `sequences[i]` gives a sequence of indices of objects that have been combined into the i-th jet (`jets[i]`).
 """
-function cambridge_aachen_algo(objects; R=1., recombine=+)
-    sequential_jet_reconstruct(objects, p=0, R=R, recombine=recombine)
+function cambridge_aachen_algo(objects; R = 1.0, recombine = +)
+    sequential_jet_reconstruct(objects, p = 0, R = R, recombine = recombine)
 end
