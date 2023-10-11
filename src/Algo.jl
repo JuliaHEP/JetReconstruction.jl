@@ -94,7 +94,7 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p = -1.0, R = 1.0
     # Data
     _objects = copy(objects)
     ## When working with LorentzVectorHEP we make sure these arrays are type stable
-    _kt2::Vector{Float64} = (LorentzVectorHEP.pt.(_objects) .^ 2) .^ _p
+    _kt2::Vector{Float64} = LorentzVectorHEP.pt2.(_objects) .^ _p
     _phi::Vector{Float64} = LorentzVectorHEP.phi.(_objects)
     _eta::Vector{Float64} = LorentzVectorHEP.rap.(_objects)
     _nn = Vector(1:N) # nearest neighbours
@@ -139,7 +139,7 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p = -1.0, R = 1.0
             _objects[i] = recombine(_objects[i], _objects[j])
             _phi[i] = LorentzVectorHEP.phi(_objects[i])
             _eta[i] = LorentzVectorHEP.rap(_objects[i])
-            _kt2[i] = (LorentzVectorHEP.pt(_objects[i])^2)^_p
+            _kt2[i] = LorentzVectorHEP.pt2(_objects[i])^_p
 
             _nndist[i] = _R2
             _nn[i] = i

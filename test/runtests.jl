@@ -83,8 +83,10 @@ function do_jet_test(strategy::JetRecoStrategy, fastjet_jets;
                         # tolerance into the isapprox() function
                         # Use atol for position as this is absolute, but rtol for
                         # the momentum
+                        # Sometimes phi could be in the range [-π, π], but FastJet always is [0, 2π]
+                        normalised_phi = jet.phi < 0.0 ? jet.phi + 2π : jet.phi
                         @test jet.rap ≈ fastjet_jets[ievt]["jets"][ijet]["rap"] atol=1e-7
-                        @test jet.phi ≈ fastjet_jets[ievt]["jets"][ijet]["phi"] atol=1e-7
+                        @test normalised_phi ≈ fastjet_jets[ievt]["jets"][ijet]["phi"] atol=1e-7
                         @test jet.pt ≈ fastjet_jets[ievt]["jets"][ijet]["pt"] rtol=1e-6
                     end
                 end
