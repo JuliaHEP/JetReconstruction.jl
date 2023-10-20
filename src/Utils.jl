@@ -108,7 +108,7 @@ function final_jets(jets::Vector{LorentzVector}, ptmin::AbstractFloat)
 	for jet in jets
 		if LorentzVectorHEP.pt(jet)^2 > dcut
 			count += 1
-			push!(final_jets, FinalJet(LorentzVectorHEP.rap(jet), LorentzVectorHEP.phi(jet), LorentzVectorHEP.pt(jet)))
+			push!(final_jets, FinalJet(LorentzVectorHEP.rapidity(jet), LorentzVectorHEP.phi(jet), LorentzVectorHEP.pt(jet)))
 		end
 	end
 	final_jets
