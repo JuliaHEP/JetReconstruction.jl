@@ -1,128 +1,143 @@
-Base.@propagate_inbounds function _dist(i, j, _eta, _phi)
-    deta = _eta[i] - _eta[j]
-    dphi = abs(_phi[i] - _phi[j])
+Base.@propagate_inbounds function dist(i, j, rapidity_array, phi_array)
+    drapidity = rapidity_array[i] - rapidity_array[j]
+    dphi = abs(phi_array[i] - phi_array[j])
     dphi = ifelse(dphi > pi, 2pi - dphi, dphi)
-    muladd(deta, deta, dphi * dphi)
+    muladd(drapidity, drapidity, dphi * dphi)
 end
 
 # d_{ij} distance with i's NN (times R^2)
-Base.@propagate_inbounds function _dij(i, _kt2, _nn, _nndist)
-    j = _nn[i]
-    d = _nndist[i]
-    d * min(_kt2[i], _kt2[j])
+Base.@propagate_inbounds function dij(i, kt2_array, nn, nndist)
+    j = nn[i]
+    d = nndist[i]
+    d * min(kt2_array[i], kt2_array[j])
 end
 
 # finds new nn for i and checks everyone additionally
-Base.@propagate_inbounds function _upd_nn_crosscheck!(i::Int, from::Int, to::Int, _eta, _phi, _R2, _nndist, _nn)
-    nndist = _R2
-    nn = i
+Base.@propagate_inbounds function upd_nn_crosscheck!(i::Int, from::Int, to::Int, rapidity_array, phi_array, R2, nndist, nn)
+    nndist_min = R2
+    nn_min = i
     @inbounds @simd for j in from:to
-        Δ2 = _dist(i, j, _eta, _phi)
-        if Δ2 < nndist
-            nn = j
-            nndist = Δ2
+        Δ2 = dist(i, j, rapidity_array, phi_array)
+        if Δ2 < nndist_min
+            nn_min = j
+            nndist_min = Δ2
         end
-        if Δ2 < _nndist[j]
-            _nndist[j] = Δ2
-            _nn[j] = i
+        if Δ2 < nndist[j]
+            nndist[j] = Δ2
+            nn[j] = i
         end
     end
-    _nndist[i] = nndist
-    _nn[i] = nn
+    nndist[i] = nndist_min
+    nn[i] = nn_min
 end
 
 # finds new nn for i
-Base.@propagate_inbounds function _upd_nn_nocross!(i::Int, from::Int, to::Int, _eta, _phi, _R2, _nndist, _nn)
-    nndist = _R2
-    nn = i
+Base.@propagate_inbounds function upd_nn_nocross!(i::Int, from::Int, to::Int, rapidity_array, phi_array, R2, nndist, nn)
+    nndist_min = R2
+    nn_min = i
     @inbounds @simd for j in from:(i-1)
-        Δ2 = _dist(i, j, _eta, _phi)
-        if Δ2 <= nndist
-            nn = j
-            nndist = Δ2
+        Δ2 = dist(i, j, rapidity_array, phi_array)
+        if Δ2 <= nndist_min
+            nn_min = j
+            nndist_min = Δ2
         end
     end
     @inbounds @simd for j in (i+1):to
-        Δ2 = _dist(i, j, _eta, _phi)
-        f = Δ2 <= nndist
-        nn = ifelse(f, j, nn)
-        nndist = ifelse(f, Δ2, nndist)
+        Δ2 = dist(i, j, rapidity_array, phi_array)
+        f = Δ2 <= nndist_min
+        nn_min = ifelse(f, j, nn_min)
+        nndist_min = ifelse(f, Δ2, nndist_min)
     end
-    _nndist[i] = nndist
-    _nn[i] = nn
+    nndist[i] = nndist_min
+    nn[i] = nn_min
 end
 
 # entire NN update step
-# Base.@propagate_inbounds function _upd_nn_step!(i::Int, j::Int, k::Int, N::Int, Nn::Int, 
-#     _kt2::Vector{Float64}, _eta::Vector{Float64}, _phi::Vector{Float64}, _R2::Float64, _nndist::Vector{Float64}, _nn::Vector{Int}, _nndij::Vector{Float64})
-Base.@propagate_inbounds function _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi, _R2, _nndist, _nn, _nndij)
-    nnk = _nn[k]
+Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array, phi_array, R2, nndist, nn, nndij)
+    nnk = nn[k]
     if nnk == i || nnk == j
-        _upd_nn_nocross!(k, 1, N, _eta, _phi, _R2, _nndist, _nn) # update dist and nn
-        _nndij[k] = _dij(k, _kt2, _nn, _nndist)
-        nnk = _nn[k]
+        upd_nn_nocross!(k, 1, N, rapidity_array, phi_array, R2, nndist, nn) # update dist and nn
+        nndij[k] = dij(k, kt2_array, nn, nndist)
+        nnk = nn[k]
     end
 
     if j != i && k != i
-        Δ2 = _dist(i, k, _eta, _phi)
-        if Δ2 < _nndist[k]
-            _nndist[k] = Δ2
-            nnk = _nn[k] = i
-            _nndij[k] = _dij(k, _kt2, _nn, _nndist)
+        Δ2 = dist(i, k, rapidity_array, phi_array)
+        if Δ2 < nndist[k]
+            nndist[k] = Δ2
+            nnk = nn[k] = i
+            nndij[k] = dij(k, kt2_array, nn, nndist)
         end
 
-        cond = Δ2 < _nndist[i]
-        _nndist[i], _nn[i] = ifelse(cond, (Δ2, k), (_nndist[i], _nn[i]))
+        cond = Δ2 < nndist[i]
+        nndist[i], nn[i] = ifelse(cond, (Δ2, k), (nndist[i], nn[i]))
     end
 
-    nnk == Nn && (_nn[k] = j)
+    nnk == Nn && (nn[k] = j)
+end
+
+"""
+This is the N2Plain jet reconstruction algorithm interface, called with an arbitrary array
+of objects, which supports the methods pt2(), phi(), rapidity() for each element.
+"""
+function sequential_jet_reconstruct(objects::AbstractArray{T}; p = -1, R = 1.0, recombine = +) where T
+    # Integer p if possible
+    p = (round(p) == p) ? Int(p) : p 
+
+    # We make sure these arrays are type stable - have seen issues where, depending on the values
+    # returned by the methods, they can become unstable and performance degrades
+    kt2_array::Vector{Float64} = pt2.(objects) .^ p
+    phi_array::Vector{Float64} = phi.(objects)
+    rapidity_array::Vector{Float64} = rapidity.(objects)
+
+    objects_array = copy(objects)
+
+    # Now call the actual reconstruction method, tuned for our internal EDM
+    sequential_jet_reconstruct(objects_array=objects_array, kt2_array=kt2_array, phi_array=phi_array, 
+        rapidity_array=rapidity_array, p=p, R=R, recombine=recombine)
 end
 
 
-function sequential_jet_reconstruct(objects::AbstractArray{T}; p = -1.0, R = 1.0, recombine = +) where T
+
+function sequential_jet_reconstruct(;objects_array::AbstractArray{J}, kt2_array::Vector{F}, 
+        phi_array::Vector{F}, rapidity_array::Vector{F}, p = -1, R = 1.0, recombine = +) where {J, F<:AbstractFloat}
     # Bounds
-    N::Int = length(objects)
+    N::Int = length(objects_array)
 
     # Returned values
-    jets = T[]
+    jets = J[]
     sequences = Vector{Int}[] # recombination sequences, WARNING: first index in the sequence is not necessarily the seed
 
     # Parameters
-    _R2 = R * R
-    _p = (round(p) == p) ? Int(p) : p # integer p if possible
+    R2 = R * R
 
     # Data
-    _objects = copy(objects)
-    ## When working with LorentzVectorHEP we make sure these arrays are type stable
-    _kt2::Vector{Float64} = LorentzVectorHEP.pt2.(_objects) .^ _p
-    _phi::Vector{Float64} = LorentzVectorHEP.phi.(_objects)
-    _eta::Vector{Float64} = LorentzVectorHEP.rapidity.(_objects)
-    _nn = Vector(1:N) # nearest neighbours
-    _nndist = fill(float(_R2), N) # distances to the nearest neighbour
-    _sequences = Vector{Int}[[x] for x in 1:N]
+    nn = Vector(1:N) # nearest neighbours
+    nndist = fill(float(R2), N) # distances to the nearest neighbour
+    sequences = Vector{Int}[[x] for x in 1:N]
 
     # initialize _nn
     @simd for i in 1:N
-        _upd_nn_crosscheck!(i, 1, i - 1, _eta, _phi, _R2, _nndist, _nn)
+        upd_nn_crosscheck!(i, 1, i - 1, rapidity_array, phi_array, R2, nndist, nn)
     end
 
     # diJ table *_R2
-    _nndij::Vector{Float64} = zeros(N)
+    nndij::Vector{Float64} = zeros(N)
     @inbounds @simd for i in 1:N
-        _nndij[i] = _dij(i, _kt2, _nn, _nndist)
+        nndij[i] = dij(i, kt2_array, nn, nndist)
     end
 
     iteration::Int = 1
     while N != 0
         # findmin
         i = 1
-        dij_min = _nndij[1]
+        dij_min = nndij[1]
         @inbounds @simd for k in 2:N
-            cond = _nndij[k] < dij_min
-            dij_min, i = ifelse(cond, (_nndij[k], k), (dij_min, i))
+            cond = nndij[k] < dij_min
+            dij_min, i = ifelse(cond, (nndij[k], k), (dij_min, i))
         end
 
-        j::Int = _nn[i]
+        j::Int = nn[i]
 
         ## Needed for certain tricky debugging situations
         # if iteration==1
@@ -136,35 +151,33 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p = -1.0, R = 1.0
             end
 
             # update ith jet, replacing it with the new one
-            _objects[i] = recombine(_objects[i], _objects[j])
-            _phi[i] = LorentzVectorHEP.phi(_objects[i])
-            _eta[i] = LorentzVectorHEP.rapidity(_objects[i])
-            _kt2[i] = LorentzVectorHEP.pt2(_objects[i])^_p
+            objects_array[i] = recombine(objects_array[i], objects_array[j])
+            phi_array[i] = LorentzVectorHEP.phi(objects_array[i])
+            rapidity_array[i] = LorentzVectorHEP.rapidity(objects_array[i])
+            kt2_array[i] = LorentzVectorHEP.pt2(objects_array[i]) ^ p
 
-            _nndist[i] = _R2
-            _nn[i] = i
+            nndist[i] = R2
+            nn[i] = i
 
-            @inbounds for x in _sequences[j] # WARNING: first index in the sequence is not necessarily the seed
-                push!(_sequences[i], x)
+            @inbounds for x in sequences[j] # WARNING: first index in the sequence is not necessarily the seed
+                push!(sequences[i], x)
             end
         else # i == j
-            # push!(jets, LorentzVectorCyl(LorentzVectorHEP.pt(_objects[i]), LorentzVectorHEP.eta(_objects[i]),
-            #     LorentzVectorHEP.phi(_objects[i]), LorentzVectorHEP.mt(_objects[i])))
-            push!(jets, _objects[i])
-            push!(sequences, _sequences[i])
+            push!(jets, objects_array[i])
+            push!(sequences, sequences[i])
         end
 
         # copy jet N to j
-        _objects[j] = _objects[N]
+        objects_array[j] = objects_array[N]
 
-        _phi[j] = _phi[N]
-        _eta[j] = _eta[N]
-        _kt2[j] = _kt2[N]
-        _nndist[j] = _nndist[N]
-        _nn[j] = _nn[N]
-        _nndij[j] = _nndij[N]
+        phi_array[j] = phi_array[N]
+        rapidity_array[j] = rapidity_array[N]
+        kt2_array[j] = kt2_array[N]
+        nndist[j] = nndist[N]
+        nn[j] = nn[N]
+        nndij[j] = nndij[N]
 
-        _sequences[j] = _sequences[N]
+        sequences[j] = sequences[N]
 
         Nn::Int = N
         N -= 1
@@ -172,11 +185,11 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p = -1.0, R = 1.0
 
         # update nearest neighbours step
         @inbounds @simd for k in 1:N
-            _upd_nn_step!(i, j, k, N, Nn, _kt2, _eta, _phi, _R2, _nndist, _nn, _nndij)
+            upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array, phi_array, R2, nndist, nn, nndij)
         end
         # @infiltrate
 
-        _nndij[i] = _dij(i, _kt2, _nn, _nndist)
+        nndij[i] = dij(i, kt2_array, nn, nndist)
     end
 
     jets, sequences
