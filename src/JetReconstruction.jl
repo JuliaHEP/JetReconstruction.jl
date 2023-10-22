@@ -5,14 +5,18 @@ module JetReconstruction
 
 using LorentzVectorHEP
 
-# particle type definition
-# include("Particle.jl")
-# export energy, px, py, pz, pt, phi, mass, eta, kt, ϕ, η
+# Import from LorentzVectorHEP methods for those 4-vector types
+pt2(p::LorentzVector) = LorentzVectorHEP.pt2(p)
+phi(p::LorentzVector) = LorentzVectorHEP.phi(p)
+rapidity(p::LorentzVector) = LorentzVectorHEP.rapidity(p)
+
+pt2(p::LorentzVectorCyl) = LorentzVectorHEP.pt2(p)
+phi(p::LorentzVectorCyl) = LorentzVectorHEP.phi(p)
+rapidity(p::LorentzVectorCyl) = LorentzVectorHEP.rapidity(p)
 
 # Philipp's pseudojet
 include("Pseudojet.jl")
-## As this is an internal EDM class, we perhaps shouldn't export this stuff...
-# export PseudoJet, rap, phi, pt, pt2, px, py, pz, pt, phi, mass, eta
+## As this is an internal EDM class, we don't export anything
 
 # Simple HepMC3 reader
 include("HepMC3.jl")
