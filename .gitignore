@@ -2,7 +2,6 @@
 /jetsavetest*.dat
 /demo.jl
 .vscode
-*.json
 /notebooks/*
 /statprof/*
 /debug/*
