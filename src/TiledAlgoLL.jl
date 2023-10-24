@@ -295,8 +295,11 @@ function inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
     jets_local
 end
 
+
 """
-Main jet reconstruction algorithm
+Main jet reconstruction algorithm entry point
+
+This function will construct the internal EDM of PseudoJets from LorentzVectors
 """
 function tiled_jet_reconstruct_ll(particles::Vector{LorentzVector}; p = -1, R = 1.0, recombine = +, ptmin = 0.0)
     # Here we need to populate the vector of PseudoJets that are the internal
@@ -309,7 +312,9 @@ function tiled_jet_reconstruct_ll(particles::Vector{LorentzVector}; p = -1, R = 
     tiled_jet_reconstruct_ll(pseudojets, p = p, R = R, recombine = recombine, ptmin = ptmin)
 end
 
-
+"""
+Main jet reconstruction algorithm, using PseudoJets
+"""
 function tiled_jet_reconstruct_ll(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +, ptmin = 0.0)
     # Bounds
     N::Int = length(particles)
