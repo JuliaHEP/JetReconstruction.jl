@@ -9,10 +9,18 @@ using LorentzVectorHEP
 pt2(p::LorentzVector) = LorentzVectorHEP.pt2(p)
 phi(p::LorentzVector) = LorentzVectorHEP.phi(p)
 rapidity(p::LorentzVector) = LorentzVectorHEP.rapidity(p)
+px(p::LorentzVector) = LorentzVectorHEP.px(p)
+py(p::LorentzVector) = LorentzVectorHEP.py(p)
+pz(p::LorentzVector) = LorentzVectorHEP.pz(p)
+energy(p::LorentzVector) = LorentzVectorHEP.energy(p)
 
 pt2(p::LorentzVectorCyl) = LorentzVectorHEP.pt2(p)
 phi(p::LorentzVectorCyl) = LorentzVectorHEP.phi(p)
 rapidity(p::LorentzVectorCyl) = LorentzVectorHEP.rapidity(p)
+px(p::LorentzVectorCyl) = LorentzVectorHEP.px(p)
+py(p::LorentzVectorCyl) = LorentzVectorHEP.py(p)
+pz(p::LorentzVectorCyl) = LorentzVectorHEP.pz(p)
+energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 
 # Philipp's pseudojet
 include("Pseudojet.jl")
