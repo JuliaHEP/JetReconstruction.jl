@@ -152,9 +152,9 @@ function sequential_jet_reconstruct(;objects_array::AbstractArray{J}, kt2_array:
 
             # update ith jet, replacing it with the new one
             objects_array[i] = recombine(objects_array[i], objects_array[j])
-            phi_array[i] = LorentzVectorHEP.phi(objects_array[i])
-            rapidity_array[i] = LorentzVectorHEP.rapidity(objects_array[i])
-            kt2_array[i] = LorentzVectorHEP.pt2(objects_array[i]) ^ p
+            phi_array[i] = phi(objects_array[i])
+            rapidity_array[i] = rapidity(objects_array[i])
+            kt2_array[i] = pt2(objects_array[i]) ^ p
 
             nndist[i] = R2
             nn[i] = i
