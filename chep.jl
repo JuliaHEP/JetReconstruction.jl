@@ -78,14 +78,20 @@ function jet_process(
 		throw(ErrorException("Strategy not yet implemented"))
 	end
 
-	# Change of tactic - we adapt all interfaces to swallow LorentzVectors directly
-	# The N2Tiled algorithm uses PseudoJets so pass these directly
-	# if strategy == N2Tiled
-	# 	event_vector = events
-	# else
-	# 	# The other algorithms swallow 4-vectors instead
-	# 	event_vector = pseudojets2vectors(events)
-	# end
+	# Build internal EDM structures for timing measurements
+	if strategy == N2Tiled
+		event_vector = Vector{Vector{JetReconstruction.PseudoJet}}(undef, 0)
+		for event in events
+			pseudojet_event = Vector{JetReconstruction.PseudoJet}(undef, length(event))
+			for (i, particle) in enumerate(event)
+				pseudojet_event[i] = JetReconstruction.PseudoJet(LorentzVectorHEP.px(particle), LorentzVectorHEP.py(particle),
+					LorentzVectorHEP.pz(particle), LorentzVectorHEP.energy(particle))
+			end
+			push!(event_vector, pseudojet_event)
+		end
+	elseif strategy == N2Plain
+		event_vector = events
+	end
 
 	# If we are dumping the results, setup the JSON structure
 	if !isnothing(dump)
@@ -95,20 +101,20 @@ function jet_process(
 	# Warmup code if we are doing a multi-sample timing run
 	if nsamples > 1 || profile
 		@info "Doing initial warm-up run"
-		for event in events
+		for event in event_vector
 			finaljets, _ = jet_reconstruction(event, R = distance, p = power)
 			final_jets(finaljets, ptmin)
 		end
 	end
 
 	if profile
-		profile_code(jet_reconstruction, events, nsamples)
+		profile_code(jet_reconstruction, event_vector, nsamples)
 		return nothing
 	end
 
     if alloc
         println("Memory allocation statistics:")
-        @timev for event in events
+        @timev for event in event_vector
             finaljets, _ = jet_reconstruction(event, R = distance, p = power)
 			final_jets(finaljets, ptmin)
         end
@@ -123,7 +129,7 @@ function jet_process(
 	for irun ∈ 1:nsamples
 		gcoff && GC.enable(false)
 		t_start = time_ns()
-		for (ievt, event) in enumerate(events)
+		for (ievt, event) in enumerate(event_vector)
 			finaljets, _ = jet_reconstruction(event, R = distance, p = power)
 			fj = final_jets(finaljets, ptmin)
 			# Only print the jet content once
