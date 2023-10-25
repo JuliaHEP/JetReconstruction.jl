@@ -80,7 +80,7 @@ end
 This is the N2Plain jet reconstruction algorithm interface, called with an arbitrary array
 of objects, which supports the methods pt2(), phi(), rapidity() for each element.
 """
-function sequential_jet_reconstruct(objects::AbstractArray{T}; p = -1, R = 1.0, recombine = +) where T
+function sequential_jet_reconstruct(objects::AbstractArray{T}; p = -1, R = 1.0, recombine = +, ptmin = 0.0) where T
     # Integer p if possible
     p = (round(p) == p) ? Int(p) : p 
 
@@ -94,13 +94,13 @@ function sequential_jet_reconstruct(objects::AbstractArray{T}; p = -1, R = 1.0, 
 
     # Now call the actual reconstruction method, tuned for our internal EDM
     sequential_jet_reconstruct(objects_array=objects_array, kt2_array=kt2_array, phi_array=phi_array, 
-        rapidity_array=rapidity_array, p=p, R=R, recombine=recombine)
+        rapidity_array=rapidity_array, p=p, R=R, recombine=recombine, ptmin=ptmin)
 end
 
 
 
 function sequential_jet_reconstruct(;objects_array::AbstractArray{J}, kt2_array::Vector{F}, 
-        phi_array::Vector{F}, rapidity_array::Vector{F}, p = -1, R = 1.0, recombine = +) where {J, F<:AbstractFloat}
+        phi_array::Vector{F}, rapidity_array::Vector{F}, p = -1, R = 1.0, recombine = +, ptmin = 0.0) where {J, F<:AbstractFloat}
     # Bounds
     N::Int = length(objects_array)
 
@@ -109,7 +109,8 @@ function sequential_jet_reconstruct(;objects_array::AbstractArray{J}, kt2_array:
     sequences = Vector{Int}[] # recombination sequences, WARNING: first index in the sequence is not necessarily the seed
 
     # Parameters
-    R2 = R * R
+    R2 = R^2
+    ptmin2 = ptmin^2
 
     # Data
     nn = Vector(1:N) # nearest neighbours
@@ -163,7 +164,9 @@ function sequential_jet_reconstruct(;objects_array::AbstractArray{J}, kt2_array:
                 push!(sequences[i], x)
             end
         else # i == j
-            push!(jets, objects_array[i])
+            if (pt2(objects_array[i]) >= ptmin2)
+                push!(jets, objects_array[i])
+            end
             push!(sequences, sequences[i])
         end
 

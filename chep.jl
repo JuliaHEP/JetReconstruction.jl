@@ -122,7 +122,7 @@ function jet_process(
 		gcoff && GC.enable(false)
 		t_start = time_ns()
 		for (ievt, event) in enumerate(event_vector)
-			finaljets, _ = jet_reconstruction(event, R = distance, p = power)
+			finaljets, _ = jet_reconstruction(event, R = distance, p = power, ptmin=ptmin)
 			fj = final_jets(finaljets, ptmin)
 			# Only print the jet content once
 			if irun == 1
