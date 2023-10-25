@@ -125,7 +125,7 @@ phi_02pi(p::PseudoJet) = begin
     return p._phi
 end
 
-rap(p::PseudoJet) = begin
+rapidity(p::PseudoJet) = begin
     _ensure_valid_rap_phi(p)
     return p._rap
 end
