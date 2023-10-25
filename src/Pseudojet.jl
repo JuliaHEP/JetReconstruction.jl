@@ -148,7 +148,7 @@ px(p::PseudoJet) = p.px
 py(p::PseudoJet) = p.py
 pz(p::PseudoJet) = p.pz
 mass(p::PseudoJet) = m(p)
-mass2 = m2
+const mass2 = m2
 energy(p::PseudoJet) = p.E
 
 import Base.+;
