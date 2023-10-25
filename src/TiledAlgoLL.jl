@@ -306,7 +306,7 @@ be used.
 If a non-standard recombination is used, it must be defined for
 JetReconstruction.PseudoJet, as this struct is used internally.
 """
-function tiled_jet_reconstruct_ll(particles::Vector{T}; p = -1, R = 1.0, recombine = +, ptmin = 0.0) where {T}
+function tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, ptmin = 0.0) where {T}
     # Here we need to populate the vector of PseudoJets that are the internal
     # EDM for the main algorithm, then we call the reconstruction
     pseudojets = Vector{PseudoJet}(undef, length(particles))
@@ -314,13 +314,13 @@ function tiled_jet_reconstruct_ll(particles::Vector{T}; p = -1, R = 1.0, recombi
         pseudojets[i] = PseudoJet(px(particle), py(particle),
             pz(particle), energy(particle))
     end
-    tiled_jet_reconstruct_ll(pseudojets, p = p, R = R, recombine = recombine, ptmin = ptmin)
+    tiled_jet_reconstruct(pseudojets, p = p, R = R, recombine = recombine, ptmin = ptmin)
 end
 
 """
 Main jet reconstruction algorithm, using PseudoJet objects
 """
-function tiled_jet_reconstruct_ll(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +, ptmin = 0.0)
+function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +, ptmin = 0.0)
     # Bounds
     N::Int = length(particles)
     # @debug "Initial particles: $(N)"

@@ -41,10 +41,10 @@ function do_jet_test(strategy::JetRecoStrategy, fastjet_jets;
 
 	# Strategy
 	if (strategy == N2Plain)
-		jet_reconstruction = sequential_jet_reconstruct
+		jet_reconstruction = plain_jet_reconstruct
         strategy_name = "N2Plain"
     elseif (strategy == N2Tiled)
-		jet_reconstruction = tiled_jet_reconstruct_ll
+		jet_reconstruction = tiled_jet_reconstruct
         strategy_name = "N2Tiled"
 	else
 		throw(ErrorException("Strategy not yet implemented"))
