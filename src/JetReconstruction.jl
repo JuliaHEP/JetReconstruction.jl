@@ -25,16 +25,14 @@ energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 # Philipp's pseudojet
 include("Pseudojet.jl")
 export PseudoJet
-## As this is an internal EDM class, we don't export anything
 
 # Simple HepMC3 reader
 include("HepMC3.jl")
-export HepMC3
 
 ## N2Plain algorithm
 # Algorithmic part for simple sequential implementation
-include("Algo.jl")
-export sequential_jet_reconstruct, kt_algo, anti_kt_algo, anti_kt_algo_alt, cambridge_aachen_algo
+include("PlainAlgo.jl")
+export plain_jet_reconstruct
 
 ## Tiled algorithms
 # Common pieces
@@ -42,7 +40,7 @@ include("TiledAlgoUtils.jl")
 
 # Algorithmic part, tiled reconstruction strategy with linked list jet objects
 include("TiledAlgoLL.jl")
-export tiled_jet_reconstruct_ll
+export tiled_jet_reconstruct
 
 # jet serialisation (saving to file)
 include("Serialize.jl")

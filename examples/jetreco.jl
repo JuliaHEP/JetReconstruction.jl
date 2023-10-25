@@ -71,9 +71,9 @@ function jet_process(
 
 	# Strategy
 	if (strategy == N2Plain)
-		jet_reconstruction = sequential_jet_reconstruct
+		jet_reconstruction = plain_jet_reconstruct
 	elseif (strategy == N2Tiled || stragegy == Best)
-		jet_reconstruction = tiled_jet_reconstruct_ll
+		jet_reconstruction = tiled_jet_reconstruct
 	else
 		throw(ErrorException("Strategy not yet implemented"))
 	end
@@ -270,8 +270,6 @@ main() = begin
 	global_logger(logger)
 	events::Vector{Vector{PseudoJet}} =
 		read_final_state_particles(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
-	# events::Vector{Vector{LorentzVector}} =
-	# 	read_final_state_particles_lv(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
 	jet_process(events, ptmin = args[:ptmin], distance = args[:distance], 
         power = args[:power], strategy = args[:strategy],
 		nsamples = args[:nsamples], gcoff = args[:gcoff], profile = args[:profile],

@@ -78,28 +78,34 @@ end
 
 """
 This is the N2Plain jet reconstruction algorithm interface, called with an arbitrary array
-of objects, which supports the methods pt2(), phi(), rapidity() for each element.
+of particles, which supports suitable 4-vector methods, viz.
+ - pt2(), phi(), rapidity(), px(), py(), pz(), energy()
+for each element.
+
+Examples of suitable types are JetReconstruction.PseudoJet and LorentzVectorHEP.
+N.B. these methods need to exist in the namespace of this package, i.e. JetReconstruction.pt2(::T),
+which is already done for the two types above.
 """
-function sequential_jet_reconstruct(objects::AbstractArray{T}; p = -1, R = 1.0, recombine = +, ptmin = 0.0) where T
+function plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, ptmin = 0.0) where T
     # Integer p if possible
     p = (round(p) == p) ? Int(p) : p 
 
     # We make sure these arrays are type stable - have seen issues where, depending on the values
     # returned by the methods, they can become unstable and performance degrades
-    kt2_array::Vector{Float64} = pt2.(objects) .^ p
-    phi_array::Vector{Float64} = phi.(objects)
-    rapidity_array::Vector{Float64} = rapidity.(objects)
+    kt2_array::Vector{Float64} = pt2.(particles) .^ p
+    phi_array::Vector{Float64} = phi.(particles)
+    rapidity_array::Vector{Float64} = rapidity.(particles)
 
-    objects_array = copy(objects)
+    objects_array = copy(particles)
 
     # Now call the actual reconstruction method, tuned for our internal EDM
-    sequential_jet_reconstruct(objects_array=objects_array, kt2_array=kt2_array, phi_array=phi_array, 
+    plain_jet_reconstruct(objects_array=objects_array, kt2_array=kt2_array, phi_array=phi_array, 
         rapidity_array=rapidity_array, p=p, R=R, recombine=recombine, ptmin=ptmin)
 end
 
 
 
-function sequential_jet_reconstruct(;objects_array::AbstractArray{J}, kt2_array::Vector{F}, 
+function plain_jet_reconstruct(;objects_array::Vector{J}, kt2_array::Vector{F}, 
         phi_array::Vector{F}, rapidity_array::Vector{F}, p = -1, R = 1.0, recombine = +, ptmin = 0.0) where {J, F<:AbstractFloat}
     # Bounds
     N::Int = length(objects_array)
@@ -201,43 +207,4 @@ function sequential_jet_reconstruct(;objects_array::AbstractArray{J}, kt2_array:
     end
 
     jets, sequences
-end
-
-"""
-`anti_kt_algo(objects; R=1, recombine=(x, y)->(x + y)) -> Vector, Vector{Vector{Int}}`
-
-Runs the anti-kt jet reconstruction algorithm. `objects` can be any collection of *unique* elements.
-
-Returns:
-    `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
-    `sequences` - a vector of vectors of indices in `objects`. For all `i`, `sequences[i]` gives a sequence of indices of objects that have been combined into the i-th jet (`jets[i]`).
-"""
-function anti_kt_algo(objects; R = 1.0, recombine = +)
-    sequential_jet_reconstruct(objects, p = -1, R = R, recombine = recombine)
-end
-
-"""
-`kt_algo(objects; R=1, recombine=(x, y)->(x + y)) -> Vector, Vector{Vector{Int}}`
-
-Runs the kt jet reconstruction algorithm. `objects` can be any collection of *unique* elements.
-
-Returns:
-    `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
-    `sequences` - a vector of vectors of indices in `objects`. For all `i`, `sequences[i]` gives a sequence of indices of objects that have been combined into the i-th jet (`jets[i]`).
-"""
-function kt_algo(objects; R = 1.0, recombine = +)
-    sequential_jet_reconstruct(objects, p = 1, R = R, recombine = recombine)
-end
-
-"""
-`cambridge_aachen_algo(objects; R=1, recombine=(x, y)->(x + y)) -> Vector, Vector{Vector{Int}}`
-
-Runs the Cambridge/Aachen jet reconstruction algorithm. `objects` can be any collection of *unique* elements.
-
-Returns:
-    `jets` - a vector of jets. Each jet is of the same type as elements in `objects`.
-    `sequences` - a vector of vectors of indices in `objects`. For all `i`, `sequences[i]` gives a sequence of indices of objects that have been combined into the i-th jet (`jets[i]`).
-"""
-function cambridge_aachen_algo(objects; R = 1.0, recombine = +)
-    sequential_jet_reconstruct(objects, p = 0, R = R, recombine = recombine)
 end
