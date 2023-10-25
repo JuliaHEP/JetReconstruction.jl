@@ -147,10 +147,10 @@ end
 """Carries out the bookkeeping associated with the step of recombining
 jet_i and jet_j (assuming a distance dij) and returns the index
 of the recombined jet, newjet_k."""
-do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij) = begin
+do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine=+) = begin
     # Create the new jet by recombining the first two with
     # the E-scheme
-    push!(clusterseq.jets, clusterseq.jets[jet_i] + clusterseq.jets[jet_j])
+    push!(clusterseq.jets, recombine(clusterseq.jets[jet_i], clusterseq.jets[jet_j]))
 
     # Get its index and the history index
     newjet_k = length(clusterseq.jets)
@@ -302,6 +302,9 @@ Main jet reconstruction algorithm entry point for generic data types
 `particles` must support methods px, py, pz and energy (N.B. these must be in the
 JetReconstruction namespace). In particular Cartesian LorentzVector structs can
 be used.
+
+If a non-standard recombination is used, it must be defined for
+JetReconstruction.PseudoJet, as this struct is used internally.
 """
 function tiled_jet_reconstruct_ll(particles::Vector{T}; p = -1, R = 1.0, recombine = +, ptmin = 0.0) where {T}
     # Here we need to populate the vector of PseudoJets that are the internal
@@ -392,7 +395,7 @@ function tiled_jet_reconstruct_ll(particles::Vector{PseudoJet}; p = -1, R = 1.0,
             end
 
             # Recombine jetA and jetB and retrieves the new index, nn
-            nn = do_ij_recombination_step!(clusterseq, jetA.jets_index, jetB.jets_index, dij_min)
+            nn = do_ij_recombination_step!(clusterseq, jetA.jets_index, jetB.jets_index, dij_min, recombine)
             tiledjet_remove_from_tiles!(clusterseq.tiling, jetA)
             oldB = copy(jetB)  # take a copy because we will need it...
 
