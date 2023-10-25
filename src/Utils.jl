@@ -94,7 +94,7 @@ function final_jets(jets::Vector{PseudoJet}, ptmin::AbstractFloat)
 		dcut = ptmin^2
 		if pt2(jet) > dcut
 			count += 1
-			push!(final_jets, FinalJet(rap(jet), phi(jet), sqrt(pt2(jet))))
+			push!(final_jets, FinalJet(rapidity(jet), phi(jet), sqrt(pt2(jet))))
 		end
 	end
 	final_jets

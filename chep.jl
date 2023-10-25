@@ -56,7 +56,7 @@ function profile_code(jet_reconstruction, events, niters)
 end
 
 function jet_process(
-	events::Vector{Vector{LorentzVector}};
+	events::Vector{Vector{PseudoJet}};
 	ptmin::Float64 = 5.0,
 	distance::Float64 = 0.4,
 	power::Integer = -1,
@@ -78,18 +78,10 @@ function jet_process(
 		throw(ErrorException("Strategy not yet implemented"))
 	end
 
-	# Build internal EDM structures for timing measurements
-	if strategy == N2Tiled
-		event_vector = Vector{Vector{JetReconstruction.PseudoJet}}(undef, 0)
-		for event in events
-			pseudojet_event = Vector{JetReconstruction.PseudoJet}(undef, length(event))
-			for (i, particle) in enumerate(event)
-				pseudojet_event[i] = JetReconstruction.PseudoJet(LorentzVectorHEP.px(particle), LorentzVectorHEP.py(particle),
-					LorentzVectorHEP.pz(particle), LorentzVectorHEP.energy(particle))
-			end
-			push!(event_vector, pseudojet_event)
-		end
-	elseif strategy == N2Plain
+	# Build internal EDM structures for timing measurements, if needed
+	# For N2Tiled and N2Plain this is unnecessary as both these reconstruction
+	# methods can process PseudoJets directly
+	if (strategy == N2Tiled) || (strategy == N2Plain)
 		event_vector = events
 	end
 
@@ -276,10 +268,10 @@ main() = begin
 		logger = ConsoleLogger(stdout, Logging.Warn)
 	end
 	global_logger(logger)
-	# events::Vector{Vector{PseudoJet}} =
-	# 	read_final_state_particles(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
-	events::Vector{Vector{LorentzVector}} =
-		read_final_state_particles_lv(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
+	events::Vector{Vector{PseudoJet}} =
+		read_final_state_particles(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
+	# events::Vector{Vector{LorentzVector}} =
+	# 	read_final_state_particles_lv(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
 	jet_process(events, ptmin = args[:ptmin], distance = args[:distance], 
         power = args[:power], strategy = args[:strategy],
 		nsamples = args[:nsamples], gcoff = args[:gcoff], profile = args[:profile],

@@ -24,6 +24,7 @@ energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 
 # Philipp's pseudojet
 include("Pseudojet.jl")
+export PseudoJet
 ## As this is an internal EDM class, we don't export anything
 
 # Simple HepMC3 reader
