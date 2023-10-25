@@ -297,23 +297,25 @@ end
 
 
 """
-Main jet reconstruction algorithm entry point
+Main jet reconstruction algorithm entry point for generic data types
 
-This function will construct the internal EDM of PseudoJets from LorentzVectors
+`particles` must support methods px, py, pz and energy (N.B. these must be in the
+JetReconstruction namespace). In particular Cartesian LorentzVector structs can
+be used.
 """
-function tiled_jet_reconstruct_ll(particles::Vector{LorentzVector}; p = -1, R = 1.0, recombine = +, ptmin = 0.0)
+function tiled_jet_reconstruct_ll(particles::Vector{T}; p = -1, R = 1.0, recombine = +, ptmin = 0.0) where {T}
     # Here we need to populate the vector of PseudoJets that are the internal
     # EDM for the main algorithm, then we call the reconstruction
     pseudojets = Vector{PseudoJet}(undef, length(particles))
     for (i, particle) in enumerate(particles)
-        pseudojets[i] = PseudoJet(LorentzVectorHEP.px(particle), LorentzVectorHEP.py(particle),
-            LorentzVectorHEP.pz(particle), LorentzVectorHEP.energy(particle))
+        pseudojets[i] = PseudoJet(px(particle), py(particle),
+            pz(particle), energy(particle))
     end
     tiled_jet_reconstruct_ll(pseudojets, p = p, R = R, recombine = recombine, ptmin = ptmin)
 end
 
 """
-Main jet reconstruction algorithm, using PseudoJets
+Main jet reconstruction algorithm, using PseudoJet objects
 """
 function tiled_jet_reconstruct_ll(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +, ptmin = 0.0)
     # Bounds
