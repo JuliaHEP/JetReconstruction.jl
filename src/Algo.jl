@@ -105,7 +105,7 @@ function sequential_jet_reconstruct(;objects_array::AbstractArray{J}, kt2_array:
     N::Int = length(objects_array)
 
     # Returned values
-    jets = J[]
+    jets = PseudoJet[]
     sequences = Vector{Int}[] # recombination sequences, WARNING: first index in the sequence is not necessarily the seed
 
     # Parameters
@@ -165,7 +165,12 @@ function sequential_jet_reconstruct(;objects_array::AbstractArray{J}, kt2_array:
             end
         else # i == j
             if (pt2(objects_array[i]) >= ptmin2)
-                push!(jets, objects_array[i])
+                # We return PseudoJets, so if we were not passed these then we need to convert (N.B. this is costly!)
+                if J == PseudoJet
+                    push!(jets, objects_array[i])
+                else
+                    push!(jets, PseudoJet(px(objects_array[i]), py(objects_array[i]), pz(objects_array[i]), energy(objects_array[i])))
+                end
             end
             push!(sequences, sequences[i])
         end
