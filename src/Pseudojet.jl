@@ -1,4 +1,4 @@
-# Copyright (c) 2022, Philippe Gras
+# Copyright (c) 2022-2023, Philippe Gras and CERN
 #
 # Adapted from PseudoJet class of c++ code from the Fastjet
 # software  (https://fastjet.fr,  hep-ph/0512210,  arXiv:1111.6097)
@@ -6,30 +6,7 @@
 #   Copyright (c) 2005-2020, Matteo Cacciari, Gavin P. Salam and Gregory
 #   Soyez
 #
-#
-#----------------------------------------------------------------------
-# This file is part of AntiKt.jl.
-#
-#  AntiKt.jl is free software; you can redistribute it and/or modify
-#  it under the terms of the GNU General Public License as published by
-#  the Free Software Foundation; either version 2 of the License, or
-#  (at your option) any later version.
-#
-#  The algorithms that underlie FastJet have required considerable
-#  development. They are described in the original FastJet paper,
-#  hep-ph/0512210 and in the manual, arXiv:1111.6097. If you use
-#  FastJet as part of work towards a scientific publication, please
-#  quote the version you use and include a citation to the manual and
-#  optionally also to hep-ph/0512210.
-#
-#  AntiKet.jl is distributed in the hope that it will be useful,
-#  but WITHOUT ANY WARRANTY; without even the implied warranty of
-#  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#  GNU General Public License for more details.
-#
-#  You should have received a copy of the GNU General Public License
-#  along with FastJet. If not, see <http:#www.gnu.org/licenses/>.
-#----------------------------------------------------------------------
+# Some implementation is taken from LorentzVectorHEP.jl, (c) Jerry Ling
 
 
 """Interface for composite types that includes fields px, py, py, and E
@@ -138,17 +115,41 @@ pt(p::PseudoJet) = sqrt(p._pt2)
 "Returns the squared invariant mass"
 m2(p::PseudoJet) = (p.E + p.pz)*(p.E-p.pz) - p._pt2
 
+"Returns the magnitude of the momentum, |p|"
+mag(p::PseudoJet) = sqrt(muladd(p.px, p.px, p.py^2) + p.pz^2)
+
+@inline function CosTheta(p::PseudoJet)
+    fZ = p.pz
+    ptot = mag(p)
+    return ifelse(ptot == 0.0, 1.0, fZ / ptot)
+end
+
+"Returns pseudorapidity, η"
+function eta(p::PseudoJet)
+    cosTheta = CosTheta(p)
+    (cosTheta^2 < 1.0) && return -0.5 * log((1.0 - cosTheta) / (1.0 + cosTheta))
+    fZ = p.pz
+    iszero(fZ) && return 0.0
+    # Warning("PseudoRapidity","transverse momentum = 0! return +/- 10e10");
+    fZ > 0.0 && return 10e10
+    return -10e10
+end
+const η = eta
+
 # returns the invariant mass
-# (If m2() is negative then -sqrt(-m2()) is returned, as in CLHEP)
+# (If m2() is negative then -sqrt(-m2()) is returned, as in CLHEP, SciKitHEP Particle and ROOT)
 m(p::PseudoJet) = begin
     x = m2(p)
     x < 0. ? -sqrt(-x) : sqrt(x)
 end
 
+# Ensure we have accessors for jet parameters
 px(p::PseudoJet) = p.px
 py(p::PseudoJet) = p.py
 pz(p::PseudoJet) = p.pz
 mass(p::PseudoJet) = m(p)
+mass2 = m2
+energy(p::PseudoJet) = p.E
 
 import Base.+;
 
