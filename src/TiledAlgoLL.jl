@@ -64,7 +64,7 @@ end
 
 """Initialise a tiled jet from a PseudoJet (using an index into our ClusterSequence)"""
 tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, jets_index, R2) = begin
-    @inbounds jet.eta = rap(clusterseq.jets[jets_index])
+    @inbounds jet.eta = rapidity(clusterseq.jets[jets_index])
     @inbounds jet.phi = phi_02pi(clusterseq.jets[jets_index])
     @inbounds jet.kt2 = pt2(clusterseq.jets[jets_index]) > 1.e-300 ? 1.0 / pt2(clusterseq.jets[jets_index]) : 1.e300
     jet.jets_index    = jets_index
@@ -288,7 +288,7 @@ function inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
         iparent_jet = clusterseq.history[elt.parent1].jetp_index
         jet = clusterseq.jets[iparent_jet]
         if pt2(jet) >= dcut
-            push!(jets_local, LorentzVectorCyl(pt(jet), rap(jet), phi(jet), mass(jet)))
+            push!(jets_local, LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
             # push!(jets_local, jet)
         end
     end
@@ -343,7 +343,7 @@ function tiled_jet_reconstruct_ll(particles::Vector{PseudoJet}; p = -1, R = 1.0,
     # Now get the tiling setup
     _eta = Vector{Float64}(undef, length(particles))
     for ijet in 1:length(particles)
-        _eta[ijet] = rap(particles[ijet])
+        _eta[ijet] = rapidity(particles[ijet])
     end
 
     tiling = Tiling(setup_tiling(_eta, R))
