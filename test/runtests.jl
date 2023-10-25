@@ -32,9 +32,6 @@ function main()
     # Test each stratgy...
     do_jet_test(N2Plain, fastjet_jets)
     do_jet_test(N2Tiled, fastjet_jets)
-
-    # Atell's original test
-    # original_tests()
 end
 
 function do_jet_test(strategy::JetRecoStrategy, fastjet_jets;
@@ -54,6 +51,7 @@ function do_jet_test(strategy::JetRecoStrategy, fastjet_jets;
 	end
 
     # Now run our jet reconstruction...
+    # From PseudoJets
     events::Vector{Vector{PseudoJet}} = read_final_state_particles("test/data/events.hepmc3")
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
@@ -63,7 +61,17 @@ function do_jet_test(strategy::JetRecoStrategy, fastjet_jets;
         push!(jet_collection, FinalJets(ievt, fj))
     end
 
-    @testset "Jet Reconstruction, $strategy_name" begin
+    # From LorentzVector
+    events_lv::Vector{Vector{LorentzVector}} = read_final_state_particles_lv("test/data/events.hepmc3")
+    jet_collection_lv = FinalJets[]
+    for (ievt, event) in enumerate(events_lv)
+        finaljets, _ = jet_reconstruction(event, R=distance, p=power, ptmin=ptmin)
+        fj = final_jets(finaljets, ptmin)
+        sort_jets!(fj)
+        push!(jet_collection_lv, FinalJets(ievt, fj))
+    end
+
+    @testset "Jet Reconstruction PseudoJet, $strategy_name" begin
         # Test each event in turn...
         for (ievt, event) in enumerate(jet_collection)
             @testset "Event $(ievt)" begin
@@ -85,53 +93,23 @@ function do_jet_test(strategy::JetRecoStrategy, fastjet_jets;
             end
         end
     end
-end
 
-"""Original test implementation"""
-function original_tests()
-    """
-    A function for test comparison
-    """
-    function arrcompare(y, yt; eps=0.1)
-        for i in eachindex(y)
-            if !(sum(abs.(y[i] .- yt[i]) .< eps) == length(y[i]))
-                return false
+    @testset "Jet Reconstruction LorentzVector, $strategy_name" begin
+        # Here we test that inputing LorentzVector gave the same results as PseudoJets
+        for (ievt, (event, event_lv)) in enumerate(zip(jet_collection, jet_collection_lv))
+            @testset "Event $(ievt)" begin
+                @test size(event.jets) == size(event_lv.jets)
+                # Test each jet in turn
+                for (jet, jet_lv) in zip(event.jets, event_lv.jets)
+                    @test jet.rap ≈ jet_lv.rap atol=1e-7
+                    @test jet.phi ≈ jet_lv.phi atol=1e-7
+                    @test jet.pt ≈ jet_lv.pt rtol=1e-6
+                end
             end
         end
-        true
     end
 
-    NUMBER_OF_TESTS = 12 # number of test files in the data folder
 
-    @testset "N2Plain Original Tests" begin
-        # @test anti_kt(X) == Y
-
-        # additional simple test
-        @test arrcompare(
-            anti_kt_algo([
-                [99.0, 0.1, 0, 100],
-                [4.0, -0.1, 0, 5.0],
-                [-99., 0., 0.0, 99]
-            ], R=0.7)[1],
-
-            [[103.0, 0.0, 0.0, 105.0], [-99.0, 0.0, 0.0, 99.0]]
-        )
-
-        # actual testing
-        for i in 1:NUMBER_OF_TESTS
-            istr = string(i)
-
-            @test arrcompare(
-                    sort(
-                        anti_kt_algo(
-                            loadjets("test/data/"*istr*".dat"), R=1
-                        )[1], lt=(a,b)->(pt(a)>pt(b))
-                    ),
-
-                    loadjets("test/data/"*istr*"-fj-result.dat")
-                )
-        end
-    end
 end
 
 if abspath(PROGRAM_FILE) == @__FILE__
