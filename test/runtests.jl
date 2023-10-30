@@ -6,7 +6,7 @@ using JSON
 using LorentzVectorHEP
 
 """Read JSON file with fastjet jets in it"""
-function read_fastjet_outputs(;fname="test/data/jet_collections_fastjet.json")
+function read_fastjet_outputs(;fname="test/data/jet_collections_fastjet_akt.json")
     f = open(fname)
     JSON.parse(f)
 end
@@ -25,13 +25,26 @@ function sort_jets!(jet_array::Vector{FinalJet})
 end
 
 function main()
-    # Read our fastjet outputs
-    fastjet_jets = read_fastjet_outputs()
-    sort_jets!(fastjet_jets)
+    # Read our fastjet outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
+    algorithms = Dict(-1 => "Anti-kt",
+        0 => "Cambridge/Achen",
+        1 => "Inclusive-kt")
+
+    fastjet_alg_files = Dict(-1 => "test/data/jet_collections_fastjet_akt.json",
+        0 => "test/data/jet_collections_fastjet_ca.json",
+        1 => "test/data/jet_collections_fastjet_ikt.json")
+
+    fastjet_data = Dict{Int, Vector{Any}}()
+    for (k, v) in pairs(fastjet_alg_files)
+        fastjet_jets = read_fastjet_outputs(fname=v)
+        sort_jets!(fastjet_jets)
+        println(typeof(fastjet_jets))
+        fastjet_data[k] = fastjet_jets
+    end
 
     # Test each stratgy...
-    do_jet_test(N2Plain, fastjet_jets)
-    do_jet_test(N2Tiled, fastjet_jets)
+    do_jet_test(N2Plain, fastjet_data[-1])
+    do_jet_test(N2Tiled, fastjet_data[-1])
 end
 
 function do_jet_test(strategy::JetRecoStrategy, fastjet_jets;
