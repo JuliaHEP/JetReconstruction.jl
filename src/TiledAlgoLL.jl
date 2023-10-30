@@ -63,10 +63,10 @@ end
 
 
 """Initialise a tiled jet from a PseudoJet (using an index into our ClusterSequence)"""
-tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, jets_index, R2) = begin
+tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, jets_index, R2, p) = begin
     @inbounds jet.eta = rapidity(clusterseq.jets[jets_index])
     @inbounds jet.phi = phi_02pi(clusterseq.jets[jets_index])
-    @inbounds jet.kt2 = pt2(clusterseq.jets[jets_index]) > 1.e-300 ? 1.0 / pt2(clusterseq.jets[jets_index]) : 1.e300
+    @inbounds jet.kt2 = pt2(clusterseq.jets[jets_index]) > 1.e-300 ? pt2(clusterseq.jets[jets_index])^p : 1.e300
     jet.jets_index    = jets_index
     # Initialise NN info as well
     jet.NN_dist = R2
@@ -360,7 +360,7 @@ function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, re
     tiledjets = similar(clusterseq.jets, TiledJet)
     for ijet in eachindex(tiledjets)
         tiledjets[ijet] = TiledJet(ijet)
-        tiledjet_set_jetinfo!(tiledjets[ijet], clusterseq, ijet, R2)
+        tiledjet_set_jetinfo!(tiledjets[ijet], clusterseq, ijet, R2, p)
     end
 
     # Now initalise all of the nearest neighbour tiles
@@ -400,7 +400,7 @@ function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, re
             oldB = copy(jetB)  # take a copy because we will need it...
 
             tiledjet_remove_from_tiles!(clusterseq.tiling, jetB)
-            tiledjet_set_jetinfo!(jetB, clusterseq, nn, R2) # cause jetB to become _jets[nn]
+            tiledjet_set_jetinfo!(jetB, clusterseq, nn, R2, p) # cause jetB to become _jets[nn]
         #                                  (in addition, registers the jet in the tiling)
         else
             # Jet-beam recombination
