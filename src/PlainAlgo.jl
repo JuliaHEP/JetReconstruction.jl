@@ -88,7 +88,7 @@ which is already done for the two types above.
 """
 function plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, ptmin = 0.0) where T
     # Integer p if possible
-    p = (round(p) == p) ? Int(p) : p 
+    p = (round(p) == p) ? Int(p) : p
 
     # We make sure these arrays are type stable - have seen issues where, depending on the values
     # returned by the methods, they can become unstable and performance degrades
