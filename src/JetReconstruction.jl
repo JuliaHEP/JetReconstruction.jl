@@ -34,7 +34,7 @@ include("HepMC3.jl")
 include("PlainAlgo.jl")
 export plain_jet_reconstruct
 
-## Tiled algorithms
+## N2Tiled algorithm
 # Common pieces
 include("TiledAlgoUtils.jl")
 

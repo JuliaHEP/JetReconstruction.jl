@@ -127,3 +127,17 @@ function final_jets(jets::Vector{LorentzVectorCyl}, ptmin::AbstractFloat)
 	end
 	final_jets
 end
+
+## Faster findmin function
+"""Find the lowest value in the array, returning the value and the index"""
+fast_findmin(dij, n) = begin
+    # findmin(@inbounds @view dij[1:n])
+    best = 1
+    @inbounds dij_min = dij[1]
+    @turbo for here in 2:n
+        newmin = dij[here] < dij_min
+        best = newmin ? here : best
+        dij_min = newmin ? dij[here] : dij_min
+    end
+    dij_min, best
+end

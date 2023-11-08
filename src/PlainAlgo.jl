@@ -1,3 +1,5 @@
+using LoopVectorization
+
 Base.@propagate_inbounds function dist(i, j, rapidity_array, phi_array)
     drapidity = rapidity_array[i] - rapidity_array[j]
     dphi = abs(phi_array[i] - phi_array[j])
@@ -104,7 +106,6 @@ function plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine 
 end
 
 
-
 function plain_jet_reconstruct(;objects_array::Vector{J}, kt2_array::Vector{F}, 
         phi_array::Vector{F}, rapidity_array::Vector{F}, p = -1, R = 1.0, recombine = +, ptmin = 0.0) where {J, F<:AbstractFloat}
     # Bounds
@@ -137,12 +138,7 @@ function plain_jet_reconstruct(;objects_array::Vector{J}, kt2_array::Vector{F},
     iteration::Int = 1
     while N != 0
         # findmin
-        i = 1
-        dij_min = nndij[1]
-        @inbounds @simd for k in 2:N
-            cond = nndij[k] < dij_min
-            dij_min, i = ifelse(cond, (nndij[k], k), (dij_min, i))
-        end
+        dij_min, i = fast_findmin(nndij, N)
 
         j::Int = nn[i]
 

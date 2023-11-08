@@ -259,20 +259,6 @@ function find_tile_neighbours!(tile_union, jetA, jetB, oldB, tiling)
     n_near_tiles
 end
 
-"""Find the lowest value in the array, returning the value and the index"""
-find_lowest(dij, n) = begin
-    best = 1
-    @inbounds dij_min = dij[1]
-    @turbo for here in 2:n
-        newmin = dij[here] < dij_min
-        best = newmin ? here : best
-        dij_min = newmin ? dij[here] : dij_min
-    end
-    # @assert argmin(dij[1:n]) == best
-    dij_min, best
-end
-
-
 
 """Return all inclusive jets of a ClusterSequence with pt > ptmin"""
 function inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
@@ -375,7 +361,7 @@ function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, re
         # compact NNs and dij arrays
         ilast = N - (iteration - 1)
         # Search for the lowest value of min_dij_ijet
-        dij_min, ibest = find_lowest(dij, ilast)
+        dij_min, ibest = fast_findmin(dij, ilast)
         @inbounds jetA = NNs[ibest]
         jetB = jetA.NN
 
