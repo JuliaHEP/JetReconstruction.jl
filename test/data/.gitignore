@@ -1,1 +1,14 @@
-events.hepmc3
+# Ignore unpacked HepMC3 event files (commit only compressed!)
+*.hepmc3
+
+# Additional HepMC3 files should not be committed into this repository
+# because they are far too large for the package itself - they should be
+# in the JetReconstructionBenchmarks.jl repo instead.
+#
+# Prefix these event files with "benchmark" if they are stashed here
+# temporarily (previously they had names like "events-pp-20TeV-50GeV.hepmc3")
+benchmark-*
+events-*
+
+# Ignore manifest for the helpert script
+Manifest.toml
