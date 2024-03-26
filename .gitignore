@@ -5,3 +5,5 @@
 /notebooks/*
 /statprof/*
 /debug/*
+*.mem
+/benchmark/*
