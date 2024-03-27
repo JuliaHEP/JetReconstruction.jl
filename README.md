@@ -87,6 +87,6 @@ Code in this package is authored by:
 - Graeme A Stewart <graeme.andrew.stewart@cern.ch>
 - Philippe Gras <philippe.gras@cern.ch>
 
-and is Copyright 2022-2023 The Authors, CERN.
+and is Copyright 2022-2024 The Authors, CERN.
 
 The code is under the MIT License.
