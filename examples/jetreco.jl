@@ -54,7 +54,15 @@ function profile_code(jet_reconstruction, events, niters)
 """,
 	)
 end
+"""
+Top level call funtion for demonstrating the use of jet reconstruction
 
+This uses the "generic_jet_reconstruct" wrapper, so algorithm swutching
+happens inside the JetReconstruction package itself.
+
+Some other ustilities are also supported here, such as profiling and
+serialising the reconstructed jet outputs.
+"""
 function jet_process(
 	events::Vector{Vector{PseudoJet}};
 	ptmin::Float64 = 5.0,
@@ -69,22 +77,6 @@ function jet_process(
 )
 	@info "Will process $(size(events)[1]) events"
 
-	# Strategy
-	if (strategy == N2Plain)
-		jet_reconstruction = plain_jet_reconstruct
-	elseif (strategy == N2Tiled || stragegy == Best)
-		jet_reconstruction = tiled_jet_reconstruct
-	else
-		throw(ErrorException("Strategy not yet implemented"))
-	end
-
-	# Build internal EDM structures for timing measurements, if needed
-	# For N2Tiled and N2Plain this is unnecessary as both these reconstruction
-	# methods can process PseudoJets directly
-	if (strategy == N2Tiled) || (strategy == N2Plain)
-		event_vector = events
-	end
-
 	# If we are dumping the results, setup the JSON structure
 	if !isnothing(dump)
 		jet_collection = FinalJets[]
@@ -93,21 +85,21 @@ function jet_process(
 	# Warmup code if we are doing a multi-sample timing run
 	if nsamples > 1 || profile
 		@info "Doing initial warm-up run"
-		for event in event_vector
-			finaljets, _ = jet_reconstruction(event, R = distance, p = power)
+		for event in events
+			finaljets, _ = generic_jet_reconstruct(event, R = distance, p = power, strategy = strategy)
 			final_jets(finaljets, ptmin)
 		end
 	end
 
 	if profile
-		profile_code(jet_reconstruction, event_vector, nsamples)
+		profile_code(generic_jet_reconstruct, events, nsamples)
 		return nothing
 	end
 
     if alloc
         println("Memory allocation statistics:")
-        @timev for event in event_vector
-            finaljets, _ = jet_reconstruction(event, R = distance, p = power)
+        @timev for event in events
+            finaljets, _ = generic_jet_reconstruct(event, R = distance, p = power, strategy = strategy)
 			final_jets(finaljets, ptmin)
         end
         return nothing
@@ -121,8 +113,8 @@ function jet_process(
 	for irun ∈ 1:nsamples
 		gcoff && GC.enable(false)
 		t_start = time_ns()
-		for (ievt, event) in enumerate(event_vector)
-			finaljets, _ = jet_reconstruction(event, R = distance, p = power, ptmin=ptmin)
+		for (ievt, event) in enumerate(events)
+			finaljets, _ = generic_jet_reconstruct(event, R = distance, p = power, ptmin=ptmin, strategy = strategy)
 			fj = final_jets(finaljets, ptmin)
 			# Only print the jet content once
 			if irun == 1
@@ -206,9 +198,9 @@ parse_command_line(args) = begin
 		default = -1
 
 		"--strategy"
-		help = "Strategy for the algorithm, valid values: Best, N2Plain, N2Tiled, N2TiledSoAGlobal, N2TiledSoATile"
+		help = """Strategy for the algorithm, valid values: $(join(JetReconstruction.AllJetRecoStrategies, ", "))"""
 		arg_type = JetRecoStrategy
-		default = N2Plain
+		default = JetReconstruction.N2Plain::JetRecoStrategy
 
 		"--nsamples", "-m"
 		help = "Number of measurement points to acquire."
@@ -247,15 +239,11 @@ end
 
 
 function ArgParse.parse_item(::Type{JetRecoStrategy}, x::AbstractString)
-	if (x == "Best")
-		return JetRecoStrategy(0)
-	elseif (x == "N2Plain")
-		return JetRecoStrategy(1)
-	elseif (x == "N2Tiled")
-		return JetRecoStrategy(2)
-	else
+	s = tryparse(JetRecoStrategy, x)
+	if s === nothing
 		throw(ErrorException("Invalid value for strategy: $(x)"))
 	end
+	s
 end
 
 main() = begin

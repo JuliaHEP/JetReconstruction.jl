@@ -4,6 +4,7 @@ Jet reconstruction (reclustering) in Julia.
 module JetReconstruction
 
 using LorentzVectorHEP
+using MLStyle
 
 # Import from LorentzVectorHEP methods for those 4-vector types
 pt2(p::LorentzVector) = LorentzVectorHEP.pt2(p)
@@ -22,12 +23,16 @@ py(p::LorentzVectorCyl) = LorentzVectorHEP.py(p)
 pz(p::LorentzVectorCyl) = LorentzVectorHEP.pz(p)
 energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 
-# Philipp's pseudojet
+# Philipp's pseudojet type
 include("Pseudojet.jl")
 export PseudoJet
 
 # Simple HepMC3 reader
 include("HepMC3.jl")
+
+# Jet reconstruction strategies
+include("JetRecoStrategies.jl")
+export JetRecoStrategy
 
 ## N2Plain algorithm
 # Algorithmic part for simple sequential implementation
@@ -37,10 +42,13 @@ export plain_jet_reconstruct
 ## N2Tiled algorithm
 # Common pieces
 include("TiledAlgoUtils.jl")
-
 # Algorithmic part, tiled reconstruction strategy with linked list jet objects
 include("TiledAlgoLL.jl")
 export tiled_jet_reconstruct
+
+## Generic algorithm, which can switch strategy dynamically
+include("GenericAlgo.jl")
+export generic_jet_reconstruct
 
 # jet serialisation (saving to file)
 include("Serialize.jl")
@@ -57,10 +65,5 @@ export jetsplot
 # JSON results
 include("JSONresults.jl")
 export FinalJet, FinalJets, JSON3
-
-# Strategy to be used
-## Maybe an enum is not the best idea, use type dispatch instead?
-@enum JetRecoStrategy Best N2Plain N2Tiled
-export JetRecoStrategy, Best, N2Plain, N2Tiled
 
 end
