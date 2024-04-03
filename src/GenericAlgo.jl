@@ -7,7 +7,8 @@ function generic_jet_reconstruct(particles; p = -1, R = 1.0, recombine = +, ptmi
     # or to an optimal choice based on the density of initial particles
 
     if strategy == JetRecoStrategy.Best
-        algorithm = length(particles) > 50 ? tiled_jet_reconstruct : plain_jet_reconstruct
+        # The breakpoint of ~90 is determined empirically on e+e- -> H and 0.5TeV pp -> 5GeV jets
+        algorithm = length(particles) > 80 ? tiled_jet_reconstruct : plain_jet_reconstruct
     elseif strategy == JetRecoStrategy.N2Plain
         algorithm = plain_jet_reconstruct
     elseif strategy == JetRecoStrategy.N2Tiled
