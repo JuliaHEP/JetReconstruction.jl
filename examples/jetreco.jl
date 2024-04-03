@@ -68,7 +68,7 @@ function jet_process(
 	ptmin::Float64 = 5.0,
 	distance::Float64 = 0.4,
 	power::Integer = -1,
-	strategy::JetRecoStrategy.T,
+	strategy::JetRecoStrategy.Strategy,
 	nsamples::Integer = 1,
 	gcoff::Bool = false,
 	profile::Bool = false,
@@ -199,7 +199,7 @@ parse_command_line(args) = begin
 
 		"--strategy"
 		help = """Strategy for the algorithm, valid values: $(join(JetReconstruction.AllJetRecoStrategies, ", "))"""
-		arg_type = JetRecoStrategy.T
+		arg_type = JetRecoStrategy.Strategy
 		default = JetRecoStrategy.Best
 
 		"--nsamples", "-m"
@@ -238,8 +238,8 @@ parse_command_line(args) = begin
 end
 
 
-function ArgParse.parse_item(::Type{JetRecoStrategy.T}, x::AbstractString)
-	s = tryparse(JetRecoStrategy.T, x)
+function ArgParse.parse_item(::Type{JetRecoStrategy.Strategy}, x::AbstractString)
+	s = tryparse(JetRecoStrategy.Strategy, x)
 	if s === nothing
 		throw(ErrorException("Invalid value for strategy: $(x)"))
 	end
