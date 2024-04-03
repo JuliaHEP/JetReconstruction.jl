@@ -1,18 +1,14 @@
-using MLStyle
+using EnumX
 
-# Valid strategy enum
-@enum JetRecoStrategy Best N2Plain N2Tiled
+# Valid strategy enum (this is a scoped enum)
+@enumx JetRecoStrategy Best N2Plain N2Tiled
 
-# Map from string to strategy
+# Map from string to an enum value (used for CLI parsing)
 Base.tryparse(E::Type{<:Enum}, str::String) =
         let insts = instances(E) ,
             p = findfirst(==(Symbol(str)) ∘ Symbol, insts) ;
             p !== nothing ? insts[p] : nothing
         end
 
-const AllJetRecoStrategies = [ String(Symbol(x)) for x in instances(JetRecoStrategy) ]
+const AllJetRecoStrategies = [ String(Symbol(x)) for x in instances(JetRecoStrategy.T) ]
 
-# We will use the MLStyle package for a "switch", so needs a few tweaks for Julia enums
-# https://thautwarm.github.io/MLStyle.jl/latest/syntax/pattern.html#support-pattern-matching-for-julia-enums
-MLStyle.is_enum(::JetRecoStrategy) = true
-MLStyle.enum_matcher(e::JetRecoStrategy, expr) = :($e === $expr)

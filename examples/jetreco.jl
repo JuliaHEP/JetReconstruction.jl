@@ -68,7 +68,7 @@ function jet_process(
 	ptmin::Float64 = 5.0,
 	distance::Float64 = 0.4,
 	power::Integer = -1,
-	strategy::JetRecoStrategy,
+	strategy::JetRecoStrategy.T,
 	nsamples::Integer = 1,
 	gcoff::Bool = false,
 	profile::Bool = false,
@@ -199,8 +199,8 @@ parse_command_line(args) = begin
 
 		"--strategy"
 		help = """Strategy for the algorithm, valid values: $(join(JetReconstruction.AllJetRecoStrategies, ", "))"""
-		arg_type = JetRecoStrategy
-		default = JetReconstruction.N2Plain::JetRecoStrategy
+		arg_type = JetRecoStrategy.T
+		default = JetRecoStrategy.Best
 
 		"--nsamples", "-m"
 		help = "Number of measurement points to acquire."
@@ -238,8 +238,8 @@ parse_command_line(args) = begin
 end
 
 
-function ArgParse.parse_item(::Type{JetRecoStrategy}, x::AbstractString)
-	s = tryparse(JetRecoStrategy, x)
+function ArgParse.parse_item(::Type{JetRecoStrategy.T}, x::AbstractString)
+	s = tryparse(JetRecoStrategy.T, x)
 	if s === nothing
 		throw(ErrorException("Invalid value for strategy: $(x)"))
 	end
