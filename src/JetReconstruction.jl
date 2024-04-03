@@ -4,7 +4,6 @@ Jet reconstruction (reclustering) in Julia.
 module JetReconstruction
 
 using LorentzVectorHEP
-using MLStyle
 
 # Import from LorentzVectorHEP methods for those 4-vector types
 pt2(p::LorentzVector) = LorentzVectorHEP.pt2(p)
