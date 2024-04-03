@@ -43,26 +43,26 @@ function main()
 
     # Test each stratgy...
     for power in keys(algorithms)
-        do_test_compare_to_fastjet(N2Plain, fastjet_data[power], algname = algorithms[power], power = power)
-        do_test_compare_to_fastjet(N2Tiled, fastjet_data[power], algname = algorithms[power], power = power)
+        do_test_compare_to_fastjet(JetRecoStrategy.N2Plain, fastjet_data[power], algname = algorithms[power], power = power)
+        do_test_compare_to_fastjet(JetRecoStrategy.N2Tiled, fastjet_data[power], algname = algorithms[power], power = power)
     end
 
     # Compare inputing data in PseudoJet with using a LorentzVector
-    do_test_compare_types(N2Plain, algname = algorithms[-1], power = -1)
-    do_test_compare_types(N2Tiled, algname = algorithms[-1], power = -1)
+    do_test_compare_types(JetRecoStrategy.N2Plain, algname = algorithms[-1], power = -1)
+    do_test_compare_types(JetRecoStrategy.N2Tiled, algname = algorithms[-1], power = -1)
 end
 
-function do_test_compare_to_fastjet(strategy::JetRecoStrategy, fastjet_jets;
+function do_test_compare_to_fastjet(strategy::JetRecoStrategy.Strategy, fastjet_jets;
     algname = "Unknown",
     ptmin::Float64 = 5.0,
     distance::Float64 = 0.4,
     power::Integer = -1)
 
     # Strategy
-    if (strategy == N2Plain)
+    if (strategy == JetRecoStrategy.N2Plain)
         jet_reconstruction = plain_jet_reconstruct
         strategy_name = "N2Plain"
-    elseif (strategy == N2Tiled)
+    elseif (strategy == JetRecoStrategy.N2Tiled)
         jet_reconstruction = tiled_jet_reconstruct
         strategy_name = "N2Tiled"
     else
@@ -104,17 +104,17 @@ function do_test_compare_to_fastjet(strategy::JetRecoStrategy, fastjet_jets;
     end
 end
 
-function do_test_compare_types(strategy::JetRecoStrategy;
+function do_test_compare_types(strategy::JetRecoStrategy.Strategy;
     algname = "Unknown",
     ptmin::Float64 = 5.0,
     distance::Float64 = 0.4,
     power::Integer = -1)
 
     # Strategy
-    if (strategy == N2Plain)
+    if (strategy == JetRecoStrategy.N2Plain)
         jet_reconstruction = plain_jet_reconstruct
         strategy_name = "N2Plain"
-    elseif (strategy == N2Tiled)
+    elseif (strategy == JetRecoStrategy.N2Tiled)
         jet_reconstruction = tiled_jet_reconstruct
         strategy_name = "N2Tiled"
     else
