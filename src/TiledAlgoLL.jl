@@ -315,7 +315,7 @@ function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, re
     R2::Float64 = R * R
     p = (round(p) == p) ? Int(p) : p # integer p if possible
 
-    # This will be used quite deep inside loops, but declare it here so that
+    # This will be used quite deep inside loops, so declare it here so that
     # memory (de)allocation gets done only once
     tile_union = Vector{Int}(undef, 3 * _n_tile_neighbours)
 
