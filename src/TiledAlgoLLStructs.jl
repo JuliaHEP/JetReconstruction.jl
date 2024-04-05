@@ -1,53 +1,4 @@
-# Structure definitions for the Tiled algorithm, with linked list
-# and TiledJets (a la FastJet)
-# Original Julia implementation by Philippe Gras,
-# ported to this package by Graeme Stewart
-
-# TODO: Consider ENUM here, rather than magic numbers
-const Invalid=-3
-const NonexistentParent=-2
-const BeamJet=-1
-
-"""A struct holding a record of jet mergers and finalisations"""
-struct HistoryElement
-    """Index in _history where first parent of this jet
-    was created (NonexistentParent if this jet is an
-    original particle)"""
-    parent1::Int
-
-    """Index in _history where second parent of this jet
-    was created (NonexistentParent if this jet is an
-    original particle); BeamJet if this history entry
-    just labels the fact that the jet has recombined
-    with the beam)"""
-    parent2::Int
-
-    """Index in _history where the current jet is
-    recombined with another jet to form its child. It
-    is Invalid if this jet does not further
-    recombine."""
-    child::Int
-
-    """Index in the _jets vector where we will find the
-    PseudoJet object corresponding to this jet
-    (i.e. the jet created at this entry of the
-    history). NB: if this element of the history
-    corresponds to a beam recombination, then
-    jetp_index=Invalid."""
-    jetp_index::Int
-
-    """The distance corresponding to the recombination
-       at this stage of the clustering."""
-    dij::Float64
-
-    """The largest recombination distance seen
-       so far in the clustering history."""
-    max_dij_so_far::Float64
-end
-
-"""Used for initial particles"""
-HistoryElement(jetp_index) = HistoryElement(NonexistentParent, NonexistentParent, Invalid, jetp_index, 0.0, 0.0)
-
+# Structures used internally by the tiled algorithm
 
 """Structure analogous to BriefJet, but with the extra information
 needed for dealing with tiles"""
@@ -242,30 +193,3 @@ tiledjet_remove_from_tiles!(tiling, jet) = begin
 
     jet.next = jet.previous = noTiledJet # To be clean, but not mandatory
 end
-
-"""
-Convienence structure holding all of the relevant parameters for
-the jet reconstruction
-"""
-struct ClusterSequence
-    """
-    This contains the physical PseudoJets; for each PseudoJet one can find
-    the corresponding position in the _history by looking at
-    _jets[i].cluster_hist_index()
-    """
-    jets::Vector{PseudoJet}
-
-    """
-    This vector will contain the branching history; for each stage,
-    history[i].jetp_index indicates where to look in the _jets
-    vector to get the physical PseudoJet.
-    """
-    history::Vector{HistoryElement}
-
-    """PseudoJet tiling"""
-    tiling::Tiling
-
-    """Total energy of the event"""
-    Qtot
-end
-

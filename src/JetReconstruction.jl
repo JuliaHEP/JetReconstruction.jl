@@ -22,12 +22,13 @@ py(p::LorentzVectorCyl) = LorentzVectorHEP.py(p)
 pz(p::LorentzVectorCyl) = LorentzVectorHEP.pz(p)
 energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 
-# Philipp's pseudojet type
+# Pseudojet type
 include("Pseudojet.jl")
 export PseudoJet
 
-# Simple HepMC3 reader
-include("HepMC3.jl")
+# ClusterSequence type
+include("ClusterSequence.jl")
+export ClusterSequence
 
 # Jet reconstruction strategies
 include("JetRecoStrategies.jl")
@@ -48,6 +49,9 @@ export tiled_jet_reconstruct
 ## Generic algorithm, which can switch strategy dynamically
 include("GenericAlgo.jl")
 export generic_jet_reconstruct
+
+# Simple HepMC3 reader
+include("HepMC3.jl")
 
 # jet serialisation (saving to file)
 include("Serialize.jl")
