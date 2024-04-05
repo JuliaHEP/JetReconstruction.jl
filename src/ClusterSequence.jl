@@ -73,3 +73,23 @@ struct ClusterSequence
     """Total energy of the event"""
     Qtot
 end
+
+"""Return all inclusive jets of a ClusterSequence with pt > ptmin"""
+function inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
+    dcut = ptmin * ptmin
+    jets_local = Vector{LorentzVectorCyl}(undef, 0)
+    # sizehint!(jets_local, length(clusterseq.jets))
+    # For inclusive jets with a plugin algorithm, we make no
+    # assumptions about anything (relation of dij to momenta,
+    # ordering of the dij, etc.)
+    # for elt in Iterators.reverse(clusterseq.history)
+    for elt in clusterseq.history
+        elt.parent2 == BeamJet || continue
+        iparent_jet = clusterseq.history[elt.parent1].jetp_index
+        jet = clusterseq.jets[iparent_jet]
+        if pt2(jet) >= dcut
+            push!(jets_local, LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
+        end
+    end
+    jets_local
+end
