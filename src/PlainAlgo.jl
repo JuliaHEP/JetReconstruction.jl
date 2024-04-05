@@ -165,7 +165,8 @@ function plain_jet_reconstruct(;objects_array::Vector{J}, kt2_array::Vector{F},
             @inbounds for x in sequences[j] # WARNING: first index in the sequence is not necessarily the seed
                 push!(sequences[i], x)
             end
-        else # i == j
+        else # i == j, this is a final jet ("merged with beam")
+            # Only store if it passes the pt cut
             if (pt2(objects_array[i]) >= ptmin2)
                 # We return PseudoJets, so if we were not passed these then we need to convert (N.B. this is costly!)
                 if J == PseudoJet
