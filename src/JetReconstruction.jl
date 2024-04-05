@@ -28,7 +28,7 @@ export PseudoJet
 
 # ClusterSequence type
 include("ClusterSequence.jl")
-export ClusterSequence
+export ClusterSequence, inclusive_jets
 
 # Jet reconstruction strategies
 include("JetRecoStrategies.jl")

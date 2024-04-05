@@ -70,8 +70,13 @@ function pseudojets2vectors(events::Vector{Vector{PseudoJet}})
 	event_vector
 end
 
-"""Return the list of jets passing a pt cut"""
-function final_jets(jets::Vector{Vector{Float64}}, ptmin::AbstractFloat)
+"""
+Return the list of jets passing a pt cut
+
+The ptmin cut in these functions is slightly legacy as often the
+input jets were already filtered on pt 
+"""
+function final_jets(jets::Vector{Vector{Float64}}, ptmin::AbstractFloat=0.0)
 	count = 0
 	final_jets = Vector{FinalJet}()
 	sizehint!(final_jets, 6)
@@ -86,7 +91,7 @@ function final_jets(jets::Vector{Vector{Float64}}, ptmin::AbstractFloat)
 	final_jets
 end
 
-function final_jets(jets::Vector{PseudoJet}, ptmin::AbstractFloat)
+function final_jets(jets::Vector{PseudoJet}, ptmin::AbstractFloat=0.0)
 	count = 0
 	final_jets = Vector{FinalJet}()
 	sizehint!(final_jets, 6)
@@ -100,7 +105,7 @@ function final_jets(jets::Vector{PseudoJet}, ptmin::AbstractFloat)
 	final_jets
 end
 
-function final_jets(jets::Vector{LorentzVector}, ptmin::AbstractFloat)
+function final_jets(jets::Vector{LorentzVector}, ptmin::AbstractFloat=0.0)
 	count = 0
 	final_jets = Vector{FinalJet}()
 	sizehint!(final_jets, 6)
@@ -114,7 +119,7 @@ function final_jets(jets::Vector{LorentzVector}, ptmin::AbstractFloat)
 	final_jets
 end
 
-function final_jets(jets::Vector{LorentzVectorCyl}, ptmin::AbstractFloat)
+function final_jets(jets::Vector{LorentzVectorCyl}, ptmin::AbstractFloat=0.0)
 	count = 0
 	final_jets = Vector{FinalJet}()
 	sizehint!(final_jets, 6)

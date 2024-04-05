@@ -260,28 +260,6 @@ function find_tile_neighbours!(tile_union, jetA, jetB, oldB, tiling)
 end
 
 
-"""Return all inclusive jets of a ClusterSequence with pt > ptmin"""
-function inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
-    dcut = ptmin * ptmin
-    jets_local = Vector{LorentzVectorCyl}(undef, 0)
-    # sizehint!(jets_local, length(clusterseq.jets))
-    # For inclusive jets with a plugin algorithm, we make no
-    # assumptions about anything (relation of dij to momenta,
-    # ordering of the dij, etc.)
-    # for elt in Iterators.reverse(clusterseq.history)
-    for elt in clusterseq.history
-        elt.parent2 == BeamJet || continue
-        iparent_jet = clusterseq.history[elt.parent1].jetp_index
-        jet = clusterseq.jets[iparent_jet]
-        if pt2(jet) >= dcut
-            push!(jets_local, LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
-            # push!(jets_local, jet)
-        end
-    end
-    jets_local
-end
-
-
 """
 Main jet reconstruction algorithm entry point for generic data types
 
@@ -292,7 +270,7 @@ be used.
 If a non-standard recombination is used, it must be defined for
 JetReconstruction.PseudoJet, as this struct is used internally.
 """
-function tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, ptmin = 0.0) where {T}
+function tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +) where {T}
     # Here we need to populate the vector of PseudoJets that are the internal
     # EDM for the main algorithm, then we call the reconstruction
     pseudojets = Vector{PseudoJet}(undef, length(particles))
@@ -300,13 +278,14 @@ function tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine 
         pseudojets[i] = PseudoJet(px(particle), py(particle),
             pz(particle), energy(particle))
     end
-    tiled_jet_reconstruct(pseudojets, p = p, R = R, recombine = recombine, ptmin = ptmin)
+    tiled_jet_reconstruct(pseudojets, p = p, R = R, recombine = recombine)
 end
+
 
 """
 Main jet reconstruction algorithm, using PseudoJet objects
 """
-function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +, ptmin = 0.0)
+function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +)
     # Bounds
     N::Int = length(particles)
     # @debug "Initial particles: $(N)"
@@ -460,5 +439,5 @@ function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, re
             @inbounds dij[jetB.dij_posn] = _tj_diJ(jetB)
         end
     end
-    inclusive_jets(clusterseq, ptmin), clusterseq.history
+    clusterseq
 end

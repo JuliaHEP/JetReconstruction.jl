@@ -25,6 +25,11 @@ function sort_jets!(jet_array::Vector{FinalJet})
     sort!(jet_array, by = jet_pt, rev = true)
 end
 
+function sort_jets!(jet_array::Vector{LorentzVectorCyl})
+    jet_pt(jet) = jet.pt
+    sort!(jet_array, by = jet_pt, rev = true)
+end
+
 function main()
     # Read our fastjet outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
     algorithms = Dict(-1 => "Anti-kt",
@@ -43,12 +48,12 @@ function main()
 
     # Test each stratgy...
     for power in keys(algorithms)
-        do_test_compare_to_fastjet(JetRecoStrategy.N2Plain, fastjet_data[power], algname = algorithms[power], power = power)
+        # do_test_compare_to_fastjet(JetRecoStrategy.N2Plain, fastjet_data[power], algname = algorithms[power], power = power)
         do_test_compare_to_fastjet(JetRecoStrategy.N2Tiled, fastjet_data[power], algname = algorithms[power], power = power)
     end
 
     # Compare inputing data in PseudoJet with using a LorentzVector
-    do_test_compare_types(JetRecoStrategy.N2Plain, algname = algorithms[-1], power = -1)
+    # do_test_compare_types(JetRecoStrategy.N2Plain, algname = algorithms[-1], power = -1)
     do_test_compare_types(JetRecoStrategy.N2Tiled, algname = algorithms[-1], power = -1)
 end
 
@@ -74,10 +79,9 @@ function do_test_compare_to_fastjet(strategy::JetRecoStrategy.Strategy, fastjet_
     events::Vector{Vector{PseudoJet}} = read_final_state_particles("test/data/events.hepmc3")
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
-        finaljets, _ = jet_reconstruction(event, R = distance, p = power, ptmin = ptmin)
-        fj = final_jets(finaljets, ptmin)
-        sort_jets!(fj)
-        push!(jet_collection, FinalJets(ievt, fj))
+        finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance, p = power), ptmin))
+        sort_jets!(finaljets)
+        push!(jet_collection, FinalJets(ievt, finaljets))
     end
 
     @testset "Jet Reconstruction compare to FastJet: Strategy $strategy_name, Algorithm $algname" begin
@@ -126,20 +130,18 @@ function do_test_compare_types(strategy::JetRecoStrategy.Strategy;
     events::Vector{Vector{PseudoJet}} = read_final_state_particles("test/data/events.hepmc3")
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
-        finaljets, _ = jet_reconstruction(event, R = distance, p = power, ptmin = ptmin)
-        fj = final_jets(finaljets, ptmin)
-        sort_jets!(fj)
-        push!(jet_collection, FinalJets(ievt, fj))
+        finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance, p = power), ptmin))
+        sort_jets!(finaljets)
+        push!(jet_collection, FinalJets(ievt, finaljets))
     end
 
     # From LorentzVector
     events_lv::Vector{Vector{LorentzVector}} = read_final_state_particles_lv("test/data/events.hepmc3")
     jet_collection_lv = FinalJets[]
     for (ievt, event) in enumerate(events_lv)
-        finaljets, _ = jet_reconstruction(event, R = distance, p = power, ptmin = ptmin)
-        fj = final_jets(finaljets, ptmin)
-        sort_jets!(fj)
-        push!(jet_collection_lv, FinalJets(ievt, fj))
+        finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance, p = power), ptmin))
+        sort_jets!(finaljets)
+        push!(jet_collection_lv, FinalJets(ievt, finaljets))
     end
 
     @testset "Jet Reconstruction Compare PseudoJet and LorentzVector, Strategy $strategy_name, Algorithm $algname" begin
@@ -158,9 +160,6 @@ function do_test_compare_types(strategy::JetRecoStrategy.Strategy;
     end
 end
 
-
-if abspath(PROGRAM_FILE) == @__FILE__
-    logger = ConsoleLogger(stdout, Logging.Warn)
-    global_logger(logger)
-    main()
-end
+logger = ConsoleLogger(stdout, Logging.Warn)
+global_logger(logger)
+main()

@@ -86,8 +86,7 @@ function jet_process(
 	if nsamples > 1 || profile
 		@info "Doing initial warm-up run"
 		for event in events
-			finaljets, _ = generic_jet_reconstruct(event, R = distance, p = power, strategy = strategy)
-			final_jets(finaljets, ptmin)
+			_ = inclusive_jets(generic_jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
 		end
 	end
 
@@ -99,8 +98,7 @@ function jet_process(
     if alloc
         println("Memory allocation statistics:")
         @timev for event in events
-            finaljets, _ = generic_jet_reconstruct(event, R = distance, p = power, strategy = strategy)
-			final_jets(finaljets, ptmin)
+			_ = inclusive_jets(generic_jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
         end
         return nothing
     end
@@ -114,8 +112,7 @@ function jet_process(
 		gcoff && GC.enable(false)
 		t_start = time_ns()
 		for (ievt, event) in enumerate(events)
-			finaljets, _ = generic_jet_reconstruct(event, R = distance, p = power, ptmin=ptmin, strategy = strategy)
-			fj = final_jets(finaljets, ptmin)
+			finaljets = inclusive_jets(generic_jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
 			# Only print the jet content once
 			if irun == 1
 				@info begin
@@ -126,7 +123,7 @@ function jet_process(
 					"$(jet_output)"
 				end
 				if !isnothing(dump)
-					push!(jet_collection, FinalJets(ievt, fj))
+					push!(jet_collection, FinalJets(ievt, finaljets))
 				end
 			end
 		end
