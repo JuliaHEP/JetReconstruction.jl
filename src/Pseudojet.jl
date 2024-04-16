@@ -50,7 +50,7 @@ PseudoJet(px::Float64, py::Float64,
 import Base.show
 show(io::IO, jet::PseudoJet) = begin
     print(io, "Pseudojet(px: ", jet.px, " py: ", jet.py, " pz: ", jet.pz, " E: ", jet.E, "; ",
-          "pt: ", sqrt(jet._pt2), " eta: ", rap(jet), " phi: ", phi(jet), ", m: ", m(jet), ")")
+          "pt: ", sqrt(jet._pt2), " eta: ", rapidity(jet), " phi: ", phi(jet), ", m: ", m(jet), ")")
 end
 
 
