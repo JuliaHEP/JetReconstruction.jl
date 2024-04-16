@@ -48,12 +48,12 @@ function main()
 
     # Test each stratgy...
     for power in keys(algorithms)
-        # do_test_compare_to_fastjet(JetRecoStrategy.N2Plain, fastjet_data[power], algname = algorithms[power], power = power)
+        do_test_compare_to_fastjet(JetRecoStrategy.N2Plain, fastjet_data[power], algname = algorithms[power], power = power)
         do_test_compare_to_fastjet(JetRecoStrategy.N2Tiled, fastjet_data[power], algname = algorithms[power], power = power)
     end
 
     # Compare inputing data in PseudoJet with using a LorentzVector
-    # do_test_compare_types(JetRecoStrategy.N2Plain, algname = algorithms[-1], power = -1)
+    do_test_compare_types(JetRecoStrategy.N2Plain, algname = algorithms[-1], power = -1)
     do_test_compare_types(JetRecoStrategy.N2Tiled, algname = algorithms[-1], power = -1)
 end
 
