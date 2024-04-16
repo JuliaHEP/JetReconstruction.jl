@@ -88,120 +88,127 @@ Examples of suitable types are JetReconstruction.PseudoJet and LorentzVectorHEP.
 N.B. these methods need to exist in the namespace of this package, i.e. JetReconstruction.pt2(::T),
 which is already done for the two types above.
 """
-function plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, ptmin = 0.0) where T
+function plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +) where T
     # Integer p if possible
     p = (round(p) == p) ? Int(p) : p
 
+    if T == PseudoJet
+        # recombination_particles will become part of the cluster sequence, so size it for
+        # the starting particles and all N recombinations
+        recombination_particles = copy(particles)
+        sizehint!(recombination_particles, length(particles) * 2)
+    else
+        recombination_particles = PseudoJet[]
+        sizehint!(recombination_particles, length(particles) * 2)
+        for i in eachindex(particles)
+            push!(recombination_particles, PseudoJet(px(particles[i]), py(particles[i]), pz(particles[i]), energy(particles[i])))
+        end
+    end
+
+    # Now call the actual reconstruction method, tuned for our internal EDM
+    _plain_jet_reconstruct(particles=recombination_particles, p=p, R=R, recombine=recombine)
+end
+
+
+function _plain_jet_reconstruct(;particles::Vector{PseudoJet}, p = -1, R = 1.0, recombine = +)
+    # Bounds
+    N::Int = length(particles)
+    # Parameters
+    R2 = R^2
+
+    # Optimised compact arrays for determining the next merge step
     # We make sure these arrays are type stable - have seen issues where, depending on the values
     # returned by the methods, they can become unstable and performance degrades
     kt2_array::Vector{Float64} = pt2.(particles) .^ p
     phi_array::Vector{Float64} = phi.(particles)
     rapidity_array::Vector{Float64} = rapidity.(particles)
-
-    objects_array = copy(particles)
-
-    # Now call the actual reconstruction method, tuned for our internal EDM
-    plain_jet_reconstruct(objects_array=objects_array, kt2_array=kt2_array, phi_array=phi_array, 
-        rapidity_array=rapidity_array, p=p, R=R, recombine=recombine, ptmin=ptmin)
-end
-
-
-function plain_jet_reconstruct(;objects_array::Vector{J}, kt2_array::Vector{F}, 
-        phi_array::Vector{F}, rapidity_array::Vector{F}, p = -1, R = 1.0, recombine = +, ptmin = 0.0) where {J, F<:AbstractFloat}
-    # Bounds
-    N::Int = length(objects_array)
-
-    # Returned values
-    jets = PseudoJet[]
-    sequences = Vector{Int}[] # recombination sequences, WARNING: first index in the sequence is not necessarily the seed
-
-    # Parameters
-    R2 = R^2
-    ptmin2 = ptmin^2
-
-    # Data
     nn = Vector(1:N) # nearest neighbours
-    nndist = fill(float(R2), N) # distances to the nearest neighbour
-    sequences = Vector{Int}[[x] for x in 1:N]
+    nndist = fill(float(R2), N) # geometric distances to the nearest neighbour
+    nndij::Vector{Float64} = zeros(N) # dij metric distance
 
-    # initialize _nn
+    # Maps index from the compact array to the clusterseq jet vector
+    clusterseq_index::Vector{Int} = collect(1:N)
+
+    # Setup the initial history and get the total energy
+    history, Qtot = initial_history(particles)
+    # Current implementation mutates the particles vector, so need to copy it
+    # for the cluster sequence (there is too much copying happening, so this
+    # needs to be rethought and reoptimised)
+    clusterseq = ClusterSequence(particles, history, Qtot)
+
+    # Initialize nearest neighbours
     @simd for i in 1:N
         upd_nn_crosscheck!(i, 1, i - 1, rapidity_array, phi_array, R2, nndist, nn)
     end
 
-    # diJ table *_R2
-    nndij::Vector{Float64} = zeros(N)
+    # diJ table * R2
     @inbounds @simd for i in 1:N
         nndij[i] = dij(i, kt2_array, nn, nndist)
     end
 
     iteration::Int = 1
     while N != 0
-        # findmin
+        @debug "Beginning iteration $iteration"
+        # Findmin and add back renormalisation to distance
         dij_min, i = fast_findmin(nndij, N)
-
+        dij_min *= R2
         j::Int = nn[i]
+        @debug "Closest compact jets are $i ($(clusterseq_index[i])) and $j ($(clusterseq_index[j]))"
 
-        ## Needed for certain tricky debugging situations
-        # if iteration==1
-        #     debug_jets(_nn, _nndist, _nndij)
-        # end
-
-        if i != j
+        if i != j # Merge jets i and j
             # swap if needed
             if j < i
                 i, j = j, i
             end
 
-            # update ith jet, replacing it with the new one
-            objects_array[i] = recombine(objects_array[i], objects_array[j])
-            phi_array[i] = phi(objects_array[i])
-            rapidity_array[i] = rapidity(objects_array[i])
-            kt2_array[i] = pt2(objects_array[i]) ^ p
+            # Source "history" for merge
+            hist_i = clusterseq.jets[clusterseq_index[i]]._cluster_hist_index
+            hist_j = clusterseq.jets[clusterseq_index[j]]._cluster_hist_index
 
+            # Recombine i and j into the next jet
+            push!(clusterseq.jets, 
+                recombine(clusterseq.jets[clusterseq_index[i]], clusterseq.jets[clusterseq_index[j]]))
+            # Get its index and the history index
+            newjet_k = length(clusterseq.jets)
+            newstep_k = length(clusterseq.history) + 1
+            clusterseq.jets[newjet_k]._cluster_hist_index = newstep_k
+            # Update history
+            add_step_to_history!(clusterseq, minmax(hist_i, hist_j)..., newjet_k, dij_min)
+
+            # Update the compact arrays, reusing the i-th slot
+            kt2_array[i] = pt2(clusterseq.jets[newjet_k]) ^ p
+            rapidity_array[i] = rapidity(clusterseq.jets[newjet_k])
+            phi_array[i] = phi(clusterseq.jets[newjet_k])
+            clusterseq_index[i] = newjet_k
             nndist[i] = R2
             nn[i] = i
-
-            @inbounds for x in sequences[j] # WARNING: first index in the sequence is not necessarily the seed
-                push!(sequences[i], x)
-            end
         else # i == j, this is a final jet ("merged with beam")
-            # Only store if it passes the pt cut
-            if (pt2(objects_array[i]) >= ptmin2)
-                # We return PseudoJets, so if we were not passed these then we need to convert (N.B. this is costly!)
-                if J == PseudoJet
-                    push!(jets, objects_array[i])
-                else
-                    push!(jets, PseudoJet(px(objects_array[i]), py(objects_array[i]), pz(objects_array[i]), energy(objects_array[i])))
-                end
-            end
-            push!(sequences, sequences[i])
+            add_step_to_history!(clusterseq, clusterseq.jets[clusterseq_index[i]]._cluster_hist_index, BeamJet, Invalid, dij_min)
         end
 
-        # copy jet N to j
-        objects_array[j] = objects_array[N]
-
-        phi_array[j] = phi_array[N]
-        rapidity_array[j] = rapidity_array[N]
-        kt2_array[j] = kt2_array[N]
-        nndist[j] = nndist[N]
-        nn[j] = nn[N]
-        nndij[j] = nndij[N]
-
-        sequences[j] = sequences[N]
+        # Squash step - copy the final jet's compact data into the j-th slot
+        if j != N
+            phi_array[j] = phi_array[N]
+            rapidity_array[j] = rapidity_array[N]
+            kt2_array[j] = kt2_array[N]
+            nndist[j] = nndist[N]
+            nn[j] = nn[N]
+            nndij[j] = nndij[N]
+            clusterseq_index[j] = clusterseq_index[N]
+        end
 
         Nn::Int = N
         N -= 1
         iteration += 1
 
-        # update nearest neighbours step
+        # Update nearest neighbours step
         @inbounds @simd for k in 1:N
             upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array, phi_array, R2, nndist, nn, nndij)
         end
-        # @infiltrate
 
         nndij[i] = dij(i, kt2_array, nn, nndist)
     end
 
-    jets, sequences
+    # Return the final cluster sequence structure
+    clusterseq
 end
