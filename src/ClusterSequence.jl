@@ -3,6 +3,8 @@
 # Original Julia implementation by Philippe Gras,
 # ported to this package by Graeme Stewart
 
+using Accessors
+
 # One cannot use an ENUM here as it's a different type
 # I don't know any good way to keep this lean and to have these necessary
 # flags other than using these "magic numbers"
@@ -92,4 +94,42 @@ function inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
         end
     end
     jets_local
+end
+
+"""Add a new jet's history into the recombination sequence"""
+add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, dij) = begin
+    max_dij_so_far = max(dij, clusterseq.history[end].max_dij_so_far)
+    push!(clusterseq.history, HistoryElement(parent1, parent2, Invalid,
+        jetp_index, dij, max_dij_so_far))
+
+    local_step = length(clusterseq.history)
+
+    # Sanity check: make sure the particles have not already been recombined
+    #
+    # Note that good practice would make this an assert (since this is
+    # a serious internal issue). However, we decided to throw an
+    # InternalError so that the end user can decide to catch it and
+    # retry the clustering with a different strategy.
+    @assert parent1 >= 1
+    if clusterseq.history[parent1].child != Invalid
+        error("Internal error. Trying to recombine an object that has previsously been recombined.")
+    end
+
+    hist_elem = clusterseq.history[parent1]
+    clusterseq.history[parent1] = @set hist_elem.child = local_step
+
+    if parent2 >= 1
+        clusterseq.history[parent2].child == Invalid || error(
+            "Internal error. Trying to recombine an object that has previsously been recombined.  Parent " * string(parent2) * "'s child index " * string(clusterseq.history[parent1].child) * ". Parent jet index: " *
+            string(clusterseq.history[parent2].jetp_index) * ".",
+        )
+        hist_elem = clusterseq.history[parent2]
+        clusterseq.history[parent2] = @set hist_elem.child = local_step
+    end
+
+    # Get cross-referencing right from PseudoJets
+    if jetp_index != Invalid
+        @assert jetp_index >= 1
+        clusterseq.jets[jetp_index]._cluster_hist_index = local_step
+    end
 end
