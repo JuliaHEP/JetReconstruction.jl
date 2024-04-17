@@ -251,6 +251,13 @@ Main jet reconstruction algorithm, using PseudoJet objects
 function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +)
     # Bounds
     N::Int = length(particles)
+
+    # Extremely odd - having these @debug statements present causes a performance
+    # degradation of ~20μs per event on my M2 mac (12%!), even when no debugging is used
+    # so they need to be completely commented out...
+    #
+    # There are a few reports of this in, e.g., https://github.com/JuliaLang/julia/issues/28147
+    # It does seem to have improved, but it's far from perfect!
     # @debug "Initial particles: $(N)"
 
     # Algorithm parameters
