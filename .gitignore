@@ -34,4 +34,5 @@ benchmark/*
 .DS_Store
 /notebooks/*
 /profile/*
+/statprof/*
 /debug/*

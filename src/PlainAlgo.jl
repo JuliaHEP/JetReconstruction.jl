@@ -122,8 +122,8 @@ function _plain_jet_reconstruct(;particles::Vector{PseudoJet}, p = -1, R = 1.0, 
     kt2_array::Vector{Float64} = pt2.(particles) .^ p
     phi_array::Vector{Float64} = phi.(particles)
     rapidity_array::Vector{Float64} = rapidity.(particles)
-    nn = Vector(1:N) # nearest neighbours
-    nndist = fill(float(R2), N) # geometric distances to the nearest neighbour
+    nn::Vector{Int} = Vector(1:N) # nearest neighbours
+    nndist::Vector{Float64} = fill(float(R2), N) # geometric distances to the nearest neighbour
     nndij::Vector{Float64} = zeros(N) # dij metric distance
 
     # Maps index from the compact array to the clusterseq jet vector
@@ -148,12 +148,16 @@ function _plain_jet_reconstruct(;particles::Vector{PseudoJet}, p = -1, R = 1.0, 
 
     iteration::Int = 1
     while N != 0
-        @debug "Beginning iteration $iteration"
+        # Extremely odd - having these @debug statements present causes a performance
+        # degradation of ~140μs per event on my M2 mac (20%!), even when no debugging is used
+        # so they need to be completely commented out...
+
+        #@debug "Beginning iteration $iteration"
         # Findmin and add back renormalisation to distance
         dij_min, i = fast_findmin(nndij, N)
         dij_min *= R2
         j::Int = nn[i]
-        @debug "Closest compact jets are $i ($(clusterseq_index[i])) and $j ($(clusterseq_index[j]))"
+        #@debug "Closest compact jets are $i ($(clusterseq_index[i])) and $j ($(clusterseq_index[j]))"
 
         if i != j # Merge jets i and j
             # swap if needed
