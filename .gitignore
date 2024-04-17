@@ -33,5 +33,5 @@ benchmark/*
 # Misc files
 .DS_Store
 /notebooks/*
-/statprof/*
+/profile/*
 /debug/*
