@@ -17,18 +17,20 @@ using JSON
 using LorentzVectorHEP
 using JetReconstruction
 
-function profile_code(jet_reconstruction, events, niters)
+function profile_code(profile, jet_reconstruction, events, niters; R=0.4, p=-1, strategy=JetRecoStrategy.N2Tiled)
 	Profile.init(n = 5*10^6, delay = 0.00001)
 	profile_events(events) = begin
 		for evt in events
-			jet_reconstruction(evt, R = 0.4)
+			jet_reconstruction(evt, R=R, p=p, strategy=strategy)
 		end
 	end
 	profile_events(events[1:1])
 	@profile for i ∈ 1:niters
 		profile_events(events)
 	end
-	statprofilehtml()
+	profile_path = joinpath("profile", profile, "profsvg.svg")
+	mkpath(dirname(profile_path))
+	statprofilehtml(path=dirname(profile_path))
 	fcolor = FlameGraphs.FlameColors(
 		reverse(colormap("Blues", 15))[1:5],
 		colorant"slategray4",
@@ -38,14 +40,14 @@ function profile_code(jet_reconstruction, events, niters)
 	)
 	ProfileSVG.save(
 		fcolor,
-		joinpath("statprof", "profsvg.svg");
+		profile_path,
 		combine = true,
 		timeunit = :ms,
 		font = "Arial, Helvetica, sans-serif",
 	)
 	println(
 		"Flame graph from ProfileSVG.jl at file://",
-		abspath("statprof/profsvg.svg"),
+		abspath(profile_path),
 		"\n",
 		"""
 \tRed tint:          Runtime dispatch
@@ -71,7 +73,7 @@ function jet_process(
 	strategy::JetRecoStrategy.Strategy,
 	nsamples::Integer = 1,
 	gcoff::Bool = false,
-	profile::Bool = false,
+	profile = nothing,
     alloc::Bool = false,
 	dump::Union{String, Nothing} = nothing,
 )
@@ -83,15 +85,15 @@ function jet_process(
 	end
 
 	# Warmup code if we are doing a multi-sample timing run
-	if nsamples > 1 || profile
+	if nsamples > 1 || !isnothing(profile)
 		@info "Doing initial warm-up run"
 		for event in events
 			_ = inclusive_jets(generic_jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
 		end
 	end
 
-	if profile
-		profile_code(generic_jet_reconstruct, events, nsamples)
+	if !isnothing(profile)
+		profile_code(profile, generic_jet_reconstruct, events, nsamples, R = distance, p = power, strategy = strategy)
 		return nothing
 	end
 
@@ -209,8 +211,9 @@ parse_command_line(args) = begin
 		action = :store_true
 
 		"--profile"
-		help = "Profile code and generate a flame graph."
-		action = :store_true
+		help = """Profile code and generate a flame graph; the results 
+		will be stored in 'profile/PROFILE' subdirectory, where PROFILE is the value
+		given to this option)"""
 
         "--alloc"
         help = "Provide memory allocation statistics."
