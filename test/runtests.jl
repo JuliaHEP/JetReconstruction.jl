@@ -6,6 +6,24 @@ using JSON
 using LorentzVectorHEP
 using Logging
 
+const events_file = joinpath(@__DIR__, "data", "events.hepmc3")
+
+"""Decompress data file, if necessary"""
+function unpack_events(file)
+    # File already there?
+    if isfile(file)
+        return true
+    end
+    # LZMA source?
+    file_compressed = joinpath(dirname(file), basename(file)*".xz")
+    if isfile(file_compressed)
+        @debug "Unpacking $(file_compressed)"
+        run(pipeline(`xzcat $file_compressed`, stdout=file))
+        return true
+    end
+    false
+end
+
 """Read JSON file with fastjet jets in it"""
 function read_fastjet_outputs(fname)
     f = open(fname)
@@ -31,6 +49,9 @@ function sort_jets!(jet_array::Vector{LorentzVectorCyl})
 end
 
 function main()
+    # If necessary, unzip the events data file
+    unpack_events(events_file)
+
     # Read our fastjet outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
     algorithms = Dict(-1 => "Anti-kt",
         0 => "Cambridge/Achen",
@@ -76,7 +97,7 @@ function do_test_compare_to_fastjet(strategy::JetRecoStrategy.Strategy, fastjet_
 
     # Now run our jet reconstruction...
     # From PseudoJets
-    events::Vector{Vector{PseudoJet}} = read_final_state_particles(joinpath(@__DIR__, "data", "events.hepmc3"))
+    events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file)
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
         finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance, p = power), ptmin))
@@ -127,7 +148,7 @@ function do_test_compare_types(strategy::JetRecoStrategy.Strategy;
 
     # Now run our jet reconstruction...
     # From PseudoJets
-    events::Vector{Vector{PseudoJet}} = read_final_state_particles(joinpath(@__DIR__, "data", "events.hepmc3"))
+    events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file)
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
         finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance, p = power), ptmin))
@@ -136,7 +157,7 @@ function do_test_compare_types(strategy::JetRecoStrategy.Strategy;
     end
 
     # From LorentzVector
-    events_lv::Vector{Vector{LorentzVector}} = read_final_state_particles_lv(joinpath(@__DIR__, "data", "events.hepmc3"))
+    events_lv::Vector{Vector{LorentzVector}} = read_final_state_particles_lv(events_file)
     jet_collection_lv = FinalJets[]
     for (ievt, event) in enumerate(events_lv)
         finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance, p = power), ptmin))

@@ -20,6 +20,7 @@ function read_final_state_particles(fname; maxevents = -1, skipevents = 0)
 		push!(events, input_particles)
 		ipart += 1
 	end
+	close(f)
 
 	@info "Total Events: $(length(events))"
 	@debug events
@@ -46,6 +47,7 @@ function read_final_state_particles_lv(fname; maxevents = -1, skipevents = 0)
 		push!(events, input_particles)
 		ipart += 1
 	end
+	close(f)
 
 	@info "Total Events: $(length(events))"
 	@debug events
