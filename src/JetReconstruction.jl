@@ -48,7 +48,7 @@ export tiled_jet_reconstruct
 
 ## Generic algorithm, which can switch strategy dynamically
 include("GenericAlgo.jl")
-export generic_jet_reconstruct
+export jet_reconstruct
 
 # Simple HepMC3 reader
 include("HepMC3.jl")

@@ -2,7 +2,7 @@
 # switch based on the strategy, or based on the event density
 # if the "Best" strategy is to be employed
 
-function generic_jet_reconstruct(particles; p = -1, R = 1.0, recombine = +, strategy = JetRecoStrategy.Best)
+function jet_reconstruct(particles; p = -1, R = 1.0, recombine = +, strategy = JetRecoStrategy.Best)
     # Either map to the fixed algorithm corresponding to the strategy
     # or to an optimal choice based on the density of initial particles
 
