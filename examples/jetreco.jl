@@ -59,7 +59,7 @@ end
 """
 Top level call funtion for demonstrating the use of jet reconstruction
 
-This uses the "generic_jet_reconstruct" wrapper, so algorithm swutching
+This uses the "jet_reconstruct" wrapper, so algorithm switching
 happens inside the JetReconstruction package itself.
 
 Some other ustilities are also supported here, such as profiling and
@@ -88,19 +88,19 @@ function jet_process(
 	if nsamples > 1 || !isnothing(profile)
 		@info "Doing initial warm-up run"
 		for event in events
-			_ = inclusive_jets(generic_jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
+			_ = inclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
 		end
 	end
 
 	if !isnothing(profile)
-		profile_code(profile, generic_jet_reconstruct, events, nsamples, R = distance, p = power, strategy = strategy)
+		profile_code(profile, jet_reconstruct, events, nsamples, R = distance, p = power, strategy = strategy)
 		return nothing
 	end
 
     if alloc
         println("Memory allocation statistics:")
         @timev for event in events
-			_ = inclusive_jets(generic_jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
+			_ = inclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
         end
         return nothing
     end
@@ -114,7 +114,7 @@ function jet_process(
 		gcoff && GC.enable(false)
 		t_start = time_ns()
 		for (ievt, event) in enumerate(events)
-			finaljets = inclusive_jets(generic_jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
+			finaljets = inclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
 			# Only print the jet content once
 			if irun == 1
 				@info begin

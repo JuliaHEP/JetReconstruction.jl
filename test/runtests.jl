@@ -91,6 +91,9 @@ function do_test_compare_to_fastjet(strategy::JetRecoStrategy.Strategy, fastjet_
     elseif (strategy == JetRecoStrategy.N2Tiled)
         jet_reconstruction = tiled_jet_reconstruct
         strategy_name = "N2Tiled"
+    elseif (strategy == JetRecoStrategy.Best)
+        jet_reconstruction = jet_reconstruct
+        strategy_name = "Best"
     else
         throw(ErrorException("Strategy not yet implemented"))
     end

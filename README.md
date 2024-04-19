@@ -10,21 +10,14 @@ Algorithms used are based on the C++ FastJet package (<https://fastjet.fr>,
 [hep-ph/0512210](https://arxiv.org/abs/hep-ph/0512210),
 [arXiv:1111.6097](https://arxiv.org/abs/1111.6097)), reimplemented natively in Julia.
 
-One algorithm is the plain N2 approach `N2Plain`, the other uses the FastJet tiling
-approach, `N2Tiled`.
+The algorithms include anti-${k}_\text{T}$, Cambridge/Achen and inclusive $k_\text{T}$.
 
 ### Interface
 
-To use the package one should call the appropriate API interface of the desired algorithm
+The simplest interface is to call:
 
 ```julia
-# N2Plain
-plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, ptmin = 0.0)
-```
-
-```julia
-# N2Tiled
-tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, ptmin = 0.0)
+cs = jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, strategy = JetRecoStrategy.Best)
 ```
 
 - `particles` - a vector of input particles for the clustering
@@ -32,16 +25,51 @@ tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, ptmi
   - These methods have to be defined in the namespace of this package, i.e., `JetReconstruction.pt2(::T)`
   - The `PseudoJet` type from this package, or a 4-vector from `LorentzVectorHEP` are suitable (and have the appropriate definitions)
 - `p` - the transverse momentum power used in the $d_{ij}$ metric for deciding on closest jets, as $k^{2p}_\text{T}$
-  - `-1` gives anti-${k}_\text{T}$ clustering
+  - `-1` gives anti-${k}_\text{T}$ clustering (default)
   - `0` gives Cambridge/Achen
   - `1` gives inclusive $k_\text{T}$
-- `R` - the cone size parameter (no particles more geometrically distance than `R` will be merged)
-- `recombine` - the function used to merge two pseudojets (by default this is simple 4-vector addition of $(E, \mathbf{p})$)
-- `ptmin` - only jets of transverse momentum greater than or equal to `ptmin` will be returned
+- `R` - the cone size parameter; no particles more geometrically distance than `R` will be merged (default 1.0)
+- `recombine` - the function used to merge two pseudojets (default is a simple 4-vector addition of $(E, \mathbf{p})$)
+- `strategy` - the algorithm strategy to adopt, as described below (default `JetRecoStrategy.Best`)
 
-Both of these functions return tuple of `(jets, seq)`, where these are a vector of `JetReconstruction.PseudoJet` objects and cluster sequencing information, respectively.
+The object returned is a `ClusterSequence`, which internally tracks all merge steps.
 
-Note that the `N2Plain` algorithm is usually faster at low densities, $\lessapprox 50$ input particles, otherwise the tiled algorithm is faster.
+To obtain the final inclusive jets, use the `inclusive_jets` method:
+
+```julia
+final_jets = inclusive_jets(cs::ClusterSequence; ptmin=0.0)
+```
+
+Only jets passing the cut $p_T > p_{Tmin}$ will be returned. The result is returned as a `Vector{LorentzVectorHEP}`.
+
+#### Sorting
+
+As sorting vectors is trivial in Julia, no special sorting methods are provided. As an example, to sort exclusive jets of $>5.0$ (usually GeV, depending on your EDM) from highest energy to lowest:
+
+```julia
+sorted_jets = sort!(inclusive_jets(cs::ClusterSequence; ptmin=5.0), by=JetReconstruction.energy, rev=true)
+```
+
+#### Strategy
+
+Three strategies are available for the different algorithms:
+
+| Strategy Name | Notes | Interface |
+|---|---|---|
+| `JetRecoStrategy.Best` | Dynamically switch strategy based on input particle density | `jet_reconstruct` |
+| `JetRecoStrategy.N2Plain` | Global matching of particles at each interation (works well for low $N$) | `plain_jet_reconstruct` |
+| `JetRecoStrategy.N2Tiled` | Use tiles of radius $R$ to limit search space (works well for higher $N$) | `tiled_jet_reconstruct` |
+
+Generally one can use the `jet_reconstruct` interface, shown above, as the *Best* strategy safely as the overhead is extremely low. That interface supports a `strategy` option to switch to a different option.
+
+Another option, if one wishes to use a specific strategy, is to call that strategy's interface directly, e.g.,
+
+```julia
+# N2Plain
+plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +)
+```
+
+Note that there is no `strategy` option in these interfaces.
 
 ### Example
 
