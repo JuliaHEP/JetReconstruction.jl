@@ -24,12 +24,12 @@ cs = jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, strat
   - Any type that supplies the methods `pt2()`, `phi()`, `rapidity()`, `px()`, `py()`, `pz()`, `energy()` can be used
   - These methods have to be defined in the namespace of this package, i.e., `JetReconstruction.pt2(::T)`
   - The `PseudoJet` type from this package, or a 4-vector from `LorentzVectorHEP` are suitable (and have the appropriate definitions)
-- `p` - the transverse momentum power used in the $d_{ij}$ metric for deciding on closest jets, as $k^{2p}_\text{T}$
-  - `-1` gives anti-${k}_\text{T}$ clustering (default)
+- `p` - the transverse momentum power used in the $d_{ij}$ metric for deciding on closest jets, as $k^{2p}_\text{T}$. Different values of $p$ then give different reconstruction algorithms:
+  - `-1` gives anti-$`{k}_\text{T}`$ clustering (default)
   - `0` gives Cambridge/Achen
   - `1` gives inclusive $k_\text{T}$
 - `R` - the cone size parameter; no particles more geometrically distance than `R` will be merged (default 1.0)
-- `recombine` - the function used to merge two pseudojets (default is a simple 4-vector addition of $(E, \mathbf{p})$)
+- `recombine` - the function used to merge two pseudojets (default is a simple 4-vector addition of $`(E, \mathbf{p})`$)
 - `strategy` - the algorithm strategy to adopt, as described below (default `JetRecoStrategy.Best`)
 
 The object returned is a `ClusterSequence`, which internally tracks all merge steps.
@@ -65,7 +65,7 @@ Generally one can use the `jet_reconstruct` interface, shown above, as the *Best
 Another option, if one wishes to use a specific strategy, is to call that strategy's interface directly, e.g.,
 
 ```julia
-# N2Plain
+# For N2Plain strategy called directly
 plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +)
 ```
 
@@ -75,7 +75,7 @@ Note that there is no `strategy` option in these interfaces.
 
 See the `examples/jetreco.jl` script for a full example of how to call jet reconstruction.
 
-```julia
+```sh
 julia --project=. examples/jetreco.jl --maxevents=100 --nsamples=1 --strategy=N2Plain test/data/events.hepmc3
 ...
 julia --project=. examples/jetreco.jl --maxevents=100 --nsamples=1 --strategy=N2Tiled test/data/events.hepmc3
