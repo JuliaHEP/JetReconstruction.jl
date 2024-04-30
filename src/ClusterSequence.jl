@@ -62,7 +62,7 @@ the jet reconstruction
 struct ClusterSequence
     """Algorithm and strategy used"""
     algorithm::JetAlgorithm.Algorithm
-    strategy::JetRecoStrategy.Strategy
+    strategy::RecoStrategy.Strategy
     
     """
     This contains the physical PseudoJets; for each PseudoJet one can find
@@ -88,7 +88,7 @@ struct ClusterSequence
 end
 
 """ClusterSequence constructor, where the power value is given"""
-ClusterSequence(p::Int, strategy::JetRecoStrategy.Strategy, jets, history, Qtot) = begin
+ClusterSequence(p::Int, strategy::RecoStrategy.Strategy, jets, history, Qtot) = begin
     if !haskey(power2algorithm, p)
         raise(ArgumentError("Unrecognised algorithm for power value p=$p"))
     end
@@ -96,7 +96,7 @@ ClusterSequence(p::Int, strategy::JetRecoStrategy.Strategy, jets, history, Qtot)
 end
 
 """ClusterSequence constructor, with direct algorithm specified"""
-ClusterSequence(alg::JetAlgorithm.Algorithm, strategy::JetRecoStrategy.Strategy, jets, history, Qtot) =
+ClusterSequence(alg::JetAlgorithm.Algorithm, strategy::RecoStrategy.Strategy, jets, history, Qtot) =
     ClusterSequence(alg, strategy, jets, length(jets), history, Qtot)
 
 """Add a new jet's history into the recombination sequence"""

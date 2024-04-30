@@ -28,7 +28,7 @@ export PseudoJet
 
 # Jet reconstruction strategies and algorithms (enums!)
 include("AlgorithmStrategyEnums.jl")
-export JetRecoStrategy, JetAlgorithm
+export RecoStrategy, JetAlgorithm
 
 # ClusterSequence type
 include("ClusterSequence.jl")

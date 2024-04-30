@@ -2,8 +2,8 @@
 using EnumX
 
 # Valid strategy enum
-@enumx T = Strategy JetRecoStrategy Best N2Plain N2Tiled
-const AllJetRecoStrategies = [String(Symbol(x)) for x in instances(JetRecoStrategy.Strategy)]
+@enumx T = Strategy RecoStrategy Best N2Plain N2Tiled
+const AllJetRecoStrategies = [String(Symbol(x)) for x in instances(RecoStrategy.Strategy)]
 
 # Algorithm emun
 @enumx T = Algorithm JetAlgorithm AntiKt Cambridge Kt EEKt Durham

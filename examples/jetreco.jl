@@ -17,7 +17,7 @@ using JSON
 using LorentzVectorHEP
 using JetReconstruction
 
-function profile_code(profile, jet_reconstruction, events, niters; R=0.4, p=-1, strategy=JetRecoStrategy.N2Tiled)
+function profile_code(profile, jet_reconstruction, events, niters; R=0.4, p=-1, strategy=RecoStrategy.N2Tiled)
 	Profile.init(n = 5*10^6, delay = 0.00001)
 	profile_events(events) = begin
 		for evt in events
@@ -72,7 +72,7 @@ function jet_process(
 	ptmin::Real = 5.0,
 	dcut = nothing,
 	njets = nothing,
-	strategy::JetRecoStrategy.Strategy,
+	strategy::RecoStrategy.Strategy,
 	nsamples::Integer = 1,
 	gcoff::Bool = false,
 	profile = nothing,
@@ -214,8 +214,8 @@ parse_command_line(args) = begin
 
 		"--strategy"
 		help = """Strategy for the algorithm, valid values: $(join(JetReconstruction.AllJetRecoStrategies, ", "))"""
-		arg_type = JetRecoStrategy.Strategy
-		default = JetRecoStrategy.Best
+		arg_type = RecoStrategy.Strategy
+		default = RecoStrategy.Best
 
 		"--nsamples", "-m"
 		help = "Number of measurement points to acquire."
@@ -254,8 +254,8 @@ parse_command_line(args) = begin
 end
 
 
-function ArgParse.parse_item(::Type{JetRecoStrategy.Strategy}, x::AbstractString)
-	s = tryparse(JetRecoStrategy.Strategy, x)
+function ArgParse.parse_item(::Type{RecoStrategy.Strategy}, x::AbstractString)
+	s = tryparse(RecoStrategy.Strategy, x)
 	if s === nothing
 		throw(ErrorException("Invalid value for strategy: $(x)"))
 	end
