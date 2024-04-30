@@ -67,9 +67,11 @@ serialising the reconstructed jet outputs.
 """
 function jet_process(
 	events::Vector{Vector{PseudoJet}};
-	ptmin::Float64 = 5.0,
-	distance::Float64 = 0.4,
+	distance::Real = 0.4,
 	power::Integer = -1,
+	ptmin::Real = 5.0,
+	dcut = nothing,
+	njets = nothing,
 	strategy::JetRecoStrategy.Strategy,
 	nsamples::Integer = 1,
 	gcoff::Bool = false,
@@ -114,7 +116,13 @@ function jet_process(
 		gcoff && GC.enable(false)
 		t_start = time_ns()
 		for (ievt, event) in enumerate(events)
-			finaljets = inclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
+			if !isnothing(njets)
+				finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), njets=njets)
+			elseif !isnothing(dcut)
+				finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), dcut=dcut)
+			else
+				finaljets = inclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
+			end
 			# Only print the jet content once
 			if irun == 1
 				@info begin
@@ -182,9 +190,17 @@ parse_command_line(args) = begin
 		default = 0
 
 		"--ptmin"
-		help = "Minimum p_t for final jets (GeV)"
+		help = "Minimum p_t for final inclusive jets (energy unit is the same as the input clusters, usually GeV)"
 		arg_type = Float64
 		default = 5.0
+
+		"--exclusive-dcut"
+		help = "Return all exclusive jets where further merging would have d>d_cut"
+		arg_type = Float64
+
+		"--exclusive-njets"
+		help = "Return all exclusive jets once clusterisation has produced n jets"
+		arg_type = Int
 
 		"--distance", "-R"
 		help = "Distance parameter for jet merging"
@@ -258,8 +274,8 @@ main() = begin
 	global_logger(logger)
 	events::Vector{Vector{PseudoJet}} =
 		read_final_state_particles(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
-	jet_process(events, ptmin = args[:ptmin], distance = args[:distance], 
-        power = args[:power], strategy = args[:strategy],
+	jet_process(events, distance = args[:distance], power = args[:power], strategy = args[:strategy],
+		ptmin = args[:ptmin], dcut = args[:exclusive_dcut], njets = args[:exclusive_njets],
 		nsamples = args[:nsamples], gcoff = args[:gcoff], profile = args[:profile],
 		alloc = args[:alloc], dump = args[:dump])
 	nothing

@@ -4,13 +4,15 @@
 # ported to this package by Graeme Stewart
 
 using Accessors
+using Logging
 
 # One cannot use an ENUM here as it's a different type
 # I don't know any good way to keep this lean and to have these necessary
 # flags other than using these "magic numbers"
-const Invalid=-3
-const NonexistentParent=-2
-const BeamJet=-1
+# (TODO: this is not runtime critical, so could consider a Union{Int,Emum}?)
+const Invalid = -3
+const NonexistentParent = -2
+const BeamJet = -1
 
 """A struct holding a record of jet mergers and finalisations"""
 struct HistoryElement
@@ -60,21 +62,29 @@ the jet reconstruction
 struct ClusterSequence
     """
     This contains the physical PseudoJets; for each PseudoJet one can find
-    the corresponding position in the _history by looking at
-    _jets[i].cluster_hist_index()
+    the corresponding position in the history by looking at
+    jets[i].cluster_hist_index()
     """
     jets::Vector{PseudoJet}
 
     """
+    Record the initial number of particles
+    """
+    n_initial_jets::Int
+
+    """
     This vector will contain the branching history; for each stage,
-    history[i].jetp_index indicates where to look in the _jets
+    history[i].jetp_index indicates where to look in the jets
     vector to get the physical PseudoJet.
     """
     history::Vector{HistoryElement}
 
     """Total energy of the event"""
-    Qtot
+    Qtot::Any
 end
+
+"""Normal ClusterSequence constructor, where length of initial particles is evaluated"""
+ClusterSequence(jets, history, Qtot) = ClusterSequence(jets, length(jets), history, Qtot)
 
 
 """Add a new jet's history into the recombination sequence"""
@@ -117,8 +127,8 @@ end
 
 """Return all inclusive jets of a ClusterSequence with pt > ptmin"""
 function inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
-    dcut = ptmin * ptmin
-    jets_local = Vector{LorentzVectorCyl}(undef, 0)
+    pt2min = ptmin * ptmin
+    jets_local = LorentzVectorCyl[]
     # sizehint!(jets_local, length(clusterseq.jets))
     # For inclusive jets with a plugin algorithm, we make no
     # assumptions about anything (relation of dij to momenta,
@@ -128,10 +138,49 @@ function inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
         elt.parent2 == BeamJet || continue
         iparent_jet = clusterseq.history[elt.parent1].jetp_index
         jet = clusterseq.jets[iparent_jet]
-        if pt2(jet) >= dcut
+        if pt2(jet) >= pt2min
+            @info "Added inclusive jet index $iparent_jet"
             push!(jets_local, LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
         end
     end
     jets_local
 end
 
+
+"""Return all exclusive jets of a ClusterSequence"""
+function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing)
+    if isnothing(dcut) && isnothing(njets)
+        throw(ArgumentError("Must pass either a dcut or an njets value"))
+    end
+
+    if !isnothing(dcut)
+        throw(ArgumentError("dcut not yet implemented"))
+    end
+
+    # njets search
+    stop_point = 2*clusterseq.n_initial_jets - njets + 1
+
+    # Sanity check - never return more jets than initial particles
+    if stop_point < clusterseq.n_initial_jets
+        stop_point = clusterseq.n_initial_jets
+    end
+
+    # Sanity check - ensure that reconstruction proceeded to the end
+    if 2 * clusterseq.n_initial_jets != length(clusterseq.history)
+        throw(ErrorException("Cluster sequence is incomplete, exclusive jets unavailable"))
+    end
+
+    excl_jets = LorentzVectorCyl[]
+    for j in stop_point:length(clusterseq.history)
+        @info "Search $j ($(clusterseq.history[j].parent1) + $(clusterseq.history[j].parent2))"
+        for parent in (clusterseq.history[j].parent1, clusterseq.history[j].parent2)
+            if (parent < stop_point && parent > 0)
+                @info "Added exclusive jet index $(clusterseq.history[parent].jetp_index)"
+                jet = clusterseq.jets[clusterseq.history[parent].jetp_index]
+                push!(excl_jets, LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
+            end
+        end
+    end
+
+    excl_jets
+end

@@ -26,13 +26,13 @@ energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 include("Pseudojet.jl")
 export PseudoJet
 
+# Jet reconstruction strategies and algorithms (enums!)
+include("AlgorithmStrategyEnums.jl")
+export JetRecoStrategy, JetAlgorithm
+
 # ClusterSequence type
 include("ClusterSequence.jl")
-export ClusterSequence, inclusive_jets
-
-# Jet reconstruction strategies
-include("JetRecoStrategies.jl")
-export JetRecoStrategy
+export ClusterSequence, inclusive_jets, exclusive_jets
 
 ## N2Plain algorithm
 # Algorithmic part for simple sequential implementation
