@@ -166,7 +166,7 @@ function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = not
     end
 
     if !isnothing(dcut)
-        throw(ArgumentError("dcut not yet implemented"))
+        njets = n_exclusive_jets(clusterseq, dcut=dcut)
     end
 
     # Check that an algorithm was used that makes sense for exclusive jets
@@ -200,4 +200,39 @@ function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = not
     end
 
     excl_jets
+end
+
+
+"""Return all number of exclusive jets of a ClusterSequence that are above a certain dcut value"""
+function n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
+    # Check that an algorithm was used that makes sense for exclusive jets
+    if !(clusterseq.algorithm ∈ (JetAlgorithm.Cambridge, JetAlgorithm.Kt, JetAlgorithm.EEKt, JetAlgorithm.Durham))
+        throw(ArgumentError("Algorithm used is not suitable for exclusive jets ($(clusterseq.algorithm))"))
+    end
+
+    # Locate the point where clustering would have stopped (i.e. the
+    # first time max_dij_so_far > dcut)
+    i_dcut = length(clusterseq.history)
+    for i_history ∈ length(clusterseq.history):-1:1
+        @info "Examining $i_history, max_dij=$(clusterseq.history[i_history].max_dij_so_far)"
+        if clusterseq.history[i_history].max_dij_so_far <= dcut
+            i_dcut = i_history
+            break
+        end
+    end
+
+    # The number of jets is then given by this formula
+    length(clusterseq.history) - i_dcut
+
+    # int i = _history.size() - 1; // last jet
+    # while (i >= 0) {
+    #   if (_history[i].max_dij_so_far <= dcut) {break;}
+    #   i--;
+    # }
+    # int stop_point = i + 1;
+    # // relation between stop_point, njets assumes one extra jet disappears
+    # // at each clustering.
+    # int njets = 2*_initial_n - stop_point;
+    # return njets;
+
 end
