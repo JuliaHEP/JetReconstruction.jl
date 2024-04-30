@@ -134,7 +134,7 @@ function _plain_jet_reconstruct(;particles::Vector{PseudoJet}, p = -1, R = 1.0, 
     # Current implementation mutates the particles vector, so need to copy it
     # for the cluster sequence (there is too much copying happening, so this
     # needs to be rethought and reoptimised)
-    clusterseq = ClusterSequence(particles, history, Qtot)
+    clusterseq = ClusterSequence(p, JetRecoStrategy.N2Plain, particles, history, Qtot)
 
     # Initialize nearest neighbours
     @simd for i in 1:N

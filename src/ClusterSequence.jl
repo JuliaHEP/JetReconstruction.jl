@@ -60,6 +60,10 @@ Convienence structure holding all of the relevant parameters for
 the jet reconstruction
 """
 struct ClusterSequence
+    """Algorithm and strategy used"""
+    algorithm::JetAlgorithm.Algorithm
+    strategy::JetRecoStrategy.Strategy
+    
     """
     This contains the physical PseudoJets; for each PseudoJet one can find
     the corresponding position in the history by looking at
@@ -68,7 +72,7 @@ struct ClusterSequence
     jets::Vector{PseudoJet}
 
     """
-    Record the initial number of particles
+    Record the initial number of particlesm used for exclusive jets
     """
     n_initial_jets::Int
 
@@ -83,9 +87,17 @@ struct ClusterSequence
     Qtot::Any
 end
 
-"""Normal ClusterSequence constructor, where length of initial particles is evaluated"""
-ClusterSequence(jets, history, Qtot) = ClusterSequence(jets, length(jets), history, Qtot)
+"""ClusterSequence constructor, where the power value is given"""
+ClusterSequence(p::Int, strategy::JetRecoStrategy.Strategy, jets, history, Qtot) = begin
+    if !haskey(power2algorithm, p)
+        raise(ArgumentError("Unrecognised algorithm for power value p=$p"))
+    end
+    ClusterSequence(power2algorithm[p], strategy, jets, length(jets), history, Qtot)
+end
 
+"""ClusterSequence constructor, with direct algorithm specified"""
+ClusterSequence(alg::JetAlgorithm.Algorithm, strategy::JetRecoStrategy.Strategy, jets, history, Qtot) =
+    ClusterSequence(alg, strategy, jets, length(jets), history, Qtot)
 
 """Add a new jet's history into the recombination sequence"""
 add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, dij) = begin
@@ -155,6 +167,11 @@ function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = not
 
     if !isnothing(dcut)
         throw(ArgumentError("dcut not yet implemented"))
+    end
+
+    # Check that an algorithm was used that makes sense for exclusive jets
+    if !(clusterseq.algorithm ∈ (JetAlgorithm.Cambridge, JetAlgorithm.Kt, JetAlgorithm.EEKt, JetAlgorithm.Durham))
+        throw(ArgumentError("Algorithm used is not suitable for exclusive jets ($(clusterseq.algorithm))"))
     end
 
     # njets search
