@@ -127,6 +127,7 @@ function jet_process(
 			if irun == 1
 				@info begin
 					jet_output = "Event $(ievt)\n"
+					sort!(finaljets, by = x -> pt(x), rev=true)
 					for (ijet, jet) in enumerate(finaljets)
 						jet_output *= " $(ijet) - $(jet)\n"
 					end
