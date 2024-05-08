@@ -192,7 +192,7 @@ parse_command_line(args) = begin
 		default = 0.4
 
 		"--power"
-		help = "Distance measure momentum power (-1 - antikt; 0 - Cambridge/Achen; 1 - inclusive k_t)"
+		help = "Distance measure momentum power (-1 - antikt; 0 - Cambridge/Aachen; 1 - inclusive k_t)"
 		arg_type = Int
 		default = -1
 
@@ -220,7 +220,7 @@ parse_command_line(args) = begin
         action = :store_true
 
 		"--dump"
-		help = "Write list of recontructed jets to a JSON formatted file"
+		help = "Write list of reconstructed jets to a JSON formatted file"
 
 		"--info"
 		help = "Print info level log messages"
