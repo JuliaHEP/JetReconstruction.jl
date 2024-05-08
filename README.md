@@ -10,7 +10,7 @@ Algorithms used are based on the C++ FastJet package (<https://fastjet.fr>,
 [hep-ph/0512210](https://arxiv.org/abs/hep-ph/0512210),
 [arXiv:1111.6097](https://arxiv.org/abs/1111.6097)), reimplemented natively in Julia.
 
-The algorithms include anti-${k}_\text{T}$, Cambridge/Achen and inclusive $k_\text{T}$.
+The algorithms include anti-${k}_\text{T}$, Cambridge/Aachen and inclusive $k_\text{T}$.
 
 ### Interface
 
@@ -26,7 +26,7 @@ cs = jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, strat
   - The `PseudoJet` type from this package, or a 4-vector from `LorentzVectorHEP` are suitable (and have the appropriate definitions)
 - `p` - the transverse momentum power used in the $d_{ij}$ metric for deciding on closest jets, as $k^{2p}_\text{T}$. Different values of $p$ then give different reconstruction algorithms:
   - `-1` gives anti-$`{k}_\text{T}`$ clustering (default)
-  - `0` gives Cambridge/Achen
+  - `0` gives Cambridge/Aachen
   - `1` gives inclusive $k_\text{T}$
 - `R` - the cone size parameter; no particles more geometrically distance than `R` will be merged (default 1.0)
 - `recombine` - the function used to merge two pseudojets (default is a simple 4-vector addition of $`(E, \mathbf{p})`$)
