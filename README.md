@@ -86,11 +86,13 @@ The example also shows how to use `JetReconstruction.HepMC3` to read HepMC3 ASCI
 
 ### Plotting
 
-**TO BE FIXED**
-
 ![illustration](img/illustration.jpeg)
 
 To visualise the clustered jets as a 3d bar plot (see illustration above) we now use `Makie.jl`. See the `jetsplot` function and its documentation for more. 
+
+### Serialisation
+
+The package also provides methods such as `loadjets`, `loadjets!`, and `savejets` that one can use to save and load objects on/from disk easily in a very flexible format. See documentation for more.
 
 ## Reference
 
