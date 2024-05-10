@@ -1,19 +1,17 @@
 """
 `savejets(filename, jets; format="px py pz E")`
 
-Saves the given `jets` into a file with the given `filename`. Each line contains information about a single jet and is formatted according to the `format` string which defaults to `"px py pz E"` but can also contain other values in any order: `"pt2"` or `"kt"` for transverse momentum, `"phi"` for azimuth, `"eta"` or `"rapidity"` for pseudorapidity, `"m"` for mass. It is strongly NOT recommended to put something other than values and (possibly custom) separators in the `format` string.
+Saves the given `jets` into a file with the given `filename`. Each line contains information about a single jet and is formatted according to the `format` string which defaults to `"px py pz E"` but can also contain other values in any order: `"pt2"` for pt^2, `"phi"` for azimuth, `"rapidity"` for rapidity. It is strongly NOT recommended to put something other than values and (possibly custom) separators in the `format` string.
 """
 function savejets(filename, jets; format="px py pz E")
     symbols = Dict(
         "E" => JetReconstruction.energy,
+        "energy" => JetReconstruction.energy,
         "px" => JetReconstruction.px,
-        "pt2" => JetReconstruction.pt2,
-        "kt" => JetReconstruction.pt2,
         "py" => JetReconstruction.py,
         "pz" => JetReconstruction.pz,
+        "pt2" => JetReconstruction.pt2,
         "phi" => JetReconstruction.phi,
-        "m" => JetReconstruction.mass,
-        "eta" => JetReconstruction.rapidity,
         "rapidity" => JetReconstruction.rapidity
     )
     for pair in symbols
@@ -23,7 +21,7 @@ function savejets(filename, jets; format="px py pz E")
     end
 
     open(filename, "w") do file
-        write(file, "# this file contains jet data.\n# each line that does not start with '#' contains the information about a jet in the following format:\n# "*"$(format)"*"\n# where E is energy, px is momentum along x, py is momentum along y, pz is momentum along z, pt or kt is transverse momentum, phi is azimuth, eta is pseudorapidity, m is mass\n")
+        write(file, "# this file contains jet data.\n# each line that does not start with '#' contains the information about a jet in the following format:\n# "*"$(format)"*"\n# where E is energy, px is momentum along x, py is momentum along y, pz is momentum along z, pt2 is pt^2, phi is azimuth, and rapidity is rapidity\n")
         for j in jets
             line = format
             for pair in symbols
@@ -67,7 +65,7 @@ end
 """
     loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->LorentzVector(E,px,py,pz), VT=LorentzVector) -> jets
 
-Loads the `jets` from a file, where each element of `jets` is of type `VT`. Ignores lines that start with `'#'`. Each line gets processed in the following way: the line is split using `split(line, splitby)` or simply `split(line)` by default. These values are then used as arguments for the `constructor` function which should produce individual jets. By default, the `constructor` constructs Lorentz vectors.
+Loads the `jets` from a file, where each element of `jets` is of type `VT`. Ignores lines that start with `'#'`. Each line gets processed in the following way: the line is split using `split(line, splitby)` or simply `split(line)` by default. These values are then used as arguments for the `constructor` function which should produce individual jets of the `VT` type. By default, the `constructor` constructs Lorentz vectors.
 
 ```julia
 # example
