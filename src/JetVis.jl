@@ -88,7 +88,7 @@ function jetsplot(objects, idx_arrays; barsize_phi=0.1, barsize_eta=0.1, colorma
 		cs[j] = i
 	end
 
-	pts = pt2.(objects)
+	pts = sqrt.(pt2.(objects))
 
 	Module.meshscatter(
 		Module.Point3f.(phi.(objects), rapidity.(objects), 0pts);
