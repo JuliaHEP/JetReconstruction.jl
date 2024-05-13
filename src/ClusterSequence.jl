@@ -151,7 +151,7 @@ function inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
         iparent_jet = clusterseq.history[elt.parent1].jetp_index
         jet = clusterseq.jets[iparent_jet]
         if pt2(jet) >= pt2min
-            @info "Added inclusive jet index $iparent_jet"
+            @debug "Added inclusive jet index $iparent_jet"
             push!(jets_local, LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
         end
     end

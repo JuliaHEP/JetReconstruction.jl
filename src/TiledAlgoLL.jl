@@ -315,7 +315,7 @@ function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, re
         jetB = jetA.NN
 
         # Normalisation
-        dij_min *= R2
+        @fastmath dij_min /= R2
 
         # @debug "Iteration $(iteration): dij_min $(dij_min); jetA $(jetA.id), jetB $(jetB.id)"
 
