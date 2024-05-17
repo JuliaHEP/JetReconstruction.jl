@@ -52,22 +52,22 @@ function main()
     # If necessary, unzip the events data file
     unpack_events(events_file)
 
-    # Read our fastjet outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
+    # Read our fastjet inclusive outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
     algorithms = Dict(-1 => "Anti-kt",
         0 => "Cambridge/Achen",
         1 => "Inclusive-kt")
-    fastjet_alg_files = Dict(-1 => joinpath(@__DIR__, "data", "jet_collections_fastjet_akt.json"),
-        0 => joinpath(@__DIR__, "data", "jet_collections_fastjet_ca.json"),
-        1 => joinpath(@__DIR__, "data", "jet_collections_fastjet_ikt.json"))
+    fastjet_alg_files_inclusive = Dict(-1 => joinpath(@__DIR__, "data", "jet-collections-fastjet-inclusive-akt.json"),
+        0 => joinpath(@__DIR__, "data", "jet-collections-fastjet-inclusive-ca.json"),
+        1 => joinpath(@__DIR__, "data", "jet-collections-fastjet-inclusive-ikt.json"))
 
     fastjet_data = Dict{Int, Vector{Any}}()
-    for (k, v) in pairs(fastjet_alg_files)
+    for (k, v) in pairs(fastjet_alg_files_inclusive)
         fastjet_jets = read_fastjet_outputs(v)
         sort_jets!(fastjet_jets)
         fastjet_data[k] = fastjet_jets
     end
 
-    # Test each stratgy...
+    # Test each stratgy for inclusive jet selection
     for power in keys(algorithms)
         do_test_compare_to_fastjet(RecoStrategy.N2Plain, fastjet_data[power], algname = algorithms[power], power = power)
         do_test_compare_to_fastjet(RecoStrategy.N2Tiled, fastjet_data[power], algname = algorithms[power], power = power)
@@ -76,13 +76,31 @@ function main()
     # Compare inputing data in PseudoJet with using a LorentzVector
     do_test_compare_types(RecoStrategy.N2Plain, algname = algorithms[-1], power = -1)
     do_test_compare_types(RecoStrategy.N2Tiled, algname = algorithms[-1], power = -1)
+
+    # Now test exclusive selections
+    fastjet_jets = read_fastjet_outputs(joinpath(@__DIR__, "data", "jet-collections-fastjet-dij20-ikt.json"))
+    sort_jets!(fastjet_jets)
+    fastjet_data_inc = fastjet_jets
+    do_test_compare_to_fastjet(RecoStrategy.N2Tiled, fastjet_data_inc, algname = "Inclusive-kt", 
+        selection = "Inclusive", power = 1, dijmax = 20.0)
 end
 
+"""
+Run the jet test
+
+dijmax -> apply inclusive dijmax cut
+njets -> apply inclusive njets cut
+
+If dijmax and njets are nothing, test inclusive jets with pt >= ptmin
+"""
 function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jets;
     algname = "Unknown",
+    selection = "Inclusive",
     ptmin::Float64 = 5.0,
     distance::Float64 = 0.4,
-    power::Integer = -1)
+    power::Integer = -1,
+    dijmax = nothing,
+    njets = nothing)
 
     # Strategy
     if (strategy == RecoStrategy.N2Plain)
@@ -103,12 +121,19 @@ function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jet
     events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file)
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
-        finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance, p = power), ptmin))
+        cluster_seq = jet_reconstruction(event, R = distance, p = power)
+        if !isnothing(dijmax)
+            finaljets = final_jets(exclusive_jets(cluster_seq, dcut=dijmax))
+        elseif !isnothing(njets)
+            finaljets = final_jets(exclusive_jets(cluster_seq, njets=njets))
+        else
+            finaljets = final_jets(inclusive_jets(cluster_seq, ptmin))
+        end
         sort_jets!(finaljets)
         push!(jet_collection, FinalJets(ievt, finaljets))
     end
 
-    @testset "Jet Reconstruction compare to FastJet: Strategy $strategy_name, Algorithm $algname" begin
+    @testset "Jet Reconstruction compare to FastJet: Strategy $strategy_name, Algorithm $algname, Selection $selection" begin
         # Test each event in turn...
         for (ievt, event) in enumerate(jet_collection)
             @testset "Event $(ievt)" begin
