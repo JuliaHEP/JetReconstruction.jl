@@ -8,6 +8,23 @@ using Logging
 
 const events_file = joinpath(@__DIR__, "data", "events.hepmc3")
 
+const algorithms = Dict(-1 => "Anti-kt",
+    0 => "Cambridge/Achen",
+    1 => "Inclusive-kt")
+
+"""Simple structure with necessary parameters for an exclusive selection test"""
+struct InclusiveTest
+    algname::AbstractString
+    selction::AbstractString
+    power::Int
+    fastjet_file::AbstractString
+    dijmax::Any
+    njets::Any
+    function InclusiveTest(selction, power, fastjet_file, dijmax, njets)
+        new(algorithms[power], selction, power, fastjet_file, dijmax, njets)
+    end
+end
+
 """Decompress data file, if necessary"""
 function unpack_events(file)
     # File already there?
@@ -15,10 +32,10 @@ function unpack_events(file)
         return true
     end
     # LZMA source?
-    file_compressed = joinpath(dirname(file), basename(file)*".xz")
+    file_compressed = joinpath(dirname(file), basename(file) * ".xz")
     if isfile(file_compressed)
         @debug "Unpacking $(file_compressed)"
-        run(pipeline(`xzcat $file_compressed`, stdout=file))
+        run(pipeline(`xzcat $file_compressed`, stdout = file))
         return true
     end
     false
@@ -53,9 +70,6 @@ function main()
     unpack_events(events_file)
 
     # Read our fastjet inclusive outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
-    algorithms = Dict(-1 => "Anti-kt",
-        0 => "Cambridge/Achen",
-        1 => "Inclusive-kt")
     fastjet_alg_files_inclusive = Dict(-1 => joinpath(@__DIR__, "data", "jet-collections-fastjet-inclusive-akt.json"),
         0 => joinpath(@__DIR__, "data", "jet-collections-fastjet-inclusive-ca.json"),
         1 => joinpath(@__DIR__, "data", "jet-collections-fastjet-inclusive-ikt.json"))
@@ -78,11 +92,19 @@ function main()
     do_test_compare_types(RecoStrategy.N2Tiled, algname = algorithms[-1], power = -1)
 
     # Now test exclusive selections
-    fastjet_jets = read_fastjet_outputs(joinpath(@__DIR__, "data", "jet-collections-fastjet-dij20-ikt.json"))
-    sort_jets!(fastjet_jets)
-    fastjet_data_inc = fastjet_jets
-    do_test_compare_to_fastjet(RecoStrategy.N2Tiled, fastjet_data_inc, algname = "Inclusive-kt", 
-        selection = "Inclusive", power = 1, dijmax = 20.0)
+    inclusive_tests = InclusiveTest[]
+    push!(inclusive_tests, InclusiveTest("exclusive njets=4", 1, "jet-collections-fastjet-njets4-ikt.json", nothing, 4))
+    push!(inclusive_tests, InclusiveTest("exclusive dijmax=20", 1, "jet-collections-fastjet-dij20-ikt.json", 20.0, nothing))
+    push!(inclusive_tests, InclusiveTest("exclusive njets=4", 0, "jet-collections-fastjet-njets4-ca.json", nothing, 4))
+    push!(inclusive_tests, InclusiveTest("exclusive dijmax=0.99", 0, "jet-collections-fastjet-dij099-ca.json", 0.99, nothing))
+
+    for test in inclusive_tests
+        input_file = joinpath(@__DIR__, "data", test.fastjet_file)
+        fastjet_jets = read_fastjet_outputs(input_file)
+        sort_jets!(fastjet_jets)
+        do_test_compare_to_fastjet(RecoStrategy.N2Tiled, fastjet_jets; algname = test.algname,
+            power = test.power, selection = test.selction, njets = test.njets, dijmax = test.dijmax)
+    end
 end
 
 """
@@ -123,9 +145,9 @@ function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jet
     for (ievt, event) in enumerate(events)
         cluster_seq = jet_reconstruction(event, R = distance, p = power)
         if !isnothing(dijmax)
-            finaljets = final_jets(exclusive_jets(cluster_seq, dcut=dijmax))
+            finaljets = final_jets(exclusive_jets(cluster_seq, dcut = dijmax))
         elseif !isnothing(njets)
-            finaljets = final_jets(exclusive_jets(cluster_seq, njets=njets))
+            finaljets = final_jets(exclusive_jets(cluster_seq, njets = njets))
         else
             finaljets = final_jets(inclusive_jets(cluster_seq, ptmin))
         end
