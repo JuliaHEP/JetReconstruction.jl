@@ -17,7 +17,7 @@ using JSON
 using LorentzVectorHEP
 using JetReconstruction
 
-function profile_code(profile, jet_reconstruction, events, niters; R=0.4, p=-1, strategy=JetRecoStrategy.N2Tiled)
+function profile_code(profile, jet_reconstruction, events, niters; R=0.4, p=-1, strategy=RecoStrategy.N2Tiled)
 	Profile.init(n = 5*10^6, delay = 0.00001)
 	profile_events(events) = begin
 		for evt in events
@@ -67,10 +67,12 @@ serialising the reconstructed jet outputs.
 """
 function jet_process(
 	events::Vector{Vector{PseudoJet}};
-	ptmin::Float64 = 5.0,
-	distance::Float64 = 0.4,
+	distance::Real = 0.4,
 	power::Integer = -1,
-	strategy::JetRecoStrategy.Strategy,
+	ptmin::Real = 5.0,
+	dcut = nothing,
+	njets = nothing,
+	strategy::RecoStrategy.Strategy,
 	nsamples::Integer = 1,
 	gcoff::Bool = false,
 	profile = nothing,
@@ -114,11 +116,18 @@ function jet_process(
 		gcoff && GC.enable(false)
 		t_start = time_ns()
 		for (ievt, event) in enumerate(events)
-			finaljets = inclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
+			if !isnothing(njets)
+				finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), njets=njets)
+			elseif !isnothing(dcut)
+				finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), dcut=dcut)
+			else
+				finaljets = inclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
+			end
 			# Only print the jet content once
 			if irun == 1
 				@info begin
 					jet_output = "Event $(ievt)\n"
+					sort!(finaljets, by = x -> pt(x), rev=true)
 					for (ijet, jet) in enumerate(finaljets)
 						jet_output *= " $(ijet) - $(jet)\n"
 					end
@@ -182,9 +191,17 @@ parse_command_line(args) = begin
 		default = 0
 
 		"--ptmin"
-		help = "Minimum p_t for final jets (GeV)"
+		help = "Minimum p_t for final inclusive jets (energy unit is the same as the input clusters, usually GeV)"
 		arg_type = Float64
 		default = 5.0
+
+		"--exclusive-dcut"
+		help = "Return all exclusive jets where further merging would have d>d_cut"
+		arg_type = Float64
+
+		"--exclusive-njets"
+		help = "Return all exclusive jets once clusterisation has produced n jets"
+		arg_type = Int
 
 		"--distance", "-R"
 		help = "Distance parameter for jet merging"
@@ -198,8 +215,8 @@ parse_command_line(args) = begin
 
 		"--strategy"
 		help = """Strategy for the algorithm, valid values: $(join(JetReconstruction.AllJetRecoStrategies, ", "))"""
-		arg_type = JetRecoStrategy.Strategy
-		default = JetRecoStrategy.Best
+		arg_type = RecoStrategy.Strategy
+		default = RecoStrategy.Best
 
 		"--nsamples", "-m"
 		help = "Number of measurement points to acquire."
@@ -238,8 +255,8 @@ parse_command_line(args) = begin
 end
 
 
-function ArgParse.parse_item(::Type{JetRecoStrategy.Strategy}, x::AbstractString)
-	s = tryparse(JetRecoStrategy.Strategy, x)
+function ArgParse.parse_item(::Type{RecoStrategy.Strategy}, x::AbstractString)
+	s = tryparse(RecoStrategy.Strategy, x)
 	if s === nothing
 		throw(ErrorException("Invalid value for strategy: $(x)"))
 	end
@@ -258,8 +275,8 @@ main() = begin
 	global_logger(logger)
 	events::Vector{Vector{PseudoJet}} =
 		read_final_state_particles(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
-	jet_process(events, ptmin = args[:ptmin], distance = args[:distance], 
-        power = args[:power], strategy = args[:strategy],
+	jet_process(events, distance = args[:distance], power = args[:power], strategy = args[:strategy],
+		ptmin = args[:ptmin], dcut = args[:exclusive_dcut], njets = args[:exclusive_njets],
 		nsamples = args[:nsamples], gcoff = args[:gcoff], profile = args[:profile],
 		alloc = args[:alloc], dump = args[:dump])
 	nothing

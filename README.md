@@ -17,7 +17,7 @@ The algorithms include anti-${k}_\text{T}$, Cambridge/Aachen and inclusive $k_\t
 The simplest interface is to call:
 
 ```julia
-cs = jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, strategy = JetRecoStrategy.Best)
+cs = jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, strategy = RecoStrategy.Best)
 ```
 
 - `particles` - a vector of input particles for the clustering
@@ -30,7 +30,7 @@ cs = jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, strat
   - `1` gives inclusive $k_\text{T}$
 - `R` - the cone size parameter; no particles more geometrically distance than `R` will be merged (default 1.0)
 - `recombine` - the function used to merge two pseudojets (default is a simple 4-vector addition of $`(E, \mathbf{p})`$)
-- `strategy` - the algorithm strategy to adopt, as described below (default `JetRecoStrategy.Best`)
+- `strategy` - the algorithm strategy to adopt, as described below (default `RecoStrategy.Best`)
 
 The object returned is a `ClusterSequence`, which internally tracks all merge steps.
 
@@ -56,9 +56,9 @@ Three strategies are available for the different algorithms:
 
 | Strategy Name | Notes | Interface |
 |---|---|---|
-| `JetRecoStrategy.Best` | Dynamically switch strategy based on input particle density | `jet_reconstruct` |
-| `JetRecoStrategy.N2Plain` | Global matching of particles at each interation (works well for low $N$) | `plain_jet_reconstruct` |
-| `JetRecoStrategy.N2Tiled` | Use tiles of radius $R$ to limit search space (works well for higher $N$) | `tiled_jet_reconstruct` |
+| `RecoStrategy.Best` | Dynamically switch strategy based on input particle density | `jet_reconstruct` |
+| `RecoStrategy.N2Plain` | Global matching of particles at each interation (works well for low $N$) | `plain_jet_reconstruct` |
+| `RecoStrategy.N2Tiled` | Use tiles of radius $R$ to limit search space (works well for higher $N$) | `tiled_jet_reconstruct` |
 
 Generally one can use the `jet_reconstruct` interface, shown above, as the *Best* strategy safely as the overhead is extremely low. That interface supports a `strategy` option to switch to a different option.
 

@@ -288,8 +288,8 @@ function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, re
 
     tiling = Tiling(setup_tiling(_eta, R))
 
-    # ClusterSequence is a convenience struct that holds the state of the reconstruction
-    clusterseq = ClusterSequence(jets, history, Qtot)
+    # ClusterSequence is the struct that holds the state of the reconstruction
+    clusterseq = ClusterSequence(p, RecoStrategy.N2Tiled, jets, history, Qtot)
 
     # Tiled jets is a structure that has additional variables for tracking which tile a jet is in
     tiledjets = similar(clusterseq.jets, TiledJet)
@@ -315,7 +315,7 @@ function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, re
         jetB = jetA.NN
 
         # Normalisation
-        dij_min *= R2
+        @fastmath dij_min /= R2
 
         # @debug "Iteration $(iteration): dij_min $(dij_min); jetA $(jetA.id), jetB $(jetB.id)"
 
