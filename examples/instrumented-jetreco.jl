@@ -70,7 +70,7 @@ serialising the reconstructed jet outputs.
 function jet_process(
 	events::Vector{Vector{PseudoJet}};
 	distance::Real = 0.4,
-	power::Integer = -1,
+	algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
 	ptmin::Real = 5.0,
 	dcut = nothing,
 	njets = nothing,
@@ -82,6 +82,9 @@ function jet_process(
 	dump::Union{String, Nothing} = nothing,
 )
 	@info "Will process $(size(events)[1]) events"
+
+	# Map algorithm to power
+	power = JetReconstruction.algorithm2power[algorithm]
 
 	# If we are dumping the results, setup the JSON structure
 	if !isnothing(dump)
@@ -210,12 +213,12 @@ parse_command_line(args) = begin
 		arg_type = Float64
 		default = 0.4
 
-		"--power"
-		help = "Distance measure momentum power (-1 - antikt; 0 - Cambridge/Aachen; 1 - inclusive k_t)"
-		arg_type = Int
-		default = -1
+		"--algorithm", "-A"
+		help = """Algorithm to use for jet reconstruction: $(join(JetReconstruction.AllJetRecoAlgorithms, ", "))"""
+		arg_type = JetAlgorithm.Algorithm
+		default = JetAlgorithm.AntiKt
 
-		"--strategy"
+		"--strategy", "-S"
 		help = """Strategy for the algorithm, valid values: $(join(JetReconstruction.AllJetRecoStrategies, ", "))"""
 		arg_type = RecoStrategy.Strategy
 		default = RecoStrategy.Best
@@ -265,6 +268,14 @@ function ArgParse.parse_item(::Type{RecoStrategy.Strategy}, x::AbstractString)
 	s
 end
 
+function ArgParse.parse_item(::Type{JetAlgorithm.Algorithm}, x::AbstractString)
+	s = tryparse(JetAlgorithm.Algorithm, x)
+	if s === nothing
+		throw(ErrorException("Invalid value for algorithm: $(x)"))
+	end
+	s
+end
+
 main() = begin
 	args = parse_command_line(ARGS)
 	if args[:debug]
@@ -277,7 +288,7 @@ main() = begin
 	global_logger(logger)
 	events::Vector{Vector{PseudoJet}} =
 		read_final_state_particles(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
-	jet_process(events, distance = args[:distance], power = args[:power], strategy = args[:strategy],
+	jet_process(events, distance = args[:distance], algorithm = args[:algorithm], strategy = args[:strategy],
 		ptmin = args[:ptmin], dcut = args[:exclusive_dcut], njets = args[:exclusive_njets],
 		nsamples = args[:nsamples], gcoff = args[:gcoff], profile = args[:profile],
 		alloc = args[:alloc], dump = args[:dump])
