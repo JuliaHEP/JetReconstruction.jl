@@ -189,10 +189,10 @@ function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = not
 
     excl_jets = LorentzVectorCyl[]
     for j in stop_point:length(clusterseq.history)
-        @info "Search $j ($(clusterseq.history[j].parent1) + $(clusterseq.history[j].parent2))"
+        @debug "Search $j ($(clusterseq.history[j].parent1) + $(clusterseq.history[j].parent2))"
         for parent in (clusterseq.history[j].parent1, clusterseq.history[j].parent2)
             if (parent < stop_point && parent > 0)
-                @info "Added exclusive jet index $(clusterseq.history[parent].jetp_index)"
+                @debug "Added exclusive jet index $(clusterseq.history[parent].jetp_index)"
                 jet = clusterseq.jets[clusterseq.history[parent].jetp_index]
                 push!(excl_jets, LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
             end
@@ -223,16 +223,5 @@ function n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
 
     # The number of jets is then given by this formula
     length(clusterseq.history) - i_dcut
-
-    # int i = _history.size() - 1; // last jet
-    # while (i >= 0) {
-    #   if (_history[i].max_dij_so_far <= dcut) {break;}
-    #   i--;
-    # }
-    # int stop_point = i + 1;
-    # // relation between stop_point, njets assumes one extra jet disappears
-    # // at each clustering.
-    # int njets = 2*_initial_n - stop_point;
-    # return njets;
 
 end
