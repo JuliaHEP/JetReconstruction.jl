@@ -214,7 +214,7 @@ function n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
     # first time max_dij_so_far > dcut)
     i_dcut = length(clusterseq.history)
     for i_history ∈ length(clusterseq.history):-1:1
-        @info "Examining $i_history, max_dij=$(clusterseq.history[i_history].max_dij_so_far)"
+        @debug "Examining $i_history, max_dij=$(clusterseq.history[i_history].max_dij_so_far)"
         if clusterseq.history[i_history].max_dij_so_far <= dcut
             i_dcut = i_history
             break
