@@ -50,6 +50,10 @@ function main()
         "file"
         help = "HepMC3 event file in HepMC3 to read"
         required = true
+
+        "output"
+        help = "File for output image"
+        default = "jetvis.png"
     end
     args = parse_args(ARGS, s; as_symbols = true)
 
@@ -58,13 +62,13 @@ function main()
     global_logger(logger)
 
     events::Vector{Vector{PseudoJet}} =
-        read_final_state_particles(args[:file], maxevents = 1, skipevents = args[:event] - 1)
+        read_final_state_particles(args[:file], maxevents = args[:event], skipevents = args[:event])
 
     power = JetReconstruction.algorithm2power[args[:algorithm]]
     cs = jet_reconstruct(events[1], R = args[:distance], p = power, strategy = args[:strategy])
 
     plt = jetsplot(events[1], cs; Module = CairoMakie)
-    save("jetvis.png", plt)
+    save(args[:output], plt)
 end
 
 main()
