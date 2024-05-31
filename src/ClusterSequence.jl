@@ -170,7 +170,7 @@ function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = not
     end
 
     # Check that an algorithm was used that makes sense for exclusive jets
-    if !(clusterseq.algorithm ∈ (JetAlgorithm.Cambridge, JetAlgorithm.Kt, JetAlgorithm.EEKt, JetAlgorithm.Durham))
+    if !(clusterseq.algorithm ∈ (JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.EEKt, JetAlgorithm.Durham))
         throw(ArgumentError("Algorithm used is not suitable for exclusive jets ($(clusterseq.algorithm))"))
     end
 
@@ -206,7 +206,7 @@ end
 """Return all number of exclusive jets of a ClusterSequence that are above a certain dcut value"""
 function n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
     # Check that an algorithm was used that makes sense for exclusive jets
-    if !(clusterseq.algorithm ∈ (JetAlgorithm.Cambridge, JetAlgorithm.Kt, JetAlgorithm.EEKt, JetAlgorithm.Durham))
+    if !(clusterseq.algorithm ∈ (JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.EEKt, JetAlgorithm.Durham))
         throw(ArgumentError("Algorithm used is not suitable for exclusive jets ($(clusterseq.algorithm))"))
     end
 
