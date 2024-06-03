@@ -1,7 +1,11 @@
 ## Jet visualisation
-# not a submodule
+
+module JetVisualisation
 
 using JetReconstruction
+using CairoMakie
+
+println("JetVisualisation module has been loaded")
 
 function get_all_ancestors(idx, cs::ClusterSequence)
     if cs.history[idx].parent1 == JetReconstruction.NonexistentParent
@@ -42,7 +46,7 @@ using WGLMakie
 jetsplot(my_objects, cs, Module=Main) #default
 ```
 """
-function jetsplot(objects, cs::ClusterSequence; barsize_phi = 0.1, barsize_eta = 0.1, colormap = :glasbey_hv_n256, Module = Main)
+function JetReconstruction.jetsplot(objects, cs::ClusterSequence; barsize_phi = 0.1, barsize_eta = 0.1, colormap = :glasbey_hv_n256, Module = CairoMakie)
     idx_arrays = Vector{Int}[]
     for elt in cs.history
         elt.parent2 == JetReconstruction.BeamJet || continue
@@ -82,7 +86,7 @@ using WGLMakie
 jetsplot(my_objects, my_colour_arrays, Module=Main) #default
 ```
 """
-function jetsplot(objects, idx_arrays; barsize_phi = 0.1, barsize_eta = 0.1, colormap = :glasbey_hv_n256, Module = Main)
+function JetReconstruction.jetsplot(objects, idx_arrays; barsize_phi = 0.1, barsize_eta = 0.1, colormap = :glasbey_hv_n256, Module = CairoMakie)
     cs = fill(0, length(objects)) # colours
     for i in 1:length(idx_arrays), j in idx_arrays[i]
         cs[j] = i
@@ -104,4 +108,6 @@ function jetsplot(objects, idx_arrays; barsize_phi = 0.1, barsize_eta = 0.1, col
         ),
         shading = NoShading,
     )
+end
+
 end

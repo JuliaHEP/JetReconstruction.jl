@@ -10,4 +10,3 @@ struct FinalJets
     jetid::Int64
     jets::Vector{FinalJet}
 end
-

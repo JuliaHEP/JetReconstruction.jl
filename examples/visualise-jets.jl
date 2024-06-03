@@ -8,7 +8,6 @@ using CairoMakie
 using JetReconstruction
 
 include(joinpath(@__DIR__, "parse-options.jl"))
-include(joinpath(dirname(pathof(JetReconstruction)), "jetvis.jl"))
 
 function main()
 
