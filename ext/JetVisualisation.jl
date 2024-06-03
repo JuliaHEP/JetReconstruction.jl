@@ -3,9 +3,7 @@
 module JetVisualisation
 
 using JetReconstruction
-using CairoMakie
-
-println("JetVisualisation module has been loaded")
+using Makie
 
 function get_all_ancestors(idx, cs::ClusterSequence)
     if cs.history[idx].parent1 == JetReconstruction.NonexistentParent
@@ -86,7 +84,7 @@ using WGLMakie
 jetsplot(my_objects, my_colour_arrays, Module=Main) #default
 ```
 """
-function JetReconstruction.jetsplot(objects, idx_arrays; barsize_phi = 0.1, barsize_eta = 0.1, colormap = :glasbey_hv_n256, Module = CairoMakie)
+function JetReconstruction.jetsplot(objects, idx_arrays; barsize_phi = 0.1, barsize_eta = 0.1, colormap = :glasbey_hv_n256, Module = Main)
     cs = fill(0, length(objects)) # colours
     for i in 1:length(idx_arrays), j in idx_arrays[i]
         cs[j] = i

@@ -13,13 +13,13 @@ LorentzVectorHEP = "f612022c-142a-473f-8cfd-a09cf3793c6c"
 LorentzVectors = "3f54b04b-17fc-5cd4-9758-90c048d965e3"
 
 [weakdeps]
-CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
+Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 
 [extensions]
-JetVisualisation = "CairoMakie"
+JetVisualisation = "Makie"
 
 [compat]
-CairoMakie = "0.12.2"
+Makie = "0.21"
 LorentzVectorHEP = "0.1.6"
 julia = "1.9"
 
