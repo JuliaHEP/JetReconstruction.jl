@@ -7,6 +7,7 @@ using CairoMakie
 
 using JetReconstruction
 
+# Parsing for algorithm and strategy enums
 include(joinpath(@__DIR__, "parse-options.jl"))
 
 function main()
