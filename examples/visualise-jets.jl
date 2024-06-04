@@ -69,6 +69,8 @@ function main()
 
     plt = jetsplot(events[1], cs; Module = CairoMakie)
     save(args[:output], plt)
+
+    @info "Saved jet visualisation to $(args[:output])"
 end
 
 main()
