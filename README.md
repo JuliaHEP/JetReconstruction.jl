@@ -100,8 +100,12 @@ examples is different from the package itself.
 ![illustration](img/jetvis.png)
 
 To visualise the clustered jets as a 3d bar plot (see illustration above) we now
-use `Makie.jl`. See the `jetsplot` function and its documentation for more.
-There are two worked examples in the `examples` directory.
+use `Makie.jl`. See the `jetsplot` function in `ext/JetVisualisation.jl` and its
+documentation for more. There are two worked examples in the `examples`
+directory.
+
+The plotting code is a package extension and will load if the one of the `Makie`
+modules is loaded in the environment.
 
 ### Serialisation
 
