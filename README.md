@@ -10,7 +10,7 @@ Algorithms used are based on the C++ FastJet package (<https://fastjet.fr>,
 [hep-ph/0512210](https://arxiv.org/abs/hep-ph/0512210),
 [arXiv:1111.6097](https://arxiv.org/abs/1111.6097)), reimplemented natively in Julia.
 
-The algorithms include anti-${k}_\text{T}$, Cambridge/Aachen and inclusive $k_\text{T}$.
+The algorithms include anti-$`{k}_\text{T}`$, Cambridge/Aachen and inclusive $`k_\text{T}`$.
 
 ### Interface
 
