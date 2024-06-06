@@ -10,10 +10,18 @@ using LoopVectorization
 # Include struct definitions and basic operations
 include("TiledAlgoLLStructs.jl")
 
+
 """
-Initialise the clustering history in a standard way,
-Takes as input the list of stable particles as input
-Returns the history and the total event energy.
+    initial_history(particles)
+
+Create an initial history for the given particles.
+
+# Arguments
+- `particles`: The initial vector of stable particles.
+
+# Returns
+- `history`: An array of `HistoryElement` objects.
+- `Qtot`: The total energy in the event.
 """
 function initial_history(particles)
     # reserve sufficient space for everything
@@ -34,14 +42,40 @@ function initial_history(particles)
     history, Qtot
 end
 
-"""Computes distance in the (eta,phi)-plane
-between two jets."""
+"""
+    _tj_dist(jetA, jetB)
+
+Compute the geometric distance in the (y, ϕ)-plane between two jets in the TiledAlgoLL module.
+
+# Arguments
+- `jetA`: The first jet.
+- `jetB`: The second jet.
+
+# Returns
+The squared distance between `jetA` and `jetB`.
+
+# Examples
+"""
 _tj_dist(jetA, jetB) = begin
     dphi = π - abs(π - abs(jetA.phi - jetB.phi))
     deta = jetA.eta - jetB.eta
-    return dphi * dphi + deta * deta
+    return muladd(dphi, dphi, deta * deta)
 end
 
+
+"""
+    _tj_diJ(jet)
+
+Compute the dij metric value for a given jet.
+
+# Arguments
+- `jet`: The input jet.
+
+# Returns
+- The dij value for the jet.
+
+# Example
+"""
 _tj_diJ(jet) = begin
     kt2 = jet.kt2
     if isvalid(jet.NN) && jet.NN.kt2 < kt2
@@ -51,10 +85,22 @@ _tj_diJ(jet) = begin
 end
 
 
-"""Return the tile index corresponding to the given eta,phi point"""
+"""
+    tile_index(tiling_setup, eta::Float64, phi::Float64)
+
+Compute the tile index for a given (eta, phi) coordinate.
+
+# Arguments
+- `tiling_setup`: The tiling setup object containing the tile size and number of tiles.
+- `eta::Float64`: The eta coordinate.
+- `phi::Float64`: The phi coordinate.
+
+# Returns
+The tile index corresponding to the (eta, phi) coordinate.
+"""
 tile_index(tiling_setup, eta::Float64, phi::Float64) = begin
     # Use clamp() to restrict to the correct ranges
-    # - eta can be out of range by construction (open end bins)
+    # - eta can be out of range by construction (open ended bins)
     # - phi is protection against bad rounding
     ieta = clamp(1 + unsafe_trunc(Int, (eta - tiling_setup._tiles_eta_min) / tiling_setup._tile_size_eta), 1, tiling_setup._n_tiles_eta)
     iphi = clamp(unsafe_trunc(Int, phi / tiling_setup._tile_size_phi), 0, tiling_setup._n_tiles_phi)
@@ -62,7 +108,24 @@ tile_index(tiling_setup, eta::Float64, phi::Float64) = begin
 end
 
 
-"""Initialise a tiled jet from a PseudoJet (using an index into our ClusterSequence)"""
+"""
+    tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling, jets_index, R2, p)
+
+Initialise a tiled jet from a PseudoJet (using an index into our ClusterSequence)
+
+Arguments:
+- `jet::TiledJet`: The TiledJet object to set the information for.
+- `clusterseq::ClusterSequence`: The ClusterSequence object containing the jets.
+- `tiling::Tiling`: The Tiling object containing the tile information.
+- `jets_index`: The index of the jet in the ClusterSequence.
+- `R2`: The jet radius parameter squared.
+- `p`: The power to raise the pt2 value to.
+
+This function sets the eta, phi, kt2, jets_index, NN_dist, NN, tile_index, previous, and next fields of the TiledJet object.
+
+Returns:
+- `nothing`
+"""
 tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling, jets_index, R2, p) = begin
     @inbounds jet.eta = rapidity(clusterseq.jets[jets_index])
     @inbounds jet.phi = phi_02pi(clusterseq.jets[jets_index])
@@ -87,6 +150,31 @@ end
 
 
 """Full scan for nearest neighbours"""
+
+
+"""
+    set_nearest_neighbours!(clusterseq::ClusterSequence, tiling::Tiling, tiledjets::Vector{TiledJet})
+
+This function sets the nearest neighbor information for all jets in the
+`tiledjets` vector.
+
+# Arguments
+- `clusterseq::ClusterSequence`: The cluster sequence object.
+- `tiling::Tiling`: The tiling object.
+- `tiledjets::Vector{TiledJet}`: The vector of tiled jets.
+
+# Returns
+- `NNs::Vector{TiledJet}`: The vector of nearest neighbor jets.
+- `diJ::Vector{Float64}`: The vector of diJ values.
+
+The function iterates over each tile in the `tiling` and sets the nearest
+neighbor information for each jet in the tile. It then looks for neighbor jets
+in the neighboring tiles and updates the nearest neighbor information
+accordingly. Finally, it creates the diJ table and returns the vectors of
+nearest neighbor jets and diJ values.
+
+Note: The diJ values are calculated as the kt distance multiplied by R^2.
+"""
 function set_nearest_neighbours!(clusterseq::ClusterSequence, tiling::Tiling, tiledjets::Vector{TiledJet})
     # Setup the initial nearest neighbour information
     for tile in tiling.tiles
@@ -136,7 +224,7 @@ function set_nearest_neighbours!(clusterseq::ClusterSequence, tiling::Tiling, ti
     for i in eachindex(diJ)
         jetA = tiledjets[i]
         diJ[i] = _tj_diJ(jetA) # kt distance * R^2
-        # our compact diJ table will not be in one-to-one corresp. with non-compact jets,
+        # Our compact diJ table will not be in one-to-one corresp. with non-compact jets,
         # so set up bi-directional correspondence here.
         @inbounds NNs[i] = jetA
         jetA.dij_posn = i
@@ -144,9 +232,30 @@ function set_nearest_neighbours!(clusterseq::ClusterSequence, tiling::Tiling, ti
     NNs, diJ
 end
 
-"""Carries out the bookkeeping associated with the step of recombining
-jet_i and jet_j (assuming a distance dij) and returns the index
-of the recombined jet, newjet_k."""
+
+"""
+    do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine=+)
+
+Perform the bookkeeping associated with the step of recombining jet_i and jet_j
+(assuming a distance dij).
+
+# Arguments
+- `clusterseq::ClusterSequence`: The cluster sequence object.
+- `jet_i`: The index of the first jet to be recombined.
+- `jet_j`: The index of the second jet to be recombined.
+- `dij`: The distance between the two jets.
+- `recombine=+`: The recombination function to be used. Default is addition.
+
+# Returns
+- `newjet_k`: The index of the newly created jet.
+
+# Description
+This function performs the i-j recombination step in the cluster sequence. It
+creates a new jet by recombining the first two jets using the specified
+recombination function. The new jet is then added to the cluster sequence. The
+function also updates the indices and history information of the new jet and
+sorts out the history.
+"""
 do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine=+) = begin
     # Create the new jet by recombining the first two with
     # the E-scheme
@@ -169,8 +278,18 @@ do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recomb
     newjet_k
 end
 
-"""Carries out the bookkeeping associated with the step of recombining
-jet_i with the beam (i.e., finalising the jet)"""
+
+"""
+    do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB)
+
+Bookkeeping for recombining a jet with the beam (i.e., finalising the jet) by
+adding a step to the history of the cluster sequence.
+
+# Arguments
+- `clusterseq::ClusterSequence`: The cluster sequence object.
+- `jet_i`: The index of the jet.
+- `diB`: The diB value.
+"""
 do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB) = begin
     # Recombine the jet with the beam
     add_step_to_history!(clusterseq, clusterseq.jets[jet_i]._cluster_hist_index, BeamJet,
@@ -178,15 +297,24 @@ do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB) = begin
 end
 
 
-"""Adds to the vector tile_union the tiles that are in the neighbourhood
-of the specified tile_index, including itself and whose tagged status are
-false ---start adding from position n_near_tiles-1, and increase n_near_tiles as
-you go along. When a neighbour is added its tagged status is set to true.
+"""
+    add_untagged_neighbours_to_tile_union(center_index, tile_union, n_near_tiles, tiling)
 
-Returns the updated number of near_tiles."""
-function add_untagged_neighbours_to_tile_union(center_index,
-    tile_union, n_near_tiles,
-    tiling)
+Adds to the vector tile_union the tiles that are in the neighbourhood of the
+specified center_index, including itself and whose tagged status are false -
+start adding from position n_near_tiles-1, and increase n_near_tiles. When a
+neighbour is added its tagged status is set to true.
+
+# Arguments
+- `center_index`: The index of the center tile.
+- `tile_union`: An array to store the indices of neighbouring tiles.
+- `n_near_tiles`: The number of neighbouring tiles.
+- `tiling`: The tiling object containing the tile tags.
+
+# Returns
+The updated number of near tiles.
+"""
+function add_untagged_neighbours_to_tile_union(center_index, tile_union, n_near_tiles, tiling)
     for tile_index in surrounding(center_index, tiling)
         @inbounds if !tiling.tags[tile_index]
             n_near_tiles += 1
@@ -198,13 +326,23 @@ function add_untagged_neighbours_to_tile_union(center_index,
     n_near_tiles
 end
 
-"""
-Establish the set of tiles over which we are going to
-have to run searches for updated and new nearest-neighbours --
-basically a combination of vicinity of the tiles of the two old
-jets and the new jet.
 
-Updates tile_union and returns n_near_tiles
+"""
+    find_tile_neighbours!(tile_union, jetA, jetB, oldB, tiling)
+
+Find the union of neighbouring tiles of `jetA`, `jetB`, and `oldB` and add them
+to the `tile_union`. This established the set of tiles over which searches for
+updated and new nearest-neighbours must be run
+
+# Arguments
+- `tile_union`: The tile union to which the neighbouring tiles will be added.
+- `jetA`: The first jet.
+- `jetB`: The second jet.
+- `oldB`: The old second jet.
+- `tiling`: The tiling information.
+
+# Returns
+The number of neighbouring tiles added to the `tile_union`.
 """
 function find_tile_neighbours!(tile_union, jetA, jetB, oldB, tiling)
     n_near_tiles = add_untagged_neighbours_to_tile_union(jetA.tile_index,
@@ -224,14 +362,32 @@ end
 
 
 """
-Main jet reconstruction algorithm entry point for generic data types
+    tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +) where {T}
 
-`particles` must support methods px, py, pz and energy (N.B. these must be in the
-JetReconstruction namespace). In particular Cartesian LorentzVector structs can
-be used.
+Main jet reconstruction algorithm entry point for reconstructing jets using the
+tiled stragegy for generic jet type T.
 
-If a non-standard recombination is used, it must be defined for
+**Note** - if a non-standard recombination is used, it must be defined for
 JetReconstruction.PseudoJet, as this struct is used internally.
+
+## Arguments
+- `particles::Vector{T}`: A vector of particles used as input for jet
+  reconstruction. T must support methods px, py, pz and energy (defined in the
+  JetReconstruction namespace)
+- `p::Int = -1`: The power parameter for the jet reconstruction algorithm, thus
+  swiching between different algorithms.
+- `R::Float64 = 1.0`: The jet radius parameter for the jet reconstruction
+  algorithm.
+- `recombine::Function = +`: The recombination function used for combining
+  pseudojets.
+
+## Returns
+- `Vector{PseudoJet}`: A vector of reconstructed jets.
+
+## Example
+```julia
+tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4, recombine = +)
+```
 """
 function tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +) where {T}
     # Here we need to populate the vector of PseudoJets that are the internal
@@ -247,6 +403,31 @@ end
 
 """
 Main jet reconstruction algorithm, using PseudoJet objects
+"""
+
+"""
+    tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +) where {T}
+
+Main jet reconstruction algorithm entry point for reconstructing jets using the
+tiled stragegy for the prefered internal jet type, `PseudoJet`.
+
+## Arguments
+- `particles::Vector{PseudoJet}`: A vector of `PseudoJet` particles used as input for jet
+  reconstruction.
+- `p::Int = -1`: The power parameter for the jet reconstruction algorithm, thus
+  swiching between different algorithms.
+- `R::Float64 = 1.0`: The jet radius parameter for the jet reconstruction
+  algorithm.
+- `recombine::Function = +`: The recombination function used for combining
+  pseudojets.
+
+## Returns
+- `Vector{PseudoJet}`: A vector of reconstructed jets.
+
+## Example
+```julia
+tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 1.0, recombine = +)
+```
 """
 function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +)
     # Bounds
