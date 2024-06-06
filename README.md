@@ -10,7 +10,7 @@ Algorithms used are based on the C++ FastJet package (<https://fastjet.fr>,
 [hep-ph/0512210](https://arxiv.org/abs/hep-ph/0512210),
 [arXiv:1111.6097](https://arxiv.org/abs/1111.6097)), reimplemented natively in Julia.
 
-The algorithms include anti-${k}_\text{T}$, Cambridge/Aachen and inclusive $k_\text{T}$.
+The algorithms include anti-$`{k}_\text{T}`$, Cambridge/Aachen and inclusive $`k_\text{T}`$.
 
 ### Interface
 
@@ -71,9 +71,11 @@ plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +)
 
 Note that there is no `strategy` option in these interfaces.
 
-### Example
+### Examples
 
-See the `examples/jetreco.jl` script for a full example of how to call jet reconstruction.
+In the examples directory there are a number of example scripts.
+
+See the `jetreco.jl` script for an example of how to call jet reconstruction.
 
 ```sh
 julia --project=. examples/jetreco.jl --maxevents=100 --nsamples=1 --strategy=N2Plain test/data/events.hepmc3
@@ -82,21 +84,40 @@ julia --project=. examples/jetreco.jl --maxevents=100 --nsamples=1 --strategy=N2
 ...
 ```
 
-The example also shows how to use `JetReconstruction.HepMC3` to read HepMC3 ASCII files (via the `read_final_state_particles()` wrapper).
+There are options to explicitly set the algorithm (use `--help` to see these).
+
+The example also shows how to use `JetReconstruction.HepMC3` to read HepMC3
+ASCII files (via the `read_final_state_particles()` wrapper).
+
+Further examples, which show visualisation, timing measurements, profiling, etc.
+are given - see the `README.md` file in the examples directory.
+
+Note that due to additional dependencies the `Project.toml` file for the
+examples is different from the package itself.
 
 ### Plotting
 
-![illustration](img/illustration.jpeg)
+![illustration](img/jetvis.png)
 
-To visualise the clustered jets as a 3d bar plot (see illustration above) we now use `Makie.jl`. See the `jetsplot` function and its documentation for more. 
+To visualise the clustered jets as a 3d bar plot (see illustration above) we now
+use `Makie.jl`. See the `jetsplot` function in `ext/JetVisualisation.jl` and its
+documentation for more. There are two worked examples in the `examples`
+directory.
+
+The plotting code is a package extension and will load if the one of the `Makie`
+modules is loaded in the environment.
 
 ### Serialisation
 
-The package also provides methods such as `loadjets`, `loadjets!`, and `savejets` that one can use to save and load objects on/from disk easily in a very flexible format. See documentation for more.
+The package also provides methods such as `loadjets`, `loadjets!`, and
+`savejets` that one can use to save and load objects on/from disk easily in a
+very flexible format. See documentation for more.
 
 ## Reference
 
-Although it has been developed further since the CHEP2023 conference, the CHEP conference proceedings, [arXiv:2309.17309](https://arxiv.org/abs/2309.17309), should be cited if you use this package:
+Although it has been developed further since the CHEP2023 conference, the CHEP
+conference proceedings, [arXiv:2309.17309](https://arxiv.org/abs/2309.17309),
+should be cited if you use this package:
 
 ```bibtex
 @misc{stewart2023polyglot,

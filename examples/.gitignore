@@ -1,0 +1,3 @@
+# Ignore visualisation outputs
+*.pdf
+*.png

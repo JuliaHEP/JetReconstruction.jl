@@ -61,12 +61,12 @@ export savejets, loadjets!, loadjets
 include("Utils.jl")
 export read_final_state_particles, read_final_state_particles_lv, pseudojets2vectors, final_jets
 
-# jet visualisation
-include("JetVis.jl")
+# Jet visualisation is an extension, see ext/JetVisualisation.jl
+function jetsplot() end
 export jetsplot
 
 # JSON results
 include("JSONresults.jl")
-export FinalJet, FinalJets, JSON3
+export FinalJet, FinalJets
 
 end

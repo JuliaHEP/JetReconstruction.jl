@@ -6,13 +6,16 @@ using EnumX
 const AllJetRecoStrategies = [String(Symbol(x)) for x in instances(RecoStrategy.Strategy)]
 
 # Algorithm emun
-@enumx T = Algorithm JetAlgorithm AntiKt Cambridge Kt EEKt Durham
+@enumx T = Algorithm JetAlgorithm AntiKt CA Kt EEKt Durham
 const AllJetRecoAlgorithms = [String(Symbol(x)) for x in instances(JetAlgorithm.Algorithm)]
 
-# Map from power values to algorithms
+# Map from algorithms to power values used 
 power2algorithm = Dict(-1 => JetAlgorithm.AntiKt,
-    0 => JetAlgorithm.Cambridge,
+    0 => JetAlgorithm.CA,
     1 => JetAlgorithm.Kt)
+algorithm2power = Dict(JetAlgorithm.AntiKt => -1,
+    JetAlgorithm.CA => 0,
+    JetAlgorithm.Kt => 1)
 
 # Map from string to an enum value (used for CLI parsing)
 Base.tryparse(E::Type{<:Enum}, str::String) =

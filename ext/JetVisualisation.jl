@@ -1,17 +1,19 @@
 ## Jet visualisation
-# not a submodule
+
+module JetVisualisation
+
+using JetReconstruction
+using Makie
 
 function get_all_ancestors(idx, cs::ClusterSequence)
-	if cs.history[idx].parent1 == NonexistentParent
-		return [cs.history[idx].jetp_index]
-	#elseif cs.history[idx].parent2 == BeamJet
-	#	return 
-	else
-		branch1 = get_all_ancestors(cs.history[idx].parent1, cs)
-		cs.history[idx].parent2 == BeamJet && return branch1
-		branch2 = get_all_ancestors(cs.history[idx].parent2, cs)
-		return [branch1; branch2]
-	end
+    if cs.history[idx].parent1 == JetReconstruction.NonexistentParent
+        return [cs.history[idx].jetp_index]
+    else
+        branch1 = get_all_ancestors(cs.history[idx].parent1, cs)
+        cs.history[idx].parent2 == JetReconstruction.BeamJet && return branch1
+        branch2 = get_all_ancestors(cs.history[idx].parent2, cs)
+        return [branch1; branch2]
+    end
 end
 
 """
@@ -42,14 +44,14 @@ using WGLMakie
 jetsplot(my_objects, cs, Module=Main) #default
 ```
 """
-function jetsplot(objects, cs::ClusterSequence; barsize_phi=0.1, barsize_eta=0.1, colormap=:glasbey_hv_n256, Module=Main)
-	idx_arrays = Vector{Int}[]
+function JetReconstruction.jetsplot(objects, cs::ClusterSequence; barsize_phi = 0.1, barsize_eta = 0.1, colormap = :glasbey_hv_n256, Module = CairoMakie)
+    idx_arrays = Vector{Int}[]
     for elt in cs.history
-        elt.parent2 == BeamJet || continue
-		push!(idx_arrays, get_all_ancestors(elt.parent1, cs))
+        elt.parent2 == JetReconstruction.BeamJet || continue
+        push!(idx_arrays, get_all_ancestors(elt.parent1, cs))
     end
 
-	jetsplot(objects, idx_arrays; barsize_phi, barsize_eta, colormap, Module)
+    jetsplot(objects, idx_arrays; barsize_phi, barsize_eta, colormap, Module)
 end
 
 """
@@ -82,26 +84,28 @@ using WGLMakie
 jetsplot(my_objects, my_colour_arrays, Module=Main) #default
 ```
 """
-function jetsplot(objects, idx_arrays; barsize_phi=0.1, barsize_eta=0.1, colormap=:glasbey_hv_n256, Module=Main)
-	cs = fill(0, length(objects)) # colours
-	for i in 1:length(idx_arrays), j in idx_arrays[i]
-		cs[j] = i
-	end
+function JetReconstruction.jetsplot(objects, idx_arrays; barsize_phi = 0.1, barsize_eta = 0.1, colormap = :glasbey_hv_n256, Module = Main)
+    cs = fill(0, length(objects)) # colours
+    for i in 1:length(idx_arrays), j in idx_arrays[i]
+        cs[j] = i
+    end
 
-	pts = sqrt.(pt2.(objects))
+    pts = sqrt.(JetReconstruction.pt2.(objects))
 
-	Module.meshscatter(
-		Module.Point3f.(phi.(objects), rapidity.(objects), 0pts);
-	  	color = cs,
-		markersize = Module.Vec3f.(barsize_phi, barsize_eta, pts),
-		colormap = colormap,
-		marker = Module.Rect3f(Module.Vec3f(0), Module.Vec3f(1)),
-	 	figure = (resolution=(700,600),),
-		axis = (
-			type = Module.Axis3, perspectiveness = 0.5, azimuth = 2.6, elevation=0.5,
-                        xlabel = "ϕ", ylabel = "η", zlabel = "kt",
-		        limits = (nothing, nothing, nothing, nothing, 0, findmax(pts)[1]+10)
-		),
-	    shading=false
-	)
+    Module.meshscatter(
+        Module.Point3f.(JetReconstruction.phi.(objects), JetReconstruction.rapidity.(objects), 0pts);
+        color = cs,
+        markersize = Module.Vec3f.(barsize_phi, barsize_eta, pts),
+        colormap = colormap,
+        marker = Module.Rect3f(Module.Vec3f(0), Module.Vec3f(1)),
+        figure = (size = (700, 600),),
+        axis = (
+            type = Module.Axis3, perspectiveness = 0.5, azimuth = 2.6, elevation = 0.5,
+            xlabel = "ϕ", ylabel = "η", zlabel = "kt",
+            limits = (nothing, nothing, nothing, nothing, 0, findmax(pts)[1] + 10),
+        ),
+        shading = NoShading,
+    )
+end
+
 end
