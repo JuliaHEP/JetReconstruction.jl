@@ -45,7 +45,26 @@ Base.@propagate_inbounds function dij(i, kt2_array, nn, nndist)
     d * min(kt2_array[i], kt2_array[j])
 end
 
-# finds new nn for i and checks everyone additionally
+"""
+    upd_nn_crosscheck!(i, from, to, rapidity_array, phi_array, R2, nndist, nn)
+
+Update the nearest neighbor information for a given particle index `i` against
+all particles in the range indexes `from` to `to`. The function updates the
+`nndist` and `nn` arrays with the nearest neighbor distance and index
+respectively, both for particle `i` and the checked particles `[from:to]` (hence
+*crosscheck*).
+
+# Arguments
+- `i::Int`: The index of the particle to update and check against.
+- `from::Int`: The starting index of the range of particles to check against.
+- `to::Int`: The ending index of the range of particles to check against.
+- `rapidity_array`: An array containing the rapidity values of all particles.
+- `phi_array`: An array containing the phi values of the all particles.
+- `R2`: The squared jet distance threshold for considering a particle as a
+  neighbour.
+- `nndist`: The array that stores the nearest neighbor distances.
+- `nn`: The array that stores the nearest neighbor indices.
+"""
 Base.@propagate_inbounds function upd_nn_crosscheck!(i::Int, from::Int, to::Int, rapidity_array, phi_array, R2, nndist, nn)
     nndist_min = R2
     nn_min = i
@@ -65,6 +84,26 @@ Base.@propagate_inbounds function upd_nn_crosscheck!(i::Int, from::Int, to::Int,
 end
 
 # finds new nn for i
+
+"""
+    upd_nn_nocross!(i, from, to, rapidity_array, phi_array, R2, nndist, nn)
+
+Update the nearest neighbor information for a given particle index `i` against
+all particles in the range indexes `from` to `to`. The function updates the
+`nndist` and `nn` arrays with the nearest neighbor distance and index
+respectively, only for particle `i` (hence *nocross*).
+
+# Arguments
+- `i::Int`: The index of the particle to update and check against.
+- `from::Int`: The starting index of the range of particles to check against.
+- `to::Int`: The ending index of the range of particles to check against.
+- `rapidity_array`: An array containing the rapidity values of all particles.
+- `phi_array`: An array containing the phi values of the all particles.
+- `R2`: The squared jet distance threshold for considering a particle as a
+  neighbour.
+- `nndist`: The array that stores the nearest neighbor distances.
+- `nn`: The array that stores the nearest neighbor indices.
+"""
 Base.@propagate_inbounds function upd_nn_nocross!(i::Int, from::Int, to::Int, rapidity_array, phi_array, R2, nndist, nn)
     nndist_min = R2
     nn_min = i
@@ -85,16 +124,40 @@ Base.@propagate_inbounds function upd_nn_nocross!(i::Int, from::Int, to::Int, ra
     nn[i] = nn_min
 end
 
-# entire NN update step
+
+"""
+    upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array, phi_array, R2, nndist, nn, nndij)
+
+Update the nearest neighbor information after a jet merge step.
+
+Arguments:
+- `i`: Index of the first particle in the last merge step.
+- `j`: Index of the second particle in the last merge step.
+- `k`: Index of the current particle for which the nearest neighbour will be updated.
+- `N`: Total number of particles (currently vaild array indexes are `[1:N]`).
+- `Nn`: Number of nearest neighbors to consider.
+- `kt2_array`: Array of transverse momentum squared values.
+- `rapidity_array`: Array of rapidity values.
+- `phi_array`: Array of azimuthal angle values.
+- `R2`: Distance threshold squared for nearest neighbors.
+- `nndist`: Array of nearest neighbor geometric distances.
+- `nn`: Array of nearest neighbor indices.
+- `nndij`: Array of metric distances between particles.
+
+This function updates the nearest neighbor information for the current particle `k` by considering the distances to particles `i` and `j`. It checks if the distance between `k` and `i` is smaller than the current nearest neighbor distance for `k`, and updates the nearest neighbor information accordingly. It also updates the nearest neighbor information for `i` if the distance between `k` and `i` is smaller than the current nearest neighbor distance for `i`. Finally, it checks if the nearest neighbor of `k` is the total number of particles `Nn` and updates it to `j` if necessary.
+
+"""
 Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array, phi_array, R2, nndist, nn, nndij)
-    nnk = nn[k]
+    nnk = nn[k] # Nearest neighbour of k
     if nnk == i || nnk == j
-        upd_nn_nocross!(k, 1, N, rapidity_array, phi_array, R2, nndist, nn) # update dist and nn
+        # Our old nearest neighbour is one of the merged particles
+        upd_nn_nocross!(k, 1, N, rapidity_array, phi_array, R2, nndist, nn) # Update dist and nn
         nndij[k] = dij(k, kt2_array, nn, nndist)
         nnk = nn[k]
     end
 
     if j != i && k != i
+        # Update particle's nearest neighbour if it's not i and the merge step was not a beam merge
         Δ2 = dist(i, k, rapidity_array, phi_array)
         if Δ2 < nndist[k]
             nndist[k] = Δ2
@@ -106,6 +169,10 @@ Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidi
         nndist[i], nn[i] = ifelse(cond, (Δ2, k), (nndist[i], nn[i]))
     end
 
+    # If the previous nearest neighbour was the final jet in the array before
+    # the merge that was just done, this jet has now been moved in the array to
+    # position k (to compactify the array), so we need to update the nearest
+    # neighbour
     nnk == Nn && (nn[k] = j)
 end
 
