@@ -9,8 +9,8 @@ using Logging
 const events_file = joinpath(@__DIR__, "data", "events.hepmc3")
 
 const algorithms = Dict(-1 => "Anti-kt",
-    0 => "Cambridge/Achen",
-    1 => "Inclusive-kt")
+                        0 => "Cambridge/Achen",
+                        1 => "Inclusive-kt")
 
 """Simple structure with necessary parameters for an exclusive selection test"""
 struct InclusiveTest
@@ -70,9 +70,12 @@ function main()
     unpack_events(events_file)
 
     # Read our fastjet inclusive outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
-    fastjet_alg_files_inclusive = Dict(-1 => joinpath(@__DIR__, "data", "jet-collections-fastjet-inclusive-akt.json"),
-        0 => joinpath(@__DIR__, "data", "jet-collections-fastjet-inclusive-ca.json"),
-        1 => joinpath(@__DIR__, "data", "jet-collections-fastjet-inclusive-ikt.json"))
+    fastjet_alg_files_inclusive = Dict(-1 => joinpath(@__DIR__, "data",
+                                                      "jet-collections-fastjet-inclusive-akt.json"),
+                                       0 => joinpath(@__DIR__, "data",
+                                                     "jet-collections-fastjet-inclusive-ca.json"),
+                                       1 => joinpath(@__DIR__, "data",
+                                                     "jet-collections-fastjet-inclusive-ikt.json"))
 
     fastjet_data = Dict{Int, Vector{Any}}()
     for (k, v) in pairs(fastjet_alg_files_inclusive)
@@ -83,8 +86,10 @@ function main()
 
     # Test each stratgy for inclusive jet selection
     for power in keys(algorithms)
-        do_test_compare_to_fastjet(RecoStrategy.N2Plain, fastjet_data[power], algname = algorithms[power], power = power)
-        do_test_compare_to_fastjet(RecoStrategy.N2Tiled, fastjet_data[power], algname = algorithms[power], power = power)
+        do_test_compare_to_fastjet(RecoStrategy.N2Plain, fastjet_data[power],
+                                   algname = algorithms[power], power = power)
+        do_test_compare_to_fastjet(RecoStrategy.N2Tiled, fastjet_data[power],
+                                   algname = algorithms[power], power = power)
     end
 
     # Compare inputing data in PseudoJet with using a LorentzVector
@@ -93,17 +98,27 @@ function main()
 
     # Now test exclusive selections
     inclusive_tests = InclusiveTest[]
-    push!(inclusive_tests, InclusiveTest("exclusive njets=4", 1, "jet-collections-fastjet-njets4-ikt.json", nothing, 4))
-    push!(inclusive_tests, InclusiveTest("exclusive dijmax=20", 1, "jet-collections-fastjet-dij20-ikt.json", 20.0, nothing))
-    push!(inclusive_tests, InclusiveTest("exclusive njets=4", 0, "jet-collections-fastjet-njets4-ca.json", nothing, 4))
-    push!(inclusive_tests, InclusiveTest("exclusive dijmax=0.99", 0, "jet-collections-fastjet-dij099-ca.json", 0.99, nothing))
+    push!(inclusive_tests,
+          InclusiveTest("exclusive njets=4", 1, "jet-collections-fastjet-njets4-ikt.json",
+                        nothing, 4))
+    push!(inclusive_tests,
+          InclusiveTest("exclusive dijmax=20", 1, "jet-collections-fastjet-dij20-ikt.json",
+                        20.0, nothing))
+    push!(inclusive_tests,
+          InclusiveTest("exclusive njets=4", 0, "jet-collections-fastjet-njets4-ca.json",
+                        nothing, 4))
+    push!(inclusive_tests,
+          InclusiveTest("exclusive dijmax=0.99", 0,
+                        "jet-collections-fastjet-dij099-ca.json", 0.99, nothing))
 
     for test in inclusive_tests
         input_file = joinpath(@__DIR__, "data", test.fastjet_file)
         fastjet_jets = read_fastjet_outputs(input_file)
         sort_jets!(fastjet_jets)
-        do_test_compare_to_fastjet(RecoStrategy.N2Tiled, fastjet_jets; algname = test.algname,
-            power = test.power, selection = test.selction, njets = test.njets, dijmax = test.dijmax)
+        do_test_compare_to_fastjet(RecoStrategy.N2Tiled, fastjet_jets;
+                                   algname = test.algname,
+                                   power = test.power, selection = test.selction,
+                                   njets = test.njets, dijmax = test.dijmax)
     end
 end
 
@@ -116,13 +131,13 @@ njets -> apply inclusive njets cut
 If dijmax and njets are nothing, test inclusive jets with pt >= ptmin
 """
 function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jets;
-    algname = "Unknown",
-    selection = "Inclusive",
-    ptmin::Float64 = 5.0,
-    distance::Float64 = 0.4,
-    power::Integer = -1,
-    dijmax = nothing,
-    njets = nothing)
+                                    algname = "Unknown",
+                                    selection = "Inclusive",
+                                    ptmin::Float64 = 5.0,
+                                    distance::Float64 = 0.4,
+                                    power::Integer = -1,
+                                    dijmax = nothing,
+                                    njets = nothing)
 
     # Strategy
     if (strategy == RecoStrategy.N2Plain)
@@ -169,9 +184,9 @@ function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jet
                         # the momentum
                         # Sometimes phi could be in the range [-π, π], but FastJet always is [0, 2π]
                         normalised_phi = jet.phi < 0.0 ? jet.phi + 2π : jet.phi
-                        @test jet.rap ≈ fastjet_jets[ievt]["jets"][ijet]["rap"] atol = 1e-7
-                        @test normalised_phi ≈ fastjet_jets[ievt]["jets"][ijet]["phi"] atol = 1e-7
-                        @test jet.pt ≈ fastjet_jets[ievt]["jets"][ijet]["pt"] rtol = 1e-6
+                        @test jet.rap≈fastjet_jets[ievt]["jets"][ijet]["rap"] atol=1e-7
+                        @test normalised_phi≈fastjet_jets[ievt]["jets"][ijet]["phi"] atol=1e-7
+                        @test jet.pt≈fastjet_jets[ievt]["jets"][ijet]["pt"] rtol=1e-6
                     end
                 end
             end
@@ -180,10 +195,10 @@ function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jet
 end
 
 function do_test_compare_types(strategy::RecoStrategy.Strategy;
-    algname = "Unknown",
-    ptmin::Float64 = 5.0,
-    distance::Float64 = 0.4,
-    power::Integer = -1)
+                               algname = "Unknown",
+                               ptmin::Float64 = 5.0,
+                               distance::Float64 = 0.4,
+                               power::Integer = -1)
 
     # Strategy
     if (strategy == RecoStrategy.N2Plain)
@@ -201,7 +216,8 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
     events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file)
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
-        finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance, p = power), ptmin))
+        finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance,
+                                                                 p = power), ptmin))
         sort_jets!(finaljets)
         push!(jet_collection, FinalJets(ievt, finaljets))
     end
@@ -210,7 +226,8 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
     events_lv::Vector{Vector{LorentzVector}} = read_final_state_particles_lv(events_file)
     jet_collection_lv = FinalJets[]
     for (ievt, event) in enumerate(events_lv)
-        finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance, p = power), ptmin))
+        finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance,
+                                                                 p = power), ptmin))
         sort_jets!(finaljets)
         push!(jet_collection_lv, FinalJets(ievt, finaljets))
     end
@@ -222,9 +239,9 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
                 @test size(event.jets) == size(event_lv.jets)
                 # Test each jet in turn
                 for (jet, jet_lv) in zip(event.jets, event_lv.jets)
-                    @test jet.rap ≈ jet_lv.rap atol = 1e-7
-                    @test jet.phi ≈ jet_lv.phi atol = 1e-7
-                    @test jet.pt ≈ jet_lv.pt rtol = 1e-6
+                    @test jet.rap≈jet_lv.rap atol=1e-7
+                    @test jet.phi≈jet_lv.phi atol=1e-7
+                    @test jet.pt≈jet_lv.pt rtol=1e-6
                 end
             end
         end

@@ -21,7 +21,6 @@ Base.@propagate_inbounds function dist(i, j, rapidity_array, phi_array)
     muladd(drapidity, drapidity, dphi * dphi)
 end
 
-
 """
     dij(i, kt2_array, nn, nndist)
 
@@ -65,7 +64,9 @@ respectively, both for particle `i` and the checked particles `[from:to]` (hence
 - `nndist`: The array that stores the nearest neighbor distances.
 - `nn`: The array that stores the nearest neighbor indices.
 """
-Base.@propagate_inbounds function upd_nn_crosscheck!(i::Int, from::Int, to::Int, rapidity_array, phi_array, R2, nndist, nn)
+Base.@propagate_inbounds function upd_nn_crosscheck!(i::Int, from::Int, to::Int,
+                                                     rapidity_array, phi_array, R2, nndist,
+                                                     nn)
     nndist_min = R2
     nn_min = i
     @inbounds @simd for j in from:to
@@ -104,17 +105,18 @@ respectively, only for particle `i` (hence *nocross*).
 - `nndist`: The array that stores the nearest neighbor distances.
 - `nn`: The array that stores the nearest neighbor indices.
 """
-Base.@propagate_inbounds function upd_nn_nocross!(i::Int, from::Int, to::Int, rapidity_array, phi_array, R2, nndist, nn)
+Base.@propagate_inbounds function upd_nn_nocross!(i::Int, from::Int, to::Int,
+                                                  rapidity_array, phi_array, R2, nndist, nn)
     nndist_min = R2
     nn_min = i
-    @inbounds @simd for j in from:(i-1)
+    @inbounds @simd for j in from:(i - 1)
         Δ2 = dist(i, j, rapidity_array, phi_array)
         if Δ2 <= nndist_min
             nn_min = j
             nndist_min = Δ2
         end
     end
-    @inbounds @simd for j in (i+1):to
+    @inbounds @simd for j in (i + 1):to
         Δ2 = dist(i, j, rapidity_array, phi_array)
         f = Δ2 <= nndist_min
         nn_min = ifelse(f, j, nn_min)
@@ -123,7 +125,6 @@ Base.@propagate_inbounds function upd_nn_nocross!(i::Int, from::Int, to::Int, ra
     nndist[i] = nndist_min
     nn[i] = nn_min
 end
-
 
 """
     upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array, phi_array, R2, nndist, nn, nndij)
@@ -147,7 +148,8 @@ Arguments:
 This function updates the nearest neighbor information for the current particle `k` by considering the distances to particles `i` and `j`. It checks if the distance between `k` and `i` is smaller than the current nearest neighbor distance for `k`, and updates the nearest neighbor information accordingly. It also updates the nearest neighbor information for `i` if the distance between `k` and `i` is smaller than the current nearest neighbor distance for `i`. Finally, it checks if the nearest neighbor of `k` is the total number of particles `Nn` and updates it to `j` if necessary.
 
 """
-Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array, phi_array, R2, nndist, nn, nndij)
+Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array,
+                                               phi_array, R2, nndist, nn, nndij)
     nnk = nn[k] # Nearest neighbour of k
     if nnk == i || nnk == j
         # Our old nearest neighbour is one of the merged particles
@@ -201,7 +203,8 @@ JetReconstruction package namespace.
 jets = plain_jet_reconstruct(particles; p = -1, R = 1.0)
 ```
 """
-function plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +) where T
+function plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0,
+                               recombine = +) where {T}
     # Integer p if possible
     p = (round(p) == p) ? Int(p) : p
 
@@ -214,14 +217,16 @@ function plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine 
         recombination_particles = PseudoJet[]
         sizehint!(recombination_particles, length(particles) * 2)
         for i in eachindex(particles)
-            push!(recombination_particles, PseudoJet(px(particles[i]), py(particles[i]), pz(particles[i]), energy(particles[i])))
+            push!(recombination_particles,
+                  PseudoJet(px(particles[i]), py(particles[i]), pz(particles[i]),
+                            energy(particles[i])))
         end
     end
 
     # Now call the actual reconstruction method, tuned for our internal EDM
-    _plain_jet_reconstruct(particles = recombination_particles, p = p, R = R, recombine = recombine)
+    _plain_jet_reconstruct(particles = recombination_particles, p = p, R = R,
+                           recombine = recombine)
 end
-
 
 """
     _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0, recombine = +)
@@ -249,7 +254,8 @@ The power value maps to specific pp jet reconstruction algorithms: -1 = AntiKt,
 - `clusterseq`: The resulting `ClusterSequence` object representing the
   reconstructed jets.
 """
-function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0, recombine = +)
+function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0,
+                                recombine = +)
     # Bounds
     N::Int = length(particles)
     # Parameters
@@ -311,7 +317,8 @@ function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0,
 
             # Recombine i and j into the next jet
             push!(clusterseq.jets,
-                recombine(clusterseq.jets[clusterseq_index[i]], clusterseq.jets[clusterseq_index[j]]))
+                  recombine(clusterseq.jets[clusterseq_index[i]],
+                            clusterseq.jets[clusterseq_index[j]]))
             # Get its index and the history index
             newjet_k = length(clusterseq.jets)
             newstep_k = length(clusterseq.history) + 1
@@ -327,7 +334,9 @@ function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0,
             nndist[i] = R2
             nn[i] = i
         else # i == j, this is a final jet ("merged with beam")
-            add_step_to_history!(clusterseq, clusterseq.jets[clusterseq_index[i]]._cluster_hist_index, BeamJet, Invalid, dij_min)
+            add_step_to_history!(clusterseq,
+                                 clusterseq.jets[clusterseq_index[i]]._cluster_hist_index,
+                                 BeamJet, Invalid, dij_min)
         end
 
         # Squash step - copy the final jet's compact data into the j-th slot
@@ -347,7 +356,8 @@ function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0,
 
         # Update nearest neighbours step
         @inbounds @simd for k in 1:N
-            upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array, phi_array, R2, nndist, nn, nndij)
+            upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array, phi_array, R2, nndist,
+                         nn, nndij)
         end
 
         nndij[i] = dij(i, kt2_array, nn, nndist)

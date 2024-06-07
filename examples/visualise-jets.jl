@@ -11,7 +11,6 @@ using JetReconstruction
 include(joinpath(@__DIR__, "parse-options.jl"))
 
 function main()
-
     s = ArgParseSettings(autofix_names = true)
     @add_arg_table s begin
         "--event", "-e"
@@ -57,15 +56,16 @@ function main()
     end
     args = parse_args(ARGS, s; as_symbols = true)
 
-
     logger = ConsoleLogger(stdout, Logging.Info)
     global_logger(logger)
 
-    events::Vector{Vector{PseudoJet}} =
-        read_final_state_particles(args[:file], maxevents = args[:event], skipevents = args[:event])
+    events::Vector{Vector{PseudoJet}} = read_final_state_particles(args[:file],
+                                                                   maxevents = args[:event],
+                                                                   skipevents = args[:event])
 
     power = JetReconstruction.algorithm2power[args[:algorithm]]
-    cs = jet_reconstruct(events[1], R = args[:distance], p = power, strategy = args[:strategy])
+    cs = jet_reconstruct(events[1], R = args[:distance], p = power,
+                         strategy = args[:strategy])
 
     plt = jetsplot(events[1], cs; Module = CairoMakie)
     save(args[:output], plt)

@@ -44,7 +44,9 @@ using WGLMakie
 jetsplot(my_objects, cs, Module=Main) #default
 ```
 """
-function JetReconstruction.jetsplot(objects, cs::ClusterSequence; barsize_phi = 0.1, barsize_eta = 0.1, colormap = :glasbey_hv_n256, Module = CairoMakie)
+function JetReconstruction.jetsplot(objects, cs::ClusterSequence; barsize_phi = 0.1,
+                                    barsize_eta = 0.1, colormap = :glasbey_hv_n256,
+                                    Module = CairoMakie)
     idx_arrays = Vector{Int}[]
     for elt in cs.history
         elt.parent2 == JetReconstruction.BeamJet || continue
@@ -84,7 +86,9 @@ using WGLMakie
 jetsplot(my_objects, my_colour_arrays, Module=Main) #default
 ```
 """
-function JetReconstruction.jetsplot(objects, idx_arrays; barsize_phi = 0.1, barsize_eta = 0.1, colormap = :glasbey_hv_n256, Module = Main)
+function JetReconstruction.jetsplot(objects, idx_arrays; barsize_phi = 0.1,
+                                    barsize_eta = 0.1, colormap = :glasbey_hv_n256,
+                                    Module = Main)
     cs = fill(0, length(objects)) # colours
     for i in 1:length(idx_arrays), j in idx_arrays[i]
         cs[j] = i
@@ -92,20 +96,19 @@ function JetReconstruction.jetsplot(objects, idx_arrays; barsize_phi = 0.1, bars
 
     pts = sqrt.(JetReconstruction.pt2.(objects))
 
-    Module.meshscatter(
-        Module.Point3f.(JetReconstruction.phi.(objects), JetReconstruction.rapidity.(objects), 0pts);
-        color = cs,
-        markersize = Module.Vec3f.(barsize_phi, barsize_eta, pts),
-        colormap = colormap,
-        marker = Module.Rect3f(Module.Vec3f(0), Module.Vec3f(1)),
-        figure = (size = (700, 600),),
-        axis = (
-            type = Module.Axis3, perspectiveness = 0.5, azimuth = 2.6, elevation = 0.5,
-            xlabel = "ϕ", ylabel = "η", zlabel = "kt",
-            limits = (nothing, nothing, nothing, nothing, 0, findmax(pts)[1] + 10),
-        ),
-        shading = NoShading,
-    )
+    Module.meshscatter(Module.Point3f.(JetReconstruction.phi.(objects),
+                                       JetReconstruction.rapidity.(objects), 0pts);
+                       color = cs,
+                       markersize = Module.Vec3f.(barsize_phi, barsize_eta, pts),
+                       colormap = colormap,
+                       marker = Module.Rect3f(Module.Vec3f(0), Module.Vec3f(1)),
+                       figure = (size = (700, 600),),
+                       axis = (type = Module.Axis3, perspectiveness = 0.5, azimuth = 2.6,
+                               elevation = 0.5,
+                               xlabel = "ϕ", ylabel = "η", zlabel = "kt",
+                               limits = (nothing, nothing, nothing, nothing, 0,
+                                         findmax(pts)[1] + 10)),
+                       shading = NoShading,)
 end
 
 end

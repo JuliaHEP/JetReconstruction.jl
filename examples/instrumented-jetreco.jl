@@ -22,7 +22,8 @@ using JetReconstruction
 # Parsing for algorithm and strategy enums
 include(joinpath(@__DIR__, "parse-options.jl"))
 
-function profile_code(profile, jet_reconstruction, events, niters; R = 0.4, p = -1, strategy = RecoStrategy.N2Tiled)
+function profile_code(profile, jet_reconstruction, events, niters; R = 0.4, p = -1,
+                      strategy = RecoStrategy.N2Tiled)
     Profile.init(n = 5 * 10^6, delay = 0.00001)
     profile_events(events) = begin
         for evt in events
@@ -30,36 +31,30 @@ function profile_code(profile, jet_reconstruction, events, niters; R = 0.4, p = 
         end
     end
     profile_events(events[1:1])
-    @profile for i ∈ 1:niters
+    @profile for i in 1:niters
         profile_events(events)
     end
     profile_path = joinpath("profile", profile, "profsvg.svg")
     mkpath(dirname(profile_path))
     statprofilehtml(path = dirname(profile_path))
-    fcolor = FlameGraphs.FlameColors(
-        reverse(colormap("Blues", 15))[1:5],
-        colorant"slategray4",
-        colorant"gray95",
-        reverse(colormap("Reds", 15))[1:5],
-        reverse(sequential_palette(39, 10; s = 38, b = 2))[1:5],#brownish pallette
-    )
-    ProfileSVG.save(
-        fcolor,
-        profile_path,
-        combine = true,
-        timeunit = :ms,
-        font = "Arial, Helvetica, sans-serif",
-    )
-    println(
-        "Flame graph from ProfileSVG.jl at file://",
-        abspath(profile_path),
-        "\n",
-        """
-        \tRed tint:          Runtime dispatch
-        \tBrown/yellow tint: Garbage collection
-        \tBlue tint:         OK
-        """,
-    )
+    fcolor = FlameGraphs.FlameColors(reverse(colormap("Blues", 15))[1:5],
+                                     colorant"slategray4",
+                                     colorant"gray95",
+                                     reverse(colormap("Reds", 15))[1:5],
+                                     reverse(sequential_palette(39, 10; s = 38, b = 2))[1:5])
+    ProfileSVG.save(fcolor,
+                    profile_path,
+                    combine = true,
+                    timeunit = :ms,
+                    font = "Arial, Helvetica, sans-serif")
+    println("Flame graph from ProfileSVG.jl at file://",
+            abspath(profile_path),
+            "\n",
+            """
+            \tRed tint:          Runtime dispatch
+            \tBrown/yellow tint: Garbage collection
+            \tBlue tint:         OK
+            """)
 end
 """
 Top level call funtion for demonstrating the use of jet reconstruction
@@ -70,20 +65,18 @@ happens inside the JetReconstruction package itself.
 Some other ustilities are also supported here, such as profiling and
 serialising the reconstructed jet outputs.
 """
-function jet_process(
-    events::Vector{Vector{PseudoJet}};
-    distance::Real = 0.4,
-    algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-    ptmin::Real = 5.0,
-    dcut = nothing,
-    njets = nothing,
-    strategy::RecoStrategy.Strategy,
-    nsamples::Integer = 1,
-    gcoff::Bool = false,
-    profile = nothing,
-    alloc::Bool = false,
-    dump::Union{String, Nothing} = nothing,
-)
+function jet_process(events::Vector{Vector{PseudoJet}};
+                     distance::Real = 0.4,
+                     algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
+                     ptmin::Real = 5.0,
+                     dcut = nothing,
+                     njets = nothing,
+                     strategy::RecoStrategy.Strategy,
+                     nsamples::Integer = 1,
+                     gcoff::Bool = false,
+                     profile = nothing,
+                     alloc::Bool = false,
+                     dump::Union{String, Nothing} = nothing,)
     @info "Will process $(size(events)[1]) events"
 
     # Map algorithm to power
@@ -98,19 +91,22 @@ function jet_process(
     if nsamples > 1 || !isnothing(profile)
         @info "Doing initial warm-up run"
         for event in events
-            _ = inclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
+            _ = inclusive_jets(jet_reconstruct(event, R = distance, p = power,
+                                               strategy = strategy), ptmin)
         end
     end
 
     if !isnothing(profile)
-        profile_code(profile, jet_reconstruct, events, nsamples, R = distance, p = power, strategy = strategy)
+        profile_code(profile, jet_reconstruct, events, nsamples, R = distance, p = power,
+                     strategy = strategy)
         return nothing
     end
 
     if alloc
         println("Memory allocation statistics:")
         @timev for event in events
-            _ = inclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
+            _ = inclusive_jets(jet_reconstruct(event, R = distance, p = power,
+                                               strategy = strategy), ptmin)
         end
         return nothing
     end
@@ -120,16 +116,21 @@ function jet_process(
     cummulative_time = 0.0
     cummulative_time2 = 0.0
     lowest_time = typemax(Float64)
-    for irun ∈ 1:nsamples
+    for irun in 1:nsamples
         gcoff && GC.enable(false)
         t_start = time_ns()
         for (ievt, event) in enumerate(events)
             if !isnothing(njets)
-                finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), njets = njets)
+                finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power,
+                                                           strategy = strategy),
+                                           njets = njets)
             elseif !isnothing(dcut)
-                finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), dcut = dcut)
+                finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power,
+                                                           strategy = strategy),
+                                           dcut = dcut)
             else
-                finaljets = inclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
+                finaljets = inclusive_jets(jet_reconstruct(event, R = distance, p = power,
+                                                           strategy = strategy), ptmin)
             end
             # Only print the jet content once
             if irun == 1
@@ -185,7 +186,7 @@ function jet_process(
     end
 end
 
-parse_command_line(args) = begin
+function parse_command_line(args)
     s = ArgParseSettings(autofix_names = true)
     @add_arg_table! s begin
         "--maxevents", "-n"
@@ -262,7 +263,7 @@ parse_command_line(args) = begin
     return parse_args(args, s; as_symbols = true)
 end
 
-main() = begin
+function main()
     args = parse_command_line(ARGS)
     if args[:debug]
         logger = ConsoleLogger(stdout, Logging.Debug)
@@ -272,12 +273,15 @@ main() = begin
         logger = ConsoleLogger(stdout, Logging.Warn)
     end
     global_logger(logger)
-    events::Vector{Vector{PseudoJet}} =
-        read_final_state_particles(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
-    jet_process(events, distance = args[:distance], algorithm = args[:algorithm], strategy = args[:strategy],
-        ptmin = args[:ptmin], dcut = args[:exclusive_dcut], njets = args[:exclusive_njets],
-        nsamples = args[:nsamples], gcoff = args[:gcoff], profile = args[:profile],
-        alloc = args[:alloc], dump = args[:dump])
+    events::Vector{Vector{PseudoJet}} = read_final_state_particles(args[:file],
+                                                                   maxevents = args[:maxevents],
+                                                                   skipevents = args[:skip])
+    jet_process(events, distance = args[:distance], algorithm = args[:algorithm],
+                strategy = args[:strategy],
+                ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
+                njets = args[:exclusive_njets],
+                nsamples = args[:nsamples], gcoff = args[:gcoff], profile = args[:profile],
+                alloc = args[:alloc], dump = args[:dump])
     nothing
 end
 

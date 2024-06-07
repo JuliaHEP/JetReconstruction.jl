@@ -1,7 +1,6 @@
 # EnumX provides scoped enums, which are nicer
 using EnumX
 
-
 """
     enum RecoStrategy
 
@@ -14,7 +13,6 @@ Scoped enumeration (using EnumX) representing the different strategies for jet r
 """
 @enumx T = Strategy RecoStrategy Best N2Plain N2Tiled
 const AllJetRecoStrategies = [String(Symbol(x)) for x in instances(RecoStrategy.Strategy)]
-
 
 """
     enum T
@@ -30,7 +28,6 @@ Scoped enumeration (using EnumX) representing different jet algorithms used in t
 """
 @enumx T = Algorithm JetAlgorithm AntiKt CA Kt EEKt Durham
 const AllJetRecoAlgorithms = [String(Symbol(x)) for x in instances(JetAlgorithm.Algorithm)]
-
 
 """
     power2algorithm

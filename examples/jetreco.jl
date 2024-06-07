@@ -25,16 +25,14 @@ happens inside the JetReconstruction package itself.
 
 Final jets can be serialised if the "dump" option is given
 """
-function jet_process(
-    events::Vector{Vector{PseudoJet}};
-    distance::Real = 0.4,
-    algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-    ptmin::Real = 5.0,
-    dcut = nothing,
-    njets = nothing,
-    strategy::RecoStrategy.Strategy,
-    dump::Union{String, Nothing} = nothing,
-)
+function jet_process(events::Vector{Vector{PseudoJet}};
+                     distance::Real = 0.4,
+                     algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
+                     ptmin::Real = 5.0,
+                     dcut = nothing,
+                     njets = nothing,
+                     strategy::RecoStrategy.Strategy,
+                     dump::Union{String, Nothing} = nothing,)
     @info "Will process $(size(events)[1]) events"
 
     # If we are dumping the results, setup the JSON structure
@@ -57,11 +55,14 @@ function jet_process(
     # Now run over each event
     for (ievt, event) in enumerate(events)
         if !isnothing(njets)
-            finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), njets = njets)
+            finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power,
+                                                       strategy = strategy), njets = njets)
         elseif !isnothing(dcut)
-            finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), dcut = dcut)
+            finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power,
+                                                       strategy = strategy), dcut = dcut)
         else
-            finaljets = inclusive_jets(jet_reconstruct(event, R = distance, p = power, strategy = strategy), ptmin)
+            finaljets = inclusive_jets(jet_reconstruct(event, R = distance, p = power,
+                                                       strategy = strategy), ptmin)
         end
         @info begin
             jet_output = "Event $(ievt)\n"
@@ -83,7 +84,7 @@ function jet_process(
     end
 end
 
-parse_command_line(args) = begin
+function parse_command_line(args)
     s = ArgParseSettings(autofix_names = true)
     @add_arg_table! s begin
         "--maxevents", "-n"
@@ -134,16 +135,18 @@ parse_command_line(args) = begin
     return parse_args(args, s; as_symbols = true)
 end
 
-
-main() = begin
+function main()
     args = parse_command_line(ARGS)
     logger = ConsoleLogger(stdout, Logging.Info)
     global_logger(logger)
-    events::Vector{Vector{PseudoJet}} =
-        read_final_state_particles(args[:file], maxevents = args[:maxevents], skipevents = args[:skip])
-    jet_process(events, distance = args[:distance], algorithm = args[:algorithm], strategy = args[:strategy],
-        ptmin = args[:ptmin], dcut = args[:exclusive_dcut], njets = args[:exclusive_njets],
-        dump = args[:dump])
+    events::Vector{Vector{PseudoJet}} = read_final_state_particles(args[:file],
+                                                                   maxevents = args[:maxevents],
+                                                                   skipevents = args[:skip])
+    jet_process(events, distance = args[:distance], algorithm = args[:algorithm],
+                strategy = args[:strategy],
+                ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
+                njets = args[:exclusive_njets],
+                dump = args[:dump])
     nothing
 end
 

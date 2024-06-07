@@ -66,7 +66,7 @@ struct Particle{T}
     vertex::Integer
 end
 
-Particle{T}() where T = Particle(LorentzVector{T}(0., 0., 0., 0.), 0, 0, 0, 0)
+Particle{T}() where {T} = Particle(LorentzVector{T}(0.0, 0.0, 0.0, 0.0), 0, 0, 0, 0)
 
 """ Read a [HepMC3](https://doi.org/10.1016/j.cpc.2020.107310) ascii file.
 
@@ -114,13 +114,13 @@ end
 close(f)
 ```
 """
-function read_events(f, fin; maxevents=-1, skipevents=0)
+function read_events(f, fin; maxevents = -1, skipevents = 0)
     T = Float64
     particles = Particle{T}[]
     ievent = 0
     ipart = 0
     toskip = skipevents
-    
+
     for (il, l) in enumerate(eachline(fin))
         if occursin(r"HepMC::.*-END_EVENT_LISTING", l)
             break
@@ -150,9 +150,10 @@ function read_events(f, fin; maxevents=-1, skipevents=0)
             px = parse(T, tok[5])
             py = parse(T, tok[6])
             pz = parse(T, tok[7])
-            e =  parse(T, tok[8])
+            e = parse(T, tok[8])
             status = parse(Int, tok[10])
-            push!(particles, Particle{T}(LorentzVector(e,px,py,pz), status, pdgid, barcode, vertex))
+            push!(particles,
+                  Particle{T}(LorentzVector(e, px, py, pz), status, pdgid, barcode, vertex))
         end
     end
     #processing the last event:
