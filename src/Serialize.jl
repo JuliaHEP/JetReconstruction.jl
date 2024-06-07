@@ -1,7 +1,31 @@
 """
-`savejets(filename, jets; format="px py pz E")`
+    savejets(filename, jets; format="px py pz E")
 
-Saves the given `jets` into a file with the given `filename`. Each line contains information about a single jet and is formatted according to the `format` string which defaults to `"px py pz E"` but can also contain other values in any order: `"pt2"` for pt^2, `"phi"` for azimuth, `"rapidity"` for rapidity. It is strongly NOT recommended to put something other than values and (possibly custom) separators in the `format` string.
+Save jet data to a file.
+
+# Arguments
+- `filename`: The name of the file to save the jet data to.
+- `jets`: An array of jet objects to save.
+- `format="px py pz E"`: (optional) A string specifying the format of the jet
+  data to save. The default format is "px py pz E".
+
+# Details
+This function saves jet data to a file in a specific format. Each line in the
+file represents a jet and contains the information about the jet in the
+specified format. The format string can include the following placeholders:
+
+- "E" or "energy": Jet energy
+- "px": Momentum along the x-axis
+- "py": Momentum along the y-axis
+- "pz": Momentum along the z-axis
+- "pt2": Square of the transverse momentum
+- "phi": Azimuth angle
+- "rapidity": Rapidity
+
+Lines starting with '#' are treated as comments and are ignored.
+
+It is strongly NOT recommended to put something other than values and (possibly
+custom) separators in the `format` string.
 """
 function savejets(filename, jets; format="px py pz E")
     symbols = Dict(
@@ -35,19 +59,27 @@ function savejets(filename, jets; format="px py pz E")
 end
 
 """
-    loadjets!(filename, jets; splitby=isspace, constructor=(px,py,pz,E)->LorentzVector(E,px,py,pz), dtype=Float64)
+    loadjets!(filename, jets; splitby=isspace, constructor=(px,py,pz,E)->LorentzVectorHEP(E,px,py,pz), dtype=Float64)
 
-Loads the `jets` from a file. Ignores lines that start with `'#'`. Each line gets processed in the following way: the line is split using `split(line, splitby)` or simply `split(line)` by default. Every value in this line is then converted to the `dtype` (which is `Float64` by default). These values are then used as arguments for the `constructor` function which should produce individual jets. By default, the `constructor` constructs Lorentz vectors.
+Loads the `jets` from a file. Ignores lines that start with `'#'`. Each line
+gets processed in the following way: the line is split using `split(line,
+splitby)` or simply `split(line)` by default. Every value in this line is then
+converted to the `dtype` (which is `Float64` by default). These values are then
+used as arguments for the `constructor` function which should produce individual
+jets. By default, the `constructor` constructs Lorentz vectors.
 
-Everything that was already in `jets` is not affected as we only use `push!` on it.
+Everything that was already in `jets` is not affected as we only use `push!` on
+it.
+
+# Example
 ```julia
-# example that loads jets from two files into one array
+# Load jets from two files into one array
 jets = []
 loadjets!("myjets1.dat", jets)
 loadjets!("myjets2.dat", jets)
 ```
 """
-function loadjets!(filename, jets; splitby=isspace, constructor=(px,py,pz,E)->LorentzVector(E,px,py,pz), dtype=Float64)
+function loadjets!(filename, jets; splitby=isspace, constructor=(px,py,pz,E)->LorentzVectorHEP(E,px,py,pz), dtype=Float64)
     open(filename, "r") do file
         for line in eachline(file)
             if line[1] != '#'
@@ -63,15 +95,23 @@ function loadjets!(filename, jets; splitby=isspace, constructor=(px,py,pz,E)->Lo
 end
 
 """
-    loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->LorentzVector(E,px,py,pz), VT=LorentzVector) -> jets
+    loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->LorentzVectorHEP(E,px,py,pz), VT=LorentzVector)
 
-Loads the `jets` from a file, where each element of `jets` is of type `VT`. Ignores lines that start with `'#'`. Each line gets processed in the following way: the line is split using `split(line, splitby)` or simply `split(line)` by default. These values are then used as arguments for the `constructor` function which should produce individual jets of the `VT` type. By default, the `constructor` constructs Lorentz vectors.
+Load jets from a file.
 
-```julia
-# example
-jets = loadjets("myjets1.dat")
-```
+# Arguments
+- `filename`: The name of the file to load jets from.
+- `splitby`: The delimiter used to split the data in the file. Default is
+  `isspace`.
+- `constructor`: A function that constructs a `VT` object from the jet data.
+  Default is `(px,py,pz,E)->LorentzVector(E,px,py,pz)`.
+- `VT`: The type of the vector used to store the jet data. Default is
+  `LorentzVector`.
+
+# Returns
+- A vector of `VT` objects representing the loaded jets.
+
 """
-function loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->LorentzVector(E,px,py,pz), VT=LorentzVector)
+function loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->LorentzVectorHEP(E,px,py,pz), VT=LorentzVector)
     loadjets!(filename, VT[], splitby=splitby, constructor=constructor)
 end

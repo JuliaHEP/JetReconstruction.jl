@@ -1,32 +1,63 @@
 # Common functions and structures for Tiled reconstruction algorithms
 
-"""Tiling definition parameters"""
+"""
+	struct TilingDef
+
+A struct representing the definition of a spcific tiling scheme.
+
+# Fields
+- `_tiles_eta_min::Float64`: The minimum rapidity of the tiles.
+- `_tiles_eta_max::Float64`: The maximum rapidity of the tiles.
+- `_tile_size_eta::Float64`: The size of a tile in rapidity (usually R^2).
+- `_tile_size_phi::Float64`: The size of a tile in phi (usually a bit more than R^2).
+- `_n_tiles_eta::Int`: The number of tiles across rapidity.
+- `_n_tiles_phi::Int`: The number of tiles across phi.
+- `_n_tiles::Int`: The total number of tiles.
+- `_tiles_ieta_min::Int`: The minimum rapidity tile index.
+- `_tiles_ieta_max::Int`: The maximum rapidity tile index.
+
+# Constructor
+	TilingDef(_tiles_eta_min, _tiles_eta_max, _tile_size_eta, _tile_size_phi,
+		_n_tiles_eta, _n_tiles_phi, _tiles_ieta_min, _tiles_ieta_max)
+
+Constructs a `TilingDef` object with the given parameters.
+"""
 struct TilingDef
-	_tiles_eta_min::Float64  # Minimum rapidity
-	_tiles_eta_max::Float64  # Maximum rapidity
-	_tile_size_eta::Float64  # Size of a tile in rapidity (usually R^2)
-	_tile_size_phi::Float64  # Size of a tile in phi (usually a bit more than R^2)
-	_n_tiles_eta::Int   # Number of tiles across rapidity
-	_n_tiles_phi::Int   # Number of tiles across phi
-	_n_tiles::Int       # Total number of tiles
-	_tiles_ieta_min::Int # Min_rapidity / rapidity tile size (needed?)
-	_tiles_ieta_max::Int # Max_rapidity / rapidity tile size (needed?)
-	
-	# Use an inner constructor as _n_tiles and _tile_linear_indexes 
-	# are defined by the other values
+	_tiles_eta_min::Float64
+	_tiles_eta_max::Float64
+	_tile_size_eta::Float64
+	_tile_size_phi::Float64
+	_n_tiles_eta::Int
+	_n_tiles_phi::Int
+	_n_tiles::Int
+	_tiles_ieta_min::Int
+	_tiles_ieta_max::Int
+
 	function TilingDef(_tiles_eta_min, _tiles_eta_max, _tile_size_eta, _tile_size_phi,
 		_n_tiles_eta, _n_tiles_phi, _tiles_ieta_min, _tiles_ieta_max)
 		new(_tiles_eta_min, _tiles_eta_max, _tile_size_eta, _tile_size_phi,
-		_n_tiles_eta, _n_tiles_phi, _n_tiles_eta*_n_tiles_phi, _tiles_ieta_min, _tiles_ieta_max,
-		)
+		_n_tiles_eta, _n_tiles_phi, _n_tiles_eta*_n_tiles_phi, _tiles_ieta_min, _tiles_ieta_max)
 	end
 end
 
+
 """
-Determine an extent for the rapidity tiles, by binning in 
-rapidity and collapsing the outer bins until they have about
-1/4 the number of particles as the maximum bin. This is the 
-heuristic which is used by FastJet.
+    determine_rapidity_extent(eta::Vector{T}) where T <: AbstractFloat
+
+Calculate the minimum and maximum rapidities based on the input vector `eta`.
+The function determines the rapidity extent by binning the multiplicities as a
+function of rapidity and finding the minimum and maximum rapidities such that
+the edge bins contain a certain fraction (~1/4) of the busiest bin and a minimum
+number of particles.
+
+This is the heuristic which is used by FastJet (inline comments are from FastJet).
+
+## Arguments
+- `eta::Vector{T}`: A vector of rapidity values.
+
+## Returns
+- `minrap::T`: The minimum rapidity value.
+- `maxrap::T`: The maximum rapidity value.
 """
 function determine_rapidity_extent(eta::Vector{T}) where T <: AbstractFloat
 	length(eta) == 0 && return 0.0, 0.0
@@ -37,7 +68,7 @@ function determine_rapidity_extent(eta::Vector{T}) where T <: AbstractFloat
 
 	# Get the minimum and maximum rapidities and at the same time bin
 	# the multiplicities as a function of rapidity to help decide how
-	# far out it's worth going
+	# far out it is worth going
 	minrap = maxrap = eta[1]
 	ibin = 0
 	for y in eta
@@ -106,8 +137,26 @@ function determine_rapidity_extent(eta::Vector{T}) where T <: AbstractFloat
 	minrap, maxrap
 end
 
+
 """
-Setup the tiling parameters for this recontstruction
+    setup_tiling(eta::Vector{T}, Rparam::AbstractFloat) where T <: AbstractFloat
+
+This function sets up the tiling parameters for a reconstruction given a vector
+of rapidities `eta` and a radius parameter `Rparam`.
+
+# Arguments
+- `eta::Vector{T}`: A vector of rapidities.
+- `Rparam::AbstractFloat`: The jet radius parameter.
+
+# Returns
+- `tiling_setup`: A `TilingDef` object containing the tiling setup parameters.
+
+# Description
+The function first decides the tile sizes based on the `Rparam` value. It then
+determines the number of tiles in the phi direction (`n_tiles_phi`) based on the
+tile size. Next, it determines the rapidity extent of the input `eta` vector and
+adjusts the values accordingly. Finally, it creates a `TilingDef` object with
+the calculated tiling parameters and returns it.
 """
 function setup_tiling(eta::Vector{T}, Rparam::AbstractFloat) where T <: AbstractFloat
 	# First decide tile sizes (with a lower bound to avoid huge memory use with
@@ -137,8 +186,20 @@ function setup_tiling(eta::Vector{T}, Rparam::AbstractFloat) where T <: Abstract
 	tiling_setup
 end
 
+
 """
-Return the geometric distance between a pair of (eta,phi) coordinates
+	geometric_distance(eta1::AbstractFloat, phi1::AbstractFloat, eta2::AbstractFloat, phi2::AbstractFloat)
+
+Compute the geometric distance between two points in the rap-phi plane.
+
+# Arguments
+- `eta1::AbstractFloat`: The eta coordinate of the first point.
+- `phi1::AbstractFloat`: The phi coordinate of the first point.
+- `eta2::AbstractFloat`: The eta coordinate of the second point.
+- `phi2::AbstractFloat`: The phi coordinate of the second point.
+
+# Returns
+- `distance::Float64`: The geometric distance between the two points.
 """
 geometric_distance(eta1::AbstractFloat, phi1::AbstractFloat, eta2::AbstractFloat, phi2::AbstractFloat) = begin
 	δeta = eta2 - eta1
@@ -146,8 +207,23 @@ geometric_distance(eta1::AbstractFloat, phi1::AbstractFloat, eta2::AbstractFloat
 	return δeta * δeta + δphi * δphi
 end
 
+
 """
-Return the dij metric distance between a pair of pseudojets
+	get_dij_dist(nn_dist, kt2_1, kt2_2, R2)
+
+Compute the dij metric distance between two jets.
+
+# Arguments
+- `nn_dist`: The nearest-neighbor distance between two jets.
+- `kt2_1`: The squared momentum metric value of the first jet.
+- `kt2_2`: The squared momentum metric value of the second jet.
+- `R2`: The jet radius parameter squared.
+
+# Returns
+The distance between the two jets.
+
+If `kt2_2` is equal to 0.0, then the first jet doesn't actually have a valid 
+neighbour, so it's treated as a single jet adjecent to the beam.
 """
 get_dij_dist(nn_dist, kt2_1, kt2_2, R2) = begin
 	if kt2_2 == 0.0
@@ -156,8 +232,22 @@ get_dij_dist(nn_dist, kt2_1, kt2_2, R2) = begin
 	return nn_dist * min(kt2_1, kt2_2)
 end
 
+
 """
-Return the tile coordinates of an (eta, phi) pair
+    get_tile(tiling_setup::TilingDef, eta::AbstractFloat, phi::AbstractFloat)
+
+Given a `tiling_setup` object, `eta` and `phi` values, this function calculates
+the tile indices for the given `eta` and `phi` values.
+
+# Arguments
+- `tiling_setup`: A `TilingDef` object that contains the tiling setup
+  parameters.
+- `eta`: The eta value for which to calculate the tile index.
+- `phi`: The phi value for which to calculate the tile index.
+
+# Returns
+- `ieta`: The tile index along the eta direction.
+- `iphi`: The tile index along the phi direction.
 """
 get_tile(tiling_setup::TilingDef, eta::AbstractFloat, phi::AbstractFloat) = begin
 	# The eta clamp is necessary as the extreme bins catch overflows for high abs(eta)
@@ -167,17 +257,22 @@ get_tile(tiling_setup::TilingDef, eta::AbstractFloat, phi::AbstractFloat) = begi
 	ieta, iphi
 end
 
-"""
-Map an (η, ϕ) pair into a linear index, which is much faster "by hand" than using
-the LinearIndices construct (like x100, which is bonkers, but there you go...)
-"""
-get_tile_linear_index(tiling_setup::TilingDef, i_η::Int, i_ϕ::Int) = begin
-	return tiling_setup._n_tiles_eta * (i_ϕ-1) + i_η
-end
 
 """
-Map a linear index to a tuple of (η, ϕ) - again this is very much faster than
-using CartesianIndices
+    get_tile_linear_index(tiling_setup::TilingDef, i_η::Int, i_ϕ::Int)
+
+Compute the linear index of a tile in a tiled setup. This is much faster in this
+function than using the LinearIndices construct (like x100, which is bonkers,
+but there you go...)
+
+# Arguments
+- `tiling_setup::TilingDef`: The tiling setup defining the number of tiles in
+  each dimension.
+- `i_η::Int`: The index of the tile in the η dimension.
+- `i_ϕ::Int`: The index of the tile in the ϕ dimension.
+
+# Returns
+- The linear index of the tile.
 """
 get_tile_cartesian_indices(tiling_setup::TilingDef, index::Int) = begin
 	return (rem(index-1, tiling_setup._n_tiles_eta)+1, div(index-1, tiling_setup._n_tiles_eta)+1)
@@ -189,16 +284,43 @@ Iterator for the indexes of rightmost tiles for a given Cartesian tile index
 		XXX
 		O.X
 		OOO
-	- η coordinate must be in range, ϕ coordinate wraps
+	- rapidity coordinate must be in range, ϕ coordinate wraps
 
 """
+
+"""
+    struct rightmost_tiles
+
+A struct for iterating over rightmost tiles for a given Cartesian tile index.
+These are the tiles above and to the right of the given tile (X=included, O=not
+included):
+
+	XXX
+	O.X
+	OOO
+
+Note, rapidity coordinate must be in range, ϕ coordinate wraps
+
+# Fields
+- `n_η::Int`: Number of η tiles
+- `n_ϕ::Int`: Number of ϕ tiles
+- `start_η::Int`: Centre η tile coordinate
+- `start_ϕ::Int`: Centre ϕ tile coordinate
+"""
 struct rightmost_tiles
-    n_η::Int		# Number of η tiles
-    n_ϕ::Int		# Number of ϕ tiles
-    start_η::Int	# Centre η tile coordinate
-    start_ϕ::Int	# Centre ϕ tile coordinate
+	n_η::Int		# Number of η tiles
+	n_ϕ::Int		# Number of ϕ tiles
+	start_η::Int	# Centre η tile coordinate
+	start_ϕ::Int	# Centre ϕ tile coordinate
 end
 
+
+"""
+    Base.iterate(t::rightmost_tiles, state=1)
+
+Iterate over the `rightmost_tiles` object, returning all the rightmost tiles for
+a given Cartesian tile index.
+"""
 function Base.iterate(t::rightmost_tiles, state=1)
     mapping = ((-1,-1), (-1,0), (-1,1), (0,1))
     if t.start_η == 1 && state == 1
@@ -217,13 +339,27 @@ function Base.iterate(t::rightmost_tiles, state=1)
     return nothing
 end
 
-"""
-Iterator for the indexes of neighbouring tiles for a given Cartesian tile index
-		XXX
-		X.X
-		XXX
-	- η coordinate must be in range, ϕ coordinate wraps
 
+"""
+    struct neighbour_tiles
+
+A struct representing the neighbouring tiles.
+
+A struct for iterating over all neighbour tiles for a given Cartesian tile index.
+These are the tiles above and to the right of the given tile (X=included, O=not
+included):
+
+	XXX
+	X.X
+	XXX
+
+Note, rapidity coordinate must be in range, ϕ coordinate wraps
+
+# Fields
+- `n_η::Int`: Number of η tiles
+- `n_ϕ::Int`: Number of ϕ tiles
+- `start_η::Int`: Centre η tile coordinate
+- `start_ϕ::Int`: Centre ϕ tile coordinate
 """
 struct neighbour_tiles
     n_η::Int		# Number of η tiles
@@ -232,6 +368,12 @@ struct neighbour_tiles
     start_ϕ::Int	# Centre ϕ tile coordinate
 end
 
+"""
+    Base.iterate(t::neighbour_tiles, state=1)
+
+Iterate over the `neighbour_tiles` object, returning all the neighbour tiles for
+a given Cartesian tile index.
+"""
 function Base.iterate(t::neighbour_tiles, state=1)
     mapping = ((-1,-1), (-1,0), (-1,1), (0,-1), (0,1), (1,-1), (1,0), (1,1))
 	# Skip for top row in η

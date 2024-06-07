@@ -1,5 +1,19 @@
 using LoopVectorization
 
+"""
+    dist(i, j, rapidity_array, phi_array)
+
+Compute the distance between points in a 2D space defined by rapidity and phi coordinates.
+
+# Arguments
+- `i::Int`: Index of the first point to consider (indexes into `rapidity_array` and `phi_array`).
+- `j::Int`: Index of the second point to consider (indexes into `rapidity_array` and `phi_array`).
+- `rapidity_array::Vector{Float64}`: Array of rapidity coordinates.
+- `phi_array::Vector{Float64}`: Array of phi coordinates.
+
+# Returns
+- `distance::Float64`: The distance between the two points.
+"""
 Base.@propagate_inbounds function dist(i, j, rapidity_array, phi_array)
     drapidity = rapidity_array[i] - rapidity_array[j]
     dphi = abs(phi_array[i] - phi_array[j])
@@ -7,14 +21,50 @@ Base.@propagate_inbounds function dist(i, j, rapidity_array, phi_array)
     muladd(drapidity, drapidity, dphi * dphi)
 end
 
-# d_{ij} distance with i's NN (times R^2)
+
+"""
+    dij(i, kt2_array, nn, nndist)
+
+Compute the dij value for a given index `i` to its nearest neighbor. The nearest
+neighbor is determined from `nn[i]`, and the metric distance to the nearest
+neighbor is given by the distance `nndist[i]` applying the lower of the
+`kt2_array` values for the two particles.ßß
+
+# Arguments
+- `i`: The index of the element.
+- `kt2_array`: An array of kt2 values.
+- `nn`: An array of nearest neighbors.
+- `nndist`: An array of nearest neighbor distances.
+
+# Returns
+- The computed dij value.
+"""
 Base.@propagate_inbounds function dij(i, kt2_array, nn, nndist)
     j = nn[i]
     d = nndist[i]
     d * min(kt2_array[i], kt2_array[j])
 end
 
-# finds new nn for i and checks everyone additionally
+"""
+    upd_nn_crosscheck!(i, from, to, rapidity_array, phi_array, R2, nndist, nn)
+
+Update the nearest neighbor information for a given particle index `i` against
+all particles in the range indexes `from` to `to`. The function updates the
+`nndist` and `nn` arrays with the nearest neighbor distance and index
+respectively, both for particle `i` and the checked particles `[from:to]` (hence
+*crosscheck*).
+
+# Arguments
+- `i::Int`: The index of the particle to update and check against.
+- `from::Int`: The starting index of the range of particles to check against.
+- `to::Int`: The ending index of the range of particles to check against.
+- `rapidity_array`: An array containing the rapidity values of all particles.
+- `phi_array`: An array containing the phi values of the all particles.
+- `R2`: The squared jet distance threshold for considering a particle as a
+  neighbour.
+- `nndist`: The array that stores the nearest neighbor distances.
+- `nn`: The array that stores the nearest neighbor indices.
+"""
 Base.@propagate_inbounds function upd_nn_crosscheck!(i::Int, from::Int, to::Int, rapidity_array, phi_array, R2, nndist, nn)
     nndist_min = R2
     nn_min = i
@@ -34,6 +84,26 @@ Base.@propagate_inbounds function upd_nn_crosscheck!(i::Int, from::Int, to::Int,
 end
 
 # finds new nn for i
+
+"""
+    upd_nn_nocross!(i, from, to, rapidity_array, phi_array, R2, nndist, nn)
+
+Update the nearest neighbor information for a given particle index `i` against
+all particles in the range indexes `from` to `to`. The function updates the
+`nndist` and `nn` arrays with the nearest neighbor distance and index
+respectively, only for particle `i` (hence *nocross*).
+
+# Arguments
+- `i::Int`: The index of the particle to update and check against.
+- `from::Int`: The starting index of the range of particles to check against.
+- `to::Int`: The ending index of the range of particles to check against.
+- `rapidity_array`: An array containing the rapidity values of all particles.
+- `phi_array`: An array containing the phi values of the all particles.
+- `R2`: The squared jet distance threshold for considering a particle as a
+  neighbour.
+- `nndist`: The array that stores the nearest neighbor distances.
+- `nn`: The array that stores the nearest neighbor indices.
+"""
 Base.@propagate_inbounds function upd_nn_nocross!(i::Int, from::Int, to::Int, rapidity_array, phi_array, R2, nndist, nn)
     nndist_min = R2
     nn_min = i
@@ -54,16 +124,40 @@ Base.@propagate_inbounds function upd_nn_nocross!(i::Int, from::Int, to::Int, ra
     nn[i] = nn_min
 end
 
-# entire NN update step
+
+"""
+    upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array, phi_array, R2, nndist, nn, nndij)
+
+Update the nearest neighbor information after a jet merge step.
+
+Arguments:
+- `i`: Index of the first particle in the last merge step.
+- `j`: Index of the second particle in the last merge step.
+- `k`: Index of the current particle for which the nearest neighbour will be updated.
+- `N`: Total number of particles (currently vaild array indexes are `[1:N]`).
+- `Nn`: Number of nearest neighbors to consider.
+- `kt2_array`: Array of transverse momentum squared values.
+- `rapidity_array`: Array of rapidity values.
+- `phi_array`: Array of azimuthal angle values.
+- `R2`: Distance threshold squared for nearest neighbors.
+- `nndist`: Array of nearest neighbor geometric distances.
+- `nn`: Array of nearest neighbor indices.
+- `nndij`: Array of metric distances between particles.
+
+This function updates the nearest neighbor information for the current particle `k` by considering the distances to particles `i` and `j`. It checks if the distance between `k` and `i` is smaller than the current nearest neighbor distance for `k`, and updates the nearest neighbor information accordingly. It also updates the nearest neighbor information for `i` if the distance between `k` and `i` is smaller than the current nearest neighbor distance for `i`. Finally, it checks if the nearest neighbor of `k` is the total number of particles `Nn` and updates it to `j` if necessary.
+
+"""
 Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array, phi_array, R2, nndist, nn, nndij)
-    nnk = nn[k]
+    nnk = nn[k] # Nearest neighbour of k
     if nnk == i || nnk == j
-        upd_nn_nocross!(k, 1, N, rapidity_array, phi_array, R2, nndist, nn) # update dist and nn
+        # Our old nearest neighbour is one of the merged particles
+        upd_nn_nocross!(k, 1, N, rapidity_array, phi_array, R2, nndist, nn) # Update dist and nn
         nndij[k] = dij(k, kt2_array, nn, nndist)
         nnk = nn[k]
     end
 
     if j != i && k != i
+        # Update particle's nearest neighbour if it's not i and the merge step was not a beam merge
         Δ2 = dist(i, k, rapidity_array, phi_array)
         if Δ2 < nndist[k]
             nndist[k] = Δ2
@@ -75,18 +169,37 @@ Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidi
         nndist[i], nn[i] = ifelse(cond, (Δ2, k), (nndist[i], nn[i]))
     end
 
+    # If the previous nearest neighbour was the final jet in the array before
+    # the merge that was just done, this jet has now been moved in the array to
+    # position k (to compactify the array), so we need to update the nearest
+    # neighbour
     nnk == Nn && (nn[k] = j)
 end
 
 """
-This is the N2Plain jet reconstruction algorithm interface, called with an arbitrary array
-of particles, which supports suitable 4-vector methods, viz.
- - pt2(), phi(), rapidity(), px(), py(), pz(), energy()
-for each element.
+    plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +) where T
 
-Examples of suitable types are JetReconstruction.PseudoJet and LorentzVectorHEP.
-N.B. these methods need to exist in the namespace of this package, i.e. JetReconstruction.pt2(::T),
-which is already done for the two types above.
+Perform jet reconstruction using the plain algorithm.
+
+# Arguments
+- `particles::Vector{T}`: A vector of particles used for jet reconstruction, any
+   array of particles, which supports suitable 4-vector methods, viz. pt2(),
+   phi(), rapidity(), px(), py(), pz(), energy(), can be used. for each element.
+- `p::Int=-1`: The integer value used for jet reconstruction.
+- `R::Float64=1.0`: The radius parameter used for jet reconstruction.
+- `recombine::Function=+`: The recombination function used for jet
+  reconstruction.
+
+**Note** for the `particles` argument, the 4-vector methods need to exist in the
+JetReconstruction package namespace.
+
+# Returns
+- `Vector{PseudoJet}`: A vector of reconstructed jets.
+
+# Example
+```julia
+jets = plain_jet_reconstruct(particles; p = -1, R = 1.0)
+```
 """
 function plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +) where T
     # Integer p if possible
@@ -106,11 +219,37 @@ function plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine 
     end
 
     # Now call the actual reconstruction method, tuned for our internal EDM
-    _plain_jet_reconstruct(particles=recombination_particles, p=p, R=R, recombine=recombine)
+    _plain_jet_reconstruct(particles = recombination_particles, p = p, R = R, recombine = recombine)
 end
 
 
-function _plain_jet_reconstruct(;particles::Vector{PseudoJet}, p = -1, R = 1.0, recombine = +)
+"""
+    _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0, recombine = +)
+
+This is the internal implementation of jet reconstruction using the plain
+algorithm. It takes a vector of `particles` representing the input particles and
+reconstructs jets based on the specified parameters. Here the particles must be
+of type `PseudoJet`.
+
+Users of the package should use the `plain_jet_reconstruct` function as their
+entry point to this jet reconstruction.
+
+The power value maps to specific pp jet reconstruction algorithms: -1 = AntiKt,
+0 = Cambridge/Aachen, 1 = Inclusive Kt.
+
+# Arguments
+- `particles`: A vector of `PseudoJet` objects representing the input particles.
+- `p=-1`: The power to which the transverse momentum (`pt`) of each particle is
+  raised.
+- `R=1.0`: The jet radius parameter.
+- `recombine`: The recombination function used to merge two jets. Default is `+`
+  (additive recombination).
+
+# Returns
+- `clusterseq`: The resulting `ClusterSequence` object representing the
+  reconstructed jets.
+"""
+function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0, recombine = +)
     # Bounds
     N::Int = length(particles)
     # Parameters
@@ -151,12 +290,13 @@ function _plain_jet_reconstruct(;particles::Vector{PseudoJet}, p = -1, R = 1.0, 
         # Extremely odd - having these @debug statements present causes a performance
         # degradation of ~140μs per event on my M2 mac (20%!), even when no debugging is used
         # so they need to be completely commented out...
-
         #@debug "Beginning iteration $iteration"
+
         # Findmin and add back renormalisation to distance
         dij_min, i = fast_findmin(nndij, N)
         @fastmath dij_min /= R2
         j::Int = nn[i]
+
         #@debug "Closest compact jets are $i ($(clusterseq_index[i])) and $j ($(clusterseq_index[j]))"
 
         if i != j # Merge jets i and j
@@ -170,7 +310,7 @@ function _plain_jet_reconstruct(;particles::Vector{PseudoJet}, p = -1, R = 1.0, 
             hist_j = clusterseq.jets[clusterseq_index[j]]._cluster_hist_index
 
             # Recombine i and j into the next jet
-            push!(clusterseq.jets, 
+            push!(clusterseq.jets,
                 recombine(clusterseq.jets[clusterseq_index[i]], clusterseq.jets[clusterseq_index[j]]))
             # Get its index and the history index
             newjet_k = length(clusterseq.jets)
@@ -180,7 +320,7 @@ function _plain_jet_reconstruct(;particles::Vector{PseudoJet}, p = -1, R = 1.0, 
             add_step_to_history!(clusterseq, minmax(hist_i, hist_j)..., newjet_k, dij_min)
 
             # Update the compact arrays, reusing the i-th slot
-            kt2_array[i] = pt2(clusterseq.jets[newjet_k]) ^ p
+            kt2_array[i] = pt2(clusterseq.jets[newjet_k])^p
             rapidity_array[i] = rapidity(clusterseq.jets[newjet_k])
             phi_array[i] = phi(clusterseq.jets[newjet_k])
             clusterseq_index[i] = newjet_k
