@@ -41,6 +41,14 @@ const power2algorithm = Dict(-1 => JetAlgorithm.AntiKt,
     0 => JetAlgorithm.CA,
     1 => JetAlgorithm.Kt)
 
+"""
+    algorithm2power
+
+A dictionary that maps pp algorithm names to their corresponding power values.
+
+The dictionary is created by iterating over the `power2algorithm` dictionary and swapping the keys and values.
+"""
+const algorithm2power = Dict((i.second, i.first) for i in power2algorithm)
 
 """
     Base.tryparse(E::Type{<:Enum}, str::String)
