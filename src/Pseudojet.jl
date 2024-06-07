@@ -352,8 +352,8 @@ const η = eta
 """
     m(p::PseudoJet)
 
-Compute the invariant mass of a `PseudoJet` object. By convention if $m^2 < 0$,
-then $-\sqrt{(-m^2)}$ is returned.
+Compute the invariant mass of a `PseudoJet` object. By convention if m^2 < 0,
+then -sqrt{(-m^2)} is returned.
 
 # Arguments
 - `p::PseudoJet`: The `PseudoJet` object for which to compute the invariant
