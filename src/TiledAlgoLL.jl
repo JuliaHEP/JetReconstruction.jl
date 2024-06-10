@@ -10,7 +10,6 @@ using LoopVectorization
 # Include struct definitions and basic operations
 include("TiledAlgoLLStructs.jl")
 
-
 """
     initial_history(particles)
 
@@ -62,7 +61,6 @@ _tj_dist(jetA, jetB) = begin
     return muladd(dphi, dphi, deta * deta)
 end
 
-
 """
     _tj_diJ(jet)
 
@@ -84,7 +82,6 @@ _tj_diJ(jet) = begin
     return jet.NN_dist * kt2
 end
 
-
 """
     tile_index(tiling_setup, eta::Float64, phi::Float64)
 
@@ -102,11 +99,13 @@ tile_index(tiling_setup, eta::Float64, phi::Float64) = begin
     # Use clamp() to restrict to the correct ranges
     # - eta can be out of range by construction (open ended bins)
     # - phi is protection against bad rounding
-    ieta = clamp(1 + unsafe_trunc(Int, (eta - tiling_setup._tiles_eta_min) / tiling_setup._tile_size_eta), 1, tiling_setup._n_tiles_eta)
-    iphi = clamp(unsafe_trunc(Int, phi / tiling_setup._tile_size_phi), 0, tiling_setup._n_tiles_phi)
+    ieta = clamp(1 + unsafe_trunc(Int,
+                              (eta - tiling_setup._tiles_eta_min) /
+                              tiling_setup._tile_size_eta), 1, tiling_setup._n_tiles_eta)
+    iphi = clamp(unsafe_trunc(Int, phi / tiling_setup._tile_size_phi), 0,
+                 tiling_setup._n_tiles_phi)
     return iphi * tiling_setup._n_tiles_eta + ieta
 end
-
 
 """
     tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling, jets_index, R2, p)
@@ -129,11 +128,12 @@ Returns:
 tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling, jets_index, R2, p) = begin
     @inbounds jet.eta = rapidity(clusterseq.jets[jets_index])
     @inbounds jet.phi = phi_02pi(clusterseq.jets[jets_index])
-    @inbounds jet.kt2 = pt2(clusterseq.jets[jets_index]) > 1.e-300 ? pt2(clusterseq.jets[jets_index])^p : 1.e300
-    jet.jets_index    = jets_index
+    @inbounds jet.kt2 = pt2(clusterseq.jets[jets_index]) > 1.e-300 ?
+                        pt2(clusterseq.jets[jets_index])^p : 1.e300
+    jet.jets_index = jets_index
     # Initialise NN info as well
     jet.NN_dist = R2
-    jet.NN      = noTiledJet
+    jet.NN = noTiledJet
 
     # Find out which tile it belonds to
     jet.tile_index = tile_index(tiling.setup, jet.eta, jet.phi)
@@ -148,9 +148,7 @@ tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling
     nothing
 end
 
-
 """Full scan for nearest neighbours"""
-
 
 """
     set_nearest_neighbours!(clusterseq::ClusterSequence, tiling::Tiling, tiledjets::Vector{TiledJet})
@@ -175,7 +173,8 @@ nearest neighbor jets and diJ values.
 
 Note: The diJ values are calculated as the kt distance multiplied by R^2.
 """
-function set_nearest_neighbours!(clusterseq::ClusterSequence, tiling::Tiling, tiledjets::Vector{TiledJet})
+function set_nearest_neighbours!(clusterseq::ClusterSequence, tiling::Tiling,
+                                 tiledjets::Vector{TiledJet})
     # Setup the initial nearest neighbour information
     for tile in tiling.tiles
         isvalid(tile) || continue
@@ -232,7 +231,6 @@ function set_nearest_neighbours!(clusterseq::ClusterSequence, tiling::Tiling, ti
     NNs, diJ
 end
 
-
 """
     do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine=+)
 
@@ -256,7 +254,7 @@ recombination function. The new jet is then added to the cluster sequence. The
 function also updates the indices and history information of the new jet and
 sorts out the history.
 """
-do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine=+) = begin
+do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine = +) = begin
     # Create the new jet by recombining the first two with
     # the E-scheme
     push!(clusterseq.jets, recombine(clusterseq.jets[jet_i], clusterseq.jets[jet_j]))
@@ -273,11 +271,10 @@ do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recomb
     hist_j = clusterseq.jets[jet_j]._cluster_hist_index
 
     add_step_to_history!(clusterseq, minmax(hist_i, hist_j)...,
-        newjet_k, dij)
+                         newjet_k, dij)
 
     newjet_k
 end
-
 
 """
     do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB)
@@ -293,9 +290,8 @@ adding a step to the history of the cluster sequence.
 do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB) = begin
     # Recombine the jet with the beam
     add_step_to_history!(clusterseq, clusterseq.jets[jet_i]._cluster_hist_index, BeamJet,
-        Invalid, diB)
+                         Invalid, diB)
 end
-
 
 """
     add_untagged_neighbours_to_tile_union(center_index, tile_union, n_near_tiles, tiling)
@@ -314,7 +310,8 @@ neighbour is added its tagged status is set to true.
 # Returns
 The updated number of near tiles.
 """
-function add_untagged_neighbours_to_tile_union(center_index, tile_union, n_near_tiles, tiling)
+function add_untagged_neighbours_to_tile_union(center_index, tile_union, n_near_tiles,
+                                               tiling)
     for tile_index in surrounding(center_index, tiling)
         @inbounds if !tiling.tags[tile_index]
             n_near_tiles += 1
@@ -325,7 +322,6 @@ function add_untagged_neighbours_to_tile_union(center_index, tile_union, n_near_
     end
     n_near_tiles
 end
-
 
 """
     find_tile_neighbours!(tile_union, jetA, jetB, oldB, tiling)
@@ -346,20 +342,21 @@ The number of neighbouring tiles added to the `tile_union`.
 """
 function find_tile_neighbours!(tile_union, jetA, jetB, oldB, tiling)
     n_near_tiles = add_untagged_neighbours_to_tile_union(jetA.tile_index,
-        tile_union, 0, tiling)
+                                                         tile_union, 0, tiling)
     if isvalid(jetB)
         if jetB.tile_index != jetA.tile_index
             n_near_tiles = add_untagged_neighbours_to_tile_union(jetB.tile_index,
-                tile_union, n_near_tiles, tiling)
+                                                                 tile_union, n_near_tiles,
+                                                                 tiling)
         end
         if oldB.tile_index != jetA.tile_index && oldB.tile_index != jetB.tile_index
             n_near_tiles = add_untagged_neighbours_to_tile_union(oldB.tile_index,
-                tile_union, n_near_tiles, tiling)
+                                                                 tile_union, n_near_tiles,
+                                                                 tiling)
         end
     end
     n_near_tiles
 end
-
 
 """
     tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +) where {T}
@@ -389,17 +386,17 @@ JetReconstruction.PseudoJet, as this struct is used internally.
 tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4, recombine = +)
 ```
 """
-function tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +) where {T}
+function tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0,
+                               recombine = +) where {T}
     # Here we need to populate the vector of PseudoJets that are the internal
     # EDM for the main algorithm, then we call the reconstruction
     pseudojets = Vector{PseudoJet}(undef, length(particles))
     for (i, particle) in enumerate(particles)
         pseudojets[i] = PseudoJet(px(particle), py(particle),
-            pz(particle), energy(particle))
+                                  pz(particle), energy(particle))
     end
     tiled_jet_reconstruct(pseudojets, p = p, R = R, recombine = recombine)
 end
-
 
 """
 Main jet reconstruction algorithm, using PseudoJet objects
@@ -511,7 +508,8 @@ function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, re
             end
 
             # Recombine jetA and jetB and retrieves the new index, nn
-            nn = do_ij_recombination_step!(clusterseq, jetA.jets_index, jetB.jets_index, dij_min, recombine)
+            nn = do_ij_recombination_step!(clusterseq, jetA.jets_index, jetB.jets_index,
+                                           dij_min, recombine)
             tiledjet_remove_from_tiles!(tiling, jetA)
             oldB = copy(jetB)  # take a copy because we will need it...
 
@@ -548,7 +546,7 @@ function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, re
                 # see if jetI had jetA or jetB as a NN -- if so recalculate the NN
                 if jetI.NN == jetA || (jetI.NN == jetB && isvalid(jetB))
                     jetI.NN_dist = R2
-                    jetI.NN      = noTiledJet
+                    jetI.NN = noTiledJet
 
                     # now go over tiles that are neighbours of I (include own tile)
                     for near_tile_index in surrounding(tile.tile_index, tiling)
@@ -579,7 +577,7 @@ function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, re
                     end
                     if dist < jetB.NN_dist && jetI != jetB
                         jetB.NN_dist = dist
-                        jetB.NN      = jetI
+                        jetB.NN = jetI
                     end
                 end # isvalid(jetB)
             end #next jetI

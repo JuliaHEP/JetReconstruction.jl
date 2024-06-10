@@ -5,7 +5,6 @@
 #
 # Some of the implementation is taken from LorentzVectorHEP.jl, (c) Jerry Ling
 
-
 """Interface for composite types that includes fields px, py, py, and E
 that represents the components of a four-momentum vector."""
 abstract type FourMomentum end
@@ -24,7 +23,6 @@ const _invalid_rap = -1.e200
 # \class PseudoJet
 # Class to contain pseudojets, including minimal information of use to
 # jet-clustering routines.
-
 
 """
     mutable struct PseudoJet <: FourMomentum
@@ -58,7 +56,6 @@ mutable struct PseudoJet <: FourMomentum
     _phi::Float64
 end
 
-
 """
     PseudoJet(px::Float64, py::Float64, pz::Float64, E::Float64,
         _cluster_hist_index::Int,
@@ -79,10 +76,10 @@ history index.
 A `PseudoJet` object.
 """
 PseudoJet(px::Float64, py::Float64, pz::Float64, E::Float64,
-    _cluster_hist_index::Int,
-    pt2::Float64) = PseudoJet(px,
-    py, pz, E, _cluster_hist_index,
-    pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
+_cluster_hist_index::Int,
+pt2::Float64) = PseudoJet(px,
+                          py, pz, E, _cluster_hist_index,
+                          pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
 
 """
     PseudoJet(px::Float64, py::Float64, pz::Float64, E::Float64)
@@ -99,8 +96,7 @@ Constructs a PseudoJet object with the given momentum components and energy.
 A PseudoJet object.
 """
 PseudoJet(px::Float64, py::Float64,
-    pz::Float64, E::Float64) = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
-
+pz::Float64, E::Float64) = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
 
 import Base.show
 """
@@ -113,10 +109,11 @@ Print a `PseudoJet` object to the specified IO stream.
 - `jet::PseudoJet`: The `PseudoJet` object whose information will be printed.
 """
 show(io::IO, jet::PseudoJet) = begin
-    print(io, "Pseudojet(px: ", jet.px, " py: ", jet.py, " pz: ", jet.pz, " E: ", jet.E, "; ",
-        "pt: ", sqrt(jet._pt2), " eta: ", rapidity(jet), " phi: ", phi(jet), ", m: ", m(jet), ")")
+    print(io, "Pseudojet(px: ", jet.px, " py: ", jet.py, " pz: ", jet.pz, " E: ", jet.E,
+          "; ",
+          "pt: ", sqrt(jet._pt2), " eta: ", rapidity(jet), " phi: ", phi(jet), ", m: ",
+          m(jet), ")")
 end
-
 
 """
     set_momentum!(j::PseudoJet, px, py, pz, E)
@@ -193,8 +190,8 @@ _set_rap_phi!(p::PseudoJet) = begin
         # error when things pz,E are large (actually the best we can do without
         # explicit knowledge of mass)
         effective_m2 = max(0.0, m2(p)) # force non tachyonic mass
-        E_plus_pz    = p.E + abs(p.pz) # the safer of p+, p-
-        p._rap       = 0.5 * log((p._pt2 + effective_m2) / (E_plus_pz * E_plus_pz))
+        E_plus_pz = p.E + abs(p.pz) # the safer of p+, p-
+        p._rap = 0.5 * log((p._pt2 + effective_m2) / (E_plus_pz * E_plus_pz))
         if p.pz > 0
             p._rap = -p._rap
         end
@@ -301,7 +298,6 @@ The magnitude of the `PseudoJet` object.
 """
 mag(p::PseudoJet) = sqrt(muladd(p.px, p.px, p.py^2) + p.pz^2)
 
-
 """
     CosTheta(p::PseudoJet)
 
@@ -318,7 +314,6 @@ Compute the cosine of the angle between the momentum vector `p` and the z-axis.
     ptot = mag(p)
     return ifelse(ptot == 0.0, 1.0, fZ / ptot)
 end
-
 
 """
     eta(p::PseudoJet)
@@ -347,7 +342,6 @@ end
 Alias for the pseudorapidity function, `eta`.
 """
 const η = eta
-
 
 """
     m(p::PseudoJet)
@@ -435,8 +429,6 @@ Return the energy of a `PseudoJet`.
 """
 energy(p::PseudoJet) = p.E
 
-
-
 import Base.+;
 
 """
@@ -453,5 +445,5 @@ A new `PseudoJet` object with the sum of the momenta and energy of `j1` and `j2`
 """
 +(j1::PseudoJet, j2::PseudoJet) = begin
     PseudoJet(j1.px + j2.px, j1.py + j2.py,
-        j1.pz + j2.pz, j1.E + j2.E)
+              j1.pz + j2.pz, j1.E + j2.E)
 end

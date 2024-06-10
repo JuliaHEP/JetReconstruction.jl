@@ -27,17 +27,15 @@ Lines starting with '#' are treated as comments and are ignored.
 It is strongly NOT recommended to put something other than values and (possibly
 custom) separators in the `format` string.
 """
-function savejets(filename, jets; format="px py pz E")
-    symbols = Dict(
-        "E" => JetReconstruction.energy,
-        "energy" => JetReconstruction.energy,
-        "px" => JetReconstruction.px,
-        "py" => JetReconstruction.py,
-        "pz" => JetReconstruction.pz,
-        "pt2" => JetReconstruction.pt2,
-        "phi" => JetReconstruction.phi,
-        "rapidity" => JetReconstruction.rapidity
-    )
+function savejets(filename, jets; format = "px py pz E")
+    symbols = Dict("E" => JetReconstruction.energy,
+                   "energy" => JetReconstruction.energy,
+                   "px" => JetReconstruction.px,
+                   "py" => JetReconstruction.py,
+                   "pz" => JetReconstruction.pz,
+                   "pt2" => JetReconstruction.pt2,
+                   "phi" => JetReconstruction.phi,
+                   "rapidity" => JetReconstruction.rapidity)
     for pair in symbols
         if !occursin(pair[1], format)
             pop!(symbols, pair[1])
@@ -45,13 +43,16 @@ function savejets(filename, jets; format="px py pz E")
     end
 
     open(filename, "w") do file
-        write(file, "# this file contains jet data.\n# each line that does not start with '#' contains the information about a jet in the following format:\n# "*"$(format)"*"\n# where E is energy, px is momentum along x, py is momentum along y, pz is momentum along z, pt2 is pt^2, phi is azimuth, and rapidity is rapidity\n")
+        write(file,
+              "# this file contains jet data.\n# each line that does not start with '#' contains the information about a jet in the following format:\n# " *
+              "$(format)" *
+              "\n# where E is energy, px is momentum along x, py is momentum along y, pz is momentum along z, pt2 is pt^2, phi is azimuth, and rapidity is rapidity\n")
         for j in jets
             line = format
             for pair in symbols
                 line = replace(line, pair[1] => "$(pair[2](j))")
             end
-            write(file, line*'\n')
+            write(file, line * '\n')
         end
         write(file, "#END")
     end
@@ -79,13 +80,13 @@ loadjets!("myjets1.dat", jets)
 loadjets!("myjets2.dat", jets)
 ```
 """
-function loadjets!(filename, jets; splitby=isspace, constructor=(px,py,pz,E)->LorentzVectorHEP(E,px,py,pz), dtype=Float64)
+function loadjets!(filename, jets; splitby = isspace,
+                   constructor = (px, py, pz, E) -> LorentzVectorHEP(E, px, py, pz),
+                   dtype = Float64)
     open(filename, "r") do file
         for line in eachline(file)
             if line[1] != '#'
-                jet = constructor(
-                    (parse(dtype, x) for x in split(line, splitby) if x != "")...
-                )
+                jet = constructor((parse(dtype, x) for x in split(line, splitby) if x != "")...)
                 push!(jets, jet)
             end
         end
@@ -112,6 +113,8 @@ Load jets from a file.
 - A vector of `VT` objects representing the loaded jets.
 
 """
-function loadjets(filename; splitby=isspace, constructor=(px,py,pz,E)->LorentzVectorHEP(E,px,py,pz), VT=LorentzVector)
-    loadjets!(filename, VT[], splitby=splitby, constructor=constructor)
+function loadjets(filename; splitby = isspace,
+                  constructor = (px, py, pz, E) -> LorentzVectorHEP(E, px, py, pz),
+                  VT = LorentzVector)
+    loadjets!(filename, VT[], splitby = splitby, constructor = constructor)
 end

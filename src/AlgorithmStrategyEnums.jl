@@ -1,7 +1,6 @@
 # EnumX provides scoped enums, which are nicer
 using EnumX
 
-
 """
     enum RecoStrategy
 
@@ -12,9 +11,8 @@ Scoped enumeration (using EnumX) representing the different strategies for jet r
 - `N2Plain`: The plain N2 strategy.
 - `N2Tiled`: The tiled N2 strategy.
 """
-@enumx T = Strategy RecoStrategy Best N2Plain N2Tiled
+@enumx T=Strategy RecoStrategy Best N2Plain N2Tiled
 const AllJetRecoStrategies = [String(Symbol(x)) for x in instances(RecoStrategy.Strategy)]
-
 
 """
     enum T
@@ -28,9 +26,8 @@ Scoped enumeration (using EnumX) representing different jet algorithms used in t
 - `EEKt`: The Generalised e+e- kt algorithm.
 - `Durham`: The e+e- kt algorithm, aka Durham.
 """
-@enumx T = Algorithm JetAlgorithm AntiKt CA Kt EEKt Durham
+@enumx T=Algorithm JetAlgorithm AntiKt CA Kt EEKt Durham
 const AllJetRecoAlgorithms = [String(Symbol(x)) for x in instances(JetAlgorithm.Algorithm)]
-
 
 """
     power2algorithm
@@ -38,8 +35,8 @@ const AllJetRecoAlgorithms = [String(Symbol(x)) for x in instances(JetAlgorithm.
 A dictionary that maps power values to corresponding jet algorithm used for pp jet reconstruction.
 """
 const power2algorithm = Dict(-1 => JetAlgorithm.AntiKt,
-    0 => JetAlgorithm.CA,
-    1 => JetAlgorithm.Kt)
+                             0 => JetAlgorithm.CA,
+                             1 => JetAlgorithm.Kt)
 
 """
     algorithm2power

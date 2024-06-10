@@ -41,7 +41,6 @@ struct HistoryElement
     max_dij_so_far::Float64
 end
 
-
 """
     HistoryElement(jetp_index)
 
@@ -54,8 +53,8 @@ Constructs a `HistoryElement` object with the given `jetp_index`, used for initi
 A `HistoryElement` object.
 
 """
-HistoryElement(jetp_index) = HistoryElement(NonexistentParent, NonexistentParent, Invalid, jetp_index, 0.0, 0.0)
-
+HistoryElement(jetp_index) = HistoryElement(NonexistentParent, NonexistentParent, Invalid,
+                                            jetp_index, 0.0, 0.0)
 
 """
     struct ClusterSequence
@@ -116,8 +115,12 @@ Constructs a `ClusterSequence` object with a specific algorithm spcified.
 # Returns
 A `ClusterSequence` object.
 """
-ClusterSequence(alg::JetAlgorithm.Algorithm, strategy::RecoStrategy.Strategy, jets, history, Qtot) =
-    ClusterSequence(alg, strategy, jets, length(jets), history, Qtot)
+ClusterSequence(alg::JetAlgorithm.Algorithm, strategy::RecoStrategy.Strategy, jets, history, Qtot) = ClusterSequence(alg,
+                                                                                                                     strategy,
+                                                                                                                     jets,
+                                                                                                                     length(jets),
+                                                                                                                     history,
+                                                                                                                     Qtot)
 
 """
     add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, dij)
@@ -142,8 +145,9 @@ corresponding `PseudoJet` object.
 """
 add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, dij) = begin
     max_dij_so_far = max(dij, clusterseq.history[end].max_dij_so_far)
-    push!(clusterseq.history, HistoryElement(parent1, parent2, Invalid,
-        jetp_index, dij, max_dij_so_far))
+    push!(clusterseq.history,
+          HistoryElement(parent1, parent2, Invalid,
+                         jetp_index, dij, max_dij_so_far))
 
     local_step = length(clusterseq.history)
 
@@ -162,10 +166,11 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
     clusterseq.history[parent1] = @set hist_elem.child = local_step
 
     if parent2 >= 1
-        clusterseq.history[parent2].child == Invalid || error(
-            "Internal error. Trying to recombine an object that has previsously been recombined.  Parent " * string(parent2) * "'s child index " * string(clusterseq.history[parent1].child) * ". Parent jet index: " *
-            string(clusterseq.history[parent2].jetp_index) * ".",
-        )
+        clusterseq.history[parent2].child == Invalid ||
+            error("Internal error. Trying to recombine an object that has previsously been recombined.  Parent " *
+                  string(parent2) * "'s child index " *
+                  string(clusterseq.history[parent1].child) * ". Parent jet index: " *
+                  string(clusterseq.history[parent2].jetp_index) * ".")
         hist_elem = clusterseq.history[parent2]
         clusterseq.history[parent2] = @set hist_elem.child = local_step
     end
@@ -254,7 +259,8 @@ function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = not
     end
 
     # Check that an algorithm was used that makes sense for exclusive jets
-    if !(clusterseq.algorithm ∈ (JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.EEKt, JetAlgorithm.Durham))
+    if !(clusterseq.algorithm ∈
+         (JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.EEKt, JetAlgorithm.Durham))
         throw(ArgumentError("Algorithm used is not suitable for exclusive jets ($(clusterseq.algorithm))"))
     end
 
@@ -278,14 +284,14 @@ function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = not
             if (parent < stop_point && parent > 0)
                 @debug "Added exclusive jet index $(clusterseq.history[parent].jetp_index)"
                 jet = clusterseq.jets[clusterseq.history[parent].jetp_index]
-                push!(excl_jets, LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
+                push!(excl_jets,
+                      LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
             end
         end
     end
 
     excl_jets
 end
-
 
 """
     n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
@@ -306,14 +312,15 @@ n_exclusive_jets(clusterseq, dcut = 20.0)
 """
 function n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
     # Check that an algorithm was used that makes sense for exclusive jets
-    if !(clusterseq.algorithm ∈ (JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.EEKt, JetAlgorithm.Durham))
+    if !(clusterseq.algorithm ∈
+         (JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.EEKt, JetAlgorithm.Durham))
         throw(ArgumentError("Algorithm used is not suitable for exclusive jets ($(clusterseq.algorithm))"))
     end
 
     # Locate the point where clustering would have stopped (i.e. the
     # first time max_dij_so_far > dcut)
     i_dcut = length(clusterseq.history)
-    for i_history ∈ length(clusterseq.history):-1:1
+    for i_history in length(clusterseq.history):-1:1
         @debug "Examining $i_history, max_dij=$(clusterseq.history[i_history].max_dij_so_far)"
         if clusterseq.history[i_history].max_dij_so_far <= dcut
             i_dcut = i_history

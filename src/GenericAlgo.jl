@@ -18,7 +18,8 @@ A cluster sequence object containing the reconstructed jets and the merging hist
 jet_reconstruct(particles; p = -1, R = 0.4)
 ```
 """
-function jet_reconstruct(particles; p = -1, R = 1.0, recombine = +, strategy = RecoStrategy.Best)
+function jet_reconstruct(particles; p = -1, R = 1.0, recombine = +,
+                         strategy = RecoStrategy.Best)
     # Either map to the fixed algorithm corresponding to the strategy
     # or to an optimal choice based on the density of initial particles
 

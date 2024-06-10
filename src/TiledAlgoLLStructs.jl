@@ -38,23 +38,24 @@ mutable struct TiledJet
 
     previous::TiledJet
     next::TiledJet
-    
+
     TiledJet(::Type{Nothing}) = begin
-        t = new(-1, 0., 0., 0., 0., -1, 0, 0)
+        t = new(-1, 0.0, 0.0, 0.0, 0.0, -1, 0, 0)
         t.NN = t.previous = t.next = t
         t
     end
-    
+
     """
     TiledJet constructor with all fields.
     """
-    TiledJet(id, eta, phi, kt2, NN_dist,
-             jet_index, tile_index, dij_posn,
-             NN, previous, next) = new(id, eta, phi, kt2, NN_dist,
-                                       jet_index, tile_index, dij_posn,
-                                       NN, previous, next)
+    function TiledJet(id, eta, phi, kt2, NN_dist,
+                      jet_index, tile_index, dij_posn,
+                      NN, previous, next)
+        new(id, eta, phi, kt2, NN_dist,
+            jet_index, tile_index, dij_posn,
+            NN, previous, next)
+    end
 end
-
 
 """
     const noTiledJet::TiledJet = TiledJet(Nothing)
@@ -87,7 +88,7 @@ Constructs a `TiledJet` object with the given `id` and initializes its propertie
 # Returns
 A `TiledJet` object with the specified `id` and values set to zero or noTiledJet.
 """
-TiledJet(id) = TiledJet(id, 0., 0., 0., 0.,
+TiledJet(id) = TiledJet(id, 0.0, 0.0, 0.0, 0.0,
                         0, 0, 0,
                         noTiledJet, noTiledJet, noTiledJet)
 
@@ -105,7 +106,7 @@ The jet to move can be an isolated jet, a jet from another list or a jet from th
 """
 insert!(nextjet::TiledJet, jettomove::TiledJet) = begin
     if !isnothing(nextjet)
-        nextjet.previous  = jettomove
+        nextjet.previous = jettomove
     end
 
     jettomove.next = nextjet
@@ -131,7 +132,6 @@ detach!(jet::TiledJet) = begin
     jet.next = jet.previous = noTiledJet
 end
 
-
 import Base.copy
 """
     copy(j::TiledJet)
@@ -144,7 +144,8 @@ Create a copy of a `TiledJet` object.
 # Returns
 A new `TiledJet` object with the same attributes as the input object.
 """
-copy(j::TiledJet) = TiledJet(j.id, j.eta, j.phi, j.kt2, j.NN_dist, j.jets_index, j.tile_index, j.dij_posn, j.NN, j.previous, j.next)
+copy(j::TiledJet) = TiledJet(j.id, j.eta, j.phi, j.kt2, j.NN_dist, j.jets_index,
+                             j.tile_index, j.dij_posn, j.NN, j.previous, j.next)
 
 # Iterator over a TiledJet walks along the chain of linked jets
 # until we reach a "noTiledJet" (which is !isvalid)
@@ -159,12 +160,11 @@ until the end (then the next jet is invalid).
 - `tj::TiledJet`: The `TiledJet` object to start to iterate over.
 """
 Base.iterate(tj::TiledJet) = begin
-   isvalid(tj) ? (tj, tj) : nothing
+    isvalid(tj) ? (tj, tj) : nothing
 end
-Base.iterate(tj::TiledJet, state::TiledJet) = begin
+function Base.iterate(tj::TiledJet, state::TiledJet)
     isvalid(state.next) ? (state.next::TiledJet, state.next::TiledJet) : nothing
 end
-
 
 """
     struct Tiling
@@ -190,7 +190,6 @@ struct Tiling
     tags::Matrix{Bool}
 end
 
-
 """
     Tiling(setup::TilingDef)
 
@@ -207,7 +206,7 @@ Tiling(setup::TilingDef) = begin
                fill(noTiledJet, (setup._n_tiles_eta, setup._n_tiles_phi)),
                fill(0, (setup._n_tiles_eta, setup._n_tiles_phi)),
                fill(false, (setup._n_tiles_eta, setup._n_tiles_phi)))
-    @inbounds for iphi = 1:setup._n_tiles_phi
+    @inbounds for iphi in 1:(setup._n_tiles_phi)
         # The order of the following two statements is important
         # to have position = tile_right in case n_tiles_eta = 1
         t.positions[1, iphi] = tile_left
@@ -225,7 +224,6 @@ const tile_right = 1
 "Number of neighbours for a tile in the tiling array (including itself)"
 const _n_tile_neighbours = 9
 
-
 """
     struct Surrounding{N}
 
@@ -240,17 +238,17 @@ end
 
 import Base.iterate
 
-Base.iterate(x::T) where {T<:Surrounding} = (x.indices[1], 2)
+Base.iterate(x::T) where {T <: Surrounding} = (x.indices[1], 2)
 Base.iterate(x::Surrounding{0}) = nothing
 Base.iterate(x::Surrounding{1}, state) = nothing
 Base.iterate(x::Surrounding{2}, state) = nothing
-Base.iterate(x::Surrounding{3}, state) = state > 3 ? nothing : (x.indices[state], state+1)
-Base.iterate(x::Surrounding{4}, state) = state > 4 ? nothing : (x.indices[state], state+1)
-Base.iterate(x::Surrounding{6}, state) = state > 6 ? nothing : (x.indices[state], state+1)
-Base.iterate(x::Surrounding{9}, state) = state > 9 ? nothing : (x.indices[state], state+1)
+Base.iterate(x::Surrounding{3}, state) = state > 3 ? nothing : (x.indices[state], state + 1)
+Base.iterate(x::Surrounding{4}, state) = state > 4 ? nothing : (x.indices[state], state + 1)
+Base.iterate(x::Surrounding{6}, state) = state > 6 ? nothing : (x.indices[state], state + 1)
+Base.iterate(x::Surrounding{9}, state) = state > 9 ? nothing : (x.indices[state], state + 1)
 
 import Base.length
-length(x::Surrounding{N}) where N = N
+length(x::Surrounding{N}) where {N} = N
 
 """
     surrounding(center::Int, tiling::Tiling)
@@ -318,7 +316,6 @@ rightneighbours(center::Int, tiling::Tiling) = begin
         return Surrounding{4}((iphip, iphim + 1, center + 1, iphip + 1))
     end
 end
-
 
 """
     tiledjet_remove_from_tiles!(tiling, jet)
