@@ -1,17 +1,23 @@
 """
     jet_reconstruct(particles; p = -1, R = 1.0, recombine = +, strategy = RecoStrategy.Best)
 
-Reconstructs jets from a collection of particles using a specified algorithm and strategy
+Reconstructs jets from a collection of particles using a specified algorithm and
+strategy
 
 # Arguments
 - `particles`: A collection of particles used for jet reconstruction.
-- `p=-1`: The power value used for the distance measure, which maps to a particular reconstruction algorithm (-1 = AntiKt, 0 = Cambridge/Aachen, 1 = Kt).
+- `p=-1`: The power value used for the distance measure for generalised k_T,
+  which maps to a particular reconstruction algorithm (-1 = AntiKt, 0 =
+  Cambridge/Aachen, 1 = Kt).
 - `R=1.0`: The jet radius parameter.
 - `recombine=+`: The recombination scheme used for combining particles.
-- `strategy=RecoStrategy.Best`: The jet reconstruction strategy to use. `RecoStrategy.Best` makes a dynamic decision based on the number of starting particles.
+- `strategy=RecoStrategy.Best`: The jet reconstruction strategy to use.
+  `RecoStrategy.Best` makes a dynamic decision based on the number of starting
+  particles.
 
 # Returns
-A cluster sequence object containing the reconstructed jets and the merging history.
+A cluster sequence object containing the reconstructed jets and the merging
+history.
 
 # Example
 ```julia

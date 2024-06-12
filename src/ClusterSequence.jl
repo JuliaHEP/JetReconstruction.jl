@@ -236,7 +236,7 @@ or a cut on the maximum distance parameter.
 **Note**: Either `dcut` or `njets` must be provided (but not both).
 
 # Returns
-- `excl_jets::Array{LorentzVectorCyl}`: An array of `LorentzVectorCyl` objects representing the exclusive jets.
+- An array of `LorentzVectorCyl` objects representing the exclusive jets.
 
 # Exceptions
 - `ArgumentError`: If neither `dcut` nor `njets` is provided.

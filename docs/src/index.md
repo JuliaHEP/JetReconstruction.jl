@@ -1,56 +1,33 @@
 # JetReconstruction.jl
 
-[![Build Status](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml?query=branch%3Amain)
-
-## This package implements sequential Jet Reconstruction (clustering)
+This package implements sequential Jet Reconstruction (clustering) algorithms,
+which are used in high-energy physics as part of event reconstruction for $pp$
+and $e^+e^-$ colliders.
 
 ### Algorithms
 
 Algorithms used are based on the C++ FastJet package (<https://fastjet.fr>,
 [hep-ph/0512210](https://arxiv.org/abs/hep-ph/0512210),
-[arXiv:1111.6097](https://arxiv.org/abs/1111.6097)), reimplemented natively in Julia.
+[arXiv:1111.6097](https://arxiv.org/abs/1111.6097)), reimplemented natively in
+Julia.
 
-The algorithms include anti-$`{k}_\text{T}`$, Cambridge/Aachen and inclusive $`k_\text{T}`$.
+The algorithms include anti-``{k}_\text{T}``, Cambridge/Aachen and inclusive ``k_\text{T}``.
 
-### Interface
+## Reconstruction Interface
 
-The simplest interface is to call:
+The main interface for reconstruction is:
 
-```julia
-cs = jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, strategy = RecoStrategy.Best)
+```@docs
+jet_reconstruct(particles; p = -1, R = 1.0, recombine = +, strategy = RecoStrategy.Best)
 ```
-
-- `particles` - a vector of input particles for the clustering
-  - Any type that supplies the methods `pt2()`, `phi()`, `rapidity()`, `px()`, `py()`, `pz()`, `energy()` can be used
-  - These methods have to be defined in the namespace of this package, i.e., `JetReconstruction.pt2(::T)`
-  - The `PseudoJet` type from this package, or a 4-vector from `LorentzVectorHEP` are suitable (and have the appropriate definitions)
-- `p` - the transverse momentum power used in the $d_{ij}$ metric for deciding on closest jets, as $k^{2p}_\text{T}$. Different values of $p$ then give different reconstruction algorithms:
-  - `-1` gives anti-$`{k}_\text{T}`$ clustering (default)
-  - `0` gives Cambridge/Aachen
-  - `1` gives inclusive $k_\text{T}$
-- `R` - the cone size parameter; no particles more geometrically distance than `R` will be merged (default 1.0)
-- `recombine` - the function used to merge two pseudojets (default is a simple 4-vector addition of $`(E, \mathbf{p})`$)
-- `strategy` - the algorithm strategy to adopt, as described below (default `RecoStrategy.Best`)
 
 The object returned is a `ClusterSequence`, which internally tracks all merge steps.
 
-To obtain the final inclusive jets, use the `inclusive_jets` method:
-
-```julia
-final_jets = inclusive_jets(cs::ClusterSequence; ptmin=0.0)
+```@docs
+ClusterSequence
 ```
 
-Only jets passing the cut $p_T > p_{Tmin}$ will be returned. The result is returned as a `Vector{LorentzVectorHEP}`.
-
-#### Sorting
-
-As sorting vectors is trivial in Julia, no special sorting methods are provided. As an example, to sort exclusive jets of $>5.0$ (usually GeV, depending on your EDM) from highest energy to lowest:
-
-```julia
-sorted_jets = sort!(inclusive_jets(cs::ClusterSequence; ptmin=5.0), by=JetReconstruction.energy, rev=true)
-```
-
-#### Strategy
+## Strategy
 
 Three strategies are available for the different algorithms:
 
@@ -71,7 +48,37 @@ plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +)
 
 Note that there is no `strategy` option in these interfaces.
 
-### Examples
+## Inclusive and Exclusive Selections
+
+To obtain final jets both inclusive (``p_T`` cut) and exclusive (``n_{jets}`` or
+``d_{ij}`` cut) selections are supported:
+
+```@docs
+inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
+```
+
+```@docs
+exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing)
+```
+
+The number of exclusive jets passing a particular `dcut` can be obtained:
+
+```@docs
+n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
+```
+
+### Sorting
+
+Sorting vectors is trivial in Julia, no special sorting methods are provided. As
+an example, to sort exclusive jets of ``>5.0`` (usually GeV, depending on your
+EDM) from highest energy to lowest:
+
+```julia
+sorted_jets = sort!(inclusive_jets(cs::ClusterSequence; ptmin=5.0), 
+  by=JetReconstruction.energy, rev=true)
+```
+
+## Examples
 
 In the examples directory there are a number of example scripts.
 
@@ -95,9 +102,9 @@ are given - see the `README.md` file in the examples directory.
 Note that due to additional dependencies the `Project.toml` file for the
 examples is different from the package itself.
 
-### Plotting
+## Plotting
 
-![illustration](docs/src/assets/jetvis.png)
+![illustration](assets/jetvis.png)
 
 To visualise the clustered jets as a 3d bar plot (see illustration above) we now
 use `Makie.jl`. See the `jetsplot` function in `ext/JetVisualisation.jl` and its
@@ -107,7 +114,7 @@ directory.
 The plotting code is a package extension and will load if the one of the `Makie`
 modules is loaded in the environment.
 
-### Serialisation
+## Serialisation
 
 The package also provides methods such as `loadjets`, `loadjets!`, and
 `savejets` that one can use to save and load objects on/from disk easily in a
@@ -116,8 +123,27 @@ very flexible format. See documentation for more.
 ## Reference
 
 Although it has been developed further since the CHEP2023 conference, the CHEP
-conference proceedings, [arXiv:2309.17309](https://arxiv.org/abs/2309.17309),
+conference proceedings,
+[10.1051/epjconf/202429505017](https://doi.org/10.1051/epjconf/202429505017),
 should be cited if you use this package:
+
+```bibtex
+@article{refId0,
+    author = {{Stewart, Graeme Andrew} and {Gras, Philippe} and {Hegner, Benedikt} and {Krasnopolski, Atell}},
+    doi = {10.1051/epjconf/202429505017},
+    journal = {EPJ Web of Conf.},
+    pages = {05017},
+    title = {Polyglot Jet Finding},
+    url = {https://doi.org/10.1051/epjconf/202429505017},
+    volume = 295,
+    year = 2024,
+    eprint={2309.17309},
+    archivePrefix={arXiv},
+    primaryClass={hep-ex}
+}
+```
+
+The original paper on arXiv is:
 
 ```bibtex
 @misc{stewart2023polyglot,
