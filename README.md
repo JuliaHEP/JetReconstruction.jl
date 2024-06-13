@@ -97,7 +97,7 @@ examples is different from the package itself.
 
 ### Plotting
 
-![illustration](img/jetvis.png)
+![illustration](docs/src/assets/jetvis.png)
 
 To visualise the clustered jets as a 3d bar plot (see illustration above) we now
 use `Makie.jl`. See the `jetsplot` function in `ext/JetVisualisation.jl` and its
