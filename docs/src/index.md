@@ -1,4 +1,4 @@
-# JetReconstruction.jl
+# Jet Reconstruction
 
 This package implements sequential Jet Reconstruction (clustering) algorithms,
 which are used in high-energy physics as part of event reconstruction for $pp$
@@ -11,7 +11,7 @@ Algorithms used are based on the C++ FastJet package (<https://fastjet.fr>,
 [arXiv:1111.6097](https://arxiv.org/abs/1111.6097)), reimplemented natively in
 Julia.
 
-The algorithms include anti-``{k}_\text{T}``, Cambridge/Aachen and inclusive ``k_\text{T}``.
+The algorithms include ``\text{anti}-{k}_\text{T}``, Cambridge/Aachen and inclusive ``k_\text{T}``.
 
 ## Reconstruction Interface
 
@@ -78,30 +78,6 @@ sorted_jets = sort!(inclusive_jets(cs::ClusterSequence; ptmin=5.0),
   by=JetReconstruction.energy, rev=true)
 ```
 
-## Examples
-
-In the examples directory there are a number of example scripts.
-
-See the `jetreco.jl` script for an example of how to call jet reconstruction.
-
-```sh
-julia --project=. examples/jetreco.jl --maxevents=100 --nsamples=1 --strategy=N2Plain test/data/events.hepmc3
-...
-julia --project=. examples/jetreco.jl --maxevents=100 --nsamples=1 --strategy=N2Tiled test/data/events.hepmc3
-...
-```
-
-There are options to explicitly set the algorithm (use `--help` to see these).
-
-The example also shows how to use `JetReconstruction.HepMC3` to read HepMC3
-ASCII files (via the `read_final_state_particles()` wrapper).
-
-Further examples, which show visualisation, timing measurements, profiling, etc.
-are given - see the `README.md` file in the examples directory.
-
-Note that due to additional dependencies the `Project.toml` file for the
-examples is different from the package itself.
-
 ## Plotting
 
 ![illustration](assets/jetvis.png)
@@ -143,7 +119,7 @@ should be cited if you use this package:
 }
 ```
 
-The original paper on arXiv is:
+The original paper on [arXiv](https://arxiv.org/abs/2309.17309) is:
 
 ```bibtex
 @misc{stewart2023polyglot,

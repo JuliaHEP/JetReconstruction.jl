@@ -5,7 +5,7 @@ Reconstructs jets from a collection of particles using a specified algorithm and
 strategy
 
 # Arguments
-- `particles`: A collection of particles used for jet reconstruction.
+- `particles`: A collection of particles used for jet reconstruction. 
 - `p=-1`: The power value used for the distance measure for generalised k_T,
   which maps to a particular reconstruction algorithm (-1 = AntiKt, 0 =
   Cambridge/Aachen, 1 = Kt).
@@ -18,6 +18,18 @@ strategy
 # Returns
 A cluster sequence object containing the reconstructed jets and the merging
 history.
+
+# Details
+
+## `particles` argument
+Any type that supplies the methods `pt2()`, `phi()`, `rapidity()`, `px()`,
+`py()`, `pz()`, `energy()` (in the `JetReconstruction` namespace) can be used.
+This includes `LorentzVector`, `LorentzVectorCyl`, and `PseudoJet`, for which
+these methods are already predefined in the `JetReconstruction` namespace.
+
+## `recombine` argument
+The `recombine` argument is the function used to merge pairs of particles. The
+default is simply `+(jet1,jet2)`, i.e. 4-momenta addition or the *E*-scheme.
 
 # Example
 ```julia
