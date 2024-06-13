@@ -4,14 +4,15 @@ This package implements sequential Jet Reconstruction (clustering) algorithms,
 which are used in high-energy physics as part of event reconstruction for $pp$
 and $e^+e^-$ colliders.
 
-### Algorithms
+## Algorithms
 
 Algorithms used are based on the C++ FastJet package (<https://fastjet.fr>,
 [hep-ph/0512210](https://arxiv.org/abs/hep-ph/0512210),
 [arXiv:1111.6097](https://arxiv.org/abs/1111.6097)), reimplemented natively in
 Julia.
 
-The algorithms include ``\text{anti}-{k}_\text{T}``, Cambridge/Aachen and inclusive ``k_\text{T}``.
+The algorithms include ``\text{anti}-{k}_\text{T}``, Cambridge/Aachen and
+inclusive ``k_\text{T}``.
 
 ## Reconstruction Interface
 
