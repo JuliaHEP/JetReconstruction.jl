@@ -1,6 +1,9 @@
 ### A Pluto.jl notebook ###
 # v0.19.42
 
+# Do not format this code, it's under the control of the Pluto.jl notebook
+#! format: off
+
 using Markdown
 using InteractiveUtils
 
