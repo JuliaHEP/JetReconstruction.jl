@@ -1,4 +1,8 @@
 # Ignore unpacked HepMC3 event files (commit only compressed!)
+# Gzip compressed files are recommended as the HepMC3 reader
+# utility in JetReconstruction will automatically detect .gz
+# files and read them with CodecZlib (so they do not need to be
+# decompressed on disk)
 *.hepmc3
 
 # Additional HepMC3 files should not be committed into this repository
@@ -10,5 +14,5 @@
 benchmark-*
 events-*
 
-# Ignore manifest for the helpert script
+# Ignore manifest for the helper script
 Manifest.toml

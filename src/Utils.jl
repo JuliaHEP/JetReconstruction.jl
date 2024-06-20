@@ -1,5 +1,7 @@
 # Utility functions, which can be used by different top level scripts
 
+using CodecZlib
+
 """
     read_final_state_particles(fname; maxevents = -1, skipevents = 0)
 
@@ -7,7 +9,8 @@ Reads final state particles from a file and returns them as a vector of
 PseudoJet objects.
 
 # Arguments
-- `fname`: The name of the file to read particles from.
+- `fname`: The name of the HepMC3 ASCII file to read particles from. If the file
+  is gzipped, the function will automatically decompress it.
 - `maxevents=-1`: The maximum number of events to read. -1 means all events will
   be read.
 - `skipevents`: The number of events to skip before an event is included.
@@ -19,6 +22,10 @@ the particles of a particular event.
 """
 function read_final_state_particles(fname; maxevents = -1, skipevents = 0)
     f = open(fname)
+    if endswith(fname, ".gz")
+        @debug "Reading gzipped file $fname"
+        f = GzipDecompressorStream(f)
+    end
 
     events = Vector{PseudoJet}[]
 
@@ -48,7 +55,8 @@ Reads final state particles from a file and returns them as a vector of
 LorentzVector objects.
 
 # Arguments
-- `fname`: The name of the file to read particles from.
+- `fname`: The name of the HepMC3 ASCII file to read particles from. If the file
+  is gzipped, the function will automatically decompress it.
 - `maxevents=-1`: The maximum number of events to read. -1 means all events will
   be read.
 - `skipevents`: The number of events to skip before an event is included.
@@ -60,6 +68,10 @@ all the particles of a particular event.
 """
 function read_final_state_particles_lv(fname; maxevents = -1, skipevents = 0)
     f = open(fname)
+    if endswith(fname, ".gz")
+        @debug "Reading gzipped file $fname"
+        f = GzipDecompressorStream(f)
+    end
 
     events = Vector{LorentzVector{Float64}}[]
 
