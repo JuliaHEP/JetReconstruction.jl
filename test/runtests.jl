@@ -6,7 +6,7 @@ using JSON
 using LorentzVectorHEP
 using Logging
 
-const events_file = joinpath(@__DIR__, "data", "events.hepmc3")
+const events_file = joinpath(@__DIR__, "data", "events.hepmc3.gz")
 
 const algorithms = Dict(-1 => "Anti-kt",
                         0 => "Cambridge/Achen",
@@ -23,22 +23,6 @@ struct InclusiveTest
     function InclusiveTest(selction, power, fastjet_file, dijmax, njets)
         new(algorithms[power], selction, power, fastjet_file, dijmax, njets)
     end
-end
-
-"""Decompress data file, if necessary"""
-function unpack_events(file)
-    # File already there?
-    if isfile(file)
-        return true
-    end
-    # LZMA source?
-    file_compressed = joinpath(dirname(file), basename(file) * ".xz")
-    if isfile(file_compressed)
-        @debug "Unpacking $(file_compressed)"
-        run(pipeline(`xzcat $file_compressed`, stdout = file))
-        return true
-    end
-    false
 end
 
 """Read JSON file with fastjet jets in it"""
@@ -66,9 +50,6 @@ function sort_jets!(jet_array::Vector{LorentzVectorCyl})
 end
 
 function main()
-    # If necessary, unzip the events data file
-    unpack_events(events_file)
-
     # Read our fastjet inclusive outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
     fastjet_alg_files_inclusive = Dict(-1 => joinpath(@__DIR__, "data",
                                                       "jet-collections-fastjet-inclusive-akt.json"),

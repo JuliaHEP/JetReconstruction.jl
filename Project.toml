@@ -5,6 +5,7 @@ version = "0.3.0"
 
 [deps]
 Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
 EnumX = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
@@ -20,6 +21,7 @@ JetVisualisation = "Makie"
 
 [compat]
 Accessors = "0.1.36"
+CodecZlib = "0.7.4"
 EnumX = "1.0.4"
 JSON = "0.21.4"
 LoopVectorization = "0.12.170"
