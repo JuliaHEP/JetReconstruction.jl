@@ -331,3 +331,36 @@ function n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
     # The number of jets is then given by this formula
     length(clusterseq.history) - i_dcut
 end
+
+
+
+"""
+    jet_ranks(clusterseq::ClusterSequence; compare_fn = JetReconstruction.pt)
+
+Compute the ranks of jets in a given `ClusterSequence` object based on a
+specified comparison function.
+
+## Arguments
+- `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the
+  jets to rank.
+- `compare_fn = JetReconstruction.pt`: The comparison function used to determine
+  the order of the jets. Defaults to `JetReconstruction.pt`, which compares jets
+  based on their transverse momentum.
+
+## Returns
+A dictionary mapping each jet index to its rank.
+
+## Note
+This is a utility function that can be used to rank initial clusters based on a specified
+jet property. It can be used to assign a consistent "rank" to each reconstructed jet in
+the cluster sequence, which is useful for stable plotting of jet outputs.
+"""
+function jet_ranks(clusterseq::ClusterSequence; compare_fn = JetReconstruction.pt)
+    initial_jet_list = collect(1:clusterseq.n_initial_jets)
+    sort!(initial_jet_list, by = i -> compare_fn(clusterseq.jets[i]), rev = true)
+    jet_ranks = Dict{Int, Int}()
+    for (rank, jetp_index) in enumerate(initial_jet_list)
+        jet_ranks[jetp_index] = rank
+    end
+    jet_ranks
+end
