@@ -4,7 +4,11 @@ module JetVisualisation
 
 using JetReconstruction
 using Makie
+# using LaTeXStrings
 
+"""
+    get_all_ancestors(idx, cs::ClusterSequence)
+"""
 function get_all_ancestors(idx, cs::ClusterSequence)
     if cs.history[idx].parent1 == JetReconstruction.NonexistentParent
         return [cs.history[idx].jetp_index]
@@ -46,7 +50,7 @@ jetsplot(my_objects, cs, Module=Main) #default
 """
 function JetReconstruction.jetsplot(objects, cs::ClusterSequence; barsize_phi = 0.1,
                                     barsize_eta = 0.1, colormap = :glasbey_hv_n256,
-                                    Module = CairoMakie)
+                                    Module = Makie)
     idx_arrays = Vector{Int}[]
     for elt in cs.history
         elt.parent2 == JetReconstruction.BeamJet || continue
@@ -109,6 +113,52 @@ function JetReconstruction.jetsplot(objects, idx_arrays; barsize_phi = 0.1,
                                limits = (nothing, nothing, nothing, nothing, 0,
                                          findmax(pts)[1] + 10)),
                        shading = NoShading,)
+end
+
+
+function JetReconstruction.jetsplot(cs::ClusterSequence, 
+            reco_state::Dict{Int, JetReconstruction.JetWithAncestors}; 
+            barsize_phi = 0.1,
+            barsize_y = 0.1, colormap = :glasbey_category10_n256,
+            Module = Makie)
+    # Setup the marker as a square object
+    jet_plot_marker = Rect3f(Vec3f(0), Vec3f(1))
+
+    # Get the jet variables to plot
+    phis = [JetReconstruction.phi(x.self) for x in values(reco_state)]
+    ys = [JetReconstruction.rapidity(x.self) for x in values(reco_state)]
+    pts = [JetReconstruction.pt(x.self) for x in values(reco_state)]
+
+    # The core points to plot are on the pt=0 axis, with the marker size
+    # scaled up to the p_T of the jet
+    jet_plot_points = Point3f.(phis.-(barsize_phi/2), ys.-(barsize_y/2), 0pts)
+    jet_plot_marker_size = Vec3f.(barsize_phi, barsize_y, pts)
+
+    # Colours are defined from the rank of the ancestor jets
+    jet_plot_colours = [x.jet_rank for x in values(reco_state)]
+
+    # Limits for rapidity and p_T are set to the maximum values in the data
+    # (For ϕ the limits are (0, 2π))
+    min_rap = max_rap = max_pt = 0.0
+    for jet in cs.jets
+        min_rap = min(min_rap, JetReconstruction.rapidity(jet))
+        max_rap = max(max_rap, JetReconstruction.rapidity(jet))
+        max_pt = max(max_pt, JetReconstruction.pt(jet))
+    end
+
+    fig, ax, plt_obj = Module.meshscatter(jet_plot_points;
+                       markersize = jet_plot_marker_size,
+                       marker = jet_plot_marker,
+					   colormap = colormap,
+					   color = jet_plot_colours,
+					   colorrange = (1,256),
+                       figure = (size = (700, 600),),
+                       axis = (type = Axis3, perspectiveness = 0.5, azimuth = 2.7,
+                               elevation = 0.5,
+                               xlabel = L"\phi", ylabel = L"y", zlabel = L"p_T",
+                               limits = (0, 2π, min_rap-0.5, max_rap+0.5, 0, max_pt + 10),
+                       shading = NoShading,)
+    fig, ax, plt_obj
 end
 
 end
