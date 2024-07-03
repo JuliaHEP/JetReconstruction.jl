@@ -4,7 +4,6 @@ module JetVisualisation
 
 using JetReconstruction
 using Makie
-# using LaTeXStrings
 
 """
     get_all_ancestors(idx, cs::ClusterSequence)
@@ -156,9 +155,72 @@ function JetReconstruction.jetsplot(cs::ClusterSequence,
                        axis = (type = Axis3, perspectiveness = 0.5, azimuth = 2.7,
                                elevation = 0.5,
                                xlabel = L"\phi", ylabel = L"y", zlabel = L"p_T",
-                               limits = (0, 2π, min_rap-0.5, max_rap+0.5, 0, max_pt + 10),
+                               limits = (0, 2π, min_rap-0.5, max_rap+0.5, 0, max_pt + 10)),
                        shading = NoShading,)
     fig, ax, plt_obj
+end
+
+
+function JetReconstruction.animatereco(cs::ClusterSequence, filename;
+                                    barsize_phi = 0.1,
+                                    barsize_y = 0.1, colormap = :glasbey_category10_n256,
+                                    perspective = 0.5, azimuth = 2.7, elevation = 0.5,
+                                    framerate = 5,
+                                    Module = Makie)
+    # Setup the marker as a square object
+    jet_plot_marker = Rect3f(Vec3f(0), Vec3f(1))
+
+    # Get the number of meaningful reconstruction steps
+    merge_steps = JetReconstruction.merge_steps(cs)
+    jet_ranks = JetReconstruction.jet_ranks(cs)
+
+    # Get the reconstruction state at each meaningful iteration
+    # And calculate the plot parameters
+    all_jet_plot_points = Vector{Vector{Point3f}}()
+    all_jet_plot_marker_size = Vector{Vector{Vec3f}}()
+    all_jet_plot_colours = Vector{Vector{Int}}()
+    for step in 0:merge_steps
+        reco_state = JetReconstruction.reco_state(cs, jet_ranks; iteration=step)
+        phis = [JetReconstruction.phi(x.self) for x in values(reco_state)]
+        ys = [JetReconstruction.rapidity(x.self) for x in values(reco_state)]
+        pts = [JetReconstruction.pt(x.self) for x in values(reco_state)]
+        push!(all_jet_plot_points, Point3f.(phis.-(barsize_phi/2), ys.-(barsize_y/2), 0pts))
+        push!(all_jet_plot_marker_size, Vec3f.(barsize_phi, barsize_y, pts))
+        push!(all_jet_plot_colours, [x.jet_rank for x in values(reco_state)])
+    end
+
+    # Keep plot limits constant
+    min_rap = max_rap = max_pt = 0.0
+    for jet in cs.jets
+        min_rap = min(min_rap, JetReconstruction.rapidity(jet))
+        max_rap = max(max_rap, JetReconstruction.rapidity(jet))
+        max_pt = max(max_pt, JetReconstruction.pt(jet))
+    end
+
+    # Setup an observable for the iteration number
+    it_obs = Observable(0)
+    jet_plot_points_obs = @lift all_jet_plot_points[$it_obs + 1]
+    jet_plot_marker_size_obs = @lift all_jet_plot_marker_size[$it_obs + 1]
+    jet_plot_colours_obs = @lift all_jet_plot_colours[$it_obs + 1]
+
+    ax = (type = type = Axis3,
+        xlabel = L"\phi", ylabel = L"y", zlabel = L"p_T",
+        limits = (0, 2π, min_rap-0.5, max_rap+0.5, 0, max_pt + 10),
+        perspectiveness = perspective, azimuth = azimuth, elevation = elevation
+    )
+    fig = Module.meshscatter(jet_plot_points_obs;
+                       markersize = jet_plot_marker_size_obs,
+                       marker = jet_plot_marker,
+					   colormap = colormap,
+					   color = jet_plot_colours_obs,
+					   colorrange = (1,256),
+                       figure = (size = (800, 600),),
+                       axis = ax,
+                       shading = NoShading,)
+    record(fig, filename, 0:merge_steps; framerate = framerate) do iteration
+        it_obs[] = iteration
+    end
+    fig
 end
 
 end
