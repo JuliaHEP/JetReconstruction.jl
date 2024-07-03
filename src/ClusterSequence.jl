@@ -332,6 +332,27 @@ function n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
     length(clusterseq.history) - i_dcut
 end
 
+"""
+    merge_steps(clusterseq::ClusterSequence)
+
+Compute the number of jet-jet merge steps in a cluster sequence. This is useful
+to give the number of meaningful recombination steps in a jet reconstruction
+sequence (beam merge steps are not counted).
+
+# Arguments
+- `clusterseq::ClusterSequence`: The cluster sequence object.
+
+# Returns
+- `merge_steps::Int`: The number of merge steps.
+"""
+function merge_steps(clusterseq::ClusterSequence)
+    merge_steps = 0
+    for step in clusterseq.history[clusterseq.n_initial_jets+1:end]
+        step.parent2 == BeamJet && continue
+        merge_steps += 1
+    end
+    merge_steps
+end
 
 
 """
@@ -421,14 +442,16 @@ function reco_state(cs::ClusterSequence, ranks; iteration=0, ignore_beam_merge=t
 	end
 	# Now update the reconstruction state by walking over the iteration sequence
     iterations_done = 0
-	for h_step ∈ cs.n_initial_jets+1:min(length(cs.history))
+	for h_step ∈ cs.n_initial_jets+1:length(cs.history)
 		h_entry = cs.history[h_step]
 		if h_entry.parent2 > 0
 			# This is a recombination
             iterations_done += 1
 			# We store all of the original particle ancestors (but only the
 			# original ones, not intermediate merges)
-			my_ancestors = union(reco_state[h_entry.parent1].ancestors, reco_state[h_entry.parent2].ancestors)
+			my_ancestors = union(
+                reco_state[cs.history[h_entry.parent1].jetp_index].ancestors,
+                reco_state[cs.history[h_entry.parent2].jetp_index].ancestors)
 			cs.history[h_entry.parent1].parent1 == JetReconstruction.NonexistentParent && push!(my_ancestors, h_entry.parent1)
 			cs.history[h_entry.parent2].parent1 == JetReconstruction.NonexistentParent && push!(my_ancestors, h_entry.parent2)
 			
@@ -440,8 +463,8 @@ function reco_state(cs::ClusterSequence, ranks; iteration=0, ignore_beam_merge=t
 			
 			reco_state[h_entry.jetp_index] = 
 				JetWithAncestors(cs.jets[h_entry.jetp_index], h_entry.jetp_index, my_ancestors, pt_rank)
-			delete!(reco_state, h_entry.parent1)
-			delete!(reco_state, h_entry.parent2)
+			delete!(reco_state, cs.history[h_entry.parent1].jetp_index)
+			delete!(reco_state, cs.history[h_entry.parent2].jetp_index)
 		else
 			# This is a finalisation / beam merger, so here we do nothing
             if ignore_beam_merge != true
