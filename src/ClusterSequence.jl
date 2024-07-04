@@ -347,13 +347,12 @@ sequence (beam merge steps are not counted).
 """
 function merge_steps(clusterseq::ClusterSequence)
     merge_steps = 0
-    for step in clusterseq.history[clusterseq.n_initial_jets+1:end]
+    for step in clusterseq.history[(clusterseq.n_initial_jets + 1):end]
         step.parent2 == BeamJet && continue
         merge_steps += 1
     end
     merge_steps
 end
-
 
 """
     jet_ranks(clusterseq::ClusterSequence; compare_fn = JetReconstruction.pt)
@@ -377,7 +376,7 @@ jet property. It can be used to assign a consistent "rank" to each reconstructed
 the cluster sequence, which is useful for stable plotting of jet outputs.
 """
 function jet_ranks(clusterseq::ClusterSequence; compare_fn = JetReconstruction.pt)
-    initial_jet_list = collect(1:clusterseq.n_initial_jets)
+    initial_jet_list = collect(1:(clusterseq.n_initial_jets))
     sort!(initial_jet_list, by = i -> compare_fn(clusterseq.jets[i]), rev = true)
     jet_ranks = Dict{Int, Int}()
     for (rank, jetp_index) in enumerate(initial_jet_list)
@@ -409,7 +408,6 @@ struct JetWithAncestors
     jet_rank::Int
 end
 
-
 """
     reco_state(cs::ClusterSequence, pt_ranks; iteration=0)
 
@@ -434,47 +432,50 @@ particles. Then, it walks over the iteration sequence and updates the
 reconstruction state based on the history of recombination and finalization/beam
 merger steps.
 """
-function reco_state(cs::ClusterSequence, ranks; iteration=0, ignore_beam_merge=true)
-	# Get the initial particles
-	reco_state = Dict{Int, JetWithAncestors}()
-	for jet_index ∈ 1:cs.n_initial_jets
-		reco_state[jet_index] = JetWithAncestors(cs.jets[cs.history[jet_index].jetp_index], jet_index, Set([]), ranks[jet_index])
-	end
-	# Now update the reconstruction state by walking over the iteration sequence
+function reco_state(cs::ClusterSequence, ranks; iteration = 0, ignore_beam_merge = true)
+    # Get the initial particles
+    reco_state = Dict{Int, JetWithAncestors}()
+    for jet_index in 1:(cs.n_initial_jets)
+        reco_state[jet_index] = JetWithAncestors(cs.jets[cs.history[jet_index].jetp_index],
+                                                 jet_index, Set([]), ranks[jet_index])
+    end
+    # Now update the reconstruction state by walking over the iteration sequence
     iterations_done = 0
-	for h_step ∈ cs.n_initial_jets+1:length(cs.history)
-		h_entry = cs.history[h_step]
-		if h_entry.parent2 > 0
-			# This is a recombination
+    for h_step in (cs.n_initial_jets + 1):length(cs.history)
+        h_entry = cs.history[h_step]
+        if h_entry.parent2 > 0
+            # This is a recombination
             iterations_done += 1
-			# We store all of the original particle ancestors (but only the
-			# original ones, not intermediate merges)
-			my_ancestors = union(
-                reco_state[cs.history[h_entry.parent1].jetp_index].ancestors,
-                reco_state[cs.history[h_entry.parent2].jetp_index].ancestors)
-			cs.history[h_entry.parent1].parent1 == JetReconstruction.NonexistentParent && push!(my_ancestors, h_entry.parent1)
-			cs.history[h_entry.parent2].parent1 == JetReconstruction.NonexistentParent && push!(my_ancestors, h_entry.parent2)
-			
-			# Now find the ancestor with the highest p_T value
-			pt_rank = cs.n_initial_jets
-			for ancestor in my_ancestors
-				(ranks[ancestor] < pt_rank) && (pt_rank = ranks[ancestor])
-			end
-			
-			reco_state[h_entry.jetp_index] = 
-				JetWithAncestors(cs.jets[h_entry.jetp_index], h_entry.jetp_index, my_ancestors, pt_rank)
-			delete!(reco_state, cs.history[h_entry.parent1].jetp_index)
-			delete!(reco_state, cs.history[h_entry.parent2].jetp_index)
-		else
-			# This is a finalisation / beam merger, so here we do nothing
+            # We store all of the original particle ancestors (but only the
+            # original ones, not intermediate merges)
+            my_ancestors = union(reco_state[cs.history[h_entry.parent1].jetp_index].ancestors,
+                                 reco_state[cs.history[h_entry.parent2].jetp_index].ancestors)
+            cs.history[h_entry.parent1].parent1 == JetReconstruction.NonexistentParent &&
+                push!(my_ancestors, h_entry.parent1)
+            cs.history[h_entry.parent2].parent1 == JetReconstruction.NonexistentParent &&
+                push!(my_ancestors, h_entry.parent2)
+
+            # Now find the ancestor with the highest p_T value
+            pt_rank = cs.n_initial_jets
+            for ancestor in my_ancestors
+                (ranks[ancestor] < pt_rank) && (pt_rank = ranks[ancestor])
+            end
+
+            reco_state[h_entry.jetp_index] = JetWithAncestors(cs.jets[h_entry.jetp_index],
+                                                              h_entry.jetp_index,
+                                                              my_ancestors, pt_rank)
+            delete!(reco_state, cs.history[h_entry.parent1].jetp_index)
+            delete!(reco_state, cs.history[h_entry.parent2].jetp_index)
+        else
+            # This is a finalisation / beam merger, so here we do nothing
             if ignore_beam_merge != true
                 iterations_done += 1
             end
-		end
+        end
         # Abort when we have done the required number of iterations
         if iterations_done == iteration
             break
         end
-	end
-	reco_state
+    end
+    reco_state
 end
