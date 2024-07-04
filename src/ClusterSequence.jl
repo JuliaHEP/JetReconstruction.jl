@@ -394,8 +394,8 @@ A struct representing a jet with its origin ancestors.
 # Fields
 - `self::PseudoJet`: The PseudoJet object for this jet.
 - `jetp_index::Int`: The index of the jet in the corresponding cluster sequence.
-- `ancestors::Set{Int}`: A set of indices representing the ancestors of the jet
-  (in the cluster sequence).
+- `ancestors::Set{Int}`: A set of indices representing the jetp_indexes of
+  ancestors of the jet (in the cluster sequence).
 - `jet_rank::Int`: The rank of the jet based on a comparison of all of the jet's
   ancestors
 

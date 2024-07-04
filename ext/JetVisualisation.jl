@@ -161,16 +161,53 @@ function JetReconstruction.jetsplot(cs::ClusterSequence,
 end
 
 
+"""
+    animatereco(cs::ClusterSequence, filename;
+                barsize_phi = 0.1,
+                barsize_y = 0.1,
+                colormap = :glasbey_category10_n256,
+                perspective = 0.5,
+                azimuth = 2.7,
+                elevation = 0.5,
+                framerate = 5,
+                ancestors = false,
+                Module = Makie)
+
+Animate the jet reconstruction process and save it as a video file.
+
+## Arguments
+- `cs::ClusterSequence`: The cluster sequence object containing the jets.
+- `filename`: The name of the output video file.
+
+## Optional Arguments
+- `barsize_phi=0.1`: The size of the bars in the phi direction.
+- `barsize_y=0.1`: The size of the bars in the y direction.
+- `colormap=:glasbey_category10_n256`: The colormap to use for coloring the
+  jets.
+- `perspective=0.5`: The perspective of the plot.
+- `azimuth=2.7`: The azimuth angle of the plot.
+- `elevation=0.5`: The elevation angle of the plot.
+- `framerate=5`: The framerate of the output video.
+- `ancestors=false`: Whether to include ancestors of the jets in the animation.
+  When `true` the ancestors of the jets will be plotted as well, as height zero
+  bars, with the same colour as the jet they are ancestors of.
+- `Module`: The plotting module to use. Default is `Makie`.
+
+## Returns
+- `fig`: The figure object representing the final frame.
+
+"""
 function JetReconstruction.animatereco(cs::ClusterSequence, filename;
                                     barsize_phi = 0.1,
                                     barsize_y = 0.1, colormap = :glasbey_category10_n256,
                                     perspective = 0.5, azimuth = 2.7, elevation = 0.5,
-                                    framerate = 5,
+                                    framerate = 5, ancestors = false,
                                     Module = Makie)
     # Setup the marker as a square object
     jet_plot_marker = Rect3f(Vec3f(0), Vec3f(1))
 
-    # Get the number of meaningful reconstruction steps
+    # Get the number of meaningful reconstruction steps and rank the initial
+    # particles by p_T
     merge_steps = JetReconstruction.merge_steps(cs)
     jet_ranks = JetReconstruction.jet_ranks(cs)
 
@@ -187,6 +224,18 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
         push!(all_jet_plot_points, Point3f.(phis.-(barsize_phi/2), ys.-(barsize_y/2), 0pts))
         push!(all_jet_plot_marker_size, Vec3f.(barsize_phi, barsize_y, pts))
         push!(all_jet_plot_colours, [x.jet_rank for x in values(reco_state)])
+        if ancestors
+            for jet_entry in values(reco_state)
+                for ancestor in jet_entry.ancestors
+                    ancestor_jet = cs.jets[ancestor]
+                    push!(all_jet_plot_points[end], Point3f(JetReconstruction.phi(ancestor_jet)-(barsize_phi/2),
+                                                        JetReconstruction.rapidity(ancestor_jet)-(barsize_y/2),
+                                                        0.0))
+                    push!(all_jet_plot_marker_size[end], Vec3f(barsize_phi, barsize_y, 0.001))
+                    push!(all_jet_plot_colours[end], jet_entry.jet_rank)
+                end
+            end
+        end
     end
 
     # Keep plot limits constant
