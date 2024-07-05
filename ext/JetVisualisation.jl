@@ -221,6 +221,10 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
     merge_steps = JetReconstruction.merge_steps(cs)
     jet_ranks = JetReconstruction.jet_ranks(cs)
 
+    # End point of the catagorical color map
+    # (How to get this programmatically from the CM Symbol?)
+    colormap_end = 256
+
     # Get the reconstruction state at each meaningful iteration
     # And calculate the plot parameters
     all_jet_plot_points = Vector{Vector{Point3f}}()
@@ -234,7 +238,7 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
         push!(all_jet_plot_points,
               Point3f.(phis .- (barsize_phi / 2), ys .- (barsize_y / 2), 0pts))
         push!(all_jet_plot_marker_size, Vec3f.(barsize_phi, barsize_y, pts))
-        push!(all_jet_plot_colours, [mod1(x.jet_rank, 256) for x in values(reco_state)])
+        push!(all_jet_plot_colours, [mod1(x.jet_rank, colormap_end) for x in values(reco_state)])
         if ancestors
             for jet_entry in values(reco_state)
                 for ancestor in jet_entry.ancestors
@@ -246,7 +250,7 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
                                   0.0))
                     push!(all_jet_plot_marker_size[end],
                           Vec3f(barsize_phi, barsize_y, 0.001))
-                    push!(all_jet_plot_colours[end], mod1(jet_entry.jet_rank, 256))
+                    push!(all_jet_plot_colours[end], mod1(jet_entry.jet_rank, colormap_end))
                 end
             end
         end
@@ -287,7 +291,7 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
                              marker = jet_plot_marker,
                              colormap = colormap,
                              color = jet_plot_colours_obs,
-                             colorrange = (1, 256),
+                             colorrange = (1, colormap_end),
                              figure = (size = (800, 600),),
                              axis = ax,
                              shading = NoShading)
