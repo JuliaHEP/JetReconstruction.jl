@@ -6,8 +6,6 @@ and performs standard jet reconstruction on the final state particles.
 
 using ArgParse
 using Profile
-using Colors
-using StatProfilerHTML
 using Logging
 using JSON
 
@@ -32,7 +30,7 @@ function jet_process(events::Vector{Vector{PseudoJet}};
                      dcut = nothing,
                      njets = nothing,
                      strategy::RecoStrategy.Strategy,
-                     dump::Union{String, Nothing} = nothing,)
+                     dump::Union{String, Nothing} = nothing)
     @info "Will process $(size(events)[1]) events"
 
     # If we are dumping the results, setup the JSON structure
@@ -56,10 +54,12 @@ function jet_process(events::Vector{Vector{PseudoJet}};
     for (ievt, event) in enumerate(events)
         if !isnothing(njets)
             finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power,
-                                                       strategy = strategy), njets = njets)
+                                                       strategy = strategy),
+                                       njets = njets)
         elseif !isnothing(dcut)
             finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power,
-                                                       strategy = strategy), dcut = dcut)
+                                                       strategy = strategy),
+                                       dcut = dcut)
         else
             finaljets = inclusive_jets(jet_reconstruct(event, R = distance, p = power,
                                                        strategy = strategy), ptmin)
