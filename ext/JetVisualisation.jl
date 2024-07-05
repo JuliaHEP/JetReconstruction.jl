@@ -111,7 +111,7 @@ function JetReconstruction.jetsplot(objects, idx_arrays; barsize_phi = 0.1,
                                xlabel = "ϕ", ylabel = "η", zlabel = "kt",
                                limits = (nothing, nothing, nothing, nothing, 0,
                                          findmax(pts)[1] + 10)),
-                       shading = NoShading,)
+                       shading = NoShading)
 end
 
 function JetReconstruction.jetsplot(cs::ClusterSequence,
@@ -159,7 +159,7 @@ function JetReconstruction.jetsplot(cs::ClusterSequence,
                                                   zlabel = L"p_T",
                                                   limits = (0, 2π, min_rap - 0.5,
                                                             max_rap + 0.5, 0, max_pt + 10)),
-                                          shading = NoShading,)
+                                          shading = NoShading)
     fig, ax, plt_obj
 end
 
@@ -177,11 +177,11 @@ end
 
 Animate the jet reconstruction process and save it as a video file.
 
-## Arguments
+# Arguments
 - `cs::ClusterSequence`: The cluster sequence object containing the jets.
 - `filename`: The name of the output video file.
 
-## Optional Arguments
+# Optional Arguments
 - `barsize_phi=0.1`: The size of the bars in the phi direction.
 - `barsize_y=0.1`: The size of the bars in the y direction.
 - `colormap=:glasbey_category10_n256`: The colormap to use for coloring the
@@ -195,7 +195,12 @@ Animate the jet reconstruction process and save it as a video file.
   bars, with the same colour as the jet they are ancestors of.
 - `Module`: The plotting module to use. Default is `Makie`.
 
-## Returns
+For `perspective`, `azimuth`, and `elevation`, a single value can be passed for
+a fixed viewpoint, or a tuple of two values for a changing viewpoint. The
+viewpoint will then change linearly between the two values over the course of the
+animation.
+
+# Returns
 - `fig`: The figure object representing the final fram.
 
 """
@@ -229,7 +234,7 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
         push!(all_jet_plot_points,
               Point3f.(phis .- (barsize_phi / 2), ys .- (barsize_y / 2), 0pts))
         push!(all_jet_plot_marker_size, Vec3f.(barsize_phi, barsize_y, pts))
-        push!(all_jet_plot_colours, [x.jet_rank for x in values(reco_state)])
+        push!(all_jet_plot_colours, [mod1(x.jet_rank, 256) for x in values(reco_state)])
         if ancestors
             for jet_entry in values(reco_state)
                 for ancestor in jet_entry.ancestors
@@ -241,7 +246,7 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
                                   0.0))
                     push!(all_jet_plot_marker_size[end],
                           Vec3f(barsize_phi, barsize_y, 0.001))
-                    push!(all_jet_plot_colours[end], jet_entry.jet_rank)
+                    push!(all_jet_plot_colours[end], mod1(jet_entry.jet_rank, 256))
                 end
             end
         end
@@ -285,7 +290,7 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
                              colorrange = (1, 256),
                              figure = (size = (800, 600),),
                              axis = ax,
-                             shading = NoShading,)
+                             shading = NoShading)
     record(fig, filename, 0:merge_steps; framerate = framerate) do iteration
         it_obs[] = iteration
     end
