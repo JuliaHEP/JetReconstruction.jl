@@ -25,12 +25,21 @@ const BeamJet = -1
 A struct holding a record of jet mergers and finalisations
 
 Fields:
-- parent1: Index in history where first parent of this jet was created (NonexistentParent if this jet is an original particle)
-- parent2: Index in history where second parent of this jet was created (NonexistentParent if this jet is an original particle); BeamJet if this history entry just labels the fact that the jet has recombined with the beam)
-- child: Index in history where the current jet is recombined with another jet to form its child. It is Invalid if this jet does not further recombine.
-- jetp_index: Index in the jets vector where we will find the PseudoJet object corresponding to this jet (i.e. the jet created at this entry of the history). NB: if this element of the history corresponds to a beam recombination, then jetp_index=Invalid.
-- dij: The distance corresponding to the recombination at this stage of the clustering.
-- max_dij_so_far: The largest recombination distance seen so far in the clustering history.
+- `parent1`: Index in history where first parent of this jet was created
+  (NonexistentParent if this jet is an original particle)
+- `parent2`: Index in history where second parent of this jet was created
+  (NonexistentParent if this jet is an original particle); BeamJet if this
+  history entry just labels the fact that the jet has recombined with the beam)
+- `child`: Index in history where the current jet is recombined with another jet
+  to form its child. It is Invalid if this jet does not further recombine.
+- `jetp_index`: Index in the jets vector where we will find the PseudoJet object
+  corresponding to this jet (i.e. the jet created at this entry of the history).
+  NB: if this element of the history corresponds to a beam recombination, then
+  `jetp_index=Invalid`.
+- `dij`: The distance corresponding to the recombination at this stage of the
+  clustering.
+- `max_dij_so_far`: The largest recombination distance seen so far in the
+  clustering history.
 """
 struct HistoryElement
     parent1::Int
@@ -330,6 +339,29 @@ function n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
 
     # The number of jets is then given by this formula
     length(clusterseq.history) - i_dcut
+end
+
+"""
+    get_all_ancestors(idx, cs::ClusterSequence)
+
+Recursively finds all ancestors of a given index in a `ClusterSequence` object.
+
+# Arguments
+- `idx`: The index of the jet for which to find ancestors.
+- `cs`: The `ClusterSequence` object containing the jet history.
+
+# Returns
+An array of indices representing the ancestors of the given jet.
+"""
+function get_all_ancestors(idx, cs::ClusterSequence)
+    if cs.history[idx].parent1 == JetReconstruction.NonexistentParent
+        return [cs.history[idx].jetp_index]
+    else
+        branch1 = get_all_ancestors(cs.history[idx].parent1, cs)
+        cs.history[idx].parent2 == JetReconstruction.BeamJet && return branch1
+        branch2 = get_all_ancestors(cs.history[idx].parent2, cs)
+        return [branch1; branch2]
+    end
 end
 
 """

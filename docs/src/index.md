@@ -16,17 +16,16 @@ inclusive ``k_\text{T}``.
 
 ## Reconstruction Interface
 
-The main interface for reconstruction is:
+The main interface for reconstruction is [`jet_reconstruct`](@ref), called as, e.g.,
 
-```@docs
-jet_reconstruct(particles; p = -1, R = 1.0, recombine = +, strategy = RecoStrategy.Best)
+```julia
+jet_reconstruct(particles; p = -1, R = 1.0)
 ```
 
-The object returned is a `ClusterSequence`, which internally tracks all merge steps.
+Where `particles` is a collection of 4-vector objects to reconstruct.
 
-```@docs
-ClusterSequence
-```
+The object returned is a [`ClusterSequence`](@ref), which internally tracks all
+merge steps.
 
 ## Strategy
 
@@ -38,9 +37,12 @@ Three strategies are available for the different algorithms:
 | `RecoStrategy.N2Plain` | Global matching of particles at each interation (works well for low $N$) | `plain_jet_reconstruct` |
 | `RecoStrategy.N2Tiled` | Use tiles of radius $R$ to limit search space (works well for higher $N$) | `tiled_jet_reconstruct` |
 
-Generally one can use the `jet_reconstruct` interface, shown above, as the *Best* strategy safely as the overhead is extremely low. That interface supports a `strategy` option to switch to a different option.
+Generally one can use the `jet_reconstruct` interface, shown above, as the
+*Best* strategy safely as the overhead is extremely low. That interface supports
+a `strategy` option to switch to a different option.
 
-Another option, if one wishes to use a specific strategy, is to call that strategy's interface directly, e.g.,
+Another option, if one wishes to use a specific strategy, is to call that
+strategy's interface directly, e.g.,
 
 ```julia
 # For N2Plain strategy called directly
@@ -54,19 +56,8 @@ Note that there is no `strategy` option in these interfaces.
 To obtain final jets both inclusive (``p_T`` cut) and exclusive (``n_{jets}`` or
 ``d_{ij}`` cut) selections are supported:
 
-```@docs
-inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
-```
-
-```@docs
-exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing)
-```
-
-The number of exclusive jets passing a particular `dcut` can be obtained:
-
-```@docs
-n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
-```
+- [inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)](@ref)
+- [exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing)](@ref)
 
 ### Sorting
 
@@ -79,7 +70,7 @@ sorted_jets = sort!(inclusive_jets(cs::ClusterSequence; ptmin=5.0),
   by=JetReconstruction.energy, rev=true)
 ```
 
-## Plotting
+## Plotting and Animation
 
 ![illustration](assets/jetvis.png)
 
@@ -90,6 +81,10 @@ directory.
 
 The plotting code is a package extension and will load if the one of the `Makie`
 modules is loaded in the environment.
+
+The [`animatereco`](@ref) function will animate the reconstruction sequence, given a
+`ClusterSequence` object. See the function documentation for the many options
+that can be customised.
 
 ## Serialisation
 

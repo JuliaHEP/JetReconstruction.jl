@@ -6,20 +6,6 @@ using JetReconstruction
 using Makie
 
 """
-    get_all_ancestors(idx, cs::ClusterSequence)
-"""
-function get_all_ancestors(idx, cs::ClusterSequence)
-    if cs.history[idx].parent1 == JetReconstruction.NonexistentParent
-        return [cs.history[idx].jetp_index]
-    else
-        branch1 = get_all_ancestors(cs.history[idx].parent1, cs)
-        cs.history[idx].parent2 == JetReconstruction.BeamJet && return branch1
-        branch2 = get_all_ancestors(cs.history[idx].parent2, cs)
-        return [branch1; branch2]
-    end
-end
-
-"""
     jetsplot(objects, cs::ClusterSequence; barsize_phi=0.1, barsize_eta=0.1, colormap=:glasbey_hv_n256, Module=Main)
 
 Plots a 3d bar chart that represents jets. Takes `objects`, an array of objects to display (should be the same array you have passed to `jet_reconstruct` to get the `cs::ClusterSequence`), and the `cs::ClusterSequence` itself as arguments.
@@ -53,7 +39,7 @@ function JetReconstruction.jetsplot(objects, cs::ClusterSequence; barsize_phi = 
     idx_arrays = Vector{Int}[]
     for elt in cs.history
         elt.parent2 == JetReconstruction.BeamJet || continue
-        push!(idx_arrays, get_all_ancestors(elt.parent1, cs))
+        push!(idx_arrays, JetReconstruction.get_all_ancestors(elt.parent1, cs))
     end
 
     jetsplot(objects, idx_arrays; barsize_phi, barsize_eta, colormap, Module)
@@ -205,7 +191,7 @@ viewpoint will then change linearly between the two values over the course of
 the animation.
 
 # Returns
-- `fig`: The figure object representing the final fram.
+- `fig`: The figure object representing the final frame.
 
 """
 function JetReconstruction.animatereco(cs::ClusterSequence, filename;
@@ -229,6 +215,14 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
     # End point of the catagorical color map
     # (How to get this programmatically from the CM Symbol?)
     colormap_end = 256
+
+    # Keep plot limits constant
+    min_rap = max_rap = max_pt = 0.0
+    for jet in cs.jets
+        min_rap = min(min_rap, JetReconstruction.rapidity(jet))
+        max_rap = max(max_rap, JetReconstruction.rapidity(jet))
+        max_pt = max(max_pt, JetReconstruction.pt(jet))
+    end
 
     # Get the reconstruction state at each meaningful iteration
     # And calculate the plot parameters
@@ -255,7 +249,7 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
                                   (barsize_y / 2),
                                   0.0))
                     push!(all_jet_plot_marker_size[end],
-                          Vec3f(barsize_phi, barsize_y, 0.0))
+                          Vec3f(barsize_phi, barsize_y, 0.001max_pt))
                     push!(all_jet_plot_colours[end], mod1(jet_entry.jet_rank, colormap_end))
                 end
             end
