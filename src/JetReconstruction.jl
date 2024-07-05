@@ -75,7 +75,8 @@ export read_final_state_particles, read_final_state_particles_lv, final_jets
 
 # Jet visualisation is an extension, see ext/JetVisualisation.jl
 function jetsplot() end
-export jetsplot
+function animatereco() end
+export jetsplot, animatereco
 
 # JSON results
 include("JSONresults.jl")

@@ -101,7 +101,9 @@ tile_index(tiling_setup, eta::Float64, phi::Float64) = begin
     # - phi is protection against bad rounding
     ieta = clamp(1 + unsafe_trunc(Int,
                               (eta - tiling_setup._tiles_eta_min) /
-                              tiling_setup._tile_size_eta), 1, tiling_setup._n_tiles_eta)
+                              tiling_setup._tile_size_eta),
+                 1,
+                 tiling_setup._n_tiles_eta)
     iphi = clamp(unsafe_trunc(Int, phi / tiling_setup._tile_size_phi), 0,
                  tiling_setup._n_tiles_phi)
     return iphi * tiling_setup._n_tiles_eta + ieta

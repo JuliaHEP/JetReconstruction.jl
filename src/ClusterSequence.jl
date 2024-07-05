@@ -25,12 +25,21 @@ const BeamJet = -1
 A struct holding a record of jet mergers and finalisations
 
 Fields:
-- parent1: Index in history where first parent of this jet was created (NonexistentParent if this jet is an original particle)
-- parent2: Index in history where second parent of this jet was created (NonexistentParent if this jet is an original particle); BeamJet if this history entry just labels the fact that the jet has recombined with the beam)
-- child: Index in history where the current jet is recombined with another jet to form its child. It is Invalid if this jet does not further recombine.
-- jetp_index: Index in the jets vector where we will find the PseudoJet object corresponding to this jet (i.e. the jet created at this entry of the history). NB: if this element of the history corresponds to a beam recombination, then jetp_index=Invalid.
-- dij: The distance corresponding to the recombination at this stage of the clustering.
-- max_dij_so_far: The largest recombination distance seen so far in the clustering history.
+- `parent1`: Index in history where first parent of this jet was created
+  (NonexistentParent if this jet is an original particle)
+- `parent2`: Index in history where second parent of this jet was created
+  (NonexistentParent if this jet is an original particle); BeamJet if this
+  history entry just labels the fact that the jet has recombined with the beam)
+- `child`: Index in history where the current jet is recombined with another jet
+  to form its child. It is Invalid if this jet does not further recombine.
+- `jetp_index`: Index in the jets vector where we will find the PseudoJet object
+  corresponding to this jet (i.e. the jet created at this entry of the history).
+  NB: if this element of the history corresponds to a beam recombination, then
+  `jetp_index=Invalid`.
+- `dij`: The distance corresponding to the recombination at this stage of the
+  clustering.
+- `max_dij_so_far`: The largest recombination distance seen so far in the
+  clustering history.
 """
 struct HistoryElement
     parent1::Int
@@ -330,4 +339,175 @@ function n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
 
     # The number of jets is then given by this formula
     length(clusterseq.history) - i_dcut
+end
+
+"""
+    get_all_ancestors(idx, cs::ClusterSequence)
+
+Recursively finds all ancestors of a given index in a `ClusterSequence` object.
+
+# Arguments
+- `idx`: The index of the jet for which to find ancestors.
+- `cs`: The `ClusterSequence` object containing the jet history.
+
+# Returns
+An array of indices representing the ancestors of the given jet.
+"""
+function get_all_ancestors(idx, cs::ClusterSequence)
+    if cs.history[idx].parent1 == JetReconstruction.NonexistentParent
+        return [cs.history[idx].jetp_index]
+    else
+        branch1 = get_all_ancestors(cs.history[idx].parent1, cs)
+        cs.history[idx].parent2 == JetReconstruction.BeamJet && return branch1
+        branch2 = get_all_ancestors(cs.history[idx].parent2, cs)
+        return [branch1; branch2]
+    end
+end
+
+"""
+    merge_steps(clusterseq::ClusterSequence)
+
+Compute the number of jet-jet merge steps in a cluster sequence. This is useful
+to give the number of meaningful recombination steps in a jet reconstruction
+sequence (beam merge steps are not counted).
+
+# Arguments
+- `clusterseq::ClusterSequence`: The cluster sequence object.
+
+# Returns
+- `merge_steps::Int`: The number of merge steps.
+"""
+function merge_steps(clusterseq::ClusterSequence)
+    merge_steps = 0
+    for step in clusterseq.history[(clusterseq.n_initial_jets + 1):end]
+        step.parent2 == BeamJet && continue
+        merge_steps += 1
+    end
+    merge_steps
+end
+
+"""
+    jet_ranks(clusterseq::ClusterSequence; compare_fn = JetReconstruction.pt)
+
+Compute the ranks of jets in a given `ClusterSequence` object based on a
+specified comparison function.
+
+## Arguments
+- `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the
+  jets to rank.
+- `compare_fn = JetReconstruction.pt`: The comparison function used to determine
+  the order of the jets. Defaults to `JetReconstruction.pt`, which compares jets
+  based on their transverse momentum.
+
+## Returns
+A dictionary mapping each jet index to its rank.
+
+## Note
+This is a utility function that can be used to rank initial clusters based on a specified
+jet property. It can be used to assign a consistent "rank" to each reconstructed jet in
+the cluster sequence, which is useful for stable plotting of jet outputs.
+"""
+function jet_ranks(clusterseq::ClusterSequence; compare_fn = JetReconstruction.pt)
+    initial_jet_list = collect(1:(clusterseq.n_initial_jets))
+    sort!(initial_jet_list, by = i -> compare_fn(clusterseq.jets[i]), rev = true)
+    jet_ranks = Dict{Int, Int}()
+    for (rank, jetp_index) in enumerate(initial_jet_list)
+        jet_ranks[jetp_index] = rank
+    end
+    jet_ranks
+end
+
+"""
+    struct JetWithAncestors
+
+A struct representing a jet with its origin ancestors.
+
+# Fields
+- `self::PseudoJet`: The PseudoJet object for this jet.
+- `jetp_index::Int`: The index of the jet in the corresponding cluster sequence.
+- `ancestors::Set{Int}`: A set of indices representing the jetp_indexes of
+  ancestors of the jet (in the cluster sequence).
+- `jet_rank::Int`: The rank of the jet based on a comparison of all of the jet's
+  ancestors
+
+# Note
+This structure needs its associated cluster sequence origin to be useful.
+"""
+struct JetWithAncestors
+    self::PseudoJet
+    jetp_index::Int
+    ancestors::Set{Int}
+    jet_rank::Int
+end
+
+"""
+    reco_state(cs::ClusterSequence, pt_ranks; iteration=0)
+
+This function returns the reconstruction state of a `ClusterSequence` object
+based on a given iteration number in the reconstruction.
+
+# Arguments
+- `cs::ClusterSequence`: The `ClusterSequence` object to update.
+- `ranks`: The ranks of the original clusters, that are inherited by peudojets
+ during the reconstruction process.
+- `iteration=0`: The iteration number to consider for updating the
+  reconstruction state (0 represents the initial state).
+- `ignore_beam_merge=true`: Ignore beam merging steps in the reconstruction
+  (which produce no change in status).
+
+# Returns
+A dictionary representing a snapshot of the reconstruction state.
+
+# Details
+The function starts by initializing the reconstruction state with the initial
+particles. Then, it walks over the iteration sequence and updates the
+reconstruction state based on the history of recombination and finalization/beam
+merger steps.
+"""
+function reco_state(cs::ClusterSequence, ranks; iteration = 0, ignore_beam_merge = true)
+    # Get the initial particles
+    reco_state = Dict{Int, JetWithAncestors}()
+    for jet_index in 1:(cs.n_initial_jets)
+        reco_state[jet_index] = JetWithAncestors(cs.jets[cs.history[jet_index].jetp_index],
+                                                 jet_index, Set([]), ranks[jet_index])
+    end
+    # Now update the reconstruction state by walking over the iteration sequence
+    iterations_done = 0
+    for h_step in (cs.n_initial_jets + 1):length(cs.history)
+        h_entry = cs.history[h_step]
+        if h_entry.parent2 > 0
+            # This is a recombination
+            iterations_done += 1
+            # We store all of the original particle ancestors (but only the
+            # original ones, not intermediate merges)
+            my_ancestors = union(reco_state[cs.history[h_entry.parent1].jetp_index].ancestors,
+                                 reco_state[cs.history[h_entry.parent2].jetp_index].ancestors)
+            cs.history[h_entry.parent1].parent1 == JetReconstruction.NonexistentParent &&
+                push!(my_ancestors, h_entry.parent1)
+            cs.history[h_entry.parent2].parent1 == JetReconstruction.NonexistentParent &&
+                push!(my_ancestors, h_entry.parent2)
+
+            # Now find the ancestor with the highest p_T value
+            pt_rank = cs.n_initial_jets
+            for ancestor in my_ancestors
+                (ranks[ancestor] < pt_rank) && (pt_rank = ranks[ancestor])
+            end
+
+            reco_state[h_entry.jetp_index] = JetWithAncestors(cs.jets[h_entry.jetp_index],
+                                                              h_entry.jetp_index,
+                                                              my_ancestors, pt_rank)
+            delete!(reco_state, cs.history[h_entry.parent1].jetp_index)
+            delete!(reco_state, cs.history[h_entry.parent2].jetp_index)
+        else
+            # This is a finalisation / beam merger, so here we do nothing
+            if ignore_beam_merge != true
+                iterations_done += 1
+            end
+        end
+        # Abort when we have done the required number of iterations
+        if iterations_done == iteration
+            break
+        end
+    end
+    reco_state
 end

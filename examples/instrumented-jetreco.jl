@@ -25,7 +25,7 @@ include(joinpath(@__DIR__, "parse-options.jl"))
 function profile_code(profile, jet_reconstruction, events, niters; R = 0.4, p = -1,
                       strategy = RecoStrategy.N2Tiled)
     Profile.init(n = 5 * 10^6, delay = 0.00001)
-    profile_events(events) = begin
+    function profile_events(events)
         for evt in events
             jet_reconstruction(evt, R = R, p = p, strategy = strategy)
         end
@@ -76,7 +76,7 @@ function jet_process(events::Vector{Vector{PseudoJet}};
                      gcoff::Bool = false,
                      profile = nothing,
                      alloc::Bool = false,
-                     dump::Union{String, Nothing} = nothing,)
+                     dump::Union{String, Nothing} = nothing)
     @info "Will process $(size(events)[1]) events"
 
     # Map algorithm to power
@@ -130,7 +130,8 @@ function jet_process(events::Vector{Vector{PseudoJet}};
                                            dcut = dcut)
             else
                 finaljets = inclusive_jets(jet_reconstruct(event, R = distance, p = power,
-                                                           strategy = strategy), ptmin)
+                                                           strategy = strategy),
+                                           ptmin)
             end
             # Only print the jet content once
             if irun == 1
