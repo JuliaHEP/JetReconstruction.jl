@@ -190,6 +190,10 @@ Animate the jet reconstruction process and save it as a video file.
 - `azimuth=2.7`: The azimuth angle of the plot.
 - `elevation=0.5`: The elevation angle of the plot.
 - `framerate=5`: The framerate of the output video.
+- `end_frames=0`: The number of static frames to show at the end of the
+  animation. This can be useful to show the final state of the jets for a longer
+  time.
+- `title=nothing`: The title to add to the plot.
 - `ancestors=false`: Whether to include ancestors of the jets in the animation.
   When `true` the ancestors of the jets will be plotted as well, as height zero
   bars, with the same colour as the jet they are ancestors of.
@@ -197,8 +201,8 @@ Animate the jet reconstruction process and save it as a video file.
 
 For `perspective`, `azimuth`, and `elevation`, a single value can be passed for
 a fixed viewpoint, or a tuple of two values for a changing viewpoint. The
-viewpoint will then change linearly between the two values over the course of the
-animation.
+viewpoint will then change linearly between the two values over the course of
+the animation.
 
 # Returns
 - `fig`: The figure object representing the final fram.
@@ -211,7 +215,8 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
                                        perspective::Union{Real, Tuple{Real, Real}} = 0.5,
                                        azimuth::Union{Real, Tuple{Real, Real}} = 2.7,
                                        elevation::Union{Real, Tuple{Real, Real}} = 0.5,
-                                       framerate = 5, ancestors = false,
+                                       framerate = 5, end_frames = 0, ancestors = false,
+                                       title = nothing,
                                        Module = Makie)
     # Setup the marker as a square object
     jet_plot_marker = Rect3f(Vec3f(0), Vec3f(1))
@@ -238,7 +243,8 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
         push!(all_jet_plot_points,
               Point3f.(phis .- (barsize_phi / 2), ys .- (barsize_y / 2), 0pts))
         push!(all_jet_plot_marker_size, Vec3f.(barsize_phi, barsize_y, pts))
-        push!(all_jet_plot_colours, [mod1(x.jet_rank, colormap_end) for x in values(reco_state)])
+        push!(all_jet_plot_colours,
+              [mod1(x.jet_rank, colormap_end) for x in values(reco_state)])
         if ancestors
             for jet_entry in values(reco_state)
                 for ancestor in jet_entry.ancestors
@@ -249,7 +255,7 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
                                   (barsize_y / 2),
                                   0.0))
                     push!(all_jet_plot_marker_size[end],
-                          Vec3f(barsize_phi, barsize_y, 0.001))
+                          Vec3f(barsize_phi, barsize_y, 0.0))
                     push!(all_jet_plot_colours[end], mod1(jet_entry.jet_rank, colormap_end))
                 end
             end
@@ -281,7 +287,7 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
                        @lift(perspective[1]+$it_obs / merge_steps *
                                             (perspective[2] - perspective[1])) : perspective
 
-    ax = (type = Axis3,
+    ax = (type = Axis3, title = isnothing(title) ? "" : title,
           xlabel = L"\phi", ylabel = L"y", zlabel = L"p_T",
           limits = (0, 2π, min_rap - 0.5, max_rap + 0.5, 0, max_pt + 10),
           perspectiveness = perspective_axis, azimuth = azimuth_axis,
@@ -295,8 +301,8 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
                              figure = (size = (800, 600),),
                              axis = ax,
                              shading = NoShading)
-    record(fig, filename, 0:merge_steps; framerate = framerate) do iteration
-        it_obs[] = iteration
+    record(fig, filename, 0:(merge_steps + end_frames); framerate = framerate) do iteration
+        it_obs[] = min(iteration, merge_steps)
     end
     fig
 end
