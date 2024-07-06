@@ -1,6 +1,7 @@
 # JetReconstruction.jl
 
 [![Build Status](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![DOI](https://zenodo.org/badge/507671522.svg)](https://zenodo.org/doi/10.5281/zenodo.12671414)
 
 ## This package implements sequential Jet Reconstruction (clustering)
 
