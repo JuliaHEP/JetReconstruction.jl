@@ -204,7 +204,8 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
     end
 
     # From LorentzVector
-    events_lv::Vector{Vector{LorentzVector}} = read_final_state_particles_lv(events_file)
+    events_lv::Vector{Vector{LorentzVector}} = read_final_state_particles(events_file;
+                                                                          T = LorentzVector)
     jet_collection_lv = FinalJets[]
     for (ievt, event) in enumerate(events_lv)
         finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance,

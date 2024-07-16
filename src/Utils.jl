@@ -3,39 +3,46 @@
 using CodecZlib
 
 """
-    read_final_state_particles(fname; maxevents = -1, skipevents = 0)
+    read_final_state_particles(fname; maxevents = -1, skipevents = 0, T=PseudoJet)
 
-Reads final state particles from a file and returns them as a vector of
-PseudoJet objects.
+Reads final state particles from a file and returns them as a vector of type T.
 
 # Arguments
 - `fname`: The name of the HepMC3 ASCII file to read particles from. If the file
   is gzipped, the function will automatically decompress it.
 - `maxevents=-1`: The maximum number of events to read. -1 means all events will
   be read.
-- `skipevents`: The number of events to skip before an event is included.
-  Default is 0.
+- `skipevents=0`: The number of events to skip before an event is included.
+- `T=PseudoJet`: The type of object to contruct and return.
 
 # Returns
-A vector of vectors of PseudoJet objects, where each inner vector represents all
-the particles of a particular event.
+A vector of vectors of T objects, where each inner vector represents all
+the particles of a particular event. In particular T can be `PseudoJet` or
+a `LorentzVector` type. Note, if T is not `PseudoJet`, the order of the
+arguments in the constructor must be `(t, x, y, z)`.
 """
-function read_final_state_particles(fname; maxevents = -1, skipevents = 0)
+function read_final_state_particles(fname; maxevents = -1, skipevents = 0, T = PseudoJet)
     f = open(fname)
     if endswith(fname, ".gz")
         @debug "Reading gzipped file $fname"
         f = GzipDecompressorStream(f)
     end
 
-    events = Vector{PseudoJet}[]
+    events = Vector{T}[]
 
     ipart = 1
     HepMC3.read_events(f, maxevents = maxevents, skipevents = skipevents) do parts
-        input_particles = PseudoJet[]
+        input_particles = T[]
         for p in parts
             if p.status == 1
-                push!(input_particles,
-                      PseudoJet(p.momentum.x, p.momentum.y, p.momentum.z, p.momentum.t))
+                # Annoyingly PseudoJet and LorentzVector constructors
+                # disagree on the order of arguments...
+                if T == PseudoJet
+                    particle = T(p.momentum.x, p.momentum.y, p.momentum.z, p.momentum.t)
+                else
+                    particle = T(p.momentum.t, p.momentum.x, p.momentum.y, p.momentum.z)
+                end
+                push!(input_particles, particle)
             end
         end
         push!(events, input_particles)
@@ -47,74 +54,6 @@ function read_final_state_particles(fname; maxevents = -1, skipevents = 0)
     @debug events
     events
 end
-
-"""
-    read_final_state_particles_lv(fname; maxevents = -1, skipevents = 0)
-
-Reads final state particles from a file and returns them as a vector of
-LorentzVector objects.
-
-# Arguments
-- `fname`: The name of the HepMC3 ASCII file to read particles from. If the file
-  is gzipped, the function will automatically decompress it.
-- `maxevents=-1`: The maximum number of events to read. -1 means all events will
-  be read.
-- `skipevents`: The number of events to skip before an event is included.
-  Default is 0.
-
-# Returns
-A vector of vectors of LorentzVector objects, where each inner vector represents
-all the particles of a particular event.
-"""
-function read_final_state_particles_lv(fname; maxevents = -1, skipevents = 0)
-    f = open(fname)
-    if endswith(fname, ".gz")
-        @debug "Reading gzipped file $fname"
-        f = GzipDecompressorStream(f)
-    end
-
-    events = Vector{LorentzVector{Float64}}[]
-
-    ipart = 1
-    HepMC3.read_events(f, maxevents = maxevents, skipevents = skipevents) do parts
-        input_particles = LorentzVector{Float64}[]
-        for p in parts
-            if p.status == 1
-                push!(input_particles,
-                      LorentzVector(p.momentum.t, p.momentum.x, p.momentum.y, p.momentum.z))
-            end
-        end
-        push!(events, input_particles)
-        ipart += 1
-    end
-    close(f)
-
-    @info "Total Events: $(length(events))"
-    @debug events
-    events
-end
-
-"""
-Return the list of jets passing a pt cut
-
-The ptmin cut in these functions is slightly legacy as often the
-input jets were already filtered on pt 
-"""
-
-# function final_jets(jets::Vector{Vector{Float64}}, ptmin::AbstractFloat=0.0)
-# 	count = 0
-# 	final_jets = Vector{FinalJet}()
-# 	sizehint!(final_jets, 6)
-# 	for jet in jets
-# 		dcut = ptmin^2
-# 		p = PseudoJet(jet[1], jet[2], jet[3], jet[4])
-# 		if p._pt2 > dcut
-# 			count += 1
-# 			push!(final_jets, FinalJet(rap(p), phi(p), sqrt(pt2(p))))
-# 		end
-# 	end
-# 	final_jets
-# end
 
 """
     final_jets(jets::Vector{PseudoJet}, ptmin::AbstractFloat=0.0)

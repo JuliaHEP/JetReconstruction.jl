@@ -71,7 +71,7 @@ export savejets, loadjets!, loadjets
 
 # utility functions, useful for different primary scripts
 include("Utils.jl")
-export read_final_state_particles, read_final_state_particles_lv, final_jets
+export read_final_state_particles, final_jets
 
 # Jet visualisation is an extension, see ext/JetVisualisation.jl
 function jetsplot() end
