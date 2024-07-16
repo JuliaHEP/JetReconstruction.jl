@@ -5,6 +5,9 @@ module JetVisualisation
 using JetReconstruction
 using Makie
 
+# Set font size generally (as opposed to xlabelsize=20, etc.)
+const jetreco_theme = Theme(fontsize = 24)
+
 """
     jetsplot(objects, cs::ClusterSequence; barsize_phi=0.1, barsize_eta=0.1, colormap=:glasbey_hv_n256, Module=Main)
 
@@ -85,6 +88,7 @@ function JetReconstruction.jetsplot(objects, idx_arrays; barsize_phi = 0.1,
 
     pts = sqrt.(JetReconstruction.pt2.(objects))
 
+    set_theme!(jetreco_theme)
     Module.meshscatter(Module.Point3f.(JetReconstruction.phi.(objects),
                                        JetReconstruction.rapidity.(objects), 0pts);
                        color = cs,
@@ -94,7 +98,7 @@ function JetReconstruction.jetsplot(objects, idx_arrays; barsize_phi = 0.1,
                        figure = (size = (700, 600),),
                        axis = (type = Module.Axis3, perspectiveness = 0.5, azimuth = 2.6,
                                elevation = 0.5,
-                               xlabel = "ϕ", ylabel = "η", zlabel = "kt",
+                               xlabel = L"\phi", ylabel = L"y", zlabel = L"p_T",
                                limits = (nothing, nothing, nothing, nothing, 0,
                                          findmax(pts)[1] + 10)),
                        shading = NoShading)
@@ -131,6 +135,7 @@ function JetReconstruction.jetsplot(cs::ClusterSequence,
         max_pt = max(max_pt, JetReconstruction.pt(jet))
     end
 
+    set_theme!(jetreco_theme)
     fig, ax, plt_obj = Module.meshscatter(jet_plot_points;
                                           markersize = jet_plot_marker_size,
                                           marker = jet_plot_marker,
@@ -281,6 +286,7 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
                        @lift(perspective[1]+$it_obs / merge_steps *
                                             (perspective[2] - perspective[1])) : perspective
 
+    set_theme!(jetreco_theme)
     ax = (type = Axis3, title = isnothing(title) ? "" : title,
           xlabel = L"\phi", ylabel = L"y", zlabel = L"p_T",
           limits = (0, 2π, min_rap - 0.5, max_rap + 0.5, 0, max_pt + 10),
