@@ -17,9 +17,11 @@ Reads final state particles from a file and returns them as a vector of type T.
 
 # Returns
 A vector of vectors of T objects, where each inner vector represents all
-the particles of a particular event.
+the particles of a particular event. In particular T can be `PseudoJet` or
+a `LorentzVector` type. Note, if T is not `PseudoJet`, the order of the
+arguments in the constructor must be `(t, x, y, z)`.
 """
-function read_final_state_particles(fname; maxevents = -1, skipevents = 0, T=PseudoJet)
+function read_final_state_particles(fname; maxevents = -1, skipevents = 0, T = PseudoJet)
     f = open(fname)
     if endswith(fname, ".gz")
         @debug "Reading gzipped file $fname"
@@ -33,8 +35,14 @@ function read_final_state_particles(fname; maxevents = -1, skipevents = 0, T=Pse
         input_particles = T[]
         for p in parts
             if p.status == 1
-                push!(input_particles,
-                      T(p.momentum.x, p.momentum.y, p.momentum.z, p.momentum.t))
+                # Annoyingly PseudoJet and LorentzVector constructors
+                # disagree on the order of arguments...
+                if T == PseudoJet
+                    particle = T(p.momentum.x, p.momentum.y, p.momentum.z, p.momentum.t)
+                else
+                    particle = T(p.momentum.t, p.momentum.x, p.momentum.y, p.momentum.z)
+                end
+                push!(input_particles, particle)
             end
         end
         push!(events, input_particles)
@@ -46,53 +54,6 @@ function read_final_state_particles(fname; maxevents = -1, skipevents = 0, T=Pse
     @debug events
     events
 end
-
-"""
-    read_final_state_particles_lv(fname; maxevents = -1, skipevents = 0)
-
-Reads final state particles from a file and returns them as a vector of
-LorentzVector objects.
-
-# Arguments
-- `fname`: The name of the HepMC3 ASCII file to read particles from. If the file
-  is gzipped, the function will automatically decompress it.
-- `maxevents=-1`: The maximum number of events to read. -1 means all events will
-  be read.
-- `skipevents`: The number of events to skip before an event is included.
-  Default is 0.
-
-# Returns
-A vector of vectors of LorentzVector objects, where each inner vector represents
-all the particles of a particular event.
-"""
-function read_final_state_particles_lv(fname; maxevents = -1, skipevents = 0)
-    f = open(fname)
-    if endswith(fname, ".gz")
-        @debug "Reading gzipped file $fname"
-        f = GzipDecompressorStream(f)
-    end
-
-    events = Vector{LorentzVector{Float64}}[]
-
-    ipart = 1
-    HepMC3.read_events(f, maxevents = maxevents, skipevents = skipevents) do parts
-        input_particles = LorentzVector{Float64}[]
-        for p in parts
-            if p.status == 1
-                push!(input_particles,
-                      LorentzVector(p.momentum.t, p.momentum.x, p.momentum.y, p.momentum.z))
-            end
-        end
-        push!(events, input_particles)
-        ipart += 1
-    end
-    close(f)
-
-    @info "Total Events: $(length(events))"
-    @debug events
-    events
-end
-
 
 """
     final_jets(jets::Vector{PseudoJet}, ptmin::AbstractFloat=0.0)
