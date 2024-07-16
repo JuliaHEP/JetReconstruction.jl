@@ -2,3 +2,5 @@
 *.pdf
 *.png
 *.mp4
+# Ignore profiling outputs
+profile/*
