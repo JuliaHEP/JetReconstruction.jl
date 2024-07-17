@@ -92,7 +92,7 @@ function jet_process(events::Vector{Vector{PseudoJet}};
         @info "Doing initial warm-up run"
         for event in events
             _ = inclusive_jets(jet_reconstruct(event, R = distance, p = power,
-                                               strategy = strategy), ptmin)
+                                               strategy = strategy); ptmin = ptmin)
         end
     end
 
@@ -106,7 +106,7 @@ function jet_process(events::Vector{Vector{PseudoJet}};
         println("Memory allocation statistics:")
         @timev for event in events
             _ = inclusive_jets(jet_reconstruct(event, R = distance, p = power,
-                                               strategy = strategy), ptmin)
+                                               strategy = strategy); ptmin = ptmin)
         end
         return nothing
     end
@@ -122,16 +122,16 @@ function jet_process(events::Vector{Vector{PseudoJet}};
         for (ievt, event) in enumerate(events)
             if !isnothing(njets)
                 finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power,
-                                                           strategy = strategy),
+                                                           strategy = strategy);
                                            njets = njets)
             elseif !isnothing(dcut)
                 finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power,
-                                                           strategy = strategy),
+                                                           strategy = strategy);
                                            dcut = dcut)
             else
                 finaljets = inclusive_jets(jet_reconstruct(event, R = distance, p = power,
-                                                           strategy = strategy),
-                                           ptmin)
+                                                           strategy = strategy);
+                                           ptmin = ptmin)
             end
             # Only print the jet content once
             if irun == 1

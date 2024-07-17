@@ -139,14 +139,18 @@ function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jet
     events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file)
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
+        # First run the reconstruction
         cluster_seq = jet_reconstruction(event, R = distance, p = power)
+        # Now make the requested selection
         if !isnothing(dijmax)
-            finaljets = final_jets(exclusive_jets(cluster_seq, dcut = dijmax))
+            selected_jets = exclusive_jets(cluster_seq; dcut = dijmax)
         elseif !isnothing(njets)
-            finaljets = final_jets(exclusive_jets(cluster_seq, njets = njets))
+            selected_jets = exclusive_jets(cluster_seq; njets = njets)
         else
-            finaljets = final_jets(inclusive_jets(cluster_seq, ptmin))
+            selected_jets = inclusive_jets(cluster_seq; ptmin = ptmin)
         end
+        # And extact in out final_jets format
+        finaljets = final_jets(selected_jets)
         sort_jets!(finaljets)
         push!(jet_collection, FinalJets(ievt, finaljets))
     end
@@ -198,7 +202,7 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
         finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance,
-                                                                 p = power), ptmin))
+                                                                 p = power), ptmin = ptmin))
         sort_jets!(finaljets)
         push!(jet_collection, FinalJets(ievt, finaljets))
     end
@@ -209,7 +213,7 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
     jet_collection_lv = FinalJets[]
     for (ievt, event) in enumerate(events_lv)
         finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance,
-                                                                 p = power), ptmin))
+                                                                 p = power), ptmin = ptmin))
         sort_jets!(finaljets)
         push!(jet_collection_lv, FinalJets(ievt, finaljets))
     end

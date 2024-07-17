@@ -211,7 +211,7 @@ This function computes the inclusive jets from a given `ClusterSequence` object.
 inclusive_jets(clusterseq, ptmin = 10.0)
 ```
 """
-function inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
+function inclusive_jets(clusterseq::ClusterSequence; ptmin = 0.0)
     pt2min = ptmin * ptmin
     jets_local = LorentzVectorCyl[]
     # sizehint!(jets_local, length(clusterseq.jets))
