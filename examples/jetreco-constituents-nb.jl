@@ -47,7 +47,7 @@ cluster_seq = jet_reconstruct(events[event_no], p = 1, R = 1.0)
 md"Retrieve the exclusive pj_jets, but as `PseudoJet` types"
 
 # ╔═╡ 0d8d4664-915f-4f28-9d5a-6e03cb8d7d8b
-pj_jets=inclusive_jets(cluster_seq; ptmin=5.0, T=PseudoJet)
+pj_jets = inclusive_jets(cluster_seq; ptmin = 5.0, T = PseudoJet)
 
 # ╔═╡ 0bd764f9-d427-43fc-8342-603b6759ec8f
 md"Get the constituents of the first jet"
@@ -57,10 +57,10 @@ my_constituents = JetReconstruction.constituents(pj_jets[1], cluster_seq)
 
 # ╔═╡ 300879ca-b53d-40b3-864a-1d46f2094123
 begin
-	println("Constituents of jet number $(event_no):")
-	for c in my_constituents
-		println(" $c")
-	end
+    println("Constituents of jet number $(event_no):")
+    for c in my_constituents
+        println(" $c")
+    end
 end
 
 # ╔═╡ Cell order:

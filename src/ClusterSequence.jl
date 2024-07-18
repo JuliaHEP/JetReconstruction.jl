@@ -238,7 +238,8 @@ function inclusive_jets(clusterseq::ClusterSequence; ptmin = 0.0, T = LorentzVec
             if T == PseudoJet
                 push!(jets_local, jet)
             else
-                push!(jets_local, LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
+                push!(jets_local,
+                      LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
             end
         end
     end
@@ -284,7 +285,8 @@ exclusive_jets(clusterseq, dcut = 20.0)
 exclusive_jets(clusterseq, njets = 3, T = PseudoJet)
 ```
 """
-function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing, T = LorentzVectorCyl)
+function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing,
+                        T = LorentzVectorCyl)
     if isnothing(dcut) && isnothing(njets)
         throw(ArgumentError("Must pass either a dcut or an njets value"))
     end
@@ -542,7 +544,6 @@ function reco_state(cs::ClusterSequence, ranks; iteration = 0, ignore_beam_merge
     reco_state
 end
 
-
 """
     constituents(j::PseudoJet, cs::ClusterSequence)
 
@@ -558,7 +559,8 @@ An array of `PseudoJet` objects representing the constituents of the given jet.
 
 """
 function constituents(j::PseudoJet, cs::ClusterSequence)
-    constituent_indexes = get_all_ancestors(cs.history[j._cluster_hist_index].jetp_index, cs)
+    constituent_indexes = get_all_ancestors(cs.history[j._cluster_hist_index].jetp_index,
+                                            cs)
     constituents = Vector{PseudoJet}()
     for idx in constituent_indexes
         push!(constituents, cs.jets[idx])
