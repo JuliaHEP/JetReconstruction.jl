@@ -192,28 +192,38 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
 end
 
 """
-    inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)
+    inclusive_jets(clusterseq::ClusterSequence; ptmin = 0.0, T = LorentzVectorCyl)
 
 Return all inclusive jets of a ClusterSequence with pt > ptmin.
 
 # Arguments
-- `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the clustering history and jets.
-- `ptmin::Float64 = 0.0`: The minimum transverse momentum (pt) threshold for the inclusive jets.
+- `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the
+  clustering history and jets.
+- `ptmin::Float64 = 0.0`: The minimum transverse momentum (pt) threshold for the
+  inclusive jets.
+- `T = LorentzVectorCyl`: The return type used for the selected jets.
 
 # Returns
-An array of `LorentzVectorCyl` objects representing the inclusive jets.
+An array of `T` objects representing the inclusive jets.
 
 # Description
-This function computes the inclusive jets from a given `ClusterSequence` object. It iterates over the clustering history and checks the transverse momentum of each parent jet. If the transverse momentum is greater than or equal to `ptmin`, the jet is added to the array of inclusive jets.
+This function computes the inclusive jets from a given `ClusterSequence` object.
+It iterates over the clustering history and checks the transverse momentum of
+each parent jet. If the transverse momentum is greater than or equal to `ptmin`,
+the jet is added to the array of inclusive jets.
+
+Valid return types are `LorentzVectorCyl` and `PseudoJet` (N.B. this will evolve
+in the future to be any subtype of `FourMomemntumBase`; currently unrecognised types
+will return `LorentzVectorCyl`).
 
 # Example
 ```julia
-inclusive_jets(clusterseq, ptmin = 10.0)
+inclusive_jets(clusterseq; ptmin = 10.0)
 ```
 """
-function inclusive_jets(clusterseq::ClusterSequence; ptmin = 0.0)
+function inclusive_jets(clusterseq::ClusterSequence; ptmin = 0.0, T = LorentzVectorCyl)
     pt2min = ptmin * ptmin
-    jets_local = LorentzVectorCyl[]
+    jets_local = T[]
     # sizehint!(jets_local, length(clusterseq.jets))
     # For inclusive jets with a plugin algorithm, we make no
     # assumptions about anything (relation of dij to momenta,
@@ -225,40 +235,56 @@ function inclusive_jets(clusterseq::ClusterSequence; ptmin = 0.0)
         jet = clusterseq.jets[iparent_jet]
         if pt2(jet) >= pt2min
             @debug "Added inclusive jet index $iparent_jet"
-            push!(jets_local, LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
+            if T == PseudoJet
+                push!(jets_local, jet)
+            else
+                push!(jets_local, LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
+            end
         end
     end
     jets_local
 end
 
 """
-    exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing)
+    exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing, T = LorentzVectorCyl)
 
-Return all exclusive jets of a ClusterSequence, with either a specific number of jets
-or a cut on the maximum distance parameter.
+Return all exclusive jets of a ClusterSequence, with either a specific number of
+jets or a cut on the maximum distance parameter.
 
 # Arguments
-- `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the clustering history and jets.
-- `dcut::Union{Nothing, Real}`: The distance parameter used to define the exclusive jets. If `dcut` is provided, the number of exclusive jets will be calculated based on this parameter.
-- `njets::Union{Nothing, Integer}`: The number of exclusive jets to be calculated. If `njets` is provided, the distance parameter `dcut` will be calculated based on this number.
+- `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the
+  clustering history and jets.
+- `dcut::Union{Nothing, Real}`: The distance parameter used to define the
+  exclusive jets. If `dcut` is provided, the number of exclusive jets will be
+  calculated based on this parameter.
+- `njets::Union{Nothing, Integer}`: The number of exclusive jets to be
+  calculated. If `njets` is provided, the distance parameter `dcut` will be
+  calculated based on this number.
+- `T = LorentzVectorCyl`: The return type used for the selected jets.
 
 **Note**: Either `dcut` or `njets` must be provided (but not both).
 
 # Returns
-- An array of `LorentzVectorCyl` objects representing the exclusive jets.
+- An array of `T` objects representing the exclusive jets.
+
+Valid return types are `LorentzVectorCyl` and `PseudoJet` (N.B. this will evolve
+in the future to be any subtype of `FourMomemntumBase`; currently unrecognised types
+will return `LorentzVectorCyl`)
 
 # Exceptions
 - `ArgumentError`: If neither `dcut` nor `njets` is provided.
-- `ArgumentError`: If the algorithm used in the `ClusterSequence` object is not suitable for exclusive jets.
-- `ErrorException`: If the cluster sequence is incomplete and exclusive jets are unavailable.
+- `ArgumentError`: If the algorithm used in the `ClusterSequence` object is not
+  suitable for exclusive jets.
+- `ErrorException`: If the cluster sequence is incomplete and exclusive jets are
+  unavailable.
 
 # Examples
 ```julia
 exclusive_jets(clusterseq, dcut = 20.0)
-exclusive_jets(clusterseq, njets = 3)
+exclusive_jets(clusterseq, njets = 3, T = PseudoJet)
 ```
 """
-function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing)
+function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing, T = LorentzVectorCyl)
     if isnothing(dcut) && isnothing(njets)
         throw(ArgumentError("Must pass either a dcut or an njets value"))
     end
@@ -286,15 +312,19 @@ function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = not
         throw(ErrorException("Cluster sequence is incomplete, exclusive jets unavailable"))
     end
 
-    excl_jets = LorentzVectorCyl[]
+    excl_jets = T[]
     for j in stop_point:length(clusterseq.history)
         @debug "Search $j ($(clusterseq.history[j].parent1) + $(clusterseq.history[j].parent2))"
         for parent in (clusterseq.history[j].parent1, clusterseq.history[j].parent2)
             if (parent < stop_point && parent > 0)
                 @debug "Added exclusive jet index $(clusterseq.history[parent].jetp_index)"
                 jet = clusterseq.jets[clusterseq.history[parent].jetp_index]
-                push!(excl_jets,
-                      LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
+                if T == PseudoJet
+                    push!(excl_jets, jet)
+                else
+                    push!(excl_jets,
+                          LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
+                end
             end
         end
     end
@@ -510,4 +540,28 @@ function reco_state(cs::ClusterSequence, ranks; iteration = 0, ignore_beam_merge
         end
     end
     reco_state
+end
+
+
+"""
+    constituents(j::PseudoJet, cs::ClusterSequence)
+
+Get the constituents of a given jet in a cluster sequence.
+
+# Arguments
+- `cs::ClusterSequence`: The cluster sequence object.
+- `j::PseudoJet`: The jet for which to retrieve the constituents.
+
+# Returns
+An array of `PseudoJet` objects representing the constituents of the given jet.
+(That is, the original clusters that were recombined to form this jet.)
+
+"""
+function constituents(j::PseudoJet, cs::ClusterSequence)
+    constituent_indexes = get_all_ancestors(cs.history[j._cluster_hist_index].jetp_index, cs)
+    constituents = Vector{PseudoJet}()
+    for idx in constituent_indexes
+        push!(constituents, cs.jets[idx])
+    end
+    constituents
 end
