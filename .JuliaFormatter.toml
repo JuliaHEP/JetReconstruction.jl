@@ -1,2 +1,5 @@
 style = "sciml"
 yas_style_nesting = true
+
+# Do not format notebooks
+ignore = ["*-pluto.jl", "*-nb.jl"]

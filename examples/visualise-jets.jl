@@ -39,7 +39,10 @@ function main()
         "--algorithm", "-A"
         help = """Algorithm to use for jet reconstruction: $(join(JetReconstruction.AllJetRecoAlgorithms, ", "))"""
         arg_type = JetAlgorithm.Algorithm
-        default = JetAlgorithm.AntiKt
+
+        "--power", "-p"
+        help = """Power value for jet reconstruction"""
+        arg_type = Float64
 
         "--strategy", "-S"
         help = """Strategy for the algorithm, valid values: $(join(JetReconstruction.AllJetRecoStrategies, ", "))"""
@@ -63,8 +66,9 @@ function main()
                                                                    maxevents = args[:event],
                                                                    skipevents = args[:event])
 
-    power = JetReconstruction.algorithm2power[args[:algorithm]]
-    cs = jet_reconstruct(events[1], R = args[:distance], p = power,
+    (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = args[:power],
+                                                                       algorithm = args[:algorithm])
+    cs = jet_reconstruct(events[1], R = args[:distance], p = p, algorithm = algorithm,
                          strategy = args[:strategy])
 
     plt = jetsplot(events[1], cs; Module = CairoMakie)
