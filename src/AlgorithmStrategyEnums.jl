@@ -70,11 +70,11 @@ Base.tryparse(E::Type{<:Enum}, str::String) =
     end
 
 """
-    set_algorithm_power_consistency!(; p::Union{Real, Nothing}, algorithm::Union{JetAlgorithm, Nothing})
+    set_algorithm_power_consistency(; p::Union{Real, Nothing}, algorithm::Union{JetAlgorithm, Nothing})
 
-Set the algorithm and power consistency.
+Get the algorithm and power consistency correct
 
-This function sets the consistency between the algorithm and power parameters.
+This function checks the consistency between the algorithm and power parameters.
 If the algorithm is specified, it checks if the power parameter is consistent
 with the algorithm's known power. If the power parameter is not specified, it
 sets the power parameter based on the algorithm. If neither the algorithm nor
@@ -84,16 +84,23 @@ the power parameter is specified, it throws an `ArgumentError`.
 - `p::Union{Real, Nothing}`: The power value.
 - `algorithm::Union{JetAlgorithm, Nothing}`: The algorithm.
 
+# Returns
+A named tuple of the consistent power and algorithm values.
+
+# Throws
+- `ArgumentError`: If the algorithm and power are inconsistent or if neither the
+  algorithm nor the power is specified.
+
 """
-function set_algorithm_power_consistency!(; p::Union{Real, Nothing},
-                                          algorithm::Union{JetAlgorithm.Algorithm, Nothing})
+function get_algorithm_power_consistency(; p::Union{Real, Nothing},
+                                         algorithm::Union{JetAlgorithm.Algorithm, Nothing})
     # For the case where an algorithm has a variable power value
     # we need to check that the power value and algorithm are both specified
     if algorithm in varpower_algorithms
         if isnothing(p)
             throw(ArgumentError("Power must be specified for algorithm $algorithm"))
         end
-        return
+        return (p = p, algorithm = algorithm)
     end
 
     # Otherwise we check the consistency between the algorithm and power
@@ -101,22 +108,22 @@ function set_algorithm_power_consistency!(; p::Union{Real, Nothing},
         power_from_alg = algorithm2power[algorithm]
         if !isnothing(p) && p != power_from_alg
             throw(ArgumentError("Algorithm and power are inconsistent"))
-        else
-            # Set the power from the algorithm
-            p = power_from_alg
         end
+        return (p = power_from_alg, algorithm = algorithm)
     else
         if isnothing(p)
             throw(ArgumentError("Either algorithm or power must be specified"))
         end
         # Set the algorithm from the power
-        algorithm = power2algorithm[p]
+        algorithm_from_power = power2algorithm[p]
+        return (p = p, algorithm = algorithm_from_power)
     end
 end
 
+"""Allow a check for algorithm and power consistency"""
 function check_algorithm_power_consistency(; p::Union{Real, Nothing},
                                            algorithm::Union{JetAlgorithm.Algorithm,
                                                             Nothing})
-    set_algorithm_power_consistency!(p = p, algorithm = algorithm)
+    get_algorithm_power_consistency(p = p, algorithm = algorithm)
     return true
 end

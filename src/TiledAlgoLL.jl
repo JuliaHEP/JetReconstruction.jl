@@ -401,7 +401,7 @@ function tiled_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -
                                recombine = +) where {T}
 
     # Check for consistency between algorithm and power
-    set_algorithm_power_consistency!(p = p, algorithm = algorithm)
+    (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
 
     # If we have PseudoJets, we can just call the main algorithm...
     if T == PseudoJet
@@ -419,7 +419,8 @@ function tiled_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -
         end
     end
 
-    _tiled_jet_reconstruct(recombination_particles; p = p, R = R, recombine = recombine)
+    _tiled_jet_reconstruct(recombination_particles; p = p, R = R, algorithm = algorithm,
+                           recombine = recombine)
 end
 
 """
@@ -451,6 +452,7 @@ tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 1.0, recombine = 
 ```
 """
 function _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1, R = 1.0,
+                                algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
                                 recombine = +)
     # Bounds
     N::Int = length(particles)
@@ -492,7 +494,7 @@ function _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1, R = 
     tiling = Tiling(setup_tiling(_eta, R))
 
     # ClusterSequence is the struct that holds the state of the reconstruction
-    clusterseq = ClusterSequence(p, RecoStrategy.N2Tiled, jets, history, Qtot)
+    clusterseq = ClusterSequence(algorithm, p, RecoStrategy.N2Tiled, jets, history, Qtot)
 
     # Tiled jets is a structure that has additional variables for tracking which tile a jet is in
     tiledjets = similar(clusterseq.jets, TiledJet)

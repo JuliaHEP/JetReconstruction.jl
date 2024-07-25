@@ -36,22 +36,24 @@ default is simply `+(jet1,jet2)`, i.e. 4-momenta addition or the *E*-scheme.
 jet_reconstruct(particles; p = -1, R = 0.4)
 ```
 """
-function jet_reconstruct(particles; p = -1, R = 1.0, recombine = +,
+function jet_reconstruct(particles; p::Union{Real, Nothing} = -1, R = 1.0,
+                         algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
+                         recombine = +,
                          strategy = RecoStrategy.Best)
     # Either map to the fixed algorithm corresponding to the strategy
     # or to an optimal choice based on the density of initial particles
 
     if strategy == RecoStrategy.Best
         # The breakpoint of ~80 is determined empirically on e+e- -> H and 0.5TeV pp -> 5GeV jets
-        algorithm = length(particles) > 80 ? tiled_jet_reconstruct : plain_jet_reconstruct
+        alg = length(particles) > 80 ? tiled_jet_reconstruct : plain_jet_reconstruct
     elseif strategy == RecoStrategy.N2Plain
-        algorithm = plain_jet_reconstruct
+        alg = plain_jet_reconstruct
     elseif strategy == RecoStrategy.N2Tiled
-        algorithm = tiled_jet_reconstruct
+        alg = tiled_jet_reconstruct
     else
         throw(ErrorException("Invalid strategy: $(strategy)"))
     end
 
     # Now call the chosen algorithm, passing through the other parameters
-    algorithm(particles; p = p, R = R, recombine = recombine)
+    alg(particles; p = p, R = R, algorithm = algorithm, recombine = recombine)
 end

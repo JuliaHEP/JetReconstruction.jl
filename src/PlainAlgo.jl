@@ -216,7 +216,7 @@ function plain_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -
                                recombine = +) where {T}
 
     # Check for consistency between algorithm and power
-    set_algorithm_power_consistency!(p = p, algorithm = algorithm)
+    (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
 
     # Integer p if possible
     p = (round(p) == p) ? Int(p) : p
@@ -238,6 +238,7 @@ function plain_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -
 
     # Now call the actual reconstruction method, tuned for our internal EDM
     _plain_jet_reconstruct(particles = recombination_particles, p = p, R = R,
+                           algorithm = algorithm,
                            recombine = recombine)
 end
 
@@ -269,6 +270,7 @@ generalised k_t algorithm.
   reconstructed jets.
 """
 function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0,
+                                algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
                                 recombine = +)
     # Bounds
     N::Int = length(particles)
@@ -293,7 +295,8 @@ function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0,
     # Current implementation mutates the particles vector, so need to copy it
     # for the cluster sequence (there is too much copying happening, so this
     # needs to be rethought and reoptimised)
-    clusterseq = ClusterSequence(p, RecoStrategy.N2Plain, particles, history, Qtot)
+    clusterseq = ClusterSequence(algorithm, p, RecoStrategy.N2Plain, particles, history,
+                                 Qtot)
 
     # Initialize nearest neighbours
     @simd for i in 1:N
