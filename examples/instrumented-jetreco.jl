@@ -23,11 +23,13 @@ using JetReconstruction
 include(joinpath(@__DIR__, "parse-options.jl"))
 
 function profile_code(profile, jet_reconstruction, events, niters; R = 0.4, p = -1,
+                      algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
                       strategy = RecoStrategy.N2Tiled)
     Profile.init(n = 5 * 10^6, delay = 0.00001)
     function profile_events(events)
         for evt in events
-            jet_reconstruction(evt, R = R, p = p, strategy = strategy)
+            jet_reconstruction(evt, R = R, p = p, algorithm = algorithm,
+                               strategy = strategy)
         end
     end
     profile_events(events[1:1])
@@ -67,7 +69,8 @@ serialising the reconstructed jet outputs.
 """
 function jet_process(events::Vector{Vector{PseudoJet}};
                      distance::Real = 0.4,
-                     algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
+                     algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
+                     p::Union{Real, Nothing} = nothing,
                      ptmin::Real = 5.0,
                      dcut = nothing,
                      njets = nothing,
@@ -77,27 +80,30 @@ function jet_process(events::Vector{Vector{PseudoJet}};
                      profile = nothing,
                      alloc::Bool = false,
                      dump::Union{String, Nothing} = nothing)
-    @info "Will process $(size(events)[1]) events"
-
-    # Map algorithm to power
-    power = JetReconstruction.algorithm2power[algorithm]
 
     # If we are dumping the results, setup the JSON structure
     if !isnothing(dump)
         jet_collection = FinalJets[]
     end
 
+    # Set consistent algorithm and power
+    (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
+                                                                       algorithm = algorithm)
+    @info "Jet reconstruction will use $(algorithm) with power $(p)"
+
     # Warmup code if we are doing a multi-sample timing run
     if nsamples > 1 || !isnothing(profile)
         @info "Doing initial warm-up run"
         for event in events
-            _ = inclusive_jets(jet_reconstruct(event, R = distance, p = power,
-                                               strategy = strategy); ptmin = ptmin)
+            _ = inclusive_jets(jet_reconstruct(event, R = distance, p = p,
+                                               algorithm = algorithm,
+                                               strategy = strategy), ptmin)
         end
     end
 
     if !isnothing(profile)
-        profile_code(profile, jet_reconstruct, events, nsamples, R = distance, p = power,
+        profile_code(profile, jet_reconstruct, events, nsamples, algorithm = algorithm,
+                     R = distance, p = p,
                      strategy = strategy)
         return nothing
     end
@@ -105,8 +111,9 @@ function jet_process(events::Vector{Vector{PseudoJet}};
     if alloc
         println("Memory allocation statistics:")
         @timev for event in events
-            _ = inclusive_jets(jet_reconstruct(event, R = distance, p = power,
-                                               strategy = strategy); ptmin = ptmin)
+            _ = inclusive_jets(jet_reconstruct(event, R = distance, p = p,
+                                               algorithm = algorithm,
+                                               strategy = strategy), ptmin)
         end
         return nothing
     end
@@ -120,18 +127,15 @@ function jet_process(events::Vector{Vector{PseudoJet}};
         gcoff && GC.enable(false)
         t_start = time_ns()
         for (ievt, event) in enumerate(events)
+            cs = jet_reconstruct(event, R = distance, p = p, algorithm = algorithm,
+                                 strategy = strategy)
+            strategy = strategy
             if !isnothing(njets)
-                finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power,
-                                                           strategy = strategy);
-                                           njets = njets)
+                finaljets = exclusive_jets(cs, njets = njets)
             elseif !isnothing(dcut)
-                finaljets = exclusive_jets(jet_reconstruct(event, R = distance, p = power,
-                                                           strategy = strategy);
-                                           dcut = dcut)
+                finaljets = exclusive_jets(cs, dcut = dcut)
             else
-                finaljets = inclusive_jets(jet_reconstruct(event, R = distance, p = power,
-                                                           strategy = strategy);
-                                           ptmin = ptmin)
+                finaljets = inclusive_jets(cs, ptmin)
             end
             # Only print the jet content once
             if irun == 1
@@ -221,7 +225,10 @@ function parse_command_line(args)
         "--algorithm", "-A"
         help = """Algorithm to use for jet reconstruction: $(join(JetReconstruction.AllJetRecoAlgorithms, ", "))"""
         arg_type = JetAlgorithm.Algorithm
-        default = JetAlgorithm.AntiKt
+
+        "--power", "-p"
+        help = """Power value for jet reconstruction"""
+        arg_type = Float64
 
         "--strategy", "-S"
         help = """Strategy for the algorithm, valid values: $(join(JetReconstruction.AllJetRecoStrategies, ", "))"""
@@ -277,7 +284,12 @@ function main()
     events::Vector{Vector{PseudoJet}} = read_final_state_particles(args[:file],
                                                                    maxevents = args[:maxevents],
                                                                    skipevents = args[:skip])
+    if isnothing(args[:algorithm]) && isnothing(args[:power])
+        @warn "Neither algorithm nor power specified, defaulting to AntiKt"
+        args[:algorithm] = JetAlgorithm.AntiKt
+    end
     jet_process(events, distance = args[:distance], algorithm = args[:algorithm],
+                p = args[:power],
                 strategy = args[:strategy],
                 ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
                 njets = args[:exclusive_njets],

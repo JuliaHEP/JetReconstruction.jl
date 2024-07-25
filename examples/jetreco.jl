@@ -32,12 +32,6 @@ function jet_process(events::Vector{Vector{PseudoJet}};
                      njets = nothing,
                      strategy::RecoStrategy.Strategy,
                      dump::Union{String, Nothing} = nothing)
-    @info "Will process $(size(events)[1]) events"
-
-    # If we are dumping the results, setup the JSON structure
-    if !isnothing(dump)
-        jet_collection = FinalJets[]
-    end
 
     # Set consistent algorithm and power
     (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
