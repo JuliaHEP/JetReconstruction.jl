@@ -50,6 +50,34 @@ function sort_jets!(jet_array::Vector{LorentzVectorCyl})
 end
 
 function main()
+    # A few unit tests
+    @testset "Algorithm/power consistency" begin
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.AntiKt,
+                                                                  p = -1)
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.CA,
+                                                                  p = 0)
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.Kt,
+                                                                  p = 1)
+
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.AntiKt,
+                                                                  p = nothing)
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = nothing,
+                                                                  p = -1)
+
+        @test_throws ArgumentError JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.AntiKt,
+                                                                                       p = 0)
+        @test_throws ArgumentError JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.Kt,
+                                                                                       p = 1.5)
+
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.GenKt,
+                                                                  p = 1.5)
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.GenKt,
+                                                                  p = -0.5)
+
+        @test_throws ArgumentError JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.GenKt,
+                                                                                       p = nothing)
+    end
+
     # Read our fastjet inclusive outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
     fastjet_alg_files_inclusive = Dict(-1 => joinpath(@__DIR__, "data",
                                                       "jet-collections-fastjet-inclusive-akt.json"),

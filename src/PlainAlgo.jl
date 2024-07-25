@@ -181,12 +181,14 @@ end
 """
     plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +) where T
 
-Perform jet reconstruction using the plain algorithm.
+Perform pp jet reconstruction using the plain algorithm.
 
 # Arguments
 - `particles::Vector{T}`: A vector of particles used for jet reconstruction, any
    array of particles, which supports suitable 4-vector methods, viz. pt2(),
    phi(), rapidity(), px(), py(), pz(), energy(), can be used. for each element.
+- `algorithm::Union{JetAlgorithm, Nothing} = nothing`: The explicit jet
+  algorithm to use.
 - `p::Int=-1`: The integer value used for jet reconstruction.
 - `R::Float64=1.0`: The radius parameter used for jet reconstruction.
 - `recombine::Function=+`: The recombination function used for jet
@@ -195,16 +197,27 @@ Perform jet reconstruction using the plain algorithm.
 **Note** for the `particles` argument, the 4-vector methods need to exist in the
 JetReconstruction package namespace.
 
+This code will use the `k_t` algorithm types, operating in `(rapidity, φ)` space.
+
+It is not necessary to specify both the `algorithm` and the `p` (power) value.
+If both are given they must be consistent or an exception is thrown.
+
 # Returns
 - `Vector{PseudoJet}`: A vector of reconstructed jets.
 
 # Example
 ```julia
-jets = plain_jet_reconstruct(particles; p = -1, R = 1.0)
+jets = plain_jet_reconstruct(particles; p = -1, R = 0.4)
+jets = plain_jet_reconstruct(particles; algorithm = JetAlgorithm.Kt, R = 1.0)
 ```
 """
-function plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0,
+function plain_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -1, R = 1.0,
+                               algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                                recombine = +) where {T}
+
+    # Check for consistency between algorithm and power
+    set_algorithm_power_consistency!(p = p, algorithm = algorithm)
+
     # Integer p if possible
     p = (round(p) == p) ? Int(p) : p
 
@@ -240,7 +253,8 @@ Users of the package should use the `plain_jet_reconstruct` function as their
 entry point to this jet reconstruction.
 
 The power value maps to specific pp jet reconstruction algorithms: -1 = AntiKt,
-0 = Cambridge/Aachen, 1 = Inclusive Kt.
+0 = Cambridge/Aachen, 1 = Inclusive Kt. Floating point values are allowed for
+generalised k_t algorithm.
 
 # Arguments
 - `particles`: A vector of `PseudoJet` objects representing the input particles.
