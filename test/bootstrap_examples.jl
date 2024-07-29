@@ -8,18 +8,16 @@ if isfile(joinpath(@__DIR__, "..", "examples", "Manifest.toml"))
     exit(0)
 end
 
-if occursin("JetReconstruction.jl", pwd())
-    local_path = joinpath("..", "JetReconstruction.jl")
+if isdir(joinpath("..", "JetReconstruction.jl"))
+    symlink("JetReconstruction.jl", "../JetReconstruction")
 else
-    local_path = joinpath("..", "JetReconstruction")
-end
 
 println("Trying local path: $local_path (from $(pwd()))")
 
 using Pkg
 Pkg.instantiate()
 Pkg.resolve()
-Pkg.develop(path = local_path)
+Pkg.develop(path = "../JetReconstruction")
 Pkg.status()
 
 println("Finished example boostrap script")
