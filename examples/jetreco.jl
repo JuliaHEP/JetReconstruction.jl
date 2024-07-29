@@ -50,7 +50,7 @@ function jet_process(events::Vector{Vector{PseudoJet}};
     # Now run over each event
     for (ievt, event) in enumerate(events)
         # Run the jet reconstruction
-        cluster_seq = jet_reconstruct(event, R = distance, p = power, algorithm = algorithm,
+        cluster_seq = jet_reconstruct(event, R = distance, p = p, algorithm = algorithm,
                                       strategy = strategy)
         # Now select jets, with inclusive or exclusive parameters
         if !isnothing(njets)
