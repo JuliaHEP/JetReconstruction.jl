@@ -43,7 +43,14 @@ The main interface for reconstruction is [`jet_reconstruct`](@ref), called as, e
 jet_reconstruct(particles; p = -1, R = 1.0)
 ```
 
-Where `particles` is a collection of 4-vector objects to reconstruct.
+or
+
+```julia
+jet_reconstruct(particles; algorithm = JetAlgorithm.AntiKt, R = 1.0)
+```
+
+Where `particles` is a collection of 4-vector objects to reconstruct and the
+algorithm is either given explicitly or implied by the power value. For the case of generalised $k_T$ both the algorithm (`JetAlgorithm.GenKt`) and `p` are needed.
 
 The object returned is a [`ClusterSequence`](@ref), which internally tracks all
 merge steps.
