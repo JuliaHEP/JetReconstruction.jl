@@ -135,7 +135,7 @@ function jet_process(events::Vector{Vector{PseudoJet}};
             elseif !isnothing(dcut)
                 finaljets = exclusive_jets(cs, dcut = dcut)
             else
-                finaljets = inclusive_jets(cs, ptmin)
+                finaljets = inclusive_jets(cs, ptmin = ptmin)
             end
             # Only print the jet content once
             if irun == 1
