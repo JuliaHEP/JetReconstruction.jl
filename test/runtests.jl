@@ -134,19 +134,7 @@ function main()
     end
 
     # Now run a few tests with our examples
-    @testset "Jet Reconstruction Examples" begin
-        example_dir = joinpath(@__DIR__, "..", "examples")
-        @test success(run(pipeline(`julia --project=$example_dir $example_dir/jetreco.jl -S N2Plain -A AntiKt -R 1.0 $events_file`, devnull)))
-        @test success(run(pipeline(`julia --project=$example_dir $example_dir/jetreco.jl -S N2Tiled -p 1 -R 1.0 $events_file`, devnull)))
-        @test success(run(pipeline(`julia --project=$example_dir $example_dir/jetreco.jl -p 1.5 -A GenKt -R 1.0 $events_file`, devnull)))
-
-        @test success(run(pipeline(`julia --project=$example_dir $example_dir/instrumented-jetreco.jl -S N2Plain -A AntiKt -R 1.0 $events_file`, devnull)))
-        @test success(run(pipeline(`julia --project=$example_dir $example_dir/instrumented-jetreco.jl -S N2Tiled -p 1 -R 1.0 $events_file`, devnull)))
-        @test success(run(pipeline(`julia --project=$example_dir $example_dir/instrumented-jetreco.jl -p 1.5 -A GenKt -R 1.0 $events_file`, devnull)))
-
-        @test success(run(pipeline(`julia --project=$example_dir $example_dir/jetreco-constituents.jl`, devnull)))
-        @test success(run(pipeline(`julia --project=$example_dir $example_dir/visualise-jets.jl -A AntiKt --event 5 -R 2.0 $events_file $example_dir/jetvis.png`, devnull)))
-    end
+    include("tests_examples.jl")
 end
 
 """
@@ -187,7 +175,8 @@ function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jet
     for (ievt, event) in enumerate(events)
         # First run the reconstruction
         if power == 1.5
-            cluster_seq = jet_reconstruction(event, R = distance, algorithm = JetAlgorithm.GenKt, p = power)
+            cluster_seq = jet_reconstruction(event, R = distance,
+                                             algorithm = JetAlgorithm.GenKt, p = power)
         else
             cluster_seq = jet_reconstruction(event, R = distance, p = power)
         end
