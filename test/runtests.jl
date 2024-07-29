@@ -10,7 +10,8 @@ const events_file = joinpath(@__DIR__, "data", "events.hepmc3.gz")
 
 const algorithms = Dict(-1 => "Anti-kt",
                         0 => "Cambridge/Achen",
-                        1 => "Inclusive-kt")
+                        1 => "Inclusive-kt",
+                        1.5 => "Generalised-kt")
 
 """Simple structure with necessary parameters for an exclusive selection test"""
 struct InclusiveTest
@@ -84,9 +85,11 @@ function main()
                                        0 => joinpath(@__DIR__, "data",
                                                      "jet-collections-fastjet-inclusive-ca.json"),
                                        1 => joinpath(@__DIR__, "data",
-                                                     "jet-collections-fastjet-inclusive-ikt.json"))
+                                                     "jet-collections-fastjet-inclusive-ikt.json"),
+                                       1.5 => joinpath(@__DIR__, "data",
+                                                       "jet-collections-fastjet-inclusive-genkt-p1.5.json"))
 
-    fastjet_data = Dict{Int, Vector{Any}}()
+    fastjet_data = Dict{Real, Vector{Any}}()
     for (k, v) in pairs(fastjet_alg_files_inclusive)
         fastjet_jets = read_fastjet_outputs(v)
         sort_jets!(fastjet_jets)
@@ -159,7 +162,7 @@ function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jet
                                     selection = "Inclusive",
                                     ptmin::Float64 = 5.0,
                                     distance::Float64 = 0.4,
-                                    power::Integer = -1,
+                                    power::Real = -1,
                                     dijmax = nothing,
                                     njets = nothing)
 
@@ -183,7 +186,11 @@ function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jet
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
         # First run the reconstruction
-        cluster_seq = jet_reconstruction(event, R = distance, p = power)
+        if power == 1.5
+            cluster_seq = jet_reconstruction(event, R = distance, algorithm = JetAlgorithm.GenKt, p = power)
+        else
+            cluster_seq = jet_reconstruction(event, R = distance, p = power)
+        end
         # Now make the requested selection
         if !isnothing(dijmax)
             selected_jets = exclusive_jets(cluster_seq; dcut = dijmax)
