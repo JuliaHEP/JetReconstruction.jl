@@ -10,7 +10,7 @@ end
 
 if isdir(joinpath("..", "JetReconstruction.jl"))
     symlink("JetReconstruction.jl", "../JetReconstruction")
-else
+end
 
 println("Trying local path: $local_path (from $(pwd()))")
 
