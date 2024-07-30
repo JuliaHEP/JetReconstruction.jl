@@ -133,8 +133,13 @@ function main()
                                    njets = test.njets, dijmax = test.dijmax)
     end
 
+    # Suppress these tests for now, as the examples Project.toml is rather heavy
+    # because of the GLMakie dependency, plus on a CI there is no GL subsystem,
+    # so things fail. The examples should be restructured to have a cleaner set
+    # of examples that are good to run in the CI.
+
     # Now run a few tests with our examples
-    include("tests_examples.jl")
+    # include("tests_examples.jl")
 end
 
 """

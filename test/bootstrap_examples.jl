@@ -10,8 +10,6 @@ println("Starting example boostrap script")
 
 local_pkg_path = joinpath(@__DIR__, "..", "..", "JetReconstruction")
 
-
-
 if !isdir(local_pkg_path)
     # Try a symlink to the current checkout
     local_checkout_path = realpath(joinpath(@__DIR__, "..", ".."))
