@@ -8,16 +8,22 @@ if isfile(joinpath(@__DIR__, "..", "examples", "Manifest.toml"))
     exit(0)
 end
 
-if isdir(joinpath("..", "JetReconstruction.jl"))
-    symlink("JetReconstruction.jl", "../JetReconstruction")
+$local_pkg_path = realpath(joinpath(@__DIR__, "..", "..", "JetReconstruction"))
+
+if !isdir($local_pkg_path)
+    # Try a symlink to the current checkout
+    $local_checkout_path = realpath(joinpath(@__DIR__, "..", ".."))
+    println("Creating symlink from $local_pkg_path to $local_checkout_path")
+    symlink($local_checkout_path, $local_pkg_path)
 end
 
-println("Trying local path: $local_path (from $(pwd()))")
+println("Setting up examples project")
 
 using Pkg
 Pkg.instantiate()
 Pkg.resolve()
-Pkg.develop(path = "../JetReconstruction")
+println(("Seting JetReconstruction development package path: $local_pkg_path"))
+Pkg.develop(path = $local_pkg_path)
 Pkg.status()
 
-println("Finished example boostrap script")
+println("Finished examples boostrap script")
