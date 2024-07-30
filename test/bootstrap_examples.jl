@@ -8,7 +8,7 @@ if isfile(joinpath(@__DIR__, "..", "examples", "Manifest.toml"))
     exit(0)
 end
 
-local_pkg_path = realpath(joinpath(@__DIR__, "..", "..", "JetReconstruction"))
+local_pkg_path = joinpath(@__DIR__, "..", "..", "JetReconstruction")
 
 if !isdir(local_pkg_path)
     # Try a symlink to the current checkout
