@@ -68,18 +68,26 @@ HistoryElement(jetp_index) = HistoryElement(NonexistentParent, NonexistentParent
 """
     struct ClusterSequence
 
-A struct holding the full history of a jet clustering sequence, including the final jets.
+A struct holding the full history of a jet clustering sequence, including the
+final jets.
 
 # Fields
 - `algorithm::JetAlgorithm.Algorithm`: The algorithm used for clustering.
 - `strategy::RecoStrategy.Strategy`: The strategy used for clustering.
-- `jets::Vector{PseudoJet}`: The physical PseudoJets in the cluster sequence. Each PseudoJet corresponds to a position in the history.
-- `n_initial_jets::Int`: The initial number of particles used for exclusive jets.
-- `history::Vector{HistoryElement}`: The branching history of the cluster sequence. Each stage in the history indicates where to look in the jets vector to get the physical PseudoJet.
+- `power::Float64`: The power value used for the clustering algorithm (not that
+  this value is always stored as a Float64 to be type stable)
+- `jets::Vector{PseudoJet}`: The physical PseudoJets in the cluster sequence.
+  Each PseudoJet corresponds to a position in the history.
+- `n_initial_jets::Int`: The initial number of particles used for exclusive
+  jets.
+- `history::Vector{HistoryElement}`: The branching history of the cluster
+  sequence. Each stage in the history indicates where to look in the jets vector
+  to get the physical PseudoJet.
 - `Qtot::Any`: The total energy of the event.
 """
 struct ClusterSequence
     algorithm::JetAlgorithm.Algorithm
+    power::Float64
     strategy::RecoStrategy.Strategy
     jets::Vector{PseudoJet}
     n_initial_jets::Int
@@ -90,10 +98,11 @@ end
 """
     ClusterSequence(p::Int, strategy::RecoStrategy.Strategy, jets, history, Qtot)
 
-Constructs a `ClusterSequence` object with a specific power value mapped to a pp reconstruction algorithm.
+Constructs a `ClusterSequence` object with a specific power and algorithm.
 
 # Arguments
-- `p::Int`: The power value for the algorithm.
+- `p::Real`: The power value for the algorithm.
+- `algorithm::JetAlgorithm.Algorithm`: The algorithm.
 - `strategy::RecoStrategy.Strategy`: The reconstruction strategy.
 - `jets`: The jets to be clustered.
 - `history`: The length of the jets.
@@ -102,34 +111,9 @@ Constructs a `ClusterSequence` object with a specific power value mapped to a pp
 # Returns
 A `ClusterSequence` object.
 """
-ClusterSequence(p::Int, strategy::RecoStrategy.Strategy, jets, history, Qtot) = begin
-    if !haskey(power2algorithm, p)
-        raise(ArgumentError("Unrecognised algorithm for power value p=$p"))
-    end
-    ClusterSequence(power2algorithm[p], strategy, jets, length(jets), history, Qtot)
+ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, strategy::RecoStrategy.Strategy, jets, history, Qtot) = begin
+    ClusterSequence(algorithm, Float64(p), strategy, jets, length(jets), history, Qtot)
 end
-
-"""
-    ClusterSequence(alg::JetAlgorithm.Algorithm, strategy::RecoStrategy.Strategy, jets, history, Qtot)
-
-Constructs a `ClusterSequence` object with a specific algorithm spcified.
-
-# Arguments
-- `alg::JetAlgorithm.Algorithm`: The algorithm.
-- `strategy::RecoStrategy.Strategy`: The reconstruction strategy.
-- `jets`: The jets to be clustered.
-- `history`: The length of the jets.
-- `Qtot`: The total energy of the jets.
-
-# Returns
-A `ClusterSequence` object.
-"""
-ClusterSequence(alg::JetAlgorithm.Algorithm, strategy::RecoStrategy.Strategy, jets, history, Qtot) = ClusterSequence(alg,
-                                                                                                                     strategy,
-                                                                                                                     jets,
-                                                                                                                     length(jets),
-                                                                                                                     history,
-                                                                                                                     Qtot)
 
 """
     add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, dij)

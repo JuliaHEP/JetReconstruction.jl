@@ -11,7 +11,8 @@ Algorithms used are based on the C++ FastJet package (<https://fastjet.fr>,
 [hep-ph/0512210](https://arxiv.org/abs/hep-ph/0512210),
 [arXiv:1111.6097](https://arxiv.org/abs/1111.6097)), reimplemented natively in Julia.
 
-The algorithms include anti-$`{k}_\text{T}`$, Cambridge/Aachen and inclusive $`k_\text{T}`$.
+The algorithms include anti-$`{k}_\text{T}`$, Cambridge/Aachen, inclusive
+$`k_\text{T}`$ and generalised $`k_\text{T}`$.
 
 ### Interface
 
@@ -35,13 +36,17 @@ cs = jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, strat
 
 The object returned is a `ClusterSequence`, which internally tracks all merge steps.
 
+Alternatively one can swap the `p=...` parameter for
+`algorithm=JetReconstruction.{AntiKt,CA,Kt}` for explicit algorithm selection. (Generalised $`{k}_\text{T}`$ requires `algorithm=JetReconstruction.GenKt` *and* `p=N`.)
+
 To obtain the final inclusive jets, use the `inclusive_jets` method:
 
 ```julia
 final_jets = inclusive_jets(cs::ClusterSequence; ptmin=0.0)
 ```
-
 Only jets passing the cut $p_T > p_{Tmin}$ will be returned. The result is returned as a `Vector{LorentzVectorHEP}`.
+
+
 
 #### Sorting
 

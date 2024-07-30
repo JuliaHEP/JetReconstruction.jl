@@ -5,6 +5,10 @@
 # N.B. currently you must use the `jet-constituents` branch of `JetReconstruction`.
 using JetReconstruction
 using LorentzVectorHEP
+using Logging
+
+logger = ConsoleLogger(stdout, Logging.Info)
+global_logger(logger)
 
 input_file = joinpath(dirname(pathof(JetReconstruction)), "..", "test", "data",
                       "events.hepmc3.gz")

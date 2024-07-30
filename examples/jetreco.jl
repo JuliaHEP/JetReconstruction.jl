@@ -25,35 +25,32 @@ Final jets can be serialised if the "dump" option is given
 """
 function jet_process(events::Vector{Vector{PseudoJet}};
                      distance::Real = 0.4,
-                     algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
+                     algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
+                     p::Union{Real, Nothing} = nothing,
                      ptmin::Real = 5.0,
                      dcut = nothing,
                      njets = nothing,
                      strategy::RecoStrategy.Strategy,
                      dump::Union{String, Nothing} = nothing)
-    @info "Will process $(size(events)[1]) events"
 
-    # If we are dumping the results, setup the JSON structure
-    if !isnothing(dump)
-        jet_collection = FinalJets[]
-    end
+    # Set consistent algorithm and power
+    (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
+                                                                       algorithm = algorithm)
+    @info "Jet reconstruction will use $(algorithm) with power $(p)"
 
     # A friendly label for the algorithm and final jet selection
     if !isnothing(njets)
-        @info "Running exclusive jets with n_jets = $(njets)"
+        @info "Will produce exclusive jets with n_jets = $(njets)"
     elseif !isnothing(dcut)
-        @info "Running exclusive jets with dcut = $(dcut)"
+        @info "Will produce exclusive jets with dcut = $(dcut)"
     else
-        @info "Running inclusive jets with ptmin = $(ptmin)"
+        @info "Will produce inclusive jets with ptmin = $(ptmin)"
     end
-
-    # Map algorithm to power
-    power = JetReconstruction.algorithm2power[algorithm]
 
     # Now run over each event
     for (ievt, event) in enumerate(events)
         # Run the jet reconstruction
-        cluster_seq = jet_reconstruct(event, R = distance, p = power,
+        cluster_seq = jet_reconstruct(event, R = distance, p = p, algorithm = algorithm,
                                       strategy = strategy)
         # Now select jets, with inclusive or exclusive parameters
         if !isnothing(njets)
@@ -117,7 +114,10 @@ function parse_command_line(args)
         "--algorithm", "-A"
         help = """Algorithm to use for jet reconstruction: $(join(JetReconstruction.AllJetRecoAlgorithms, ", "))"""
         arg_type = JetAlgorithm.Algorithm
-        default = JetAlgorithm.AntiKt
+
+        "--power", "-p"
+        help = """Power value for jet reconstruction"""
+        arg_type = Float64
 
         "--strategy", "-S"
         help = """Strategy for the algorithm, valid values: $(join(JetReconstruction.AllJetRecoStrategies, ", "))"""
@@ -141,7 +141,12 @@ function main()
     events::Vector{Vector{PseudoJet}} = read_final_state_particles(args[:file],
                                                                    maxevents = args[:maxevents],
                                                                    skipevents = args[:skip])
+    if isnothing(args[:algorithm]) && isnothing(args[:power])
+        @warn "Neither algorithm nor power specified, defaulting to AntiKt"
+        args[:algorithm] = JetAlgorithm.AntiKt
+    end
     jet_process(events, distance = args[:distance], algorithm = args[:algorithm],
+                p = args[:power],
                 strategy = args[:strategy],
                 ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
                 njets = args[:exclusive_njets],

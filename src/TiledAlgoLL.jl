@@ -369,12 +369,20 @@ tiled stragegy for generic jet type T.
 **Note** - if a non-standard recombination is used, it must be defined for
 JetReconstruction.PseudoJet, as this struct is used internally.
 
+This code will use the `k_t` algorithm types, operating in `(rapidity, φ)`
+space.
+
+It is not necessary to specify both the `algorithm` and the `p` (power) value.
+If both are given they must be consistent or an exception is thrown.
+
 ## Arguments
 - `particles::Vector{T}`: A vector of particles used as input for jet
   reconstruction. T must support methods px, py, pz and energy (defined in the
   JetReconstruction namespace)
-- `p::Int = -1`: The power parameter for the jet reconstruction algorithm, thus
-  swiching between different algorithms.
+- `p::Union{Real, Nothing} = -1`: The power parameter for the jet reconstruction
+  algorithm, thus swiching between different algorithms.
+- `algorithm::Union{JetAlgorithm, Nothing} = nothing`: The explicit jet
+  algorithm to use.
 - `R::Float64 = 1.0`: The jet radius parameter for the jet reconstruction
   algorithm.
 - `recombine::Function = +`: The recombination function used for combining
@@ -388,16 +396,31 @@ JetReconstruction.PseudoJet, as this struct is used internally.
 tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4, recombine = +)
 ```
 """
-function tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0,
+function tiled_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -1, R = 1.0,
+                               algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                                recombine = +) where {T}
-    # Here we need to populate the vector of PseudoJets that are the internal
-    # EDM for the main algorithm, then we call the reconstruction
-    pseudojets = Vector{PseudoJet}(undef, length(particles))
-    for (i, particle) in enumerate(particles)
-        pseudojets[i] = PseudoJet(px(particle), py(particle),
-                                  pz(particle), energy(particle))
+
+    # Check for consistency between algorithm and power
+    (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
+
+    # If we have PseudoJets, we can just call the main algorithm...
+    if T == PseudoJet
+        # recombination_particles will become part of the cluster sequence, so size it for
+        # the starting particles and all N recombinations
+        recombination_particles = copy(particles)
+        sizehint!(recombination_particles, length(particles) * 2)
+    else
+        recombination_particles = PseudoJet[]
+        sizehint!(recombination_particles, length(particles) * 2)
+        for i in eachindex(particles)
+            push!(recombination_particles,
+                  PseudoJet(px(particles[i]), py(particles[i]), pz(particles[i]),
+                            energy(particles[i])))
+        end
     end
-    tiled_jet_reconstruct(pseudojets, p = p, R = R, recombine = recombine)
+
+    _tiled_jet_reconstruct(recombination_particles; p = p, R = R, algorithm = algorithm,
+                           recombine = recombine)
 end
 
 """
@@ -405,10 +428,10 @@ Main jet reconstruction algorithm, using PseudoJet objects
 """
 
 """
-    tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +) where {T}
+    _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +) where {T}
 
-Main jet reconstruction algorithm entry point for reconstructing jets using the
-tiled stragegy for the prefered internal jet type, `PseudoJet`.
+Main jet reconstruction algorithm entry point for reconstructing jets once preprocessing
+of data types are done.
 
 ## Arguments
 - `particles::Vector{PseudoJet}`: A vector of `PseudoJet` particles used as input for jet
@@ -428,7 +451,9 @@ tiled stragegy for the prefered internal jet type, `PseudoJet`.
 tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 1.0, recombine = +)
 ```
 """
-function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +)
+function _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1, R = 1.0,
+                                algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
+                                recombine = +)
     # Bounds
     N::Int = length(particles)
 
@@ -469,7 +494,7 @@ function tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, re
     tiling = Tiling(setup_tiling(_eta, R))
 
     # ClusterSequence is the struct that holds the state of the reconstruction
-    clusterseq = ClusterSequence(p, RecoStrategy.N2Tiled, jets, history, Qtot)
+    clusterseq = ClusterSequence(algorithm, p, RecoStrategy.N2Tiled, jets, history, Qtot)
 
     # Tiled jets is a structure that has additional variables for tracking which tile a jet is in
     tiledjets = similar(clusterseq.jets, TiledJet)

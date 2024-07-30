@@ -10,7 +10,8 @@ const events_file = joinpath(@__DIR__, "data", "events.hepmc3.gz")
 
 const algorithms = Dict(-1 => "Anti-kt",
                         0 => "Cambridge/Achen",
-                        1 => "Inclusive-kt")
+                        1 => "Inclusive-kt",
+                        1.5 => "Generalised-kt")
 
 """Simple structure with necessary parameters for an exclusive selection test"""
 struct InclusiveTest
@@ -50,15 +51,45 @@ function sort_jets!(jet_array::Vector{LorentzVectorCyl})
 end
 
 function main()
+    # A few unit tests
+    @testset "Algorithm/power consistency" begin
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.AntiKt,
+                                                                  p = -1)
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.CA,
+                                                                  p = 0)
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.Kt,
+                                                                  p = 1)
+
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.AntiKt,
+                                                                  p = nothing)
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = nothing,
+                                                                  p = -1)
+
+        @test_throws ArgumentError JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.AntiKt,
+                                                                                       p = 0)
+        @test_throws ArgumentError JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.Kt,
+                                                                                       p = 1.5)
+
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.GenKt,
+                                                                  p = 1.5)
+        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.GenKt,
+                                                                  p = -0.5)
+
+        @test_throws ArgumentError JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.GenKt,
+                                                                                       p = nothing)
+    end
+
     # Read our fastjet inclusive outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
     fastjet_alg_files_inclusive = Dict(-1 => joinpath(@__DIR__, "data",
                                                       "jet-collections-fastjet-inclusive-akt.json"),
                                        0 => joinpath(@__DIR__, "data",
                                                      "jet-collections-fastjet-inclusive-ca.json"),
                                        1 => joinpath(@__DIR__, "data",
-                                                     "jet-collections-fastjet-inclusive-ikt.json"))
+                                                     "jet-collections-fastjet-inclusive-ikt.json"),
+                                       1.5 => joinpath(@__DIR__, "data",
+                                                       "jet-collections-fastjet-inclusive-genkt-p1.5.json"))
 
-    fastjet_data = Dict{Int, Vector{Any}}()
+    fastjet_data = Dict{Real, Vector{Any}}()
     for (k, v) in pairs(fastjet_alg_files_inclusive)
         fastjet_jets = read_fastjet_outputs(v)
         sort_jets!(fastjet_jets)
@@ -101,6 +132,14 @@ function main()
                                    power = test.power, selection = test.selction,
                                    njets = test.njets, dijmax = test.dijmax)
     end
+
+    # Suppress these tests for now, as the examples Project.toml is rather heavy
+    # because of the GLMakie dependency, plus on a CI there is no GL subsystem,
+    # so things fail. The examples should be restructured to have a cleaner set
+    # of examples that are good to run in the CI.
+
+    # Now run a few tests with our examples
+    # include("tests_examples.jl")
 end
 
 """
@@ -116,7 +155,7 @@ function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jet
                                     selection = "Inclusive",
                                     ptmin::Float64 = 5.0,
                                     distance::Float64 = 0.4,
-                                    power::Integer = -1,
+                                    power::Real = -1,
                                     dijmax = nothing,
                                     njets = nothing)
 
@@ -140,7 +179,12 @@ function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jet
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
         # First run the reconstruction
-        cluster_seq = jet_reconstruction(event, R = distance, p = power)
+        if power == 1.5
+            cluster_seq = jet_reconstruction(event, R = distance,
+                                             algorithm = JetAlgorithm.GenKt, p = power)
+        else
+            cluster_seq = jet_reconstruction(event, R = distance, p = power)
+        end
         # Now make the requested selection
         if !isnothing(dijmax)
             selected_jets = exclusive_jets(cluster_seq; dcut = dijmax)
