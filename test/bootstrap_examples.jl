@@ -14,7 +14,7 @@ if !isdir(local_pkg_path)
     # Try a symlink to the current checkout
     local_checkout_path = realpath(joinpath(@__DIR__, "..", ".."))
     println("Creating symlink from $local_pkg_path to $local_checkout_path")
-    symlink($local_checkout_path, local_pkg_path)
+    symlink(local_checkout_path, local_pkg_path)
 end
 
 println("Setting up examples project")
