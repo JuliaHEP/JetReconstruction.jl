@@ -1,9 +1,7 @@
-# Adapted from PseudoJet class of c++ code of Fastjet (https://fastjet.fr,
+# Inspired by the PseudoJet class of c++ code of Fastjet (https://fastjet.fr,
 #  hep-ph/0512210,  arXiv:1111.6097)
 #
-#  Copyright (c) 2005-2020, Matteo Cacciari, Gavin P. Salam and Gregory Soyez
-#
-# Some of the implementation is taken from LorentzVectorHEP.jl, (c) Jerry Ling
+# Some of the implementation is taken from LorentzVectorHEP.jl, by Jerry Ling
 
 """Interface for composite types that includes fields px, py, py, and E
 that represents the components of a four-momentum vector."""
@@ -18,11 +16,6 @@ const _invalid_phi = -100.0
 
 """Used to signal that the rapidity value has not yet been computed."""
 const _invalid_rap = -1.e200
-
-# @ingroup basic_classes
-# \class PseudoJet
-# Class to contain pseudojets, including minimal information of use to
-# jet-clustering routines.
 
 """
     mutable struct PseudoJet <: FourMomentum
@@ -429,8 +422,9 @@ Return the energy of a `PseudoJet`.
 """
 energy(p::PseudoJet) = p.E
 
-import Base.+;
+cluster_hist_index(p::PseudoJet) = p._cluster_hist_index
 
+import Base.+;
 """
     +(j1::PseudoJet, j2::PseudoJet)
 

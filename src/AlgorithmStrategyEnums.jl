@@ -103,6 +103,11 @@ function get_algorithm_power_consistency(; p::Union{Real, Nothing},
         return (p = p, algorithm = algorithm)
     end
 
+    # Some algorithms have fixed power values
+    if algorithm == JetAlgorithm.Durham
+        return (p = 1, algorithm = algorithm)
+    end
+
     # Otherwise we check the consistency between the algorithm and power
     if !isnothing(algorithm)
         power_from_alg = algorithm2power[algorithm]
@@ -126,4 +131,28 @@ function check_algorithm_power_consistency(; p::Union{Real, Nothing},
                                                             Nothing})
     get_algorithm_power_consistency(p = p, algorithm = algorithm)
     return true
+end
+
+"""
+    is_pp(algorithm::JetAlgorithm.Algorithm)
+
+Check if the algorithm is a pp reconstruction algorithm.
+
+# Returns
+`true` if the algorithm is a pp reconstruction algorithm, `false` otherwise.
+"""
+function is_pp(algorithm::JetAlgorithm.Algorithm)
+    return algorithm in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt]
+end
+
+"""
+    is_ee(algorithm::JetAlgorithm.Algorithm)
+
+Check if the algorithm is a e+e- reconstruction algorithm.
+
+# Returns
+`true` if the algorithm is a e+e- reconstruction algorithm, `false` otherwise.
+"""
+function is_ee(algorithm::JetAlgorithm.Algorithm)
+    return algorithm in [JetAlgorithm.EEKt, JetAlgorithm.Durham]
 end

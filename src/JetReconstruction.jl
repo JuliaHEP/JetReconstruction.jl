@@ -34,9 +34,10 @@ py(p::LorentzVectorCyl) = LorentzVectorHEP.py(p)
 pz(p::LorentzVectorCyl) = LorentzVectorHEP.pz(p)
 energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 
-# Pseudojet type
+# Pseudojet and EEjet types
 include("Pseudojet.jl")
-export PseudoJet
+include("EEjet.jl")
+export PseudoJet, EEjet
 
 # Jet reconstruction strategies and algorithms (enums!)
 include("AlgorithmStrategyEnums.jl")
@@ -57,6 +58,10 @@ include("TiledAlgoUtils.jl")
 # Algorithmic part, tiled reconstruction strategy with linked list jet objects
 include("TiledAlgoLL.jl")
 export tiled_jet_reconstruct
+
+## E+E- algorithms
+include("EEAlgorithm.jl")
+export ee_genkt_algorithm
 
 ## Generic algorithm, which can switch strategy dynamically
 include("GenericAlgo.jl")
