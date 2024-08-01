@@ -39,11 +39,11 @@ function main()
 
     # Read our fastjet inclusive outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
     fastjet_alg_files_inclusive = Dict(-1 => joinpath(@__DIR__, "data",
-                                                      "jet-collections-fastjet-inclusive-akt.json"),
+                                                      "jet-collections-fastjet-inclusive-AntiKt.json"),
                                        0 => joinpath(@__DIR__, "data",
-                                                     "jet-collections-fastjet-inclusive-ca.json"),
+                                                     "jet-collections-fastjet-inclusive-CA.json"),
                                        1 => joinpath(@__DIR__, "data",
-                                                     "jet-collections-fastjet-inclusive-ikt.json"),
+                                                     "jet-collections-fastjet-inclusive-Kt.json"),
                                        1.5 => joinpath(@__DIR__, "data",
                                                        "jet-collections-fastjet-inclusive-genkt-p1.5.json"))
 
