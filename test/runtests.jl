@@ -6,49 +6,7 @@ using JSON
 using LorentzVectorHEP
 using Logging
 
-const events_file = joinpath(@__DIR__, "data", "events.hepmc3.gz")
-
-const algorithms = Dict(-1 => "Anti-kt",
-                        0 => "Cambridge/Achen",
-                        1 => "Inclusive-kt",
-                        1.5 => "Generalised-kt")
-
-"""Simple structure with necessary parameters for an exclusive selection test"""
-struct InclusiveTest
-    algname::AbstractString
-    selction::AbstractString
-    power::Int
-    fastjet_file::AbstractString
-    dijmax::Any
-    njets::Any
-    function InclusiveTest(selction, power, fastjet_file, dijmax, njets)
-        new(algorithms[power], selction, power, fastjet_file, dijmax, njets)
-    end
-end
-
-"""Read JSON file with fastjet jets in it"""
-function read_fastjet_outputs(fname)
-    f = open(fname)
-    JSON.parse(f)
-end
-
-"""Sort jet outputs by pt of final jets"""
-function sort_jets!(event_jet_array)
-    jet_pt(jet) = jet["pt"]
-    for e in event_jet_array
-        sort!(e["jets"], by = jet_pt, rev = true)
-    end
-end
-
-function sort_jets!(jet_array::Vector{FinalJet})
-    jet_pt(jet) = jet.pt
-    sort!(jet_array, by = jet_pt, rev = true)
-end
-
-function sort_jets!(jet_array::Vector{LorentzVectorCyl})
-    jet_pt(jet) = jet.pt
-    sort!(jet_array, by = jet_pt, rev = true)
-end
+include("common.jl")
 
 function main()
     # A few unit tests
@@ -97,16 +55,16 @@ function main()
     end
 
     # Test each stratgy for inclusive jet selection
-    for power in keys(algorithms)
+    for power in keys(pp_algorithms)
         do_test_compare_to_fastjet(RecoStrategy.N2Plain, fastjet_data[power],
-                                   algname = algorithms[power], power = power)
+                                   algname = pp_algorithms[power], power = power)
         do_test_compare_to_fastjet(RecoStrategy.N2Tiled, fastjet_data[power],
-                                   algname = algorithms[power], power = power)
+                                   algname = pp_algorithms[power], power = power)
     end
 
     # Compare inputing data in PseudoJet with using a LorentzVector
-    do_test_compare_types(RecoStrategy.N2Plain, algname = algorithms[-1], power = -1)
-    do_test_compare_types(RecoStrategy.N2Tiled, algname = algorithms[-1], power = -1)
+    do_test_compare_types(RecoStrategy.N2Plain, algname = pp_algorithms[-1], power = -1)
+    do_test_compare_types(RecoStrategy.N2Tiled, algname = pp_algorithms[-1], power = -1)
 
     # Now test exclusive selections
     inclusive_tests = InclusiveTest[]
@@ -175,7 +133,7 @@ function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jet
 
     # Now run our jet reconstruction...
     # From PseudoJets
-    events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file)
+    events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file_pp)
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
         # First run the reconstruction
@@ -242,7 +200,7 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
 
     # Now run our jet reconstruction...
     # From PseudoJets
-    events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file)
+    events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file_pp)
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
         finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance,
@@ -252,7 +210,7 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
     end
 
     # From LorentzVector
-    events_lv::Vector{Vector{LorentzVector}} = read_final_state_particles(events_file;
+    events_lv::Vector{Vector{LorentzVector}} = read_final_state_particles(events_file_pp;
                                                                           T = LorentzVector)
     jet_collection_lv = FinalJets[]
     for (ievt, event) in enumerate(events_lv)
