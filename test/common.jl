@@ -7,6 +7,7 @@ using Logging
 using LorentzVectorHEP
 using JSON
 using Test
+using CodecZlib
 
 logger = ConsoleLogger(stdout, Logging.Warn)
 global_logger(logger)
@@ -22,17 +23,21 @@ const pp_algorithms = Dict(-1 => "Anti-kt",
 """
     struct ComparisonTest
 
-Test parameters for the comparison of jet reconstruction against known FastJet results.
+Test parameters for the comparison of jet reconstruction against known FastJet
+results.
 
 # Fields
 - `events_file::AbstractString`: The file containing the event data.
-- `fastjet_outputs::AbstractString`: The file containing the FastJet outputs in JSON format.
-- `algorithm::JetAlgorithm.Algorithm`: The algorithm used for jet reconstruction.
+- `fastjet_outputs::AbstractString`: The file containing the FastJet outputs in
+  JSON format (N.B. can be gzipped)
+- `algorithm::JetAlgorithm.Algorithm`: The algorithm used for jet
+  reconstruction.
 - `power::Real`: The power parameter for the jet reconstruction algorithm.
 - `R::Real`: The radius parameter for the jet reconstruction algorithm.
 - `selector`: The selector used for final jet outputs.
 
-`selector` should be a closure that takes a `ClusterSequence` object and returns a vector of `FinalJet` objects, e.g.,
+`selector` should be a closure that takes a `ClusterSequence` object and returns
+a vector of `FinalJet` objects, e.g.,
 ```julia
 selector = (cs) -> exclusive_jets(cs; njets = 2)
 ```
@@ -63,6 +68,10 @@ end
 """Read JSON file with fastjet jets in it"""
 function read_fastjet_outputs(fname)
     f = open(fname)
+    if endswith(fname, ".gz")
+        @debug "Reading gzipped file $fname"
+        f = GzipDecompressorStream(f)
+    end
     JSON.parse(f)
 end
 
@@ -84,7 +93,7 @@ function sort_jets!(jet_array::Vector{LorentzVectorCyl})
     sort!(jet_array, by = jet_pt, rev = true)
 end
 
-function run_reco_test(test::ComparisonTest)
+function run_reco_test(test::ComparisonTest; testname = nothing)
     # Read the input events
     events = JetReconstruction.read_final_state_particles(test.events_file)
     # Read the fastjet results
@@ -103,7 +112,11 @@ function run_reco_test(test::ComparisonTest)
         push!(jet_collection, FinalJets(ievent, finaljets))
     end
 
-    @testset "FastJet comparison: Algorithm=$(test.algorithm), p=$(test.power), R=$(test.R), strategy=$(test.strategy)" begin
+    if isnothing(testname)
+        testname = "FastJet comparison: alg=$(test.algorithm), p=$(test.power), R=$(test.R), strategy=$(test.strategy)"
+    end
+
+    @testset testname begin
         # Test each event in turn...
         for (ievt, event) in enumerate(jet_collection)
             @testset "Event $(ievt)" begin
