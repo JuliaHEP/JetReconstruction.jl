@@ -39,13 +39,13 @@ function main()
 
     # Read our fastjet inclusive outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
     fastjet_alg_files_inclusive = Dict(-1 => joinpath(@__DIR__, "data",
-                                                      "jet-collections-fastjet-inclusive-AntiKt.json"),
+                                                      "jet-collections-fastjet-inclusive-AntiKt.json.gz"),
                                        0 => joinpath(@__DIR__, "data",
-                                                     "jet-collections-fastjet-inclusive-CA.json"),
+                                                     "jet-collections-fastjet-inclusive-CA.json.gz"),
                                        1 => joinpath(@__DIR__, "data",
-                                                     "jet-collections-fastjet-inclusive-Kt.json"),
+                                                     "jet-collections-fastjet-inclusive-Kt.json.gz"),
                                        1.5 => joinpath(@__DIR__, "data",
-                                                       "jet-collections-fastjet-inclusive-genkt-p1.5.json"))
+                                                       "jet-collections-fastjet-inclusive-genkt-p1.5.json.gz"))
 
     fastjet_data = Dict{Real, Vector{Any}}()
     for (k, v) in pairs(fastjet_alg_files_inclusive)
@@ -69,17 +69,17 @@ function main()
     # Now test exclusive selections
     inclusive_tests = InclusiveTest[]
     push!(inclusive_tests,
-          InclusiveTest("exclusive njets=4", 1, "jet-collections-fastjet-njets4-ikt.json",
+          InclusiveTest("exclusive njets=4", 1, "jet-collections-fastjet-njets4-ikt.json.gz",
                         nothing, 4))
     push!(inclusive_tests,
-          InclusiveTest("exclusive dijmax=20", 1, "jet-collections-fastjet-dij20-ikt.json",
+          InclusiveTest("exclusive dijmax=20", 1, "jet-collections-fastjet-dij20-ikt.json.gz",
                         20.0, nothing))
     push!(inclusive_tests,
-          InclusiveTest("exclusive njets=4", 0, "jet-collections-fastjet-njets4-ca.json",
+          InclusiveTest("exclusive njets=4", 0, "jet-collections-fastjet-njets4-ca.json.gz",
                         nothing, 4))
     push!(inclusive_tests,
           InclusiveTest("exclusive dijmax=0.99", 0,
-                        "jet-collections-fastjet-dij099-ca.json", 0.99, nothing))
+                        "jet-collections-fastjet-dij099-ca.json.gz", 0.99, nothing))
 
     for test in inclusive_tests
         input_file = joinpath(@__DIR__, "data", test.fastjet_file)
