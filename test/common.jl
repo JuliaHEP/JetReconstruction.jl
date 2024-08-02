@@ -116,7 +116,7 @@ function run_reco_test(test::ComparisonTest; testname = nothing)
         testname = "FastJet comparison: alg=$(test.algorithm), p=$(test.power), R=$(test.R), strategy=$(test.strategy)"
     end
 
-    @testset testname begin
+    @testset "$testname" begin
         # Test each event in turn...
         for (ievt, event) in enumerate(jet_collection)
             @testset "Event $(ievt)" begin
