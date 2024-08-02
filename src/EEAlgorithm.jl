@@ -3,7 +3,12 @@ const large_dij = 1.0e6
 
 function angular_distance(jet1::EEjet, jet2::EEjet)
     # Calculate the angular distance between two jets
-    1.0 - nx(jet1) * nx(jet2) + ny(jet1) * ny(jet2) + nz(jet1) * nz(jet2)
+    (1.0 - nx(jet1) * nx(jet2) + ny(jet1) * ny(jet2) + nz(jet1) * nz(jet2)) * 2.0
+end
+
+"""Calculate the dij distance, *given that NN is set correctly*"""
+function dij_dist(nndist, jet1::EEjet, jet2::EEjet)
+    nndist * min(energy(jet1)^2, energy(jet2)^2)
 end
 
 function get_angular_nearest_neighbours!(jets::Vector{FourMomentum},
@@ -26,9 +31,8 @@ function get_angular_nearest_neighbours!(jets::Vector{FourMomentum},
         end
     end
     for i in eachindex(jets)
-        nndij[i] = 2.0 * nndist[i] *
-                   min(energy(jets[clusterseq_index[i]]),
-                       energy(jets[clusterseq_index[nni[i]]]))^2
+        nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
+                           jets[clusterseq_index[nni[i]]])
     end
 end
 
@@ -43,9 +47,8 @@ function update_nn_no_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
             if the_nndist < nndist[i]
                 nndist[i] = the_nndist
                 nni[i] = j
-                nndij[i] = 2.0 * nndist[i] *
-                           min(energy(jets[clusterseq_index[i]]),
-                               energy(jets[clusterseq_index[j]]))^2
+                nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
+                    jets[clusterseq_index[j]])
             end
         end
     end
@@ -63,16 +66,14 @@ function update_nn_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
             if the_nndist < nndist[i]
                 nndist[i] = the_nndist
                 nni[i] = j
-                nndij[i] = 2.0 * nndist[i] *
-                           min(energy(jets[clusterseq_index[i]]),
-                               energy(jets[clusterseq_index[j]]))^2
+                nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
+                    jets[clusterseq_index[j]])
             end
             if the_nndist < nndist[j]
                 nndist[j] = the_nndist
                 nni[j] = i
-                nndij[i] = 2.0 * nndist[j] *
-                           min(energy(jets[clusterseq_index[j]]),
-                               energy(jets[clusterseq_index[i]]))^2
+                nndij[j] = dij_dist(nndist[j], jets[clusterseq_index[j]],
+                    jets[clusterseq_index[i]])
             end
         end
     end
@@ -92,7 +93,7 @@ function ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nn
             end
         end
     end
-    @info "Consistency check passed at $msg"
+    @debug "Consistency check passed at $msg"
 end
 
 function ee_genkt_algorithm(particles::Vector{T}; p::Union{Real, Nothing} = -1, R = 1.0,
