@@ -104,9 +104,9 @@ function ee_genkt_algorithm(particles::Vector{T}; p::Union{Real, Nothing} = -1, 
     # (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
 
     # Integer p if possible
-    # p = (round(p) == p) ? Int(p) : p
+    p = (round(p) == p) ? Int(p) : p
 
-    # For this algorithm, p=1 and R is not used
+    # For the Durham algorithm, p=1 and R is not used, but nominally set to 4
 
     if T == EEjet
         # recombination_particles will become part of the cluster sequence, so size it for
@@ -146,7 +146,6 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     nndist::Vector{Float64} = Vector{Float64}(undef, N) # distances 
     fill!(nndist, large_distance)
     nndij::Vector{Float64} = Vector{Float64}(undef, N)  # dij metric distance
-    fill!(nndij, large_dij)
     nni::Vector{Int} = collect(1:N) # Nearest neighbour index
 
     # Maps index from the compact array to the clusterseq jet vector
@@ -161,7 +160,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     # Run over initial pairs of jets to find nearest neighbours
     get_angular_nearest_neighbours!(clusterseq.jets, clusterseq_index, nndist, nndij, nni)
 
-    ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, "Start")
+    # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, "Start")
 
     # Now we can start the main loop
     iter = 0
@@ -174,9 +173,6 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         end
         # Normalise the dij_min
         dij_min /= R2
-        # println("i: $iter N: $N - Found minimum distance $dij_min at $ijetA to $ijetB")
-        @assert ijetA <= N
-        @assert ijetB <= N
 
         if ijetA != ijetB
 
@@ -184,16 +180,10 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
             hist_jetA = clusterseq.jets[clusterseq_index[ijetA]]._cluster_hist_index
             hist_jetB = clusterseq.jets[clusterseq_index[ijetB]]._cluster_hist_index
 
-            # println("Merging jets $(clusterseq_index[ijetA]) (h: $hist_jetA) and $(clusterseq_index[ijetB]) (h: $hist_jetB)")
-
-            @assert clusterseq.history[hist_jetA].child == Invalid
-            @assert clusterseq.history[hist_jetB].child == Invalid
-
-            # Recombine i and j into the next jet
+            # Recombine jetA and jetB into the next jet
             merged_jet = recombine(clusterseq.jets[clusterseq_index[ijetA]],
                                    clusterseq.jets[clusterseq_index[ijetB]])
             merged_jet._cluster_hist_index = length(clusterseq.history) + 1
-            # println("Merged jet: $merged_jet")
 
             # Now add the jet to the sequence, and update the history
             push!(clusterseq.jets, merged_jet)
@@ -231,11 +221,8 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
             else
                 # Otherwise, if the jet had ijetA or ijetB as their NN, we need to update them
                 if (nni[i] == ijetA) || (nni[i] == ijetB)
-                    # println("Triggered update for $i for jet $(nni[i])")
                     update_nn_no_cross!(i, N, clusterseq.jets, clusterseq_index, nndist,
                                         nndij, nni)
-                    # println("Updatedto : $(nndist[i]) $(nndij[i]) $(nni[i])")
-                    @assert nni[i] <= N
                 end
             end
         end
@@ -243,8 +230,8 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         # Finally, we need to update the nearest neighbours for the new jet, checking both ways
         update_nn_cross!(ijetA, N, clusterseq.jets, clusterseq_index, nndist, nndij, nni)
 
-        ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni,
-                             "iteration $iter")
+        # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni,
+        #                      "iteration $iter")
     end
 
     # Return the final cluster sequence structure
