@@ -204,7 +204,6 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = -1, R = 1.0,
             nni[ijetA] = ijetA
             clusterseq_index[ijetA] = merged_jet._cluster_hist_index
         else
-            @warn "No more merges possible at iteration $iter of $N"
             add_step_to_history!(clusterseq,
                                  clusterseq.jets[clusterseq_index[ijetA]]._cluster_hist_index,
                                  BeamJet, Invalid, dij_min)
