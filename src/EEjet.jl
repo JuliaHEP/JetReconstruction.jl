@@ -64,7 +64,7 @@ phi(eej::EEjet) = begin
 end
 
 m2(eej::EEjet) = energy(eej)^2 - p2(eej)
-mass(eej::EEjet) = m2(eej) < 0.0 ? -sqrt(m2(eej)) : sqrt(m2(eej))
+mass(eej::EEjet) = m2(eej) < 0.0 ? -sqrt(-m2(eej)) : sqrt(m2(eej))
 
 function rapidity(eej::EEjet)
     if energy(eej) == abs(pz(eej)) && iszero(pt2(eej))
