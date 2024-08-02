@@ -1,9 +1,9 @@
-const large_distance = 4π
+const large_distance = 16.0 # = 4^2
 const large_dij = 1.0e6
 
 function angular_distance(jet1::EEjet, jet2::EEjet)
-    # Calculate the angular distance between two jets
-    (1.0 - nx(jet1) * nx(jet2) + ny(jet1) * ny(jet2) + nz(jet1) * nz(jet2)) * 2.0
+    # Calculate the angular distance between two jets (1 - cos(theta))
+    (1.0 - nx(jet1) * nx(jet2) - ny(jet1) * ny(jet2) - nz(jet1) * nz(jet2)) * 2.0
 end
 
 """Calculate the dij distance, *given that NN is set correctly*"""
@@ -96,7 +96,7 @@ function ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nn
     @debug "Consistency check passed at $msg"
 end
 
-function ee_genkt_algorithm(particles::Vector{T}; p::Union{Real, Nothing} = -1, R = 1.0,
+function ee_genkt_algorithm(particles::Vector{T}; p::Union{Real, Nothing} = -1, R = 4.0,
                             algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                             recombine = +) where {T}
 
@@ -124,12 +124,12 @@ function ee_genkt_algorithm(particles::Vector{T}; p::Union{Real, Nothing} = -1, 
     end
 
     # Now call the actual reconstruction method, tuned for our internal EDM
-    _ee_genkt_algorithm(particles = recombination_particles; p = 1, R = 1.0,
+    _ee_genkt_algorithm(particles = recombination_particles; p = 1, R = 4.0,
                         algorithm = algorithm,
                         recombine = recombine)
 end
 
-function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = -1, R = 1.0,
+function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
                              algorithm = JetAlgorithm.Durham,
                              recombine = +)
 
@@ -172,6 +172,8 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = -1, R = 1.0,
         if ijetB < ijetA
             ijetA, ijetB = ijetB, ijetA
         end
+        # Normalise the dij_min
+        dij_min /= R2
         # println("i: $iter N: $N - Found minimum distance $dij_min at $ijetA to $ijetB")
         @assert ijetA <= N
         @assert ijetB <= N

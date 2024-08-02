@@ -43,6 +43,7 @@ EEjet(pj::PseudoJet) = EEjet(px(pj), py(pj), pz(pj), energy(pj), cluster_hist_in
 
 p2(eej::EEjet) = eej._p2
 pt2(eej::EEjet) = eej.px^2 + eej.py^2
+const kt2 = pt2
 pt(eej::EEjet) = sqrt(pt2(eej))
 energy(eej::EEjet) = eej.E
 px(eej::EEjet) = eej.px
