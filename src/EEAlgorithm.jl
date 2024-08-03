@@ -16,8 +16,8 @@ function get_angular_nearest_neighbours!(jets::Vector{FourMomentum},
                                          nndist::Vector{Float64},
                                          nndij::Vector{Float64}, nni::Vector{Int})
     # Get the nearest neighbour for each jet
-    for i in eachindex(jets)
-        for j in (i + 1):length(jets)
+    @inbounds for i in eachindex(jets)
+        @inbounds for j in (i + 1):length(jets)
             the_nndist = angular_distance(jets[clusterseq_index[i]],
                                           jets[clusterseq_index[j]])
             if the_nndist < nndist[i]
@@ -30,7 +30,7 @@ function get_angular_nearest_neighbours!(jets::Vector{FourMomentum},
             end
         end
     end
-    for i in eachindex(jets)
+    @inbounds for i in eachindex(jets)
         nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
                            jets[clusterseq_index[nni[i]]])
     end
@@ -40,7 +40,7 @@ function update_nn_no_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
     # Update the nearest neighbour for jet i, w.r.t. all other active jets
     nndist[i] = large_distance
     nni[i] = i
-    for j in 1:N
+    @inbounds for j in 1:N
         if j != i
             the_nndist = angular_distance(jets[clusterseq_index[i]],
                                           jets[clusterseq_index[j]])
@@ -59,7 +59,7 @@ function update_nn_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
     # also doing the cross check for the other jet
     nndist[i] = large_distance
     nni[i] = i
-    for j in 1:N
+    @inbounds for j in 1:N
         if j != i
             the_nndist = angular_distance(jets[clusterseq_index[i]],
                                           jets[clusterseq_index[j]])
