@@ -70,7 +70,7 @@ Base.tryparse(E::Type{<:Enum}, str::String) =
     end
 
 """
-    set_algorithm_power_consistency(; p::Union{Real, Nothing}, algorithm::Union{JetAlgorithm, Nothing})
+    get_algorithm_power_consistency(; p::Union{Real, Nothing}, algorithm::Union{JetAlgorithm, Nothing})
 
 Get the algorithm and power consistency correct
 

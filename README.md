@@ -12,41 +12,50 @@ Algorithms used are based on the C++ FastJet package (<https://fastjet.fr>,
 [arXiv:1111.6097](https://arxiv.org/abs/1111.6097)), reimplemented natively in Julia.
 
 The algorithms include anti-$`{k}_\text{T}`$, Cambridge/Aachen, inclusive
-$`k_\text{T}`$ and generalised $`k_\text{T}`$.
+$`k_\text{T}`$, generalised $`k_\text{T}`$ for pp events; and the Durham algorithm for e+e-.
 
 ### Interface
 
 The simplest interface is to call:
 
 ```julia
-cs = jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +, strategy = RecoStrategy.Best)
+cs = jet_reconstruct(particles::Vector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, [p = -1,] [recombine = +,] [strategy = RecoStrategy.Best])
 ```
 
 - `particles` - a vector of input particles for the clustering
   - Any type that supplies the methods `pt2()`, `phi()`, `rapidity()`, `px()`, `py()`, `pz()`, `energy()` can be used
   - These methods have to be defined in the namespace of this package, i.e., `JetReconstruction.pt2(::T)`
   - The `PseudoJet` type from this package, or a 4-vector from `LorentzVectorHEP` are suitable (and have the appropriate definitions)
-- `p` - the transverse momentum power used in the $d_{ij}$ metric for deciding on closest jets, as $k^{2p}_\text{T}$. Different values of $p$ then give different reconstruction algorithms:
-  - `-1` gives anti-$`{k}_\text{T}`$ clustering (default)
-  - `0` gives Cambridge/Aachen
-  - `1` gives inclusive $k_\text{T}$
-- `R` - the cone size parameter; no particles more geometrically distance than `R` will be merged (default 1.0)
+- `algorithm` is the name of the jet algorithm to be used (from the `JetAlgorithm` enum)
+  - `JetAlgorithm.AntiKt` anti-$`{k}_\text{T}`$ clustering (default)
+  - `JetAlgorithm.CA` Cambridge/Aachen clustering
+  - `JetAlgorithm.Kt` inclusive $k_\text{T}$
+  - `JetAlgorithm.GenKt` generalised $k_\text{T}$ (which also requires specification of `p`)
+  - `JetAlgorithm.Durham` the $e^+e-$ $k_\text{T}$ algorithm, also known as the Durham algorithm
+- `R` - the cone size parameter; no particles more geometrically distance than `R` will be merged (default 1.0; note this parameter is ignored for the Durham algorithm)
 - `recombine` - the function used to merge two pseudojets (default is a simple 4-vector addition of $`(E, \mathbf{p})`$)
 - `strategy` - the algorithm strategy to adopt, as described below (default `RecoStrategy.Best`)
 
 The object returned is a `ClusterSequence`, which internally tracks all merge steps.
 
-Alternatively one can swap the `p=...` parameter for
-`algorithm=JetReconstruction.{AntiKt,CA,Kt}` for explicit algorithm selection. (Generalised $`{k}_\text{T}`$ requires `algorithm=JetReconstruction.GenKt` *and* `p=N`.)
+Alternatively, *for pp reconstruction*, one can swap the `algorithm=...`
+parameter for the value of `p`, the transverse momentum power used in the
+$d_{ij}$ metric for deciding on closest jets, as $k^{2p}_\text{T}$. Different
+values of $p$ then correspond to different reconstruction algorithms:
+
+- `-1` gives anti-$`{k}_\text{T}`$ clustering (default)
+- `0` gives Cambridge/Aachen
+- `1` gives inclusive $k_\text{T}$
+
+(for the `GenKt` algorithm the `p` value *must* also be given to specify the algorithm fully).
 
 To obtain the final inclusive jets, use the `inclusive_jets` method:
 
 ```julia
 final_jets = inclusive_jets(cs::ClusterSequence; ptmin=0.0)
 ```
+
 Only jets passing the cut $p_T > p_{Tmin}$ will be returned. The result is returned as a `Vector{LorentzVectorHEP}`.
-
-
 
 #### Sorting
 
@@ -72,7 +81,7 @@ Another option, if one wishes to use a specific strategy, is to call that strate
 
 ```julia
 # For N2Plain strategy called directly
-plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +)
+plain_jet_reconstruct(particles::Vector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, recombine = +)
 ```
 
 Note that there is no `strategy` option in these interfaces.
@@ -84,9 +93,11 @@ In the examples directory there are a number of example scripts.
 See the `jetreco.jl` script for an example of how to call jet reconstruction.
 
 ```sh
-julia --project=. examples/jetreco.jl --maxevents=100 --nsamples=1 --strategy=N2Plain test/data/events.hepmc3
+julia --project=examples examples/jetreco.jl --algorithm=AntiKt test/data/events.pp13TeV.hepmc3.gz
 ...
-julia --project=. examples/jetreco.jl --maxevents=100 --nsamples=1 --strategy=N2Tiled test/data/events.hepmc3
+julia --project=examples examples/jetreco.jl --algorithm=Durham test/data/events.eeH.hepmc3.gz
+...
+julia --project=examples examples/jetreco.jl --maxevents=10 --strategy=N2Plain --algorithm=Kt --exclusive-njets=3 test/data/events.pp13TeV.hepmc3.gz
 ...
 ```
 
