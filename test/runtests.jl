@@ -37,6 +37,10 @@ function main()
                                                                                        p = nothing)
     end
 
+    # New test structure, factorised tests for pp and e+e-
+    include("test-pp-reconstruction.jl")
+    include("test-ee-reconstruction.jl")
+
     # Read our fastjet inclusive outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
     fastjet_alg_files_inclusive = Dict(-1 => joinpath(@__DIR__, "data",
                                                       "jet-collections-fastjet-inclusive-AntiKt.json.gz"),
