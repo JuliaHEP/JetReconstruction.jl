@@ -10,8 +10,8 @@ for alg in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt],
     fastjet_file = joinpath(@__DIR__, "data",
                             "jet-collections-fastjet-inclusive-$(alg).json.gz")
     test = ComparisonTest(events_file_pp, fastjet_file,
-                        alg, stg,
-                        JetReconstruction.algorithm2power[alg], 0.4,
-                        (cs) -> inclusive_jets(cs; ptmin = 5.0))
+                          alg, stg,
+                          JetReconstruction.algorithm2power[alg], 0.4,
+                          (cs) -> inclusive_jets(cs; ptmin = 5.0))
     run_reco_test(test)
 end

@@ -32,7 +32,7 @@ function get_angular_nearest_neighbours!(jets::Vector{FourMomentum},
     end
     @inbounds for i in eachindex(jets)
         nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
-                           jets[clusterseq_index[nni[i]]])
+                            jets[clusterseq_index[nni[i]]])
     end
 end
 
@@ -48,7 +48,7 @@ function update_nn_no_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
                 nndist[i] = the_nndist
                 nni[i] = j
                 nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
-                    jets[clusterseq_index[j]])
+                                    jets[clusterseq_index[j]])
             end
         end
     end
@@ -67,13 +67,13 @@ function update_nn_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
                 nndist[i] = the_nndist
                 nni[i] = j
                 nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
-                    jets[clusterseq_index[j]])
+                                    jets[clusterseq_index[j]])
             end
             if the_nndist < nndist[j]
                 nndist[j] = the_nndist
                 nni[j] = i
                 nndij[j] = dij_dist(nndist[j], jets[clusterseq_index[j]],
-                    jets[clusterseq_index[i]])
+                                    jets[clusterseq_index[i]])
             end
         end
     end

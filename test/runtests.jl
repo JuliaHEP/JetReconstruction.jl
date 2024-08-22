@@ -69,10 +69,12 @@ function main()
     # Now test exclusive selections
     inclusive_tests = InclusiveTest[]
     push!(inclusive_tests,
-          InclusiveTest("exclusive njets=4", 1, "jet-collections-fastjet-njets4-ikt.json.gz",
+          InclusiveTest("exclusive njets=4", 1,
+                        "jet-collections-fastjet-njets4-ikt.json.gz",
                         nothing, 4))
     push!(inclusive_tests,
-          InclusiveTest("exclusive dijmax=20", 1, "jet-collections-fastjet-dij20-ikt.json.gz",
+          InclusiveTest("exclusive dijmax=20", 1,
+                        "jet-collections-fastjet-dij20-ikt.json.gz",
                         20.0, nothing))
     push!(inclusive_tests,
           InclusiveTest("exclusive njets=4", 0, "jet-collections-fastjet-njets4-ca.json.gz",
