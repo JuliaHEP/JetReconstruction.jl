@@ -13,9 +13,11 @@ perform a jet reconstruction, with different algorithms and (optionally)
 strategy, producing exclusive and inclusive jet selections.
 
 ```sh
-julia --project=. examples/jetreco.jl --maxevents=100 --strategy=N2Plain test/data/events.hepmc3
+julia --project=examples examples/jetreco.jl --algorithm=AntiKt test/data/events.pp13TeV.hepmc3.gz
 ...
-julia --project=. examples/jetreco.jl --maxevents=100 --strategy=N2Tiled test/data/events.hepmc3
+julia --project=examples examples/jetreco.jl --algorithm=Durham test/data/events.eeH.hepmc3.gz
+...
+julia --project=examples examples/jetreco.jl --maxevents=10 --strategy=N2Plain --algorithm=Kt --exclusive-njets=3 test/data/events.pp13TeV.hepmc3.gz
 ...
 ```
 

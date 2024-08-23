@@ -50,7 +50,9 @@ jet_reconstruct(particles; algorithm = JetAlgorithm.AntiKt, R = 1.0)
 ```
 
 Where `particles` is a collection of 4-vector objects to reconstruct and the
-algorithm is either given explicitly or implied by the power value. For the case of generalised $k_T$ both the algorithm (`JetAlgorithm.GenKt`) and `p` are needed.
+algorithm is either given explicitly or implied by the power value. For the case
+of generalised $k_T$ both the algorithm (`JetAlgorithm.GenKt`) and `p` are
+needed. For the case of the Durham algorithm the `R` value is ignored.
 
 The object returned is a [`ClusterSequence`](@ref), which internally tracks all
 merge steps.

@@ -134,7 +134,8 @@ Update the nearest neighbor information after a jet merge step.
 Arguments:
 - `i`: Index of the first particle in the last merge step.
 - `j`: Index of the second particle in the last merge step.
-- `k`: Index of the current particle for which the nearest neighbour will be updated.
+- `k`: Index of the current particle for which the nearest neighbour will be
+  updated.
 - `N`: Total number of particles (currently vaild array indexes are `[1:N]`).
 - `Nn`: Number of nearest neighbors to consider.
 - `kt2_array`: Array of transverse momentum squared values.
@@ -145,7 +146,14 @@ Arguments:
 - `nn`: Array of nearest neighbor indices.
 - `nndij`: Array of metric distances between particles.
 
-This function updates the nearest neighbor information for the current particle `k` by considering the distances to particles `i` and `j`. It checks if the distance between `k` and `i` is smaller than the current nearest neighbor distance for `k`, and updates the nearest neighbor information accordingly. It also updates the nearest neighbor information for `i` if the distance between `k` and `i` is smaller than the current nearest neighbor distance for `i`. Finally, it checks if the nearest neighbor of `k` is the total number of particles `Nn` and updates it to `j` if necessary.
+This function updates the nearest neighbor information for the current particle
+`k` by considering the distances to particles `i` and `j`. It checks if the
+distance between `k` and `i` is smaller than the current nearest neighbor
+distance for `k`, and updates the nearest neighbor information accordingly. It
+also updates the nearest neighbor information for `i` if the distance between
+`k` and `i` is smaller than the current nearest neighbor distance for `i`.
+Finally, it checks if the nearest neighbor of `k` is the total number of
+particles `Nn` and updates it to `j` if necessary.
 
 """
 Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array,

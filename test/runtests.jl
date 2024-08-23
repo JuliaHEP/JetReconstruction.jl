@@ -6,49 +6,7 @@ using JSON
 using LorentzVectorHEP
 using Logging
 
-const events_file = joinpath(@__DIR__, "data", "events.hepmc3.gz")
-
-const algorithms = Dict(-1 => "Anti-kt",
-                        0 => "Cambridge/Achen",
-                        1 => "Inclusive-kt",
-                        1.5 => "Generalised-kt")
-
-"""Simple structure with necessary parameters for an exclusive selection test"""
-struct InclusiveTest
-    algname::AbstractString
-    selction::AbstractString
-    power::Int
-    fastjet_file::AbstractString
-    dijmax::Any
-    njets::Any
-    function InclusiveTest(selction, power, fastjet_file, dijmax, njets)
-        new(algorithms[power], selction, power, fastjet_file, dijmax, njets)
-    end
-end
-
-"""Read JSON file with fastjet jets in it"""
-function read_fastjet_outputs(fname)
-    f = open(fname)
-    JSON.parse(f)
-end
-
-"""Sort jet outputs by pt of final jets"""
-function sort_jets!(event_jet_array)
-    jet_pt(jet) = jet["pt"]
-    for e in event_jet_array
-        sort!(e["jets"], by = jet_pt, rev = true)
-    end
-end
-
-function sort_jets!(jet_array::Vector{FinalJet})
-    jet_pt(jet) = jet.pt
-    sort!(jet_array, by = jet_pt, rev = true)
-end
-
-function sort_jets!(jet_array::Vector{LorentzVectorCyl})
-    jet_pt(jet) = jet.pt
-    sort!(jet_array, by = jet_pt, rev = true)
-end
+include("common.jl")
 
 function main()
     # A few unit tests
@@ -79,65 +37,19 @@ function main()
                                                                                        p = nothing)
     end
 
-    # Read our fastjet inclusive outputs (we read for anti-kt, cambridge/achen, inclusive-kt)
-    fastjet_alg_files_inclusive = Dict(-1 => joinpath(@__DIR__, "data",
-                                                      "jet-collections-fastjet-inclusive-akt.json"),
-                                       0 => joinpath(@__DIR__, "data",
-                                                     "jet-collections-fastjet-inclusive-ca.json"),
-                                       1 => joinpath(@__DIR__, "data",
-                                                     "jet-collections-fastjet-inclusive-ikt.json"),
-                                       1.5 => joinpath(@__DIR__, "data",
-                                                       "jet-collections-fastjet-inclusive-genkt-p1.5.json"))
-
-    fastjet_data = Dict{Real, Vector{Any}}()
-    for (k, v) in pairs(fastjet_alg_files_inclusive)
-        fastjet_jets = read_fastjet_outputs(v)
-        sort_jets!(fastjet_jets)
-        fastjet_data[k] = fastjet_jets
-    end
-
-    # Test each stratgy for inclusive jet selection
-    for power in keys(algorithms)
-        do_test_compare_to_fastjet(RecoStrategy.N2Plain, fastjet_data[power],
-                                   algname = algorithms[power], power = power)
-        do_test_compare_to_fastjet(RecoStrategy.N2Tiled, fastjet_data[power],
-                                   algname = algorithms[power], power = power)
-    end
+    # New test structure, factorised tests for pp and e+e-
+    include("test-pp-reconstruction.jl")
+    include("test-ee-reconstruction.jl")
 
     # Compare inputing data in PseudoJet with using a LorentzVector
-    do_test_compare_types(RecoStrategy.N2Plain, algname = algorithms[-1], power = -1)
-    do_test_compare_types(RecoStrategy.N2Tiled, algname = algorithms[-1], power = -1)
-
-    # Now test exclusive selections
-    inclusive_tests = InclusiveTest[]
-    push!(inclusive_tests,
-          InclusiveTest("exclusive njets=4", 1, "jet-collections-fastjet-njets4-ikt.json",
-                        nothing, 4))
-    push!(inclusive_tests,
-          InclusiveTest("exclusive dijmax=20", 1, "jet-collections-fastjet-dij20-ikt.json",
-                        20.0, nothing))
-    push!(inclusive_tests,
-          InclusiveTest("exclusive njets=4", 0, "jet-collections-fastjet-njets4-ca.json",
-                        nothing, 4))
-    push!(inclusive_tests,
-          InclusiveTest("exclusive dijmax=0.99", 0,
-                        "jet-collections-fastjet-dij099-ca.json", 0.99, nothing))
-
-    for test in inclusive_tests
-        input_file = joinpath(@__DIR__, "data", test.fastjet_file)
-        fastjet_jets = read_fastjet_outputs(input_file)
-        sort_jets!(fastjet_jets)
-        do_test_compare_to_fastjet(RecoStrategy.N2Tiled, fastjet_jets;
-                                   algname = test.algname,
-                                   power = test.power, selection = test.selction,
-                                   njets = test.njets, dijmax = test.dijmax)
-    end
+    do_test_compare_types(RecoStrategy.N2Plain, algname = pp_algorithms[-1], power = -1)
+    do_test_compare_types(RecoStrategy.N2Tiled, algname = pp_algorithms[-1], power = -1)
 
     # Suppress these tests for now, as the examples Project.toml is rather heavy
     # because of the GLMakie dependency, plus on a CI there is no GL subsystem,
     # so things fail. The examples should be restructured to have a cleaner set
     # of examples that are good to run in the CI.
-
+    #
     # Now run a few tests with our examples
     # include("tests_examples.jl")
 end
@@ -175,7 +87,7 @@ function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jet
 
     # Now run our jet reconstruction...
     # From PseudoJets
-    events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file)
+    events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file_pp)
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
         # First run the reconstruction
@@ -242,7 +154,7 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
 
     # Now run our jet reconstruction...
     # From PseudoJets
-    events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file)
+    events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file_pp)
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
         finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance,
@@ -252,7 +164,7 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
     end
 
     # From LorentzVector
-    events_lv::Vector{Vector{LorentzVector}} = read_final_state_particles(events_file;
+    events_lv::Vector{Vector{LorentzVector}} = read_final_state_particles(events_file_pp;
                                                                           T = LorentzVector)
     jet_collection_lv = FinalJets[]
     for (ievt, event) in enumerate(events_lv)

@@ -66,6 +66,37 @@ HistoryElement(jetp_index) = HistoryElement(NonexistentParent, NonexistentParent
                                             jetp_index, 0.0, 0.0)
 
 """
+    initial_history(particles)
+
+Create an initial history for the given particles.
+
+# Arguments
+- `particles`: The initial vector of stable particles.
+
+# Returns
+- `history`: An array of `HistoryElement` objects.
+- `Qtot`: The total energy in the event.
+"""
+function initial_history(particles)
+    # reserve sufficient space for everything
+    history = Vector{HistoryElement}(undef, length(particles))
+    sizehint!(history, 2 * length(particles))
+
+    Qtot::Float64 = 0
+
+    for i in eachindex(particles)
+        history[i] = HistoryElement(i)
+
+        # get cross-referencing right from the Jets
+        particles[i]._cluster_hist_index = i
+
+        # determine the total energy in the event
+        Qtot += particles[i].E
+    end
+    history, Qtot
+end
+
+"""
     struct ClusterSequence
 
 A struct holding the full history of a jet clustering sequence, including the
@@ -89,7 +120,7 @@ struct ClusterSequence
     algorithm::JetAlgorithm.Algorithm
     power::Float64
     strategy::RecoStrategy.Strategy
-    jets::Vector{PseudoJet}
+    jets::Vector{FourMomentum}
     n_initial_jets::Int
     history::Vector{HistoryElement}
     Qtot::Any

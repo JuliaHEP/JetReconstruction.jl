@@ -97,7 +97,7 @@ function jet_process(events::Vector{Vector{PseudoJet}};
         for event in events
             _ = inclusive_jets(jet_reconstruct(event, R = distance, p = p,
                                                algorithm = algorithm,
-                                               strategy = strategy), ptmin)
+                                               strategy = strategy); ptmin = ptmin)
         end
     end
 
@@ -113,7 +113,7 @@ function jet_process(events::Vector{Vector{PseudoJet}};
         @timev for event in events
             _ = inclusive_jets(jet_reconstruct(event, R = distance, p = p,
                                                algorithm = algorithm,
-                                               strategy = strategy), ptmin)
+                                               strategy = strategy), ptmin = ptmin)
         end
         return nothing
     end
@@ -129,13 +129,12 @@ function jet_process(events::Vector{Vector{PseudoJet}};
         for (ievt, event) in enumerate(events)
             cs = jet_reconstruct(event, R = distance, p = p, algorithm = algorithm,
                                  strategy = strategy)
-            strategy = strategy
             if !isnothing(njets)
-                finaljets = exclusive_jets(cs, njets = njets)
+                finaljets = exclusive_jets(cs; njets = njets)
             elseif !isnothing(dcut)
-                finaljets = exclusive_jets(cs, dcut = dcut)
+                finaljets = exclusive_jets(cs; dcut = dcut)
             else
-                finaljets = inclusive_jets(cs, ptmin = ptmin)
+                finaljets = inclusive_jets(cs; ptmin = ptmin)
             end
             # Only print the jet content once
             if irun == 1
