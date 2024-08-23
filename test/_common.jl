@@ -57,9 +57,11 @@ struct ComparisonTest
 end
 
 """Constructor where there is no selector_name given"""
-function ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R, selector)
+function ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R,
+                        selector)
     selector_name = ""
-    ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R, selector, selector_name)
+    ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R, selector,
+                   selector_name)
 end
 
 """Read JSON file with fastjet jets in it"""
