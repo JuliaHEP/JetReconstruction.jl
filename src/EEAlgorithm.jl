@@ -3,7 +3,7 @@ const large_dij = 1.0e6
 
 function angular_distance(jet1::EEjet, jet2::EEjet)
     # Calculate the angular distance between two jets (1 - cos(theta))
-    (1.0 - nx(jet1) * nx(jet2) - ny(jet1) * ny(jet2) - nz(jet1) * nz(jet2)) * 2.0
+    @muladd (1.0 - nx(jet1) * nx(jet2) - ny(jet1) * ny(jet2) - nz(jet1) * nz(jet2)) * 2.0
 end
 
 """Calculate the dij distance, *given that NN is set correctly*"""
