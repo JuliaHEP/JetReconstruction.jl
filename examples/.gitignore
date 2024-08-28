@@ -4,4 +4,5 @@
 *.mp4
 # Ignore profiling outputs
 profile/*
+# Playground for development scripts and notebooks
 playground/*

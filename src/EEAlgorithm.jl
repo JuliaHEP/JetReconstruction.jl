@@ -19,7 +19,7 @@ function get_angular_nearest_neighbours!(jets::Vector{FourMomentum},
     @inbounds for i in eachindex(jets)
         @inbounds for j in (i + 1):length(jets)
             this_nndist = angular_distance(jets[clusterseq_index[i]],
-                                          jets[clusterseq_index[j]])
+                                           jets[clusterseq_index[j]])
             if this_nndist < nndist[i]
                 nndist[i] = this_nndist
                 nni[i] = j
@@ -43,7 +43,7 @@ function update_nn_no_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
     @inbounds for j in 1:N
         if j != i
             this_nndist = angular_distance(jets[clusterseq_index[i]],
-                                          jets[clusterseq_index[j]])
+                                           jets[clusterseq_index[j]])
             if this_nndist < nndist[i]
                 nndist[i] = this_nndist
                 nni[i] = j
@@ -51,7 +51,7 @@ function update_nn_no_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
         end
     end
     nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
-        jets[clusterseq_index[nni[i]]])
+                        jets[clusterseq_index[nni[i]]])
 end
 
 function update_nn_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
@@ -62,7 +62,7 @@ function update_nn_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
     @inbounds for j in 1:N
         if j != i
             this_nndist = angular_distance(jets[clusterseq_index[i]],
-                                          jets[clusterseq_index[j]])
+                                           jets[clusterseq_index[j]])
             if this_nndist < nndist[i]
                 nndist[i] = this_nndist
                 nni[i] = j
@@ -77,7 +77,7 @@ function update_nn_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
         end
     end
     nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
-        jets[clusterseq_index[nni[i]]])
+                        jets[clusterseq_index[nni[i]]])
 end
 
 function ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, msg)
