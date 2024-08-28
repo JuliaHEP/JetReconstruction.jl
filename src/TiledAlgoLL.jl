@@ -27,7 +27,7 @@ The squared distance between `jetA` and `jetB`.
 _tj_dist(jetA, jetB) = begin
     dphi = π - abs(π - abs(jetA.phi - jetB.phi))
     deta = jetA.eta - jetB.eta
-    return muladd(dphi, dphi, deta * deta)
+    @muladd dphi * dphi + deta * deta
 end
 
 """

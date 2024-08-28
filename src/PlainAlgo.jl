@@ -18,7 +18,7 @@ Base.@propagate_inbounds function dist(i, j, rapidity_array, phi_array)
     drapidity = rapidity_array[i] - rapidity_array[j]
     dphi = abs(phi_array[i] - phi_array[j])
     dphi = ifelse(dphi > pi, 2pi - dphi, dphi)
-    muladd(drapidity, drapidity, dphi * dphi)
+    @muladd drapidity * drapidity + dphi * dphi
 end
 
 """

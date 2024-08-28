@@ -16,6 +16,7 @@ examples in this package for more information.
 module JetReconstruction
 
 using LorentzVectorHEP
+using MuladdMacro
 
 # Import from LorentzVectorHEP methods for those 4-vector types
 pt2(p::LorentzVector) = LorentzVectorHEP.pt2(p)

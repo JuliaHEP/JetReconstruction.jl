@@ -1,13 +1,13 @@
 const large_distance = 16.0 # = 4^2
 const large_dij = 1.0e6
 
-function angular_distance(jet1::EEjet, jet2::EEjet)
+@inline function angular_distance(jet1::EEjet, jet2::EEjet)
     # Calculate the angular distance between two jets (1 - cos(theta))
-    (1.0 - nx(jet1) * nx(jet2) - ny(jet1) * ny(jet2) - nz(jet1) * nz(jet2)) * 2.0
+    @muladd (1.0 - nx(jet1) * nx(jet2) - ny(jet1) * ny(jet2) - nz(jet1) * nz(jet2)) * 2.0
 end
 
 """Calculate the dij distance, *given that NN is set correctly*"""
-function dij_dist(nndist, jet1::EEjet, jet2::EEjet)
+@inline function dij_dist(nndist, jet1::EEjet, jet2::EEjet)
     nndist * min(energy(jet1)^2, energy(jet2)^2)
 end
 
@@ -18,14 +18,14 @@ function get_angular_nearest_neighbours!(jets::Vector{FourMomentum},
     # Get the nearest neighbour for each jet
     @inbounds for i in eachindex(jets)
         @inbounds for j in (i + 1):length(jets)
-            the_nndist = angular_distance(jets[clusterseq_index[i]],
-                                          jets[clusterseq_index[j]])
-            if the_nndist < nndist[i]
-                nndist[i] = the_nndist
+            this_nndist = angular_distance(jets[clusterseq_index[i]],
+                                           jets[clusterseq_index[j]])
+            if this_nndist < nndist[i]
+                nndist[i] = this_nndist
                 nni[i] = j
             end
-            if the_nndist < nndist[j]
-                nndist[j] = the_nndist
+            if this_nndist < nndist[j]
+                nndist[j] = this_nndist
                 nni[j] = i
             end
         end
@@ -42,16 +42,16 @@ function update_nn_no_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
     nni[i] = i
     @inbounds for j in 1:N
         if j != i
-            the_nndist = angular_distance(jets[clusterseq_index[i]],
-                                          jets[clusterseq_index[j]])
-            if the_nndist < nndist[i]
-                nndist[i] = the_nndist
+            this_nndist = angular_distance(jets[clusterseq_index[i]],
+                                           jets[clusterseq_index[j]])
+            if this_nndist < nndist[i]
+                nndist[i] = this_nndist
                 nni[i] = j
-                nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
-                                    jets[clusterseq_index[j]])
             end
         end
     end
+    nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
+                        jets[clusterseq_index[nni[i]]])
 end
 
 function update_nn_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
@@ -61,22 +61,23 @@ function update_nn_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
     nni[i] = i
     @inbounds for j in 1:N
         if j != i
-            the_nndist = angular_distance(jets[clusterseq_index[i]],
-                                          jets[clusterseq_index[j]])
-            if the_nndist < nndist[i]
-                nndist[i] = the_nndist
+            this_nndist = angular_distance(jets[clusterseq_index[i]],
+                                           jets[clusterseq_index[j]])
+            if this_nndist < nndist[i]
+                nndist[i] = this_nndist
                 nni[i] = j
-                nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
-                                    jets[clusterseq_index[j]])
             end
-            if the_nndist < nndist[j]
-                nndist[j] = the_nndist
+            if this_nndist < nndist[j]
+                nndist[j] = this_nndist
                 nni[j] = i
+                # j will not be revisited, so update metric distance here
                 nndij[j] = dij_dist(nndist[j], jets[clusterseq_index[j]],
                                     jets[clusterseq_index[i]])
             end
         end
     end
+    nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
+                        jets[clusterseq_index[nni[i]]])
 end
 
 function ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, msg)
@@ -140,9 +141,10 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
 
     R2 = R^2
 
-    # Optimised compact arrays for determining the next merge step
-    # We make sure these arrays are type stable - have seen issues where, depending on the values
-    # returned by the methods, they can become unstable and performance degrades
+    # Optimised compact arrays for determining the next merge step We make sure
+    # these arrays are type stable - have seen issues where, depending on the
+    # values returned by the methods, they can become unstable and performance
+    # degrades
     nndist::Vector{Float64} = Vector{Float64}(undef, N) # distances 
     fill!(nndist, large_distance)
     nndij::Vector{Float64} = Vector{Float64}(undef, N)  # dij metric distance
