@@ -159,11 +159,6 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     else
         throw(ArgumentError("Algorithm $algorithm not supported for e+e-"))
     end
-    # # We add a reverse normalisation factor for the beam distance to ensure that
-    # # the comparison with dij is correct
-    # beam_distance_alg(algorithm, jet::EEjet) = algorithm == JetAlgorithm.Durham ?
-    #                                            large_distance : jet.E^2p / dij_factor
-    # beam_distance(jet::EEjet) = beam_distance_alg(algorithm, jet)
 
     # Optimised compact arrays for determining the next merge step We make sure
     # these arrays are type stable - have seen issues where, depending on the
@@ -194,13 +189,26 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         iter += 1
         dij_min, ijetA = fast_findmin(nndij, N)
         ijetB = nni[ijetA]
-        if ijetB < ijetA
-            ijetA, ijetB = ijetB, ijetA
-        end
+
         # Normalise the dij_min
         dij_min *= dij_factor
 
-        if ijetA != ijetB
+        # Now we check if there is a "beam" merge possibility
+        if (algorithm == JetAlgorithm.EEKt) && (energy(clusterseq.jets[clusterseq_index[ijetA]])^2p < dij_min)
+            # We have an EEKt beam merge
+            dij_min = energy(clusterseq.jets[clusterseq_index[ijetA]])^2p
+            ijetB = ijetA
+            add_step_to_history!(clusterseq, clusterseq.jets[clusterseq_index[ijetA]]._cluster_hist_index,
+                                 BeamJet, Invalid, dij_min)
+        elseif N == 1
+            # We have a single jet left
+            add_step_to_history!(clusterseq, clusterseq.jets[clusterseq_index[ijetA]]._cluster_hist_index,
+                BeamJet, Invalid, dij_min)
+        else
+            # Jet-jet merge
+            if ijetB < ijetA
+                ijetA, ijetB = ijetB, ijetA
+            end
 
             # Source "history" for merge
             hist_jetA = clusterseq.jets[clusterseq_index[ijetA]]._cluster_hist_index
@@ -222,10 +230,6 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
             nndij[ijetA] = large_dij
             nni[ijetA] = ijetA
             clusterseq_index[ijetA] = merged_jet._cluster_hist_index
-        else
-            add_step_to_history!(clusterseq,
-                                 clusterseq.jets[clusterseq_index[ijetA]]._cluster_hist_index,
-                                 BeamJet, Invalid, dij_min)
         end
 
         # Squash step - copy the final jet's compact data into the jetB slot
