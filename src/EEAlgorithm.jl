@@ -12,10 +12,11 @@ end
     nndist * min(energy(jet1)^2, energy(jet2)^2)
 end
 
-function get_angular_nearest_neighbours!(jets::Vector{FourMomentum},
+function get_angular_nearest_neighbours!(cs::ClusterSequence,
                                          clusterseq_index::Vector{Int},
                                          nndist::Vector{Float64},
                                          nndij::Vector{Float64}, nni::Vector{Int})
+    jets = cs.jets
     # Get the nearest neighbour for each jet
     @inbounds for i in eachindex(jets)
         @inbounds for j in (i + 1):length(jets)
@@ -37,11 +38,12 @@ function get_angular_nearest_neighbours!(jets::Vector{FourMomentum},
     end
 end
 
-function update_nn_no_cross!(i, N, jets, clusterseq_index, nndist, nndij,
+function update_nn_no_cross!(i, N, cs::ClusterSequence, clusterseq_index, nndist, nndij,
                              nni)
     # Update the nearest neighbour for jet i, w.r.t. all other active jets
     nndist[i] = large_distance
     nni[i] = i
+    jets = cs.jets
     @inbounds for j in 1:N
         if j != i
             this_nndist = angular_distance(jets[clusterseq_index[i]],
@@ -56,11 +58,12 @@ function update_nn_no_cross!(i, N, jets, clusterseq_index, nndist, nndij,
                         jets[clusterseq_index[nni[i]]])
 end
 
-function update_nn_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
+function update_nn_cross!(i, N, cs::ClusterSequence, clusterseq_index, nndist, nndij, nni)
     # Update the nearest neighbour for jet i, w.r.t. all other active jets
     # also doing the cross check for the other jet
     nndist[i] = large_distance
     nni[i] = i
+    jets = cs.jets
     @inbounds for j in 1:N
         if j != i
             this_nndist = angular_distance(jets[clusterseq_index[i]],
@@ -162,8 +165,6 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     #                                            large_distance : jet.E^2p / dij_factor
     # beam_distance(jet::EEjet) = beam_distance_alg(algorithm, jet)
 
-    # Beam merge function
-
     # Optimised compact arrays for determining the next merge step We make sure
     # these arrays are type stable - have seen issues where, depending on the
     # values returned by the methods, they can become unstable and performance
@@ -183,8 +184,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
                                  Qtot)
 
     # Run over initial pairs of jets to find nearest neighbours
-    get_angular_nearest_neighbours!(clusterseq.jets, clusterseq_index,
-                                    nndist, nndij, nni)
+    get_angular_nearest_neighbours!(clusterseq, clusterseq_index, nndist, nndij, nni)
 
     # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, "Start")
 
@@ -247,14 +247,14 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
             else
                 # Otherwise, if the jet had ijetA or ijetB as their NN, we need to update them
                 if (nni[i] == ijetA) || (nni[i] == ijetB)
-                    update_nn_no_cross!(i, N, clusterseq.jets, clusterseq_index, nndist,
+                    update_nn_no_cross!(i, N, clusterseq, clusterseq_index, nndist,
                                         nndij, nni)
                 end
             end
         end
 
         # Finally, we need to update the nearest neighbours for the new jet, checking both ways
-        update_nn_cross!(ijetA, N, clusterseq.jets, clusterseq_index, nndist, nndij, nni)
+        update_nn_cross!(ijetA, N, clusterseq, clusterseq_index, nndist, nndij, nni)
 
         # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni,
         #                      "iteration $iter")
