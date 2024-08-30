@@ -190,20 +190,26 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         dij_min, ijetA = fast_findmin(nndij, N)
         ijetB = nni[ijetA]
 
+        # println("N $N, Iteration $iter: dij_min = $dij_min, ijetA = $ijetA, ijetB = $ijetB; njets = $(length(clusterseq.jets))")
+
         # Normalise the dij_min
         dij_min *= dij_factor
 
         # Now we check if there is a "beam" merge possibility
-        if (algorithm == JetAlgorithm.EEKt) && (energy(clusterseq.jets[clusterseq_index[ijetA]])^2p < dij_min)
+        if (algorithm === JetAlgorithm.EEKt) &&
+           (energy(clusterseq.jets[clusterseq_index[ijetA]])^2p < dij_min)
             # We have an EEKt beam merge
             dij_min = energy(clusterseq.jets[clusterseq_index[ijetA]])^2p
             ijetB = ijetA
-            add_step_to_history!(clusterseq, clusterseq.jets[clusterseq_index[ijetA]]._cluster_hist_index,
+            # println("Beam merge: dij_min = $dij_min, ijetA = $ijetA, ijetB = $ijetB")
+            add_step_to_history!(clusterseq,
+                                 clusterseq.jets[clusterseq_index[ijetA]]._cluster_hist_index,
                                  BeamJet, Invalid, dij_min)
         elseif N == 1
             # We have a single jet left
-            add_step_to_history!(clusterseq, clusterseq.jets[clusterseq_index[ijetA]]._cluster_hist_index,
-                BeamJet, Invalid, dij_min)
+            add_step_to_history!(clusterseq,
+                                 clusterseq.jets[clusterseq_index[ijetA]]._cluster_hist_index,
+                                 BeamJet, Invalid, dij_min)
         else
             # Jet-jet merge
             if ijetB < ijetA
@@ -221,15 +227,15 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
 
             # Now add the jet to the sequence, and update the history
             push!(clusterseq.jets, merged_jet)
+            newjet_k = length(clusterseq.jets)
             add_step_to_history!(clusterseq, minmax(hist_jetA, hist_jetB)...,
-                                 merged_jet._cluster_hist_index,
-                                 dij_min)
+                                 newjet_k, dij_min)
 
             # Update the compact arrays, reusing the JetA slot
             nndist[ijetA] = large_distance
             nndij[ijetA] = large_dij
             nni[ijetA] = ijetA
-            clusterseq_index[ijetA] = merged_jet._cluster_hist_index
+            clusterseq_index[ijetA] = newjet_k
         end
 
         # Squash step - copy the final jet's compact data into the jetB slot
@@ -250,7 +256,8 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
                 nni[i] = ijetB
             else
                 # Otherwise, if the jet had ijetA or ijetB as their NN, we need to update them
-                if (nni[i] == ijetA) || (nni[i] == ijetB)
+                # plus "belt and braces" check for an invalid NN (>N)
+                if (nni[i] == ijetA) || (nni[i] == ijetB) || (nni[i] > N)
                     update_nn_no_cross!(i, N, clusterseq, clusterseq_index, nndist,
                                         nndij, nni)
                 end
@@ -258,7 +265,10 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         end
 
         # Finally, we need to update the nearest neighbours for the new jet, checking both ways
-        update_nn_cross!(ijetA, N, clusterseq, clusterseq_index, nndist, nndij, nni)
+        # (But only if there was a new jet!)
+        if (ijetA != ijetB)
+            update_nn_cross!(ijetA, N, clusterseq, clusterseq_index, nndist, nndij, nni)
+        end
 
         # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni,
         #                      "iteration $iter")

@@ -128,9 +128,6 @@ struct ClusterSequence
     Qtot::Any
 end
 
-
-
-
 """
     ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64, strategy::RecoStrategy.Strategy, jets, history, Qtot)
 

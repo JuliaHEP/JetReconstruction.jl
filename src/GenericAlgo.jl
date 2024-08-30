@@ -75,7 +75,7 @@ function jet_reconstruct(particles; p::Union{Real, Nothing} = -1, R = 1.0,
         else
             throw(ErrorException("Invalid strategy: $(strategy)"))
         end
-    elseif algorithm == JetAlgorithm.Durham
+    elseif is_ee(algorithm)
         alg = ee_genkt_algorithm
     end
 
