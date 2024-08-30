@@ -100,6 +100,7 @@ function get_algorithm_power_consistency(; p::Union{Real, Nothing},
         if isnothing(p)
             throw(ArgumentError("Power must be specified for algorithm $algorithm"))
         end
+        # And then we just return what these are...
         return (p = p, algorithm = algorithm)
     end
 

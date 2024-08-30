@@ -2,12 +2,13 @@ const large_distance = 16.0 # = 4^2
 const large_dij = 1.0e6
 
 @inline function angular_distance(jet1::EEjet, jet2::EEjet)
-    # Calculate the angular distance between two jets (1 - cos(theta))
-    @muladd (1.0 - nx(jet1) * nx(jet2) - ny(jet1) * ny(jet2) - nz(jet1) * nz(jet2)) * 2.0
+    # Calculate the angular distance between two jets (1 - cos(θ))
+    @muladd 1.0 - nx(jet1) * nx(jet2) - ny(jet1) * ny(jet2) - nz(jet1) * nz(jet2)
 end
 
 """Calculate the dij distance, *given that NN is set correctly*"""
 @inline function dij_dist(nndist, jet1::EEjet, jet2::EEjet)
+    # Calculate the dij distance between two jets
     nndist * min(energy(jet1)^2, energy(jet2)^2)
 end
 
@@ -36,7 +37,8 @@ function get_angular_nearest_neighbours!(jets::Vector{FourMomentum},
     end
 end
 
-function update_nn_no_cross!(i, N, jets, clusterseq_index, nndist, nndij, nni)
+function update_nn_no_cross!(i, N, jets, clusterseq_index, nndist, nndij,
+                             nni)
     # Update the nearest neighbour for jet i, w.r.t. all other active jets
     nndist[i] = large_distance
     nni[i] = i
@@ -102,12 +104,15 @@ function ee_genkt_algorithm(particles::Vector{T}; p::Union{Real, Nothing} = -1, 
                             recombine = +) where {T}
 
     # Check for consistency between algorithm and power
-    # (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
+    (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
 
     # Integer p if possible
     p = (round(p) == p) ? Int(p) : p
 
     # For the Durham algorithm, p=1 and R is not used, but nominally set to 4
+    if algorithm == JetAlgorithm.Durham
+        R = 4.0
+    end
 
     if T == EEjet
         # recombination_particles will become part of the cluster sequence, so size it for
@@ -131,15 +136,33 @@ function ee_genkt_algorithm(particles::Vector{T}; p::Union{Real, Nothing} = -1, 
 end
 
 function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
-                             algorithm = JetAlgorithm.Durham,
+                             algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
                              recombine = +)
-
-    # Warning - at the moment this is only the Durham algorithm
-
     # Bounds
     N::Int = length(particles)
 
+    # R squared
     R2 = R^2
+
+    # Constant factor for the dij metric and the beam distance function
+    if algorithm == JetAlgorithm.Durham
+        dij_factor = 2.0
+    elseif algorithm == JetAlgorithm.EEKt
+        if R < π
+            dij_factor = 1 / (1 - cos(R))
+        else
+            dij_factor = 3 + cos(R)
+        end
+    else
+        throw(ArgumentError("Algorithm $algorithm not supported for e+e-"))
+    end
+    # # We add a reverse normalisation factor for the beam distance to ensure that
+    # # the comparison with dij is correct
+    # beam_distance_alg(algorithm, jet::EEjet) = algorithm == JetAlgorithm.Durham ?
+    #                                            large_distance : jet.E^2p / dij_factor
+    # beam_distance(jet::EEjet) = beam_distance_alg(algorithm, jet)
+
+    # Beam merge function
 
     # Optimised compact arrays for determining the next merge step We make sure
     # these arrays are type stable - have seen issues where, depending on the
@@ -160,7 +183,8 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
                                  Qtot)
 
     # Run over initial pairs of jets to find nearest neighbours
-    get_angular_nearest_neighbours!(clusterseq.jets, clusterseq_index, nndist, nndij, nni)
+    get_angular_nearest_neighbours!(clusterseq.jets, clusterseq_index,
+                                    nndist, nndij, nni)
 
     # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, "Start")
 
@@ -174,7 +198,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
             ijetA, ijetB = ijetB, ijetA
         end
         # Normalise the dij_min
-        dij_min /= R2
+        dij_min *= dij_factor
 
         if ijetA != ijetB
 
