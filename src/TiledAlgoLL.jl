@@ -463,7 +463,7 @@ function _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1, R = 
     tiling = Tiling(setup_tiling(_eta, R))
 
     # ClusterSequence is the struct that holds the state of the reconstruction
-    clusterseq = ClusterSequence(algorithm, p, RecoStrategy.N2Tiled, jets, history, Qtot)
+    clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Tiled, jets, history, Qtot)
 
     # Tiled jets is a structure that has additional variables for tracking which tile a jet is in
     tiledjets = similar(clusterseq.jets, TiledJet)

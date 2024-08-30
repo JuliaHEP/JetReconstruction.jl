@@ -180,7 +180,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     # Setup the initial history and get the total energy
     history, Qtot = initial_history(particles)
 
-    clusterseq = ClusterSequence(algorithm, p, RecoStrategy.N2Plain, particles, history,
+    clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Plain, particles, history,
                                  Qtot)
 
     # Run over initial pairs of jets to find nearest neighbours
