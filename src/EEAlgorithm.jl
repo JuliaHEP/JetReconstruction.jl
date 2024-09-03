@@ -7,9 +7,9 @@ const large_dij = 1.0e6
 end
 
 """Calculate the dij distance, *given that NN is set correctly*"""
-@inline function dij_dist(nndist, jet1::EEjet, jet2::EEjet)
+@inline function dij_dist(nndist, jet1::EEjet, jet2::EEjet, p=1)
     # Calculate the dij distance between two jets
-    nndist * min(energy(jet1)^2, energy(jet2)^2)
+    nndist * min(energy(jet1)^2p, energy(jet2)^2p)
 end
 
 function get_angular_nearest_neighbours!(cs::ClusterSequence,
@@ -34,7 +34,7 @@ function get_angular_nearest_neighbours!(cs::ClusterSequence,
     end
     @inbounds for i in eachindex(jets)
         nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
-                            jets[clusterseq_index[nni[i]]])
+                            jets[clusterseq_index[nni[i]]], cs.power)
     end
 end
 
@@ -55,7 +55,7 @@ function update_nn_no_cross!(i, N, cs::ClusterSequence, clusterseq_index, nndist
         end
     end
     nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
-                        jets[clusterseq_index[nni[i]]])
+                        jets[clusterseq_index[nni[i]]], cs.power)
 end
 
 function update_nn_cross!(i, N, cs::ClusterSequence, clusterseq_index, nndist, nndij, nni)
@@ -77,12 +77,12 @@ function update_nn_cross!(i, N, cs::ClusterSequence, clusterseq_index, nndist, n
                 nni[j] = i
                 # j will not be revisited, so update metric distance here
                 nndij[j] = dij_dist(nndist[j], jets[clusterseq_index[j]],
-                                    jets[clusterseq_index[i]])
+                                    jets[clusterseq_index[i]], cs.power)
             end
         end
     end
     nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
-                        jets[clusterseq_index[nni[i]]])
+                        jets[clusterseq_index[nni[i]]], cs.power)
 end
 
 function ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, msg)
@@ -133,7 +133,7 @@ function ee_genkt_algorithm(particles::Vector{T}; p::Union{Real, Nothing} = -1, 
     end
 
     # Now call the actual reconstruction method, tuned for our internal EDM
-    _ee_genkt_algorithm(particles = recombination_particles; p = 1, R = 4.0,
+    _ee_genkt_algorithm(particles = recombination_particles; p = p, R = R,
                         algorithm = algorithm,
                         recombine = recombine)
 end
