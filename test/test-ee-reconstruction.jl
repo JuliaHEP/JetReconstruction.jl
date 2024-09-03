@@ -17,3 +17,12 @@ eekt_inclusive = ComparisonTest(events_file_ee,
                                (cs) -> inclusive_jets(cs; ptmin = 5.0), "inclusive")
 
 run_reco_test(eekt_inclusive)
+
+for r in [2.0, 4.0]
+    eekt_njets = ComparisonTest(events_file_ee,
+                                   joinpath(@__DIR__, "data",
+                                            "jet-collections-fastjet-njets4-EEKt-p1-R$(r).json.gz"),
+                                   JetAlgorithm.EEKt, RecoStrategy.N2Plain, 1, r,
+                                   (cs) -> exclusive_jets(cs; njets = 4), "exclusive njets")
+    run_reco_test(eekt_njets)
+end

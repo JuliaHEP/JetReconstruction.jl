@@ -178,7 +178,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     nndist::Vector{Float64} = Vector{Float64}(undef, N) # distances 
     fill!(nndist, large_distance)
     nndij::Vector{Float64} = Vector{Float64}(undef, N)  # dij metric distance
-    nni::Vector{Int} = collect(1:N) # Nearest neighbour index
+    nni::Vector{Int} = collect(1:N) # Nearest neighbour index (in the compact arrays!)
 
     # Maps index from the compact array to the clusterseq jet vector
     clusterseq_index::Vector{Int} = collect(1:N)
