@@ -102,6 +102,17 @@ function ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nn
     @debug "Consistency check passed at $msg"
 end
 
+function dij_correct_for_beam!(cs::ClusterSequence, clusterseq_index, nndist, nndij, nni, N, dij_factor)
+    # Correct the dij metric for the beam merges
+    for i in 1:N
+        diB = energy(cs.jets[clusterseq_index[i]])^(2*cs.power)
+        if diB < nndij[i] * dij_factor
+            nndij[i] = diB / dij_factor
+            nni[i] = 0
+        end
+    end
+end
+
 function ee_genkt_algorithm(particles::Vector{T}; p::Union{Real, Nothing} = -1, R = 4.0,
                             algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                             recombine = +) where {T}
@@ -154,7 +165,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         if R < π
             dij_factor = 1 / (1 - cos(R))
         else
-            dij_factor = 3 + cos(R)
+            dij_factor = 1 / (3 + cos(R))
         end
     else
         throw(ArgumentError("Algorithm $algorithm not supported for e+e-"))
@@ -187,6 +198,11 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     iter = 0
     while N != 0
         iter += 1
+
+        if algorithm == JetAlgorithm.EEKt
+            dij_correct_for_beam!(clusterseq, clusterseq_index, nndist, nndij, nni, N, dij_factor)
+        end
+
         dij_min, ijetA = fast_findmin(nndij, N)
         ijetB = nni[ijetA]
 
@@ -196,8 +212,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         dij_min *= dij_factor
 
         # Now we check if there is a "beam" merge possibility
-        if (algorithm === JetAlgorithm.EEKt) &&
-           (energy(clusterseq.jets[clusterseq_index[ijetA]])^2p < dij_min)
+        if ijetB == 0
             # We have an EEKt beam merge
             dij_min = energy(clusterseq.jets[clusterseq_index[ijetA]])^2p
             ijetB = ijetA
