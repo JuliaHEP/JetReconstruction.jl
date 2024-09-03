@@ -79,7 +79,8 @@ function jet_process(events::Vector{Vector{PseudoJet}};
                      gcoff::Bool = false,
                      profile = nothing,
                      alloc::Bool = false,
-                     dump::Union{String, Nothing} = nothing)
+                     dump::Union{String, Nothing} = nothing,
+                     dump_cs = false)
 
     # If we are dumping the results, setup the JSON structure
     if !isnothing(dump)
@@ -148,6 +149,15 @@ function jet_process(events::Vector{Vector{PseudoJet}};
                 end
                 if !isnothing(dump)
                     push!(jet_collection, FinalJets(ievt, finaljets))
+                end
+                if dump_cs
+                    println("Cluster sequence for event $(ievt)")
+                    for (ijet, jet) in enumerate(cs.jets)
+                        println(" $(ijet) - $(jet)")
+                    end
+                    for (ihistory, history) in enumerate(cs.history)
+                        println(" $(ihistory) - $(history)")
+                    end
                 end
             end
         end
@@ -239,6 +249,10 @@ function parse_command_line(args)
         arg_type = Int
         default = 1
 
+        "--dump-clusterseq"
+        help = "Dump the cluster sequence for each event"
+        action = :store_true
+
         "--gcoff"
         help = "Turn off Julia garbage collector during each time measurement."
         action = :store_true
@@ -293,7 +307,7 @@ function main()
                 ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
                 njets = args[:exclusive_njets],
                 nsamples = args[:nsamples], gcoff = args[:gcoff], profile = args[:profile],
-                alloc = args[:alloc], dump = args[:dump])
+                alloc = args[:alloc], dump = args[:dump], dump_cs = args[:dump_clusterseq])
     nothing
 end
 
