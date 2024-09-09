@@ -1,3 +1,5 @@
+# Use these constants whenever we need to set a large value for the distance or
+# metric distance
 const large_distance = 16.0 # = 4^2
 const large_dij = 1.0e6
 
@@ -7,7 +9,7 @@ const large_dij = 1.0e6
 end
 
 """Calculate the dij distance, *given that NN is set correctly*"""
-@inline function dij_dist(nndist, jet1::EEjet, jet2::EEjet, p=1)
+@inline function dij_dist(nndist, jet1::EEjet, jet2::EEjet, p = 1)
     # Calculate the dij distance between two jets
     nndist * min(energy(jet1)^2p, energy(jet2)^2p)
 end
@@ -102,10 +104,11 @@ function ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nn
     @debug "Consistency check passed at $msg"
 end
 
-function dij_correct_for_beam!(cs::ClusterSequence, clusterseq_index, nndist, nndij, nni, N, dij_factor)
+function dij_correct_for_beam!(cs::ClusterSequence, clusterseq_index, nndist, nndij, nni, N,
+                               dij_factor)
     # Correct the dij metric for the beam merges
     for i in 1:N
-        diB = energy(cs.jets[clusterseq_index[i]])^(2*cs.power)
+        diB = energy(cs.jets[clusterseq_index[i]])^(2 * cs.power)
         if diB < nndij[i] * dij_factor
             nndij[i] = diB / dij_factor
             nni[i] = 0
@@ -176,7 +179,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     # values returned by the methods, they can become unstable and performance
     # degrades
     nndist::Vector{Float64} = Vector{Float64}(undef, N) # distances 
-    fill!(nndist, large_distance)
+    fill!(nndist, R2)
     nndij::Vector{Float64} = Vector{Float64}(undef, N)  # dij metric distance
     nni::Vector{Int} = collect(1:N) # Nearest neighbour index (in the compact arrays!)
 
@@ -200,7 +203,8 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         iter += 1
 
         if algorithm == JetAlgorithm.EEKt
-            dij_correct_for_beam!(clusterseq, clusterseq_index, nndist, nndij, nni, N, dij_factor)
+            dij_correct_for_beam!(clusterseq, clusterseq_index, nndist, nndij, nni, N,
+                                  dij_factor)
         end
 
         dij_min, ijetA = fast_findmin(nndij, N)
@@ -247,7 +251,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
                                  newjet_k, dij_min)
 
             # Update the compact arrays, reusing the JetA slot
-            nndist[ijetA] = large_distance
+            nndist[ijetA] = R2
             nndij[ijetA] = large_dij
             nni[ijetA] = ijetA
             clusterseq_index[ijetA] = newjet_k
