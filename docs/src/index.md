@@ -32,34 +32,56 @@ Algorithms used are based on the C++ FastJet package (<https://fastjet.fr>,
 [arXiv:1111.6097](https://arxiv.org/abs/1111.6097)), reimplemented natively in
 Julia.
 
-The algorithms include ``\text{anti}-{k}_\text{T}``, Cambridge/Aachen and
-inclusive ``k_\text{T}``.
+The algorithms include anti-``{k}_\text{T}``, Cambridge/Aachen, inclusive
+``k_\text{T}``, generalised ``k_\text{T}`` for ``pp`` events; and the Durham
+algorithm and generalised ``k_\text{T}`` for ``e^+e^-``.
 
 ## Reconstruction Interface
 
 The main interface for reconstruction is [`jet_reconstruct`](@ref), called as, e.g.,
 
 ```julia
-jet_reconstruct(particles; p = -1, R = 1.0)
+jet_reconstruct(particles; algorithm = JetAlgorithm.AntiKt, R = 1.0)
 ```
 
-or
+or with some of the optional arguments,
 
 ```julia
-jet_reconstruct(particles; algorithm = JetAlgorithm.AntiKt, R = 1.0)
+jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, R = 0.4, p = 0.5, recombine = +, strategy = RecoStrategy.Best)
 ```
 
 Where `particles` is a collection of 4-vector objects to reconstruct and the
 algorithm is either given explicitly or implied by the power value. For the case
-of generalised $k_T$ both the algorithm (`JetAlgorithm.GenKt`) and `p` are
-needed. For the case of the Durham algorithm the `R` value is ignored.
+of generalised ``k_T`` (for ``pp`` and ``e^+e^-``) both the algorithm
+(`JetAlgorithm.GenKt`) and `p` are needed. For the case of the Durham algorithm
+the `R` value is ignored.
 
 The object returned is a [`ClusterSequence`](@ref), which internally tracks all
 merge steps.
 
+### Algorithm Types
+
+Each known algorithm is referenced using a `JetAlgorithm` scoped enum value.
+
+| Algorithm | Type name | Notes |
+|-----------|-----------|-------|
+| anti-``{k}_\text{T}`` | `JetAlgorithm.AntiKt` | Implies `p=-1` |
+| Cambridge/Aachen | `JetAlgorithm.CA` | Implies `p=0` |
+| inclusive ``k_\text{T}`` | `JetAlgorithm.Kt` | Implies `p=1` |
+| generalised ``k_\text{T}`` | `JetAlgorithm.GenKt` | For $pp$, value of `p` must also be specified |
+| ``e^+e-`` ``k_\text{T}`` / Durham | `JetAlgorithm.Durham` | `R` value ignored and can be omitted |
+| generalised ``e^+e-`` ``k_\text{T}`` | `JetAlgorithm.EEKt` | For ``e^+e^-``, value of `p` must also be specified |
+
+### ``pp`` Algorithms
+
+For the three ``pp`` algorithms with fixed `p` values, the `p` value can be
+given instead of the algorithm name. However, this should be considered
+*deprecated* and will be removed in a future release.
+
 ## Strategy
 
-Three strategies are available for the different algorithms:
+Three strategies are available for the different algorithms, which can be
+specified by passing the named argument `strategy=...`.
 
 | Strategy Name | Notes | Interface |
 |---|---|---|
@@ -76,10 +98,10 @@ strategy's interface directly, e.g.,
 
 ```julia
 # For N2Plain strategy called directly
-plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +)
+plain_jet_reconstruct(particles::Vector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, recombine = +)
 ```
 
-Note that there is no `strategy` option in these interfaces.
+(There is no `strategy` option in these interfaces.)
 
 ## Inclusive and Exclusive Selections
 

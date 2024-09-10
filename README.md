@@ -2,6 +2,8 @@
 
 [![Build Status](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![DOI](https://zenodo.org/badge/507671522.svg)](https://zenodo.org/doi/10.5281/zenodo.12671414)
+[![](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliahep.github.io/JetReconstruction.jl/stable)
+[![](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliahep.github.io/JetReconstruction.jl/dev)
 
 ## This package implements sequential Jet Reconstruction (clustering)
 
@@ -12,7 +14,8 @@ Algorithms used are based on the C++ FastJet package (<https://fastjet.fr>,
 [arXiv:1111.6097](https://arxiv.org/abs/1111.6097)), reimplemented natively in Julia.
 
 The algorithms include anti-$`{k}_\text{T}`$, Cambridge/Aachen, inclusive
-$`k_\text{T}`$, generalised $`k_\text{T}`$ for pp events; and the Durham algorithm for e+e-.
+$`k_\text{T}`$, generalised $`k_\text{T}`$ for $`pp`$ events; and the Durham
+algorithm and generalised $`k_\text{T}`$ for $`e^+e^-`$.
 
 ### Interface
 
@@ -32,6 +35,7 @@ cs = jet_reconstruct(particles::Vector{T}; algorithm = JetAlgorithm.AntiKt, R = 
   - `JetAlgorithm.Kt` inclusive $k_\text{T}$
   - `JetAlgorithm.GenKt` generalised $k_\text{T}$ (which also requires specification of `p`)
   - `JetAlgorithm.Durham` the $e^+e-$ $k_\text{T}$ algorithm, also known as the Durham algorithm
+  - `JetAlgorithm.EEKt` the $e^+e-$ generalised $k_\text{T}$ algorithm
 - `R` - the cone size parameter; no particles more geometrically distance than `R` will be merged (default 1.0; note this parameter is ignored for the Durham algorithm)
 - `recombine` - the function used to merge two pseudojets (default is a simple 4-vector addition of $`(E, \mathbf{p})`$)
 - `strategy` - the algorithm strategy to adopt, as described below (default `RecoStrategy.Best`)
@@ -47,7 +51,7 @@ values of $p$ then correspond to different reconstruction algorithms:
 - `0` gives Cambridge/Aachen
 - `1` gives inclusive $k_\text{T}$
 
-(for the `GenKt` algorithm the `p` value *must* also be given to specify the algorithm fully).
+Note, for the `GenKt` and `EEKt` algorithms the `p` value *must* also be given to specify the algorithm fully.
 
 To obtain the final inclusive jets, use the `inclusive_jets` method:
 
