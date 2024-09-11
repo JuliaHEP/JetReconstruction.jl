@@ -107,6 +107,7 @@ final jets.
 - `strategy::RecoStrategy.Strategy`: The strategy used for clustering.
 - `power::Float64`: The power value used for the clustering algorithm (not that
   this value is always stored as a Float64 to be type stable)
+- `R::Float64`: The R parameter used for the clustering algorithm.
 - `jets::Vector{PseudoJet}`: The physical PseudoJets in the cluster sequence.
   Each PseudoJet corresponds to a position in the history.
 - `n_initial_jets::Int`: The initial number of particles used for exclusive
@@ -119,6 +120,7 @@ final jets.
 struct ClusterSequence
     algorithm::JetAlgorithm.Algorithm
     power::Float64
+    R::Float64
     strategy::RecoStrategy.Strategy
     jets::Vector{FourMomentum}
     n_initial_jets::Int
@@ -127,23 +129,22 @@ struct ClusterSequence
 end
 
 """
-    ClusterSequence(p::Int, strategy::RecoStrategy.Strategy, jets, history, Qtot)
+    ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64, strategy::RecoStrategy.Strategy, jets, history, Qtot)
 
-Constructs a `ClusterSequence` object with a specific power and algorithm.
+Construct a `ClusterSequence` object.
 
 # Arguments
-- `p::Real`: The power value for the algorithm.
-- `algorithm::JetAlgorithm.Algorithm`: The algorithm.
-- `strategy::RecoStrategy.Strategy`: The reconstruction strategy.
-- `jets`: The jets to be clustered.
-- `history`: The length of the jets.
-- `Qtot`: The total energy of the jets.
-
-# Returns
-A `ClusterSequence` object.
+- `algorithm::JetAlgorithm.Algorithm`: The algorithm used for clustering.
+- `p::Real`: The power value used for the clustering algorithm.
+- `R::Float64`: The R parameter used for the clustering algorithm.
+- `strategy::RecoStrategy.Strategy`: The strategy used for clustering.
+- `jets::Vector{PseudoJet}`: The physical PseudoJets in the cluster sequence.
+- `history::Vector{HistoryElement}`: The branching history of the cluster
+  sequence.
+- `Qtot::Any`: The total energy of the event.
 """
-ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, strategy::RecoStrategy.Strategy, jets, history, Qtot) = begin
-    ClusterSequence(algorithm, Float64(p), strategy, jets, length(jets), history, Qtot)
+ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64, strategy::RecoStrategy.Strategy, jets, history, Qtot) = begin
+    ClusterSequence(algorithm, Float64(p), R, strategy, jets, length(jets), history, Qtot)
 end
 
 """

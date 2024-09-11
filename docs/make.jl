@@ -18,4 +18,7 @@ makedocs(sitename = "JetReconstruction.jl",
          ])
 
 deploydocs(repo = "github.com/JuliaHEP/JetReconstruction.jl.git",
+           devbranch = "main",
+           devurl = "dev",
+           versions = ["stable" => "v^", "v#.#", "dev" => "dev"],
            push_preview = true)
