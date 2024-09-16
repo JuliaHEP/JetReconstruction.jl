@@ -17,6 +17,7 @@ module JetReconstruction
 
 using LorentzVectorHEP
 using MuladdMacro
+using StructArrays
 
 # Import from LorentzVectorHEP methods for those 4-vector types
 pt2(p::LorentzVector) = LorentzVectorHEP.pt2(p)

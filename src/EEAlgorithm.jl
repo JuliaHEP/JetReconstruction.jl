@@ -3,12 +3,41 @@
 const large_distance = 16.0 # = 4^2
 const large_dij = 1.0e6
 
+"""
+    angular_distance(jet1::EEjet, jet2::EEjet) -> Float64
+
+Calculate the angular distance between two jets using the formula (1 - cos(θ)).
+
+# Arguments
+- `jet1::EEjet`: The first jet.
+- `jet2::EEjet`: The second jet.
+
+# Returns
+- `Float64`: The angular distance between `jet1` and `jet2`, which is ``1 - cos
+  \theta``.
+"""
 @inline function angular_distance(jet1::EEjet, jet2::EEjet)
     # Calculate the angular distance between two jets (1 - cos(θ))
     @muladd 1.0 - nx(jet1) * nx(jet2) - ny(jet1) * ny(jet2) - nz(jet1) * nz(jet2)
 end
 
-"""Calculate the dij distance, *given that NN is set correctly*"""
+"""
+    dij_dist(nndist, jet1::EEjet, jet2::EEjet, p = 1)
+
+Calculate the dij distance between two ``e^+e^-``jets.
+
+# Arguments
+- `nndist`: The angular nearest neighbor distance.
+- `jet1::EEjet`: The first jet object of type `EEjet`.
+- `jet2::EEjet`: The second jet object of type `EEjet`.
+- `p=1`: The power weighting for the energy of the jets.
+
+# Returns
+- The dij distance between `jet1` and `jet2`.
+
+# Notes
+- The function uses the energy of the jets raised to the power of `2p` and takes the minimum of these values multiplied by `nndist`.
+"""
 @inline function dij_dist(nndist, jet1::EEjet, jet2::EEjet, p = 1)
     # Calculate the dij distance between two jets
     nndist * min(energy(jet1)^2p, energy(jet2)^2p)
@@ -37,6 +66,38 @@ function get_angular_nearest_neighbours!(cs::ClusterSequence,
     @inbounds for i in eachindex(jets)
         nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
                             jets[clusterseq_index[nni[i]]], cs.power)
+    end
+end
+
+function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
+    # Get the initial nearest neighbours for each jet
+    N = length(eereco)
+    # Nearest neighbour geometric distance
+    @inbounds for i in 1:N
+        @inbounds for j in (i + 1):N
+            @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
+            if this_nndist < eereco[i].nndist
+                eereco[i].nndist = this_nndist
+                eereco[i].nni = j
+            end
+            if this_nndist < eereco[j].nndist
+                eereco[j].nndist = this_nndist
+                eereco[j].nni = i
+            end
+        end
+    end
+    # Nearest neighbour dij distance
+    @inbounds for i in 1:N
+        eereco[i].dijdist = min(eereco[i].E2p, eereco[eereco[i].nni].E2p) * dij_factor * eereco[i].nndist
+    end
+    # For the EEKt algorithm, we need to check the beam distance as well
+    if algorithm == JetAlgorithm.EEKt
+        @inbounds for i in 1:N
+            if eereco[i].E2p < eereco[i].dijdist
+                eereco[i].dijdist = eereco[i].E2p
+                eereco[i].nni = 0
+            end
+        end
     end
 end
 
@@ -147,7 +208,7 @@ function ee_genkt_algorithm(particles::Vector{T}; p::Union{Real, Nothing} = -1, 
     end
 
     # Now call the actual reconstruction method, tuned for our internal EDM
-    _ee_genkt_algorithm(particles = recombination_particles; p = p, R = R,
+    _ee_genkt_algorithm(particles = recombination_particles, p = p, R = R,
                         algorithm = algorithm,
                         recombine = recombine)
 end
@@ -174,17 +235,32 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         throw(ArgumentError("Algorithm $algorithm not supported for e+e-"))
     end
 
+    # For optimised reconstruction generate an SoA containing the necessary
+    # jet information and populate it accordingly
+    # We need N slots for this array
+    eereco = StructArray{EERecoJet}(undef, N)
+    for i in eachindex(particles)
+        eereco[i].index = i
+        eereco[i].nni = 0
+        eereco[i].nndist = R2
+        # eereco[i].dijdist = UNDEF # Not needed
+        eereco[i].nx = nx(particles[i])
+        eereco[i].ny = ny(particles[i])
+        eereco[i].nz = nz(particles[i])
+        eereco[i].E2p = energy(particles[i])^(2p)
+    end
+
     # Optimised compact arrays for determining the next merge step We make sure
     # these arrays are type stable - have seen issues where, depending on the
     # values returned by the methods, they can become unstable and performance
     # degrades
-    nndist::Vector{Float64} = Vector{Float64}(undef, N) # distances 
-    fill!(nndist, R2)
-    nndij::Vector{Float64} = Vector{Float64}(undef, N)  # dij metric distance
-    nni::Vector{Int} = collect(1:N) # Nearest neighbour index (in the compact arrays!)
+    # nndist::Vector{Float64} = Vector{Float64}(undef, N) # distances 
+    # fill!(nndist, R2)
+    # nndij::Vector{Float64} = Vector{Float64}(undef, N)  # dij metric distance
+    # nni::Vector{Int} = collect(1:N) # Nearest neighbour index (in the compact arrays!)
 
-    # Maps index from the compact array to the clusterseq jet vector
-    clusterseq_index::Vector{Int} = collect(1:N)
+    # # Maps index from the compact array to the clusterseq jet vector
+    # clusterseq_index::Vector{Int} = collect(1:N)
 
     # Setup the initial history and get the total energy
     history, Qtot = initial_history(particles)
@@ -193,7 +269,9 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
                                  Qtot)
 
     # Run over initial pairs of jets to find nearest neighbours
-    get_angular_nearest_neighbours!(clusterseq, clusterseq_index, nndist, nndij, nni)
+    get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
+
+    return clusterseq
 
     # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, "Start")
 
@@ -202,10 +280,10 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     while N != 0
         iter += 1
 
-        if algorithm == JetAlgorithm.EEKt
-            dij_correct_for_beam!(clusterseq, clusterseq_index, nndist, nndij, nni, N,
-                                  dij_factor)
-        end
+        # if algorithm == JetAlgorithm.EEKt
+        #     dij_correct_for_beam!(clusterseq, clusterseq_index, nndist, nndij, nni, N,
+        #                           dij_factor)
+        # end
 
         dij_min, ijetA = fast_findmin(nndij, N)
         ijetB = nni[ijetA]

@@ -95,3 +95,16 @@ function show(io::IO, eej::EEjet)
     print(io, "EEjet(px: ", eej.px, " py: ", eej.py, " pz: ", eej.pz, " E: ", eej.E,
           " cluster_hist_index: ", eej._cluster_hist_index, ")")
 end
+
+# Optimised reconstruction struct for e+e jets
+
+mutable struct EERecoJet
+    index::Int
+    nni::Int
+    nndist::Float64
+    dijdist::Float64
+    nx::Float64
+    ny::Float64
+    nz::Float64
+    E2p::Float64
+end
