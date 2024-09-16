@@ -29,6 +29,7 @@ LoopVectorization = "0.12.170"
 LorentzVectorHEP = "0.1.6"
 LorentzVectors = "0.4.3"
 Makie = "0.21"
+MuladdMacro = "0.2.4"
 julia = "1.9"
 
 [extras]
