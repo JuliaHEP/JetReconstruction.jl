@@ -72,7 +72,7 @@ end
 function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
     # Get the initial nearest neighbours for each jet
     N = length(eereco)
-    this_dist_vector = Vector{Float64}(undef, N)
+    # this_dist_vector = Vector{Float64}(undef, N)
     # Nearest neighbour geometric distance
     @inbounds for i in 1:N
         # TODO: Replace the 'j' loop with a vectorised operation over the appropriate array elements
@@ -80,14 +80,20 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
         #     eereco[i].ny .* eereco[i + 1:end].ny .- eereco[i].nz .* eereco[i + 1:end].nz
         @inbounds for j in (i + 1):N
             @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
-            if this_nndist < eereco[i].nndist
-                eereco.nndist[i] = this_nndist
-                eereco.nni[i] = j
-            end
-            if this_nndist < eereco[j].nndist
-                eereco.nndist[j] = this_nndist
-                eereco.nni[j] = i
-            end
+            better_nndist_i = this_nndist < eereco[i].nndist
+            eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
+            eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
+            better_nndist_j = this_nndist < eereco[j].nndist
+            eereco.nndist[j] = better_nndist_j ? this_nndist : eereco.nndist[i]
+            eereco.nni[j] = better_nndist_j ? i : eereco.nni[j]
+            # if this_nndist < eereco[i].nndist
+            #     eereco.nndist[i] = this_nndist
+            #     eereco.nni[i] = j
+            # end
+            # if this_nndist < eereco[j].nndist
+            #     eereco.nndist[j] = this_nndist
+            #     eereco.nni[j] = i
+            # end
         end
     end
     # Nearest neighbour dij distance
