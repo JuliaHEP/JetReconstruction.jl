@@ -104,10 +104,13 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
     # This is structured to only check for EEKt once!
     if algorithm == JetAlgorithm.EEKt
         @inbounds for i in 1:N
-            if eereco[i].E2p < eereco[i].dijdist
-                eereco.dijdist[i] = eereco.E2p[i]
-                eereco.nni[i] = 0
-            end
+            beam_close = eereco[i].E2p < eereco[i].dijdist
+            eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
+            eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
+            # if eereco[i].E2p < eereco[i].dijdist
+            #     eereco.dijdist[i] = eereco.E2p[i]
+            #     eereco.nni[i] = 0
+            # end
         end
     end
 end
@@ -139,18 +142,24 @@ function update_nn_no_cross!(eereco, i, N, algorithm, dij_factor)
     @inbounds for j in 1:N
         if j != i
             @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
-            if this_nndist < eereco[i].nndist
-                eereco.nndist[i] = this_nndist
-                eereco.nni[i] = j
-            end
+            better_nndist_i = this_nndist < eereco[i].nndist
+            eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
+            eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
+            # if this_nndist < eereco[i].nndist
+            #     eereco.nndist[i] = this_nndist
+            #     eereco.nni[i] = j
+            # end
         end
     end
     eereco.dijdist[i] = min(eereco[i].E2p, eereco[eereco[i].nni].E2p) * dij_factor * eereco[i].nndist
     if algorithm == JetAlgorithm.EEKt
-        if eereco[i].E2p < eereco[i].dijdist
-            eereco.dijdist[i] = eereco[i].E2p
-            eereco.nni[i] = 0
-        end
+        beam_close = eereco[i].E2p < eereco[i].dijdist
+        eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
+        eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
+        # if eereco[i].E2p < eereco[i].dijdist
+        #     eereco.dijdist[i] = eereco[i].E2p
+        #     eereco.nni[i] = 0
+        # end
     end
 end
 
@@ -190,10 +199,13 @@ function update_nn_cross!(eereco, i, N, algorithm, dij_factor)
     @inbounds for j in 1:N
         if j != i
             @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
-            if this_nndist < eereco[i].nndist
-                eereco.nndist[i] = this_nndist
-                eereco.nni[i] = j
-            end
+            better_nndist_i = this_nndist < eereco[i].nndist
+            eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
+            eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
+            # if this_nndist < eereco[i].nndist
+            #     eereco.nndist[i] = this_nndist
+            #     eereco.nni[i] = j
+            # end
             if this_nndist < eereco[j].nndist
                 eereco.nndist[j] = this_nndist
                 eereco.nni[j] = i
@@ -210,10 +222,13 @@ function update_nn_cross!(eereco, i, N, algorithm, dij_factor)
     end
     eereco.dijdist[i] = min(eereco[i].E2p, eereco[eereco[i].nni].E2p) * dij_factor * eereco[i].nndist
     if algorithm == JetAlgorithm.EEKt
-        if eereco[i].E2p < eereco[i].dijdist
-            eereco.dijdist[i] = eereco[i].E2p
-            eereco.nni[i] = 0
-        end
+        beam_close = eereco[i].E2p < eereco[i].dijdist
+        eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
+        eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
+        # if eereco[i].E2p < eereco[i].dijdist
+        #     eereco.dijdist[i] = eereco[i].E2p
+        #     eereco.nni[i] = 0
+        # end
     end
 end
 
