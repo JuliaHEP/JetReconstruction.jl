@@ -81,26 +81,26 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
         @inbounds for j in (i + 1):N
             @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
             if this_nndist < eereco[i].nndist
-                eereco[i].nndist = this_nndist
-                eereco[i].nni = j
+                eereco.nndist[i] = this_nndist
+                eereco.nni[i] = j
             end
             if this_nndist < eereco[j].nndist
-                eereco[j].nndist = this_nndist
-                eereco[j].nni = i
+                eereco.nndist[j] = this_nndist
+                eereco.nni[j] = i
             end
         end
     end
     # Nearest neighbour dij distance
     @inbounds for i in 1:N
-        eereco[i].dijdist = min(eereco[i].E2p, eereco[eereco[i].nni].E2p) * dij_factor * eereco[i].nndist
+        eereco.dijdist[i] = min(eereco[i].E2p, eereco[eereco[i].nni].E2p) * dij_factor * eereco[i].nndist
     end
     # For the EEKt algorithm, we need to check the beam distance as well
     # This is structured to only check for EEKt once!
     if algorithm == JetAlgorithm.EEKt
         @inbounds for i in 1:N
             if eereco[i].E2p < eereco[i].dijdist
-                eereco[i].dijdist = eereco[i].E2p
-                eereco[i].nni = 0
+                eereco.dijdist[i] = eereco.E2p[i]
+                eereco.nni[i] = 0
             end
         end
     end
@@ -128,22 +128,22 @@ end
 
 # Update the nearest neighbour for jet i, w.r.t. all other active jets
 function update_nn_no_cross!(eereco, i, N, algorithm, dij_factor)
-    eereco[i].nndist = large_distance
-    eereco[i].nni = 0
+    eereco.nndist[i] = large_distance
+    eereco.nni[i] = i
     @inbounds for j in 1:N
         if j != i
             @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
             if this_nndist < eereco[i].nndist
-                eereco[i].nndist = this_nndist
-                eereco[i].nni = j
+                eereco.nndist[i] = this_nndist
+                eereco.nni[i] = j
             end
         end
     end
-    eereco[i].dijdist = min(eereco[i].E2p, eereco[eereco[i].nni].E2p) * dij_factor * eereco[i].nndist
+    eereco.dijdist[i] = min(eereco[i].E2p, eereco[eereco[i].nni].E2p) * dij_factor * eereco[i].nndist
     if algorithm == JetAlgorithm.EEKt
         if eereco[i].E2p < eereco[i].dijdist
-            eereco[i].dijdist = eereco[i].E2p
-            eereco[i].nni = 0
+            eereco.dijdist[i] = eereco[i].E2p
+            eereco.nni[i] = 0
         end
     end
 end
@@ -179,34 +179,34 @@ end
 function update_nn_cross!(eereco, i, N, algorithm, dij_factor)
     # Update the nearest neighbour for jet i, w.r.t. all other active jets
     # also doing the cross check for the other jet
-    eereco[i].nndist = large_distance
-    eereco[i].nni = 0
+    eereco.nndist[i] = large_distance
+    eereco.nni[i] = i
     @inbounds for j in 1:N
         if j != i
             @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
             if this_nndist < eereco[i].nndist
-                eereco[i].nndist = this_nndist
-                eereco[i].nni = j
+                eereco.nndist[i] = this_nndist
+                eereco.nni[i] = j
             end
             if this_nndist < eereco[j].nndist
-                eereco[j].nndist = this_nndist
-                eereco[j].nni = i
+                eereco.nndist[j] = this_nndist
+                eereco.nni[j] = i
                 # j will not be revisited, so update metric distance here
-                nndij[j] = min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[j].nndist
+                eereco.dijdist[j] = min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[j].nndist
                 if algorithm == JetAlgorithm.EEKt
                     if eereco[j].E2p < eereco[j].dijdist
-                        eereco[j].dijdist = eereco[j].E2p
-                        eereco[j].nni = 0
+                        eereco.dijdist[j] = eereco[j].E2p
+                        eereco.nni[j] = 0
                     end
                 end
             end
         end
     end
-    eereco[i].dijdist = min(eereco[i].E2p, eereco[eereco[i].nni].E2p) * dij_factor * eereco[i].nndist
+    eereco.dijdist[i] = min(eereco[i].E2p, eereco[eereco[i].nni].E2p) * dij_factor * eereco[i].nndist
     if algorithm == JetAlgorithm.EEKt
         if eereco[i].E2p < eereco[i].dijdist
-            eereco[i].dijdist = eereco[i].E2p
-            eereco[i].nni = 0
+            eereco.dijdist[i] = eereco[i].E2p
+            eereco.nni[i] = 0
         end
     end
 end
@@ -219,6 +219,23 @@ function ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nn
         end
         for i in 1:N
             jet = clusterseq.jets[clusterseq_index[i]]
+            jet_hist = clusterseq.history[jet._cluster_hist_index]
+            if jet_hist.child != Invalid
+                @error "Jet $i has invalid child $(jet_hist.child)"
+            end
+        end
+    end
+    @debug "Consistency check passed at $msg"
+end
+
+function ee_check_consistency(clusterseq, eereco, N)
+    # Check the consistency of the reconstruction state
+    for i in 1:N
+        if eereco[i].nni > N
+            @error "Jet $i has invalid nearest neighbour $(eereco[i].nni)"
+        end
+        for i in 1:N
+            jet = clusterseq.jets[eereco[i].index]
             jet_hist = clusterseq.history[jet._cluster_hist_index]
             if jet_hist.child != Invalid
                 @error "Jet $i has invalid child $(jet_hist.child)"
@@ -339,7 +356,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
 
     # println("Jet 23 compact: ", eereco[23])
 
-    return clusterseq
+    # return clusterseq
 
     # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, "Start")
 
@@ -356,7 +373,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         dij_min, ijetA = fast_findmin(eereco.dijdist, N)
         ijetB = eereco[ijetA].nni
 
-        println("N $N, Iteration $iter: dij_min = $dij_min, ijetA = $ijetA, ijetB = $ijetB; njets = $(length(clusterseq.jets))")
+        # println("N $N, Iteration $iter: dij_min = $dij_min, ijetA = $ijetA, ijetB = $ijetB; njets = $(length(clusterseq.jets))")
 
         # Normalise the dij_min
         # dij_min *= dij_factor
@@ -364,13 +381,15 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         # Now we check if there is a "beam" merge possibility
         if ijetB == 0
             # We have an EEKt beam merge
-            ijetB == ijetA
-            println("Beam merge: dij_min = $dij_min, ijetA = $ijetA, ijetB = $ijetB")
+            ijetB = ijetA
+            # println("Beam merge: dij_min = $dij_min, ijetA = $ijetA, ijetB = $ijetB")
             add_step_to_history!(clusterseq,
                                  clusterseq.jets[eereco[ijetA].index]._cluster_hist_index,
                                  BeamJet, Invalid, dij_min)
         elseif N == 1
             # We have a single jet left
+            ijetB = ijetA
+            # println("Final jet: dij_min = $dij_min, ijetA = $ijetA, ijetB = $ijetB")
             add_step_to_history!(clusterseq,
                                  clusterseq.jets[eereco[ijetA].index]._cluster_hist_index,
                                  BeamJet, Invalid, dij_min)
@@ -396,18 +415,26 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
                                  newjet_k, dij_min)
 
             # Update the compact arrays, reusing the JetA slot
-            eereco[ijetA].index = newjet_k
-            eereco[ijetA].nni = 0
-            eereco[ijetA].nndist = R2
-            eereco[ijetA].nx = nx(merged_jet)
-            eereco[ijetA].ny = ny(merged_jet)
-            eereco[ijetA].nz = nz(merged_jet)
-            eereco[ijetA].E2p = energy(merged_jet)^(2p)
+            eereco.index[ijetA] = newjet_k
+            eereco.nni[ijetA] = 0
+            eereco.nndist[ijetA] = R2
+            eereco.nx[ijetA] = nx(merged_jet)
+            eereco.ny[ijetA] = ny(merged_jet)
+            eereco.nz[ijetA] = nz(merged_jet)
+            eereco.E2p[ijetA] = energy(merged_jet)^(2p)
         end
 
         # Squash step - copy the final jet's compact data into the jetB slot
+        # unless we are at the end of the array, in which case do nothing
         if ijetB != N
-            eereco[ijetB] = eereco[N]
+            eereco.index[ijetB] = eereco.index[N]
+            eereco.nni[ijetB] = eereco.nni[N]
+            eereco.nndist[ijetB] = eereco.nndist[N]
+            eereco.dijdist[ijetB] = eereco.dijdist[N]
+            eereco.nx[ijetB] = eereco.nx[N]
+            eereco.ny[ijetB] = eereco.ny[N]
+            eereco.nz[ijetB] = eereco.nz[N]
+            eereco.E2p[ijetB] = eereco.E2p[N]
         end
 
         # Now number of active jets is decreased by one
@@ -417,7 +444,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         for i in 1:N
             # First, if any jet's NN was the old index N, it's now ijetB
             if (ijetB != N + 1) && (eereco[i].nni == N + 1)
-                eereco[i].nni = ijetB
+                eereco.nni[i] = ijetB
             else
                 # Otherwise, if the jet had ijetA or ijetB as their NN, we need to update them
                 # plus "belt and braces" check for an invalid NN (>N)
@@ -432,11 +459,12 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         # Finally, we need to update the nearest neighbours for the new jet, checking both ways
         # (But only if there was a new jet!)
         if ijetA != ijetB
-            update_nn_cross!(eereco, i, N, algorithm, dij_factor)
+            update_nn_cross!(eereco, ijetA, N, algorithm, dij_factor)
         end
 
         # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni,
         #                      "iteration $iter")
+        # ee_check_consistency(clusterseq, eereco, N)
     end
 
     # Return the final cluster sequence structure
