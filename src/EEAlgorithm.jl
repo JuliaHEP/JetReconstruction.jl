@@ -4,69 +4,39 @@ const large_distance = 16.0 # = 4^2
 const large_dij = 1.0e6
 
 """
-    angular_distance(jet1::EEjet, jet2::EEjet) -> Float64
+    angular_distance(eereco, i, j) -> Float64
 
 Calculate the angular distance between two jets using the formula (1 - cos(θ)).
 
 # Arguments
-- `jet1::EEjet`: The first jet.
-- `jet2::EEjet`: The second jet.
+- `eereco`: The array of `EERecoJet` objects.
+- `i`: The first jet.
+- `j`: The second jet.
 
 # Returns
-- `Float64`: The angular distance between `jet1` and `jet2`, which is ``1 - cos
-  \theta``.
+- `Float64`: The angular distance between `i` and `j`, which is ``1 - cos\theta``.
 """
-@inline function angular_distance(jet1::EEjet, jet2::EEjet)
-    # Calculate the angular distance between two jets (1 - cos(θ))
-    @muladd 1.0 - nx(jet1) * nx(jet2) - ny(jet1) * ny(jet2) - nz(jet1) * nz(jet2)
+@inline function angular_distance(eereco, i, j)
+    @muladd 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
 end
 
 """
-    dij_dist(nndist, jet1::EEjet, jet2::EEjet, p = 1)
+    dij_dist(eereco, i, j, dij_factor)
 
 Calculate the dij distance between two ``e^+e^-``jets.
 
 # Arguments
-- `nndist`: The angular nearest neighbor distance.
-- `jet1::EEjet`: The first jet object of type `EEjet`.
-- `jet2::EEjet`: The second jet object of type `EEjet`.
-- `p=1`: The power weighting for the energy of the jets.
+- `eereco`: The array of `EERecoJet` objects.
+- `i`: The first jet.
+- `j`: The second jet.
+- `dij_factor`: The scaling factor to multiply the dij distance by.
 
 # Returns
-- The dij distance between `jet1` and `jet2`.
-
-# Notes
-- The function uses the energy of the jets raised to the power of `2p` and takes the minimum of these values multiplied by `nndist`.
+- The dij distance between `i` and `j`.
 """
-@inline function dij_dist(nndist, jet1::EEjet, jet2::EEjet, p = 1)
-    # Calculate the dij distance between two jets
-    nndist * min(energy(jet1)^2p, energy(jet2)^2p)
-end
-
-function get_angular_nearest_neighbours!(cs::ClusterSequence,
-                                         clusterseq_index::Vector{Int},
-                                         nndist::Vector{Float64},
-                                         nndij::Vector{Float64}, nni::Vector{Int})
-    jets = cs.jets
-    # Get the nearest neighbour for each jet
-    @inbounds for i in eachindex(jets)
-        @inbounds for j in (i + 1):length(jets)
-            this_nndist = angular_distance(jets[clusterseq_index[i]],
-                                           jets[clusterseq_index[j]])
-            if this_nndist < nndist[i]
-                nndist[i] = this_nndist
-                nni[i] = j
-            end
-            if this_nndist < nndist[j]
-                nndist[j] = this_nndist
-                nni[j] = i
-            end
-        end
-    end
-    @inbounds for i in eachindex(jets)
-        nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
-                            jets[clusterseq_index[nni[i]]], cs.power)
-    end
+@inline function dij_dist(eereco, i, j, dij_factor)
+    # Calculate the dij distance for jet i
+    min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[i].nndist
 end
 
 function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
@@ -75,11 +45,14 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
     # this_dist_vector = Vector{Float64}(undef, N)
     # Nearest neighbour geometric distance
     @inbounds for i in 1:N
-        # TODO: Replace the 'j' loop with a vectorised operation over the appropriate array elements
+        # TODO: Replace the 'j' loop with a vectorised operation over the appropriate array elements?
         # this_dist_vector .= 1.0 .- eereco.nx[i:N] .* eereco[i + 1:end].nx .-
         #     eereco[i].ny .* eereco[i + 1:end].ny .- eereco[i].nz .* eereco[i + 1:end].nz
+        # The problem here will be avoiding allocations for the array outputs, which would easily
+        # kill performance
         @inbounds for j in (i + 1):N
-            @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
+            this_nndist = angular_distance(eereco, i, j)
+            # @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
             better_nndist_i = this_nndist < eereco[i].nndist
             eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
@@ -115,33 +88,14 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
     end
 end
 
-function update_nn_no_cross!(i, N, cs::ClusterSequence, clusterseq_index, nndist, nndij,
-                             nni)
-    # Update the nearest neighbour for jet i, w.r.t. all other active jets
-    nndist[i] = large_distance
-    nni[i] = i
-    jets = cs.jets
-    @inbounds for j in 1:N
-        if j != i
-            this_nndist = angular_distance(jets[clusterseq_index[i]],
-                                           jets[clusterseq_index[j]])
-            if this_nndist < nndist[i]
-                nndist[i] = this_nndist
-                nni[i] = j
-            end
-        end
-    end
-    nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
-                        jets[clusterseq_index[nni[i]]], cs.power)
-end
-
 # Update the nearest neighbour for jet i, w.r.t. all other active jets
 function update_nn_no_cross!(eereco, i, N, algorithm, dij_factor)
     eereco.nndist[i] = large_distance
     eereco.nni[i] = i
     @inbounds for j in 1:N
         if j != i
-            @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
+            this_nndist = angular_distance(eereco, i, j)
+            # @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
             better_nndist_i = this_nndist < eereco[i].nndist
             eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
@@ -163,34 +117,6 @@ function update_nn_no_cross!(eereco, i, N, algorithm, dij_factor)
     end
 end
 
-
-function update_nn_cross!(i, N, cs::ClusterSequence, clusterseq_index, nndist, nndij, nni)
-    # Update the nearest neighbour for jet i, w.r.t. all other active jets
-    # also doing the cross check for the other jet
-    nndist[i] = large_distance
-    nni[i] = i
-    jets = cs.jets
-    @inbounds for j in 1:N
-        if j != i
-            this_nndist = angular_distance(jets[clusterseq_index[i]],
-                                           jets[clusterseq_index[j]])
-            if this_nndist < nndist[i]
-                nndist[i] = this_nndist
-                nni[i] = j
-            end
-            if this_nndist < nndist[j]
-                nndist[j] = this_nndist
-                nni[j] = i
-                # j will not be revisited, so update metric distance here
-                nndij[j] = dij_dist(nndist[j], jets[clusterseq_index[j]],
-                                    jets[clusterseq_index[i]], cs.power)
-            end
-        end
-    end
-    nndij[i] = dij_dist(nndist[i], jets[clusterseq_index[i]],
-                        jets[clusterseq_index[nni[i]]], cs.power)
-end
-
 function update_nn_cross!(eereco, i, N, algorithm, dij_factor)
     # Update the nearest neighbour for jet i, w.r.t. all other active jets
     # also doing the cross check for the other jet
@@ -198,7 +124,8 @@ function update_nn_cross!(eereco, i, N, algorithm, dij_factor)
     eereco.nni[i] = i
     @inbounds for j in 1:N
         if j != i
-            @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
+            this_nndist = angular_distance(eereco, i, j)
+            # @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
             better_nndist_i = this_nndist < eereco[i].nndist
             eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
