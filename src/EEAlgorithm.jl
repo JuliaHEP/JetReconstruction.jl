@@ -6,7 +6,8 @@ const large_dij = 1.0e6
 """
     angular_distance(eereco, i, j) -> Float64
 
-Calculate the angular distance between two jets using the formula (1 - cos(θ)).
+Calculate the angular distance between two jets `i` and `j` using the formula
+``1 - cos(θ_{ij})``.
 
 # Arguments
 - `eereco`: The array of `EERecoJet` objects.
@@ -14,10 +15,12 @@ Calculate the angular distance between two jets using the formula (1 - cos(θ)).
 - `j`: The second jet.
 
 # Returns
-- `Float64`: The angular distance between `i` and `j`, which is ``1 - cos\theta``.
+- `Float64`: The angular distance between `i` and `j`, which is ``1 -
+  cos\theta``.
 """
 @inline function angular_distance(eereco, i, j)
-    @inbounds @muladd 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
+    @inbounds @muladd 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
+                      eereco[i].nz * eereco[j].nz
 end
 
 """
@@ -53,21 +56,14 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
         # kill performance
         @inbounds for j in (i + 1):N
             this_nndist = angular_distance(eereco, i, j)
-            # @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
+
+            # Using these ternary operators is faster than the if-else block
             better_nndist_i = this_nndist < eereco[i].nndist
             eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
             better_nndist_j = this_nndist < eereco[j].nndist
             eereco.nndist[j] = better_nndist_j ? this_nndist : eereco.nndist[j]
             eereco.nni[j] = better_nndist_j ? i : eereco.nni[j]
-            # if this_nndist < eereco[i].nndist
-            #     eereco.nndist[i] = this_nndist
-            #     eereco.nni[i] = j
-            # end
-            # if this_nndist < eereco[j].nndist
-            #     eereco.nndist[j] = this_nndist
-            #     eereco.nni[j] = i
-            # end
         end
     end
     # Nearest neighbour dij distance
@@ -75,16 +71,12 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
         eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor)
     end
     # For the EEKt algorithm, we need to check the beam distance as well
-    # This is structured to only check for EEKt once!
+    # (This is structured to only check for EEKt once)
     if algorithm == JetAlgorithm.EEKt
         @inbounds for i in 1:N
-            beam_close = eereco[i].E2p < eereco[i].dijdist
-            eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
-            eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
-            # if eereco[i].E2p < eereco[i].dijdist
-            #     eereco.dijdist[i] = eereco.E2p[i]
-            #     eereco.nni[i] = 0
-            # end
+            beam_closer = eereco[i].E2p < eereco[i].dijdist
+            eereco.dijdist[i] = beam_closer ? eereco[i].E2p : eereco.dijdist[i]
+            eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
         end
     end
 end
@@ -96,14 +88,9 @@ function update_nn_no_cross!(eereco, i, N, algorithm, dij_factor)
     @inbounds for j in 1:N
         if j != i
             this_nndist = angular_distance(eereco, i, j)
-            # @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
             better_nndist_i = this_nndist < eereco[i].nndist
             eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
-            # if this_nndist < eereco[i].nndist
-            #     eereco.nndist[i] = this_nndist
-            #     eereco.nni[i] = j
-            # end
         end
     end
     eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor)
@@ -111,10 +98,6 @@ function update_nn_no_cross!(eereco, i, N, algorithm, dij_factor)
         beam_close = eereco[i].E2p < eereco[i].dijdist
         eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
         eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
-        # if eereco[i].E2p < eereco[i].dijdist
-        #     eereco.dijdist[i] = eereco[i].E2p
-        #     eereco.nni[i] = 0
-        # end
     end
 end
 
@@ -129,10 +112,6 @@ function update_nn_cross!(eereco, i, N, algorithm, dij_factor)
             better_nndist_i = this_nndist < eereco[i].nndist
             eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
-            # if this_nndist < eereco[i].nndist
-            #     eereco.nndist[i] = this_nndist
-            #     eereco.nni[i] = j
-            # end
             if this_nndist < eereco[j].nndist
                 eereco.nndist[j] = this_nndist
                 eereco.nni[j] = i
@@ -152,10 +131,6 @@ function update_nn_cross!(eereco, i, N, algorithm, dij_factor)
         beam_close = eereco[i].E2p < eereco[i].dijdist
         eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
         eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
-        # if eereco[i].E2p < eereco[i].dijdist
-        #     eereco.dijdist[i] = eereco[i].E2p
-        #     eereco.nni[i] = 0
-        # end
     end
 end
 
@@ -176,8 +151,39 @@ function ee_check_consistency(clusterseq, eereco, N)
     @debug "Consistency check passed at $msg"
 end
 
-function ee_genkt_algorithm(particles::Vector{T}; p::Union{Real, Nothing} = -1, R = 4.0,
-                            algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
+"""
+    ee_genkt_algorithm(particles::Vector{T}; p = -1, R = 4.0,
+                       algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
+                       recombine = +) where {T}
+
+Run an e+e- reconstruction algorithm on a set of initial particles.
+
+# Arguments
+- `particles::Vector{T}`: A vector of particles to be clustered.
+- `p = 1`: The power parameter for the algorithm. Not required / ignored for
+  the Durham algorithm when it is set to 1.
+- `R = 4.0`: The jet radius parameter. Not required / ignored for the Durham
+  algorithm.
+- `algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham`: The specific jet
+  algorithm to use.
+- `recombine`: The recombination scheme to use. Defaults to `+`.
+
+# Returns
+- The result of the jet clustering as a `ClusterSequence` object.
+
+# Notes
+This is the public interface to the e+e- jet clustering algorithm. The function
+will check for consistency between the algorithm and the power parameter as
+needed. It will then prepare the internal EDM particles for the clustering
+itself, and call the actual reconstruction method `_ee_genkt_algorithm`.
+
+If the algorithm is Durham, `p` is set to 1 and `R` is nominally set to 4.
+
+Note that unlike `pp` reconstruction the algorithm has to be specified
+explicitly.
+"""
+function ee_genkt_algorithm(particles::Vector{T}; p = 1, R = 4.0,
+                            algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
                             recombine = +) where {T}
 
     # Check for consistency between algorithm and power
@@ -212,6 +218,13 @@ function ee_genkt_algorithm(particles::Vector{T}; p::Union{Real, Nothing} = -1, 
                         recombine = recombine)
 end
 
+"""
+    _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
+                       algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
+                       recombine = +)
+
+This function is the actual implementation of the e+e- jet clustering algorithm.
+"""
 function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
                              algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
                              recombine = +)
@@ -248,35 +261,17 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
         eereco.nz[i] = nz(particles[i])
         eereco.E2p[i] = energy(particles[i])^(2p)
     end
-    # println("Jet 23 compact init: ", eereco[23])
-    # println("Jet 23 particles: ", particles[23])
-
-    # Optimised compact arrays for determining the next merge step We make sure
-    # these arrays are type stable - have seen issues where, depending on the
-    # values returned by the methods, they can become unstable and performance
-    # degrades
-    # nndist::Vector{Float64} = Vector{Float64}(undef, N) # distances 
-    # fill!(nndist, R2)
-    # nndij::Vector{Float64} = Vector{Float64}(undef, N)  # dij metric distance
-    # nni::Vector{Int} = collect(1:N) # Nearest neighbour index (in the compact arrays!)
-
-    # # Maps index from the compact array to the clusterseq jet vector
-    # clusterseq_index::Vector{Int} = collect(1:N)
 
     # Setup the initial history and get the total energy
     history, Qtot = initial_history(particles)
 
     clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Plain, particles, history,
                                  Qtot)
-    # println("Jet 23: ", clusterseq.jets[23])
 
     # Run over initial pairs of jets to find nearest neighbours
     get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
 
-    # println("Jet 23 compact: ", eereco[23])
-
-    # return clusterseq
-
+    # Only for debugging purposes...
     # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, "Start")
 
     # Now we can start the main loop
@@ -284,31 +279,19 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     while N != 0
         iter += 1
 
-        # if algorithm == JetAlgorithm.EEKt
-        #     dij_correct_for_beam!(clusterseq, clusterseq_index, nndist, nndij, nni, N,
-        #                           dij_factor)
-        # end
-
         dij_min, ijetA = fast_findmin(eereco.dijdist, N)
         ijetB = eereco[ijetA].nni
-
-        # println("N $N, Iteration $iter: dij_min = $dij_min, ijetA = $ijetA, ijetB = $ijetB; njets = $(length(clusterseq.jets))")
-
-        # Normalise the dij_min
-        # dij_min *= dij_factor
 
         # Now we check if there is a "beam" merge possibility
         if ijetB == 0
             # We have an EEKt beam merge
             ijetB = ijetA
-            # println("Beam merge: dij_min = $dij_min, ijetA = $ijetA, ijetB = $ijetB")
             add_step_to_history!(clusterseq,
                                  clusterseq.jets[eereco[ijetA].index]._cluster_hist_index,
                                  BeamJet, Invalid, dij_min)
         elseif N == 1
             # We have a single jet left
             ijetB = ijetA
-            # println("Final jet: dij_min = $dij_min, ijetA = $ijetA, ijetB = $ijetB")
             add_step_to_history!(clusterseq,
                                  clusterseq.jets[eereco[ijetA].index]._cluster_hist_index,
                                  BeamJet, Invalid, dij_min)
@@ -367,10 +350,9 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
             else
                 # Otherwise, if the jet had ijetA or ijetB as their NN, we need to update them
                 # plus "belt and braces" check for an invalid NN (>N)
-                if (eereco[i].nni == ijetA) || (eereco[i].nni == ijetB) || (eereco[i].nni > N)
+                if (eereco[i].nni == ijetA) || (eereco[i].nni == ijetB) ||
+                   (eereco[i].nni > N)
                     update_nn_no_cross!(eereco, i, N, algorithm, dij_factor)
-                    # update_nn_no_cross!(i, N, clusterseq, clusterseq_index, nndist,
-                    #                     nndij, nni)
                 end
             end
         end
@@ -381,8 +363,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
             update_nn_cross!(eereco, ijetA, N, algorithm, dij_factor)
         end
 
-        # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni,
-        #                      "iteration $iter")
+        # Only for debugging purposes...
         # ee_check_consistency(clusterseq, eereco, N)
     end
 
