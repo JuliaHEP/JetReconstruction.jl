@@ -58,7 +58,7 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
             eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
             better_nndist_j = this_nndist < eereco[j].nndist
-            eereco.nndist[j] = better_nndist_j ? this_nndist : eereco.nndist[i]
+            eereco.nndist[j] = better_nndist_j ? this_nndist : eereco.nndist[j]
             eereco.nni[j] = better_nndist_j ? i : eereco.nni[j]
             # if this_nndist < eereco[i].nndist
             #     eereco.nndist[i] = this_nndist
