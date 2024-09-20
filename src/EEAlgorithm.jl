@@ -17,7 +17,7 @@ Calculate the angular distance between two jets using the formula (1 - cos(θ)).
 - `Float64`: The angular distance between `i` and `j`, which is ``1 - cos\theta``.
 """
 @inline function angular_distance(eereco, i, j)
-    @muladd 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
+    @inbounds @muladd 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
 end
 
 """
@@ -35,8 +35,9 @@ Calculate the dij distance between two ``e^+e^-``jets.
 - The dij distance between `i` and `j`.
 """
 @inline function dij_dist(eereco, i, j, dij_factor)
-    # Calculate the dij distance for jet i
-    min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[i].nndist
+    # Calculate the dij distance for jet i from jet j
+    j == 0 && return large_dij
+    @inbounds min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[i].nndist
 end
 
 function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
@@ -70,8 +71,8 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
         end
     end
     # Nearest neighbour dij distance
-    @inbounds for i in 1:N
-        eereco.dijdist[i] = min(eereco[i].E2p, eereco[eereco[i].nni].E2p) * dij_factor * eereco[i].nndist
+    for i in 1:N
+        eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor)
     end
     # For the EEKt algorithm, we need to check the beam distance as well
     # This is structured to only check for EEKt once!
@@ -105,7 +106,7 @@ function update_nn_no_cross!(eereco, i, N, algorithm, dij_factor)
             # end
         end
     end
-    eereco.dijdist[i] = min(eereco[i].E2p, eereco[eereco[i].nni].E2p) * dij_factor * eereco[i].nndist
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor)
     if algorithm == JetAlgorithm.EEKt
         beam_close = eereco[i].E2p < eereco[i].dijdist
         eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
@@ -125,7 +126,6 @@ function update_nn_cross!(eereco, i, N, algorithm, dij_factor)
     @inbounds for j in 1:N
         if j != i
             this_nndist = angular_distance(eereco, i, j)
-            # @muladd this_nndist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
             better_nndist_i = this_nndist < eereco[i].nndist
             eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
@@ -137,7 +137,7 @@ function update_nn_cross!(eereco, i, N, algorithm, dij_factor)
                 eereco.nndist[j] = this_nndist
                 eereco.nni[j] = i
                 # j will not be revisited, so update metric distance here
-                eereco.dijdist[j] = min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[j].nndist
+                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor)
                 if algorithm == JetAlgorithm.EEKt
                     if eereco[j].E2p < eereco[j].dijdist
                         eereco.dijdist[j] = eereco[j].E2p
@@ -147,7 +147,7 @@ function update_nn_cross!(eereco, i, N, algorithm, dij_factor)
             end
         end
     end
-    eereco.dijdist[i] = min(eereco[i].E2p, eereco[eereco[i].nni].E2p) * dij_factor * eereco[i].nndist
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor)
     if algorithm == JetAlgorithm.EEKt
         beam_close = eereco[i].E2p < eereco[i].dijdist
         eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
@@ -157,23 +157,6 @@ function update_nn_cross!(eereco, i, N, algorithm, dij_factor)
         #     eereco.nni[i] = 0
         # end
     end
-end
-
-function ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, msg)
-    # Check the consistency of the reconstruction state
-    for i in 1:N
-        if nni[i] > N
-            @error "Jet $i has invalid nearest neighbour $(nni[i])"
-        end
-        for i in 1:N
-            jet = clusterseq.jets[clusterseq_index[i]]
-            jet_hist = clusterseq.history[jet._cluster_hist_index]
-            if jet_hist.child != Invalid
-                @error "Jet $i has invalid child $(jet_hist.child)"
-            end
-        end
-    end
-    @debug "Consistency check passed at $msg"
 end
 
 function ee_check_consistency(clusterseq, eereco, N)
@@ -191,18 +174,6 @@ function ee_check_consistency(clusterseq, eereco, N)
         end
     end
     @debug "Consistency check passed at $msg"
-end
-
-function dij_correct_for_beam!(cs::ClusterSequence, clusterseq_index, nndist, nndij, nni, N,
-                               dij_factor)
-    # Correct the dij metric for the beam merges
-    for i in 1:N
-        diB = energy(cs.jets[clusterseq_index[i]])^(2 * cs.power)
-        if diB < nndij[i] * dij_factor
-            nndij[i] = diB / dij_factor
-            nni[i] = 0
-        end
-    end
 end
 
 function ee_genkt_algorithm(particles::Vector{T}; p::Union{Real, Nothing} = -1, R = 4.0,
