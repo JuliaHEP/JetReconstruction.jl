@@ -11,30 +11,21 @@ The `EEjet` struct is a 4-momentum object used for the e+e jet reconstruction ro
 - `_cluster_hist_index::Int`: The index of the cluster histogram.
 - `_p2::Float64`: The squared momentum of the jet.
 - `_inv_p::Float64`: The inverse momentum of the jet.
-- `_nx::Float64`: The normalised x-component of the jet direction [0.0, 1.0].
-- `_ny::Float64`: The normalised y-component of the jet direction [0.0, 1.0].
-- `_nz::Float64`: The normalised z-component of the jet direction [0.0, 1.0].
 """
 mutable struct EEjet <: FourMomentum
     px::Float64
     py::Float64
     pz::Float64
     E::Float64
-    _cluster_hist_index::Int
     _p2::Float64
     _inv_p::Float64
-    _nx::Float64
-    _ny::Float64
-    _nz::Float64
+    _cluster_hist_index::Int
 end
 
 function EEjet(px::Float64, py::Float64, pz::Float64, E::Float64, _cluster_hist_index::Int)
     @muladd p2 = px * px + py * py + pz * pz
-    inv_p = 1.0 / sqrt(p2)
-    nx = px * inv_p
-    ny = py * inv_p
-    nz = pz * inv_p
-    EEjet(px, py, pz, E, _cluster_hist_index, p2, inv_p, nx, ny, nz)
+    inv_p = @fastmath 1.0 / sqrt(p2)
+    EEjet(px, py, pz, E, p2, inv_p, _cluster_hist_index)
 end
 
 EEjet(px::Float64, py::Float64, pz::Float64, E::Float64) = EEjet(px, py, pz, E, 0)
@@ -49,9 +40,9 @@ energy(eej::EEjet) = eej.E
 px(eej::EEjet) = eej.px
 py(eej::EEjet) = eej.py
 pz(eej::EEjet) = eej.pz
-nx(eej::EEjet) = eej._nx
-ny(eej::EEjet) = eej._ny
-nz(eej::EEjet) = eej._nz
+nx(eej::EEjet) = eej.px * eej._inv_p
+ny(eej::EEjet) = eej.py * eej._inv_p
+nz(eej::EEjet) = eej.pz * eej._inv_p
 cluster_hist_index(eej::EEjet) = eej._cluster_hist_index
 
 phi(eej::EEjet) = begin
