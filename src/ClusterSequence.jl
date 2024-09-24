@@ -176,6 +176,8 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
 
     local_step = length(clusterseq.history)
 
+    # println("Adding step $local_step: parent1=$parent1, parent2=$parent2, jetp_index=$jetp_index, dij=$dij")
+
     # Sanity check: make sure the particles have not already been recombined
     #
     # Note that good practice would make this an assert (since this is
@@ -184,7 +186,10 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
     # retry the clustering with a different strategy.
     @assert parent1 >= 1
     if clusterseq.history[parent1].child != Invalid
-        error("Internal error. Trying to recombine an object that has previsously been recombined.")
+        error("Internal error. Trying to recombine an object that has previsously been recombined. Parent " *
+              string(parent1) * "'s child index " *
+              string(clusterseq.history[parent1].child) * ". Parent jet index: " *
+              string(clusterseq.history[parent1].jetp_index) * ".")
     end
 
     hist_elem = clusterseq.history[parent1]
