@@ -17,13 +17,16 @@ StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [weakdeps]
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+EDM4hep = "eb32b910-dde9-4347-8fce-cd6be3498f0c"
 
 [extensions]
 JetVisualisation = "Makie"
+EDM4hepJets = "EDM4hep"
 
 [compat]
 Accessors = "0.1.36"
 CodecZlib = "0.7.4"
+EDM4hep = "0.4.1"
 EnumX = "1.0.4"
 JSON = "0.21.4"
 LoopVectorization = "0.12.170"

@@ -71,8 +71,8 @@ A `PseudoJet` object.
 PseudoJet(px::Real, py::Real, pz::Real, E::Real,
 _cluster_hist_index::Int,
 pt2::Real) = PseudoJet(px,
-                          py, pz, E, _cluster_hist_index,
-                          pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
+                       py, pz, E, _cluster_hist_index,
+                       pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
 
 """
     PseudoJet(px::Real, py::Real, pz::Real, E::Real)
