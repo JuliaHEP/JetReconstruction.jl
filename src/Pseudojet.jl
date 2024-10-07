@@ -50,46 +50,46 @@ mutable struct PseudoJet <: FourMomentum
 end
 
 """
-    PseudoJet(px::Float64, py::Float64, pz::Float64, E::Float64,
+    PseudoJet(px::Real, py::Real, pz::Real, E::Real,
         _cluster_hist_index::Int,
-        pt2::Float64)
+        pt2::Real)
 
 Constructs a PseudoJet object with the given momentum components and energy and
 history index.
 
 # Arguments
-- `px::Float64`: The x-component of the momentum.
-- `py::Float64`: The y-component of the momentum.
-- `pz::Float64`: The z-component of the momentum.
-- `E::Float64`: The energy.
+- `px::Real`: The x-component of the momentum.
+- `py::Real`: The y-component of the momentum.
+- `pz::Real`: The z-component of the momentum.
+- `E::Real`: The energy.
 - `_cluster_hist_index::Int`: The cluster history index.
-- `pt2::Float64`: The transverse momentum squared.
+- `pt2::Real`: The transverse momentum squared.
 
 # Returns
 A `PseudoJet` object.
 """
-PseudoJet(px::Float64, py::Float64, pz::Float64, E::Float64,
+PseudoJet(px::Real, py::Real, pz::Real, E::Real,
 _cluster_hist_index::Int,
-pt2::Float64) = PseudoJet(px,
+pt2::Real) = PseudoJet(px,
                           py, pz, E, _cluster_hist_index,
                           pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
 
 """
-    PseudoJet(px::Float64, py::Float64, pz::Float64, E::Float64)
+    PseudoJet(px::Real, py::Real, pz::Real, E::Real)
 
 Constructs a PseudoJet object with the given momentum components and energy.
 
 # Arguments
-- `px::Float64`: The x-component of the momentum.
-- `py::Float64`: The y-component of the momentum.
-- `pz::Float64`: The z-component of the momentum.
-- `E::Float64`: The energy.
+- `px::Real`: The x-component of the momentum.
+- `py::Real`: The y-component of the momentum.
+- `pz::Real`: The z-component of the momentum.
+- `E::Real`: The energy.
 
 # Returns
 A PseudoJet object.
 """
-PseudoJet(px::Float64, py::Float64,
-pz::Float64, E::Float64) = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
+PseudoJet(px::Real, py::Real,
+pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
 
 import Base.show
 """
