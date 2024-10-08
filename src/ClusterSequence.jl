@@ -342,7 +342,7 @@ function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = not
             if (parent < stop_point && parent > 0)
                 @debug "Added exclusive jet index $(clusterseq.history[parent].jetp_index)"
                 jet = clusterseq.jets[clusterseq.history[parent].jetp_index]
-                if T == PseudoJet
+                if (T == PseudoJet) || (T == EEjet)
                     push!(excl_jets, jet)
                 else
                     push!(excl_jets,
