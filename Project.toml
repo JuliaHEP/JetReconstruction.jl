@@ -26,7 +26,7 @@ EDM4hepJets = "EDM4hep"
 [compat]
 Accessors = "0.1.36"
 CodecZlib = "0.7.4"
-EDM4hep = "0.4.1"
+EDM4hep = "0.4.0"
 EnumX = "1.0.4"
 JSON = "0.21.4"
 LoopVectorization = "0.12.170"

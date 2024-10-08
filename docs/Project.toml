@@ -8,3 +8,5 @@ Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
 
 [compat]
 Documenter = "1.4"
+EDM4hep = "0.4"
+Makie = "0.20, 0.21"
