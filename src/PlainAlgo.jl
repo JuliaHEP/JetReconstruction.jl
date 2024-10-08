@@ -219,7 +219,8 @@ jets = plain_jet_reconstruct(particles; p = -1, R = 0.4)
 jets = plain_jet_reconstruct(particles; algorithm = JetAlgorithm.Kt, R = 1.0)
 ```
 """
-function plain_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -1, R = 1.0,
+function plain_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, Nothing} = -1,
+                               R = 1.0,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                                recombine = +) where {T}
 

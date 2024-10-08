@@ -34,12 +34,8 @@ function main()
             break
         end
         recps = RootIO.get(reader, evt, "ReconstructedParticles")
-        particles = ReconstructedParticle[]
-        for recp in recps
-            push!(particles, recp)
-        end
 
-        cs = jet_reconstruct(particles; algorithm = JetAlgorithm.Durham)
+        cs = jet_reconstruct(recps; algorithm = JetAlgorithm.Durham)
         @info begin
             jets = "Event $(ievt)\n"
             for jet in exclusive_jets(cs; njets = 2, T = EEjet)
