@@ -12,3 +12,7 @@ julia --project EDM4hepJets.jl [--maxevents MAX_EVENTS] path/to/input.root
 
 The optional argument `--maxevents` controls how many events are read from the
 input file (default is just 1).
+
+There is also a very simple `SimpleRecoEDM4hep.jl` that can be used in the REPL
+for tests and development. Here one has to update the file path explicitly to a
+valid local EDM4hep file.
