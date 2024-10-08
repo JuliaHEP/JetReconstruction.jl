@@ -1,29 +1,8 @@
-```@raw html
----
-layout: home
-
-hero:
-  name: "JetReconstruction.jl"
-  tagline:  "Jet reconstruction (reclustering) with Julia"
-  image:
-    src: /logo.png
-    alt: DocumenterVitepress
-  actions:
-    - theme: brand
-      text: Examples
-      link: /examples
-    - theme: alt
-      text: Public APIs
-      link: /lib/public
-
----
-```
-
 # Jet Reconstruction
 
 This package implements sequential Jet Reconstruction (clustering) algorithms,
-which are used in high-energy physics as part of event reconstruction for $pp$
-and $e^+e^-$ colliders.
+which are used in high-energy physics as part of event reconstruction for ``pp``
+and ``e^+e^-`` colliders.
 
 ## Algorithms
 
@@ -59,6 +38,31 @@ the `R` value is ignored.
 The object returned is a [`ClusterSequence`](@ref), which internally tracks all
 merge steps.
 
+### Input Particle Types
+
+For the `particles` input to the reconstruction any one dimensional
+`AbstractArray{T, 1}` can be used, where the type `T` has to implement methods
+to extract the 4-vector components, viz, the following are required:
+
+- `JetReconstuction.px(particle::T)`
+- `JetReconstuction.py(particle::T)`
+- `JetReconstuction.pz(particle::T)`
+- `JetReconstuction.energy(particle::T)`
+
+Currently built-in supported types are
+[`LorentzVectorHEP`](https://github.com/JuliaHEP/LorentzVectorHEP.jl), the
+`PseudoJet` and `EEjet`s from this package, and `ReconstructedParticles` from
+[EDM4hep](https://github.com/peremato/EDM4hep.jl).
+
+If you require support for a different input collection type then ensure you
+define the `px()`, etc. methods *for your specific type* and *in the
+`JetReconstruction` package*. This use of what might be considered type piracy
+is blessed as long as you are en *end user* of the jet reconstruction package.
+
+If your type is used in several places or by different users, please consider
+writing a package extension that will support your type, following the model for
+EDM4hep in `ext/EDM4hepJets.jl`.
+
 ### Algorithm Types
 
 Each known algorithm is referenced using a `JetAlgorithm` scoped enum value.
@@ -80,8 +84,8 @@ given instead of the algorithm name. However, this should be considered
 
 ## Strategy
 
-Three strategies are available for the different algorithms, which can be
-specified by passing the named argument `strategy=...`.
+For the ``pp`` algorithms three strategies are available for the different
+algorithms, which can be specified by passing the named argument `strategy=...`.
 
 | Strategy Name | Notes | Interface |
 |---|---|---|
@@ -93,15 +97,8 @@ Generally one can use the `jet_reconstruct` interface, shown above, as the
 *Best* strategy safely as the overhead is extremely low. That interface supports
 a `strategy` option to switch to a different option.
 
-Another option, if one wishes to use a specific strategy, is to call that
-strategy's interface directly, e.g.,
-
-```julia
-# For N2Plain strategy called directly
-plain_jet_reconstruct(particles::Vector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, recombine = +)
-```
-
-(There is no `strategy` option in these interfaces.)
+For ``e^+e^-`` algorithms particle densities are low, so the only implementation
+is of the same type as `N2Plain`.
 
 ## Inclusive and Exclusive Selections
 

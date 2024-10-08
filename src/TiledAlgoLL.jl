@@ -365,7 +365,8 @@ If both are given they must be consistent or an exception is thrown.
 tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4, recombine = +)
 ```
 """
-function tiled_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -1, R = 1.0,
+function tiled_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, Nothing} = -1,
+                               R = 1.0,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                                recombine = +) where {T}
 
