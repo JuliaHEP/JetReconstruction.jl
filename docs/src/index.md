@@ -26,42 +26,22 @@ jet_reconstruct(particles; algorithm = JetAlgorithm.AntiKt, R = 1.0)
 or with some of the optional arguments,
 
 ```julia
-jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, R = 0.4, p = 0.5, recombine = +, strategy = RecoStrategy.Best)
+jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, R = 0.4, 
+                p = 0.5, recombine = +, strategy = RecoStrategy.Best)
 ```
 
-Where `particles` is a collection of 4-vector objects to reconstruct and the
-algorithm is either given explicitly or implied by the power value. For the case
-of generalised ``k_T`` (for ``pp`` and ``e^+e^-``) both the algorithm
-(`JetAlgorithm.GenKt`) and `p` are needed. For the case of the Durham algorithm
-the `R` value is ignored.
+Where `particles` is a collection of 4-vector objects (see [Input Particle
+Types](@ref)) to reconstruct and the algorithm is either given explicitly or
+implied by the power value.
+
+For the case of generalised ``k_T`` (for ``pp`` and ``e^+e^-``) both the
+algorithm (`GenKt`, `EEKt`) and `p` are needed.
+
+The `R` value determines the cone size; in the case of the Durham algorithm the
+`R` value is ignored.
 
 The object returned is a [`ClusterSequence`](@ref), which internally tracks all
-merge steps.
-
-### Input Particle Types
-
-For the `particles` input to the reconstruction any one dimensional
-`AbstractArray{T, 1}` can be used, where the type `T` has to implement methods
-to extract the 4-vector components, viz, the following are required:
-
-- `JetReconstuction.px(particle::T)`
-- `JetReconstuction.py(particle::T)`
-- `JetReconstuction.pz(particle::T)`
-- `JetReconstuction.energy(particle::T)`
-
-Currently built-in supported types are
-[`LorentzVectorHEP`](https://github.com/JuliaHEP/LorentzVectorHEP.jl), the
-`PseudoJet` and `EEjet`s from this package, and `ReconstructedParticles` from
-[EDM4hep](https://github.com/peremato/EDM4hep.jl).
-
-If you require support for a different input collection type then ensure you
-define the `px()`, etc. methods *for your specific type* and *in the
-`JetReconstruction` package*. This use of what might be considered type piracy
-is blessed as long as you are en *end user* of the jet reconstruction package.
-
-If your type is used in several places or by different users, please consider
-writing a package extension that will support your type, following the model for
-EDM4hep in `ext/EDM4hepJets.jl`.
+merge steps and is used for [Inclusive and Exclusive Selections](@ref).
 
 ### Algorithm Types
 
@@ -76,37 +56,26 @@ Each known algorithm is referenced using a `JetAlgorithm` scoped enum value.
 | ``e^+e-`` ``k_\text{T}`` / Durham | `JetAlgorithm.Durham` | `R` value ignored and can be omitted |
 | generalised ``e^+e-`` ``k_\text{T}`` | `JetAlgorithm.EEKt` | For ``e^+e^-``, value of `p` must also be specified |
 
-### ``pp`` Algorithms
+#### ``pp`` Algorithms
 
 For the three ``pp`` algorithms with fixed `p` values, the `p` value can be
 given instead of the algorithm name. However, this should be considered
 *deprecated* and will be removed in a future release.
 
-## Strategy
+### Strategy
 
-For the ``pp`` algorithms three strategies are available for the different
-algorithms, which can be specified by passing the named argument `strategy=...`.
-
-| Strategy Name | Notes | Interface |
-|---|---|---|
-| `RecoStrategy.Best` | Dynamically switch strategy based on input particle density | `jet_reconstruct` |
-| `RecoStrategy.N2Plain` | Global matching of particles at each interation (works well for low $N$) | `plain_jet_reconstruct` |
-| `RecoStrategy.N2Tiled` | Use tiles of radius $R$ to limit search space (works well for higher $N$) | `tiled_jet_reconstruct` |
-
-Generally one can use the `jet_reconstruct` interface, shown above, as the
-*Best* strategy safely as the overhead is extremely low. That interface supports
-a `strategy` option to switch to a different option.
-
-For ``e^+e^-`` algorithms particle densities are low, so the only implementation
-is of the same type as `N2Plain`.
+Generally one does not need to manually specify a strategy, but [Algorithm
+Strategy](@ref) describes how to do this, if desired.
 
 ## Inclusive and Exclusive Selections
 
 To obtain final jets both inclusive (``p_T`` cut) and exclusive (``n_{jets}`` or
 ``d_{ij}`` cut) selections are supported:
 
-- [inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)](@ref)
-- [exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing)](@ref)
+- [`inclusive_jets(clusterseq::ClusterSequence, ptmin = 0.0)`](@ref)
+- [`exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing)`](@ref)
+
+(For `exclusive_jets` either `dcut` or `njets` is needed, but not both.)
 
 ### Sorting
 
@@ -119,29 +88,7 @@ sorted_jets = sort!(inclusive_jets(cs::ClusterSequence; ptmin=5.0),
   by=JetReconstruction.energy, rev=true)
 ```
 
-## Plotting and Animation
-
-![illustration](assets/jetvis.png)
-
-To visualise the clustered jets as a 3d bar plot (see illustration above) we now
-use `Makie.jl`. See the `jetsplot` function in `ext/JetVisualisation.jl` and its
-documentation for more. There are two worked examples in the `examples`
-directory.
-
-The plotting code is a package extension and will load if the one of the `Makie`
-modules is loaded in the environment.
-
-The [`animatereco`](@ref) function will animate the reconstruction sequence, given a
-`ClusterSequence` object. See the function documentation for the many options
-that can be customised.
-
-## Serialisation
-
-The package also provides methods such as `loadjets`, `loadjets!`, and
-`savejets` that one can use to save and load objects on/from disk easily in a
-very flexible format. See documentation for more.
-
-## Reference
+## References
 
 Although it has been developed further since the CHEP2023 conference, the CHEP
 conference proceedings,

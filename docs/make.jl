@@ -15,8 +15,11 @@ makedocs(sitename = "JetReconstruction.jl",
              "Examples" => "examples.md",
              "EDM4hep" => "EDM4hep.md",
              "Visualisation" => "visualisation.md",
-             "Reference" => Any["Public API" => "lib/public.md",
-                                "Internal API" => "lib/internal.md"]
+             "Particle Inputs" => "particles.md",
+             "Reconstruction Strategies" => "strategy.md",
+             "Reference Docs" => Any["Public API" => "lib/public.md",
+                                "Internal API" => "lib/internal.md"],
+             "Extras" => Any["Serialisation" => "extras/serialisation.md"]
          ])
 
 deploydocs(repo = "github.com/JuliaHEP/JetReconstruction.jl.git",

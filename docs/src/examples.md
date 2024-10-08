@@ -1,7 +1,9 @@
 # Jet Reconstruction Examples
 
 The Jet Reconstruction package has a number of example files that show how to
-usage.
+usage. These are in the `examples` subdirectory of the package and can be
+browsed directly on
+[GitHub](https://github.com/JuliaHEP/JetReconstruction.jl/tree/main/examples).
 
 *Note:* because of extra dependencies in these scripts, one must use the
 `Project.toml` file in the `examples` directory.
@@ -58,4 +60,4 @@ showing how the jets merge from their different constituents.
 
 The `examples/EDM4hep` folder contains examples of using EDM4hep reconstructed
 particles as input to jet reconstruction. See the specific `README.md` file in
-that directory.
+that directory as well as [EDM4hep Inputs](@ref).
