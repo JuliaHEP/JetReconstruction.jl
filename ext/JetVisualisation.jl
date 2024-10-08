@@ -49,24 +49,32 @@ function JetReconstruction.jetsplot(objects, cs::ClusterSequence; barsize_phi = 
 end
 
 """
-`jetsplot(objects, idx_arrays; barsize_phi=0.1, barsize_eta=0.1, colormap=:glasbey_hv_n256, Module=Main)`
+    jetsplot(objects, idx_arrays; barsize_phi=0.1, barsize_eta=0.1, colormap=:glasbey_hv_n256, Module=Main)
 
-Plots a 3d bar chart that represents jets. Takes an `objects` array of objects to display and `idx_arrays`, an array of arrays with indeces, where `idx_arrays[i]` gives indeces of `objects` that form the jet number `i`. This function's signature might not be the most practical for the current version of the JetReconstruction.jl package, as it has been written during the early stage of development. There is now an overload of it that takes a `ClusterSequence` object as its argument.
+Plots a 3d bar chart that represents jets. Takes an `objects` array of objects
+to display and `idx_arrays`, an array of arrays with indeces, where
+`idx_arrays[i]` gives indeces of `objects` that form the jet number `i`. This
+function's signature might not be the most practical for the current version of
+the JetReconstruction.jl package, as it has been written during the early stage
+of development. There is now an overload of it that takes a `ClusterSequence`
+object as its argument.
 
-Optional arguments:
-`barsize_phi::Real` — width of a bar along the ϕ axis;
-`barsize_eta::Real` — width of a bar along the η axis;
-`colormap::Symbol` — Makie colour map;
-`Module` — the module where you have your Makie (see below);
+Optional arguments: `barsize_phi::Real` — width of a bar along the ϕ axis;
+`barsize_eta::Real` — width of a bar along the η axis; `colormap::Symbol` —
+Makie colour map; `Module` — the module where you have your Makie (see below);
 ```
 # example
 using CairoMakie # use any other Makie that you have here
 
 jetsplot([object1, object2, object3], [[1], [2, 3]])
 ```
-The example above plots `object1` as a separate jet in one colour and `object2` and `object3` together in another colour.
+The example above plots `object1` as a separate jet in one colour and `object2`
+and `object3` together in another colour.
 
-This function needs `Makie.jl` to work. You should install and import/use a specific backend yourself. `jetsplot` works with `CairoMakie`, `WGLMakie`, `GLMakie`, etc. Additionally, you can specify the module where you have your `Makie` explicitly:
+This function needs `Makie.jl` to work. You should install and import/use a
+specific backend yourself. `jetsplot` works with `CairoMakie`, `WGLMakie`,
+`GLMakie`, etc. Additionally, you can specify the module where you have your
+`Makie` explicitly:
 ```
 import CairoMakie
 jetsplot(my_objects, my_colour_arrays, Module=CairoMakie)

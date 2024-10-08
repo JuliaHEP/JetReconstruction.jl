@@ -1,24 +1,3 @@
-```@raw html
----
-layout: home
-
-hero:
-  name: "JetReconstruction.jl"
-  tagline:  "Jet reconstruction (reclustering) with Julia"
-  image:
-    src: /logo.png
-    alt: DocumenterVitepress
-  actions:
-    - theme: brand
-      text: Examples
-      link: /examples
-    - theme: alt
-      text: Public APIs
-      link: /lib/public
-
----
-```
-
 # Jet Reconstruction
 
 This package implements sequential Jet Reconstruction (clustering) algorithms,

@@ -14,7 +14,7 @@ CollapsedDocStrings = true
 Pages = ["internal.md"]
 ```
 
-## Public Interface
+## Internal Methods and Types
 
 ```@autodocs
 Modules = [JetReconstruction]
