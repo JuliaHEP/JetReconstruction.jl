@@ -22,13 +22,13 @@ algorithm and generalised $`k_\text{T}`$ for $`e^+e^-`$.
 The simplest interface is to call:
 
 ```julia
-cs = jet_reconstruct(particles::Vector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, [p = -1,] [recombine = +,] [strategy = RecoStrategy.Best])
+cs = jet_reconstruct(particles::AbstractArray{T, 1}; algorithm = JetAlgorithm.AntiKt, R = 1.0, [p = -1,] [recombine = +,] [strategy = RecoStrategy.Best])
 ```
 
-- `particles` - a vector of input particles for the clustering
+- `particles` - a one dimensional array (vector) of input particles for the clustering
   - Any type that supplies the methods `pt2()`, `phi()`, `rapidity()`, `px()`, `py()`, `pz()`, `energy()` can be used
   - These methods have to be defined in the namespace of this package, i.e., `JetReconstruction.pt2(::T)`
-  - The `PseudoJet` type from this package, or a 4-vector from `LorentzVectorHEP` are suitable (and have the appropriate definitions)
+  - The `PseudoJet` or `EEjet` types from this package, a 4-vector from `LorentzVectorHEP`, or a `ReconstructedParticle` from [EDM4hep](https://github.com/peremato/EDM4hep.jl) are suitable (and have the appropriate definitions)
 - `algorithm` is the name of the jet algorithm to be used (from the `JetAlgorithm` enum)
   - `JetAlgorithm.AntiKt` anti-$`{k}_\text{T}`$ clustering (default)
   - `JetAlgorithm.CA` Cambridge/Aachen clustering
@@ -59,7 +59,7 @@ To obtain the final inclusive jets, use the `inclusive_jets` method:
 final_jets = inclusive_jets(cs::ClusterSequence; ptmin=0.0)
 ```
 
-Only jets passing the cut $p_T > p_{Tmin}$ will be returned. The result is returned as a `Vector{LorentzVectorHEP}`.
+Only jets passing the cut $p_T > p_{Tmin}$ will be returned. The result is returned as a `Vector{LorentzVectorHEP}`, but different return types can be specified (e.g., `T = EEjet`).
 
 #### Sorting
 
