@@ -331,13 +331,17 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
                 ijetA, ijetB = ijetB, ijetA
             end
 
+            # Resolve the jet indexes to access the actual jets
+            jetA_idx = eereco[ijetA].index
+            jetB_idx = eereco[ijetB].index
+
             # Source "history" for merge
-            hist_jetA = clusterseq.jets[eereco[ijetA].index]._cluster_hist_index
-            hist_jetB = clusterseq.jets[eereco[ijetB].index]._cluster_hist_index
+            hist_jetA = clusterseq.jets[jetA_idx]._cluster_hist_index
+            hist_jetB = clusterseq.jets[jetB_idx]._cluster_hist_index
 
             # Recombine jetA and jetB into the next jet
-            merged_jet = recombine(clusterseq.jets[eereco[ijetA].index],
-                                   clusterseq.jets[eereco[ijetB].index])
+            merged_jet = recombine(clusterseq.jets[jetA_idx],
+                                   clusterseq.jets[jetB_idx])
             merged_jet._cluster_hist_index = length(clusterseq.history) + 1
 
             # Now add the jet to the sequence, and update the history
