@@ -151,6 +151,45 @@ function ee_check_consistency(clusterseq, eereco, N)
     @debug "Consistency check passed at $msg"
 end
 
+function fill_reco_array!(eereco, particles, R2, p)
+    for i in eachindex(particles)
+        eereco.index[i] = i
+        eereco.nni[i] = 0
+        eereco.nndist[i] = R2
+        # eereco.dijdist[i] = UNDEF # Does not need to be initialised
+        eereco.nx[i] = nx(particles[i])
+        eereco.ny[i] = ny(particles[i])
+        eereco.nz[i] = nz(particles[i])
+        eereco.E2p[i] = energy(particles[i])^(2p)
+    end
+end
+
+@inline function insert_new_jet!(eereco, i, newjet_k, R2, merged_jet, p)
+    eereco.index[i] = newjet_k
+    eereco.nni[i] = 0
+    eereco.nndist[i] = R2
+    eereco.nx[i] = nx(merged_jet)
+    eereco.ny[i] = ny(merged_jet)
+    eereco.nz[i] = nz(merged_jet)
+    eereco.E2p[i] = energy(merged_jet)^(2p)
+end
+
+"""
+    copy_to_slot!(eereco, i, j)
+
+Copy the contents of slot `i` in the `eereco` array to slot `j`.
+"""
+@inline function copy_to_slot!(eereco, i, j)
+    eereco.index[j] = eereco.index[i]
+    eereco.nni[j] = eereco.nni[i]
+    eereco.nndist[j] = eereco.nndist[i]
+    eereco.dijdist[j] = eereco.dijdist[i]
+    eereco.nx[j] = eereco.nx[i]
+    eereco.ny[j] = eereco.ny[i]
+    eereco.nz[j] = eereco.nz[i]
+    eereco.E2p[j] = eereco.E2p[i]
+end
+
 """
     ee_genkt_algorithm(particles::Vector{T}; p = -1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
@@ -251,16 +290,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     # jet information and populate it accordingly
     # We need N slots for this array
     eereco = StructArray{EERecoJet}(undef, N)
-    for i in eachindex(particles)
-        eereco.index[i] = i
-        eereco.nni[i] = 0
-        eereco.nndist[i] = R2
-        # eereco[i].dijdist = UNDEF # Not needed
-        eereco.nx[i] = nx(particles[i])
-        eereco.ny[i] = ny(particles[i])
-        eereco.nz[i] = nz(particles[i])
-        eereco.E2p[i] = energy(particles[i])^(2p)
-    end
+    fill_reco_array!(eereco, particles, R2, p)
 
     # Setup the initial history and get the total energy
     history, Qtot = initial_history(particles)
@@ -301,13 +331,17 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
                 ijetA, ijetB = ijetB, ijetA
             end
 
+            # Resolve the jet indexes to access the actual jets
+            jetA_idx = eereco[ijetA].index
+            jetB_idx = eereco[ijetB].index
+
             # Source "history" for merge
-            hist_jetA = clusterseq.jets[eereco[ijetA].index]._cluster_hist_index
-            hist_jetB = clusterseq.jets[eereco[ijetB].index]._cluster_hist_index
+            hist_jetA = clusterseq.jets[jetA_idx]._cluster_hist_index
+            hist_jetB = clusterseq.jets[jetB_idx]._cluster_hist_index
 
             # Recombine jetA and jetB into the next jet
-            merged_jet = recombine(clusterseq.jets[eereco[ijetA].index],
-                                   clusterseq.jets[eereco[ijetB].index])
+            merged_jet = recombine(clusterseq.jets[jetA_idx],
+                                   clusterseq.jets[jetB_idx])
             merged_jet._cluster_hist_index = length(clusterseq.history) + 1
 
             # Now add the jet to the sequence, and update the history
@@ -317,26 +351,13 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
                                  newjet_k, dij_min)
 
             # Update the compact arrays, reusing the JetA slot
-            eereco.index[ijetA] = newjet_k
-            eereco.nni[ijetA] = 0
-            eereco.nndist[ijetA] = R2
-            eereco.nx[ijetA] = nx(merged_jet)
-            eereco.ny[ijetA] = ny(merged_jet)
-            eereco.nz[ijetA] = nz(merged_jet)
-            eereco.E2p[ijetA] = energy(merged_jet)^(2p)
+            insert_new_jet!(eereco, ijetA, newjet_k, R2, merged_jet, p)
         end
 
         # Squash step - copy the final jet's compact data into the jetB slot
         # unless we are at the end of the array, in which case do nothing
         if ijetB != N
-            eereco.index[ijetB] = eereco.index[N]
-            eereco.nni[ijetB] = eereco.nni[N]
-            eereco.nndist[ijetB] = eereco.nndist[N]
-            eereco.dijdist[ijetB] = eereco.dijdist[N]
-            eereco.nx[ijetB] = eereco.nx[N]
-            eereco.ny[ijetB] = eereco.ny[N]
-            eereco.nz[ijetB] = eereco.nz[N]
-            eereco.E2p[ijetB] = eereco.E2p[N]
+            copy_to_slot!(eereco, N, ijetB)
         end
 
         # Now number of active jets is decreased by one

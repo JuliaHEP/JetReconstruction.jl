@@ -37,7 +37,7 @@ function read_final_state_particles(fname; maxevents = -1, skipevents = 0, T = P
             if p.status == 1
                 # Annoyingly PseudoJet and LorentzVector constructors
                 # disagree on the order of arguments...
-                if T == PseudoJet
+                if T <: FourMomentum
                     particle = T(p.momentum.x, p.momentum.y, p.momentum.z, p.momentum.t)
                 else
                     particle = T(p.momentum.t, p.momentum.x, p.momentum.y, p.momentum.z)

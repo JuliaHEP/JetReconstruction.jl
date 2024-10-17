@@ -67,7 +67,7 @@ happens inside the JetReconstruction package itself.
 Some other ustilities are also supported here, such as profiling and
 serialising the reconstructed jet outputs.
 """
-function jet_process(events::Vector{Vector{PseudoJet}};
+function jet_process(events::Vector{Vector{T}};
                      distance::Real = 0.4,
                      algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                      p::Union{Real, Nothing} = nothing,
@@ -80,7 +80,7 @@ function jet_process(events::Vector{Vector{PseudoJet}};
                      profile = nothing,
                      alloc::Bool = false,
                      dump::Union{String, Nothing} = nothing,
-                     dump_cs = false)
+                     dump_cs = false) where {T <: JetReconstruction.FourMomentum}
 
     # If we are dumping the results, setup the JSON structure
     if !isnothing(dump)
@@ -294,9 +294,16 @@ function main()
         logger = ConsoleLogger(stdout, Logging.Warn)
     end
     global_logger(logger)
-    events::Vector{Vector{PseudoJet}} = read_final_state_particles(args[:file],
-                                                                   maxevents = args[:maxevents],
-                                                                   skipevents = args[:skip])
+    # Try to read events into the correct type!
+    if JetReconstruction.is_ee(args[:algorithm])
+        jet_type = EEjet
+    else
+        jet_type = PseudoJet
+    end
+    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file],
+                                                                  maxevents = args[:maxevents],
+                                                                  skipevents = args[:skip],
+                                                                  T = jet_type)
     if isnothing(args[:algorithm]) && isnothing(args[:power])
         @warn "Neither algorithm nor power specified, defaulting to AntiKt"
         args[:algorithm] = JetAlgorithm.AntiKt

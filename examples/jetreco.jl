@@ -23,7 +23,7 @@ happens inside the JetReconstruction package itself.
 
 Final jets can be serialised if the "dump" option is given
 """
-function jet_process(events::Vector{Vector{PseudoJet}};
+function jet_process(events::Vector{Vector{T}};
                      distance::Real = 0.4,
                      algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                      p::Union{Real, Nothing} = nothing,
@@ -31,7 +31,8 @@ function jet_process(events::Vector{Vector{PseudoJet}};
                      dcut = nothing,
                      njets = nothing,
                      strategy::RecoStrategy.Strategy,
-                     dump::Union{String, Nothing} = nothing)
+                     dump::Union{String, Nothing} = nothing) where {T <:
+                                                                    JetReconstruction.FourMomentum}
 
     # Set consistent algorithm and power
     (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
@@ -138,9 +139,16 @@ function main()
     args = parse_command_line(ARGS)
     logger = ConsoleLogger(stdout, Logging.Info)
     global_logger(logger)
-    events::Vector{Vector{PseudoJet}} = read_final_state_particles(args[:file],
-                                                                   maxevents = args[:maxevents],
-                                                                   skipevents = args[:skip])
+    # Try to read events into the correct type!
+    if JetReconstruction.is_ee(args[:algorithm])
+        jet_type = EEjet
+    else
+        jet_type = PseudoJet
+    end
+    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file],
+                                                                  maxevents = args[:maxevents],
+                                                                  skipevents = args[:skip],
+                                                                  T = jet_type)
     if isnothing(args[:algorithm]) && isnothing(args[:power])
         @warn "Neither algorithm nor power specified, defaulting to AntiKt"
         args[:algorithm] = JetAlgorithm.AntiKt
