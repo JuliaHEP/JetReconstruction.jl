@@ -143,8 +143,9 @@ Construct a `ClusterSequence` object.
   sequence.
 - `Qtot::Any`: The total energy of the event.
 """
-ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64, strategy::RecoStrategy.Strategy, jets::Vector{T}, history, Qtot) where T <: FourMomentum = begin
-    ClusterSequence{T}(algorithm, Float64(p), R, strategy, jets, length(jets), history, Qtot)
+ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64, strategy::RecoStrategy.Strategy, jets::Vector{T}, history, Qtot) where {T <: FourMomentum} = begin
+    ClusterSequence{T}(algorithm, Float64(p), R, strategy, jets, length(jets), history,
+                       Qtot)
 end
 
 """
