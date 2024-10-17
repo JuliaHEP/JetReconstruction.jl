@@ -31,7 +31,8 @@ function jet_process(events::Vector{Vector{T}};
                      dcut = nothing,
                      njets = nothing,
                      strategy::RecoStrategy.Strategy,
-                     dump::Union{String, Nothing} = nothing) where T <: JetReconstruction.FourMomentum
+                     dump::Union{String, Nothing} = nothing) where {T <:
+                                                                    JetReconstruction.FourMomentum}
 
     # Set consistent algorithm and power
     (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
@@ -145,9 +146,9 @@ function main()
         jet_type = PseudoJet
     end
     events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file],
-                                                                   maxevents = args[:maxevents],
-                                                                   skipevents = args[:skip],
-                                                                   T = jet_type)
+                                                                  maxevents = args[:maxevents],
+                                                                  skipevents = args[:skip],
+                                                                  T = jet_type)
     if isnothing(args[:algorithm]) && isnothing(args[:power])
         @warn "Neither algorithm nor power specified, defaulting to AntiKt"
         args[:algorithm] = JetAlgorithm.AntiKt

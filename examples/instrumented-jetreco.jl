@@ -80,7 +80,7 @@ function jet_process(events::Vector{Vector{T}};
                      profile = nothing,
                      alloc::Bool = false,
                      dump::Union{String, Nothing} = nothing,
-                     dump_cs = false) where T <: JetReconstruction.FourMomentum
+                     dump_cs = false) where {T <: JetReconstruction.FourMomentum}
 
     # If we are dumping the results, setup the JSON structure
     if !isnothing(dump)
@@ -301,8 +301,9 @@ function main()
         jet_type = PseudoJet
     end
     events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file],
-                                                                   maxevents = args[:maxevents],
-                                                                   skipevents = args[:skip], T = jet_type)
+                                                                  maxevents = args[:maxevents],
+                                                                  skipevents = args[:skip],
+                                                                  T = jet_type)
     if isnothing(args[:algorithm]) && isnothing(args[:power])
         @warn "Neither algorithm nor power specified, defaulting to AntiKt"
         args[:algorithm] = JetAlgorithm.AntiKt
