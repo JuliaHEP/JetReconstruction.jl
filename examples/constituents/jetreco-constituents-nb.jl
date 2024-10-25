@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.45
+# v0.19.46
 
 using Markdown
 using InteractiveUtils
@@ -8,7 +8,7 @@ using InteractiveUtils
 using Pkg
 
 # ╔═╡ cd974dcf-ab96-4ff2-b76a-e18032343581
-Pkg.activate(".")
+Pkg.activate("..")
 
 # ╔═╡ d25974b4-6531-408f-a0f7-ae7ae4a731d4
 using Revise
@@ -63,9 +63,18 @@ begin
     end
 end
 
+# ╔═╡ c9ce9c76-82ef-42ff-bb2e-3b3b8085d8bc
+begin
+	my_constituent_indexes = constituent_indexes(pj_jets[1], cluster_seq)
+	println("\nConsitituent indexes for jet number $(event_no): $my_constituent_indexes")
+	for i in my_constituent_indexes
+	    println("  Constituent jet $i: $(events[1][i])")
+	end
+end
+
 # ╔═╡ Cell order:
 # ╟─dff6a188-2cbe-11ef-32d0-73c4c05efad2
-# ╟─b16f99a0-31ec-4e8f-99c6-7a6fcb16cbee
+# ╠═b16f99a0-31ec-4e8f-99c6-7a6fcb16cbee
 # ╠═f3a6edec-9d40-4044-89bc-4ff1656f634f
 # ╠═cd974dcf-ab96-4ff2-b76a-e18032343581
 # ╠═d25974b4-6531-408f-a0f7-ae7ae4a731d4
@@ -80,3 +89,4 @@ end
 # ╟─0bd764f9-d427-43fc-8342-603b6759ec8f
 # ╠═46a64c6f-51d7-4083-a953-ecc76882f21e
 # ╠═300879ca-b53d-40b3-864a-1d46f2094123
+# ╠═c9ce9c76-82ef-42ff-bb2e-3b3b8085d8bc

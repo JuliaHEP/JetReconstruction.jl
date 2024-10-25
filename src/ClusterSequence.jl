@@ -576,16 +576,33 @@ Get the constituents of a given jet in a cluster sequence.
 - `j::PseudoJet`: The jet for which to retrieve the constituents.
 
 # Returns
-An array of `PseudoJet` objects representing the constituents of the given jet.
-(That is, the original clusters that were recombined to form this jet.)
+An array of jet objects representing the constituents of the given jet.
 
 """
-function constituents(j::PseudoJet, cs::ClusterSequence)
-    constituent_indexes = get_all_ancestors(cs.history[j._cluster_hist_index].jetp_index,
-                                            cs)
-    constituents = Vector{PseudoJet}()
-    for idx in constituent_indexes
+function constituents(j::T, cs::ClusterSequence{T}) where T <: FourMomentum
+    constituent_idxs = constituent_indexes(j, cs)
+    constituents = Vector{T}()
+    for idx in constituent_idxs
         push!(constituents, cs.jets[idx])
     end
     constituents
+end
+
+
+"""
+    constituent_indexes(j::T:<FourMomentum, cs::ClusterSequence)
+
+Return the indexes of the original particles which are the constituents of the
+given jet.
+
+# Arguments
+- `j::T<:FourMomentum`: The jet for which to retrieve the constituents.
+- `cs::ClusterSequence`: The cluster sequence object.
+
+# Returns
+
+An vector of indices representing the original constituents of the given jet.
+"""
+function constituent_indexes(j::T, cs::ClusterSequence{T}) where T <: FourMomentum
+    get_all_ancestors(cs.history[j._cluster_hist_index].jetp_index, cs)
 end

@@ -1,8 +1,6 @@
 # # Jet Reconstruction Constituents Example
 #
 # Perform a simple reconstruction example and show how to retrieve constituent jets.
-#
-# N.B. currently you must use the `jet-constituents` branch of `JetReconstruction`.
 using JetReconstruction
 using LorentzVectorHEP
 using Logging
@@ -30,8 +28,9 @@ for c in my_constituents
     println(" $c")
 end
 
-# Now show how to convert to LorentzVectorCyl:
-println("\nConstituents of jet number $(event_no) as LorentzVectorCyl:")
-for c in my_constituents
-    println(" $(LorentzVectorCyl(JetReconstruction.pt(c), JetReconstruction.rapidity(c), JetReconstruction.phi(c), JetReconstruction.mass(c)))")
+# Just retrieve the indexes of the constituents
+my_constituent_indexes = constituent_indexes(pj_jets[1], cluster_seq)
+println("\nConsitituent indexes for jet number $(event_no): $my_constituent_indexes")
+for i in my_constituent_indexes
+    println("  Constituent jet $i: $(events[1][i])")
 end
