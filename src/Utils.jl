@@ -142,8 +142,9 @@ function fast_findmin(dij::DenseVector{T}, n) where T
     lane = VecRange{8}(0)
     i = 1
     @inbounds @fastmath for _ in 1:n_batches
-        predicate = dij[lane + i] < minvals
-        minvals = vifelse(predicate, dij[lane + i], minvals)
+        dijs = dij[lane + i]
+        predicate = dijs < minvals
+        minvals = vifelse(predicate, dijs, minvals)
         min_indices = vifelse(predicate, laneIndices, min_indices)
 
         i += 8
