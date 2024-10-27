@@ -133,17 +133,17 @@ array.
 - `dij_min`: The minimum value in the first `n` elements of the `dij` array.
 - `best`: The index of the minimum value in the `dij` array.
 """
-function fast_findmin(x, n)
-    laneIndices = SIMD.Vec{8, Int64}((1, 2, 3, 4, 5, 6, 7, 8))
-    minvals = SIMD.Vec{8, Float64}(Inf)
-    min_indices = SIMD.Vec{8, Int64}(0)
+function fast_findmin(dij::DenseVector{T}, n) where T
+    laneIndices = SIMD.Vec{8, Int}((1, 2, 3, 4, 5, 6, 7, 8))
+    minvals = SIMD.Vec{8, T}(Inf)
+    min_indices = SIMD.Vec{8, Int}(0)
 
     n_batches, remainder = divrem(n, 8)
     lane = VecRange{8}(0)
     i = 1
     @inbounds @fastmath for _ in 1:n_batches
-        predicate = x[lane + i] < minvals
-        minvals = vifelse(predicate, x[lane + i], minvals)
+        predicate = dij[lane + i] < minvals
+        minvals = vifelse(predicate, dij[lane + i], minvals)
         min_indices = vifelse(predicate, laneIndices, min_indices)
 
         i += 8
@@ -157,9 +157,9 @@ function fast_findmin(x, n)
                 min_value == minvals[7] ? min_indices[7] : min_indices[8]
 
     @inbounds @fastmath for _ in 1:remainder
-        xi = x[i]
-        pred = x[i] < min_value
-        min_value = ifelse(pred, xi, min_value)
+        xi = dij[i]
+        pred = dij[i] < min_value
+        min_value= ifelse(pred, xi, min_value)
         min_index = ifelse(pred, i, min_index)
         i += 1
     end
