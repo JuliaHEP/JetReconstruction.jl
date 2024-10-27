@@ -1,5 +1,3 @@
-using LoopVectorization
-
 """
     dist(i, j, rapidity_array, phi_array)
 

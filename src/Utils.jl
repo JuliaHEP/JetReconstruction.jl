@@ -123,7 +123,7 @@ end
     fast_findmin(dij, n)
 
 Find the minimum value and its index in the first `n` elements of the `dij`
-array. The use of `@turbo` macro gives a significant performance boost.
+array.
 
 # Arguments
 - `dij`: An array of values.
@@ -133,14 +133,35 @@ array. The use of `@turbo` macro gives a significant performance boost.
 - `dij_min`: The minimum value in the first `n` elements of the `dij` array.
 - `best`: The index of the minimum value in the `dij` array.
 """
-fast_findmin(dij, n) = begin
-    # findmin(@inbounds @view dij[1:n])
-    best = 1
-    @inbounds dij_min = dij[1]
-    @turbo for here in 2:n
-        newmin = dij[here] < dij_min
-        best = newmin ? here : best
-        dij_min = newmin ? dij[here] : dij_min
+function fast_findmin(x, n)
+    laneIndices = SIMD.Vec{8, Int64}((1, 2, 3, 4, 5, 6, 7, 8))
+    minvals = SIMD.Vec{8, Float64}(Inf)
+    min_indices = SIMD.Vec{8, Int64}(0)
+
+    n_batches, remainder = divrem(n, 8)
+    lane = VecRange{8}(0)
+    i = 1
+    @inbounds @fastmath for _ in 1:n_batches
+        predicate = x[lane + i] < minvals
+        minvals = vifelse(predicate, x[lane + i], minvals)
+        min_indices = vifelse(predicate, laneIndices, min_indices)
+
+        i += 8
+        laneIndices += 8
     end
-    dij_min, best
+
+    min_value = SIMD.minimum(minvals)
+    min_index = min_value == minvals[1] ? min_indices[1] : min_value == minvals[2] ? min_indices[2] :
+                min_value == minvals[3] ? min_indices[3] : min_value == minvals[4] ? min_indices[4] :
+                min_value == minvals[5] ? min_indices[5] : min_value == minvals[6] ? min_indices[6] :
+                min_value == minvals[7] ? min_indices[7] : min_indices[8]
+
+    @inbounds @fastmath for _ in 1:remainder
+        xi = x[i]
+        pred = x[i] < min_value
+        min_value = ifelse(pred, xi, min_value)
+        min_index = ifelse(pred, i, min_index)
+        i += 1
+    end
+    return min_value, min_index
 end
