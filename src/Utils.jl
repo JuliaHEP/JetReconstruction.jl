@@ -151,7 +151,7 @@ function fast_findmin(dij::DenseVector{T}, n) where T
     end
 
     min_value = SIMD.minimum(minvals)
-    min_index = min_value == minvals[1] ? min_indices[1] : min_value == minvals[2] ? min_indices[2] :
+    min_index = @inbounds min_value == minvals[1] ? min_indices[1] : min_value == minvals[2] ? min_indices[2] :
                 min_value == minvals[3] ? min_indices[3] : min_value == minvals[4] ? min_indices[4] :
                 min_value == minvals[5] ? min_indices[5] : min_value == minvals[6] ? min_indices[6] :
                 min_value == minvals[7] ? min_indices[7] : min_indices[8]
