@@ -89,4 +89,8 @@ export jetsplot, animatereco
 include("JSONresults.jl")
 export FinalJet, FinalJets
 
+# Substructure modules
+include("Substructure.jl")
+export MassDropTagger, SoftDropTagger, Filter, Trim, massDrop, softDrop, jetFilter, jetTrim
+
 end
