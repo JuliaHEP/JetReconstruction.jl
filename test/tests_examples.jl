@@ -5,7 +5,7 @@ using Test
 const example_dir = joinpath(pkgdir(JetReconstruction), "examples")
 const test_dir = joinpath(pkgdir(JetReconstruction), "test")
 
-# Need to ensure examples is properly instatiated
+# Need to ensure examples is properly instantiated
 run(`julia --project=$example_dir $test_dir/bootstrap_examples.jl`)
 
 # Now run a few tests with our examples

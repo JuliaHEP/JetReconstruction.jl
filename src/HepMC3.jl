@@ -71,7 +71,7 @@ Particle{T}() where {T} = Particle(LorentzVector{T}(0.0, 0.0, 0.0, 0.0), 0, 0, 0
 """ Read a [HepMC3](https://doi.org/10.1016/j.cpc.2020.107310) ascii file.
 
     Each event is passed to the provided function f as a vector of Particles. A
-    maximum number of events to read (value -1 to read all availble events) and
+    maximum number of events to read (value -1 to read all available events) and
     a number of events to skip at the beginning of the file can be provided.
 """
 

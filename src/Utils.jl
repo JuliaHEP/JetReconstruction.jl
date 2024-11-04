@@ -13,7 +13,7 @@ Reads final state particles from a file and returns them as a vector of type T.
 - `maxevents=-1`: The maximum number of events to read. -1 means all events will
   be read.
 - `skipevents=0`: The number of events to skip before an event is included.
-- `T=PseudoJet`: The type of object to contruct and return.
+- `T=PseudoJet`: The type of object to construct and return.
 
 # Returns
 A vector of vectors of T objects, where each inner vector represents all
@@ -123,7 +123,7 @@ end
     fast_findmin(dij, n)
 
 Find the minimum value and its index in the first `n` elements of the `dij`
-array. The use of `@turbo` macro gives a significiant performance boost.
+array. The use of `@turbo` macro gives a significant performance boost.
 
 # Arguments
 - `dij`: An array of values.

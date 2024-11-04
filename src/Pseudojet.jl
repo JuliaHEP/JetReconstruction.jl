@@ -21,7 +21,7 @@ const _invalid_rap = -1.e200
     mutable struct PseudoJet <: FourMomentum
 
 The `PseudoJet` struct represents a pseudojet, a four-momentum object used in
-jet reconstruction algorithms. Additonal information for the link back into the
+jet reconstruction algorithms. Additional information for the link back into the
 history of the clustering is stored in the `_cluster_hist_index` field. There is
 caching of the more expensive calculations for rapidity and azimuthal angle.
 

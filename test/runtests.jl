@@ -41,7 +41,7 @@ function main()
     include("test-pp-reconstruction.jl")
     include("test-ee-reconstruction.jl")
 
-    # Compare inputing data in PseudoJet with using a LorentzVector
+    # Compare inputting data in PseudoJet with using a LorentzVector
     do_test_compare_types(RecoStrategy.N2Plain, algname = pp_algorithms[-1], power = -1)
     do_test_compare_types(RecoStrategy.N2Tiled, algname = pp_algorithms[-1], power = -1)
 
@@ -105,7 +105,7 @@ function do_test_compare_to_fastjet(strategy::RecoStrategy.Strategy, fastjet_jet
         else
             selected_jets = inclusive_jets(cluster_seq; ptmin = ptmin)
         end
-        # And extact in out final_jets format
+        # And extract in out final_jets format
         finaljets = final_jets(selected_jets)
         sort_jets!(finaljets)
         push!(jet_collection, FinalJets(ievt, finaljets))
@@ -175,7 +175,7 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
     end
 
     @testset "Jet Reconstruction Compare PseudoJet and LorentzVector, Strategy $strategy_name, Algorithm $algname" begin
-        # Here we test that inputing LorentzVector gave the same results as PseudoJets
+        # Here we test that inputting LorentzVector gave the same results as PseudoJets
         for (ievt, (event, event_lv)) in enumerate(zip(jet_collection, jet_collection_lv))
             @testset "Event $(ievt)" begin
                 @test size(event.jets) == size(event_lv.jets)

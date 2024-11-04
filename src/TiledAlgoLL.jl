@@ -106,7 +106,7 @@ tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling
     jet.NN_dist = R2
     jet.NN = noTiledJet
 
-    # Find out which tile it belonds to
+    # Find out which tile it belongs to
     jet.tile_index = tile_index(tiling.setup, jet.eta, jet.phi)
 
     # Insert it into the tile's linked list of jets (at the beginning)
@@ -333,7 +333,7 @@ end
     tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +) where {T}
 
 Main jet reconstruction algorithm entry point for reconstructing jets using the
-tiled stragegy for generic jet type T.
+tiled strategy for generic jet type T.
 
 **Note** - if a non-standard recombination is used, it must be defined for
 JetReconstruction.PseudoJet, as this struct is used internally.
@@ -349,7 +349,7 @@ If both are given they must be consistent or an exception is thrown.
   reconstruction. T must support methods px, py, pz and energy (defined in the
   JetReconstruction namespace)
 - `p::Union{Real, Nothing} = -1`: The power parameter for the jet reconstruction
-  algorithm, thus swiching between different algorithms.
+  algorithm, thus switching between different algorithms.
 - `algorithm::Union{JetAlgorithm, Nothing} = nothing`: The explicit jet
   algorithm to use.
 - `R::Float64 = 1.0`: The jet radius parameter for the jet reconstruction
@@ -407,7 +407,7 @@ of data types are done.
 - `particles::Vector{PseudoJet}`: A vector of `PseudoJet` particles used as input for jet
   reconstruction.
 - `p::Int = -1`: The power parameter for the jet reconstruction algorithm, thus
-  swiching between different algorithms.
+  switching between different algorithms.
 - `R::Float64 = 1.0`: The jet radius parameter for the jet reconstruction
   algorithm.
 - `recombine::Function = +`: The recombination function used for combining
@@ -473,7 +473,7 @@ function _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1, R = 
         tiledjet_set_jetinfo!(tiledjets[ijet], clusterseq, tiling, ijet, R2, p)
     end
 
-    # Now initalise all of the nearest neighbour tiles
+    # Now initialise all of the nearest neighbour tiles
     NNs, dij = set_nearest_neighbours!(clusterseq, tiling, tiledjets)
 
     # Main loop of the reconstruction
