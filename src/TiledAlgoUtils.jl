@@ -3,7 +3,7 @@
 """
 	struct TilingDef
 
-A struct representing the definition of a spcific tiling scheme.
+A struct representing the definition of a specific tiling scheme.
 
 # Fields
 - `_tiles_eta_min::Float64`: The minimum rapidity of the tiles.
@@ -220,7 +220,7 @@ Compute the dij metric distance between two jets.
 The distance between the two jets.
 
 If `kt2_2` is equal to 0.0, then the first jet doesn't actually have a valid 
-neighbour, so it's treated as a single jet adjecent to the beam.
+neighbour, so it's treated as a single jet adjacent to the beam.
 """
 get_dij_dist(nn_dist, kt2_1, kt2_2, R2) = begin
     if kt2_2 == 0.0

@@ -1,7 +1,7 @@
 # Structures used internally by the tiled algorithm
 
 """Structure analogous to PseudoJet, but with the extra information
-needed for dealing with tiles for the tiled stragegy"""
+needed for dealing with tiles for the tiled strategy"""
 
 """
     struct TiledJet
@@ -193,7 +193,7 @@ end
 """
     Tiling(setup::TilingDef)
 
-Constructs a intial `Tiling` object based on the provided `setup` parameters.
+Constructs a initial `Tiling` object based on the provided `setup` parameters.
 
 # Arguments
 - `setup::TilingDef`: The setup parameters for the tiling.
@@ -289,7 +289,7 @@ end
     rightneighbours(center::Int, tiling::Tiling)
 
 Compute the indices of the right neighbors of a given center index in a tiling.
-This is used in the inital sweep to calculate the nearest neighbors, where the
+This is used in the initial sweep to calculate the nearest neighbors, where the
 search between jets for the nearest neighbour is bi-directional, thus when a
 tile is considered only the right neighbours are needed to compare jet
 distances as the left-hand tiles have been done from that tile already.

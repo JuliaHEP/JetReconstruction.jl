@@ -16,7 +16,7 @@ using JetReconstruction
 include(joinpath(@__DIR__, "parse-options.jl"))
 
 """
-Top level call funtion for demonstrating the use of jet reconstruction
+Top level call function for demonstrating the use of jet reconstruction
 
 This uses the "jet_reconstruct" wrapper, so algorithm switching
 happens inside the JetReconstruction package itself.

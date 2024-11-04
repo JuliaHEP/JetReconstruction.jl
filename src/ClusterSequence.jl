@@ -187,7 +187,7 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
     # retry the clustering with a different strategy.
     @assert parent1 >= 1
     if clusterseq.history[parent1].child != Invalid
-        error("Internal error. Trying to recombine an object that has previsously been recombined. Parent " *
+        error("Internal error. Trying to recombine an object that has previously been recombined. Parent " *
               string(parent1) * "'s child index " *
               string(clusterseq.history[parent1].child) * ". Parent jet index: " *
               string(clusterseq.history[parent1].jetp_index) * ".")
@@ -198,7 +198,7 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
 
     if parent2 >= 1
         clusterseq.history[parent2].child == Invalid ||
-            error("Internal error. Trying to recombine an object that has previsously been recombined.  Parent " *
+            error("Internal error. Trying to recombine an object that has previously been recombined.  Parent " *
                   string(parent2) * "'s child index " *
                   string(clusterseq.history[parent1].child) * ". Parent jet index: " *
                   string(clusterseq.history[parent2].jetp_index) * ".")
@@ -363,7 +363,7 @@ Return the number of exclusive jets of a ClusterSequence that are above a certai
 
 # Arguments
 - `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the clustering history.
-- `dcut::AbstractFloat`: The maximum calue for the distance parameter in the reconstruction.
+- `dcut::AbstractFloat`: The maximum value for the distance parameter in the reconstruction.
 
 # Returns
 The number of exclusive jets in the `ClusterSequence` object.

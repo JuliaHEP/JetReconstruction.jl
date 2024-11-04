@@ -33,7 +33,7 @@ these methods are already predefined in the `JetReconstruction` namespace.
 The `recombine` argument is the function used to merge pairs of particles. The
 default is simply `+(jet1,jet2)`, i.e. 4-momenta addition or the *E*-scheme.
 
-## Consitency of `p`, `algorithm` and `R` arguments
+## Consistency of `p`, `algorithm` and `R` arguments
 If an algorithm is explicitly specified the `p` value should be consistent with
 it or `nothing`. If the algorithm is one where `p` can vary, then it has to be
 given, along with the algorithm.``

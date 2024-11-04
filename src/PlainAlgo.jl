@@ -136,7 +136,7 @@ Arguments:
 - `j`: Index of the second particle in the last merge step.
 - `k`: Index of the current particle for which the nearest neighbour will be
   updated.
-- `N`: Total number of particles (currently vaild array indexes are `[1:N]`).
+- `N`: Total number of particles (currently valid array indexes are `[1:N]`).
 - `Nn`: Number of nearest neighbors to consider.
 - `kt2_array`: Array of transverse momentum squared values.
 - `rapidity_array`: Array of rapidity values.

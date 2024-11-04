@@ -1,5 +1,5 @@
 """
-Add `parse_item` code for interpeting `JetAlgorithm.Algorithm` and `RecoStrategy.Strategy` types
+Add `parse_item` code for interpreting `JetAlgorithm.Algorithm` and `RecoStrategy.Strategy` types
 from the command line.
 """
 
