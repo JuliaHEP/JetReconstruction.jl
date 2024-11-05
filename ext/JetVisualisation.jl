@@ -52,8 +52,8 @@ end
     jetsplot(objects, idx_arrays; barsize_phi=0.1, barsize_eta=0.1, colormap=:glasbey_hv_n256, Module=Main)
 
 Plots a 3d bar chart that represents jets. Takes an `objects` array of objects
-to display and `idx_arrays`, an array of arrays with indeces, where
-`idx_arrays[i]` gives indeces of `objects` that form the jet number `i`. This
+to display and `idx_arrays`, an array of arrays with indices, where
+`idx_arrays[i]` gives indices of `objects` that form the jet number `i`. This
 function's signature might not be the most practical for the current version of
 the JetReconstruction.jl package, as it has been written during the early stage
 of development. There is now an overload of it that takes a `ClusterSequence`
@@ -225,7 +225,7 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
     merge_steps = JetReconstruction.merge_steps(cs)
     jet_ranks = JetReconstruction.jet_ranks(cs)
 
-    # End point of the catagorical color map
+    # End point of the categorical color map
     # (How to get this programmatically from the CM Symbol?)
     colormap_end = 256
 

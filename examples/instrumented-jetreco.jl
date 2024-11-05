@@ -59,12 +59,12 @@ function profile_code(profile, jet_reconstruction, events, niters; R = 0.4, p = 
             """)
 end
 """
-Top level call funtion for demonstrating the use of jet reconstruction
+Top level call function for demonstrating the use of jet reconstruction
 
 This uses the "jet_reconstruct" wrapper, so algorithm switching
 happens inside the JetReconstruction package itself.
 
-Some other ustilities are also supported here, such as profiling and
+Some other utilities are also supported here, such as profiling and
 serialising the reconstructed jet outputs.
 """
 function jet_process(events::Vector{Vector{T}};

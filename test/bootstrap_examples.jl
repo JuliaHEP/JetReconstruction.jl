@@ -1,10 +1,10 @@
 # Bootstrap script to setup this local version of the JetReconstruction package
 # for running the examples
 
-println("Starting example boostrap script")
+println("Starting example bootstrap script")
 
 # if isfile(joinpath(@__DIR__, "..", "examples", "Manifest.toml"))
-#     println("Exisiting Manifest.toml found - assuming environment is already setup")
+#     println("Existing Manifest.toml found - assuming environment is already setup")
 #     exit(0)
 # end
 
@@ -25,8 +25,8 @@ println("Setting up examples project")
 using Pkg
 Pkg.instantiate()
 Pkg.resolve()
-println(("Seting JetReconstruction development package path: $local_pkg_path"))
+println(("Setting JetReconstruction development package path: $local_pkg_path"))
 Pkg.develop(path = local_pkg_path)
 Pkg.status()
 
-println("Finished examples boostrap script")
+println("Finished examples bootstrap script")
