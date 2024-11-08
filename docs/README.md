@@ -6,10 +6,10 @@
 
 The general guidelines are to have documentation split into meaningful sections,
 none of which are too long. If a new functionality is added then create a new
-documentation page in `src`. Then map that markdown file to the a section in the
+documentation page in `src`. Then map that markdown file to a section in the
 documentation in `make.jl` in the `pages` map.
 
-## Previewing Documenation
+## Previewing Documentation
 
 From the `docs` directory:
 

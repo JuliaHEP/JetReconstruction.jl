@@ -36,7 +36,7 @@ default is simply `+(jet1,jet2)`, i.e. 4-momenta addition or the *E*-scheme.
 ## Consistency of `p`, `algorithm` and `R` arguments
 If an algorithm is explicitly specified the `p` value should be consistent with
 it or `nothing`. If the algorithm is one where `p` can vary, then it has to be
-given, along with the algorithm.``
+given, along with the algorithm.
 
 If the `p` parameter is passed and `algorithm=nothing`, then pp-type
 reconstruction is implied (i.e., AntiKt, CA, Kt or GenKt will be used,
