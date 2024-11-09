@@ -69,6 +69,11 @@ export ee_genkt_algorithm
 include("GenericAlgo.jl")
 export jet_reconstruct
 
+## Substructure modules
+include("Substructure.jl")
+export MassDropTagger, SoftDropTagger, JetFilter, JetTrim, mass_drop, soft_drop,
+       jet_filtering, jet_trimming
+
 # Simple HepMC3 reader
 include("HepMC3.jl")
 
@@ -88,9 +93,5 @@ export jetsplot, animatereco
 # JSON results
 include("JSONresults.jl")
 export FinalJet, FinalJets
-
-# Substructure modules
-include("Substructure.jl")
-export MassDropTagger, SoftDropTagger, Filter, Trim, massDrop, softDrop, jetFilter, jetTrim
 
 end
