@@ -117,7 +117,7 @@ final jets.
   to get the physical PseudoJet.
 - `Qtot::Any`: The total energy of the event.
 """
-struct ClusterSequence{T<:FourMomentum}
+struct ClusterSequence{T <: FourMomentum}
     algorithm::JetAlgorithm.Algorithm
     power::Float64
     R::Float64
@@ -502,7 +502,7 @@ based on a given iteration number in the reconstruction.
 
 # Arguments
 - `cs::ClusterSequence`: The `ClusterSequence` object to update.
-- `ranks`: The ranks of the original clusters, that are inherited by peudojets
+- `ranks`: The ranks of the original clusters, that are inherited by pseudojets
  during the reconstruction process.
 - `iteration=0`: The iteration number to consider for updating the
   reconstruction state (0 represents the initial state).
