@@ -5,6 +5,11 @@
 
 #include <stddef.h>
 
+/*Special states in a history.*/
+#define JETRECONSTRUCTION_INVALID -3
+#define JETRECONSTRUCTION_NONEXISTENTPARENT -2
+#define JETRECONSTRUCTION_BEAMJET -1
+
 /*
 Enumeration representing different jet algorithms used in
 the JetReconstruction module.
