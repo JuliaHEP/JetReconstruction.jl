@@ -53,6 +53,9 @@ function main()
 
     # Test with Aqua (https://juliatesting.github.io/Aqua.jl/stable/)
     include("test-aqua.jl")
+
+    # C-interface tests
+    include("test-c-interface.jl")
 end
 
 logger = ConsoleLogger(stdout, Logging.Warn)
