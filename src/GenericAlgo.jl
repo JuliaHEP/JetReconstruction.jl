@@ -66,7 +66,7 @@ function jet_reconstruct(particles; p::Union{Real, Nothing} = -1, R = 1.0,
     if (algorithm === nothing) || is_pp(algorithm)
         # We assume a pp reconstruction
         if strategy == RecoStrategy.Best
-            # The breakpoint of ~80 is determined empirically on e+e- -> H and 0.5TeV pp -> 5GeV jets
+            # The breakpoint of ~80 is determined empirically on e+e- -> H and 0.5 TeV pp -> 5 GeV jets
             alg = length(particles) > 80 ? tiled_jet_reconstruct : plain_jet_reconstruct
         elseif strategy == RecoStrategy.N2Plain
             alg = plain_jet_reconstruct
