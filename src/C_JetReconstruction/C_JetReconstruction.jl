@@ -23,6 +23,7 @@ Wraps a C array into a Julia `Vector` for both bits and non-bits types.
 This function use 'unsafe' methods and has undefined behaviour
 if pointer isn't valid or length isn't correct.
 """
+
 function unsafe_wrap_c_array(ptr::Ptr{T}, array_length::Csize_t) where {T}
     if isbitstype(T)
         return unsafe_wrap(Vector{T}, ptr, array_length)
@@ -163,9 +164,8 @@ function jets_selection(selector, clustersequence::Ptr{C_ClusterSequence{T}},
                         result::Ptr{C_JetsResult{U}}; kwargs...)::Cint where {T, U}
     c_clusterseq = unsafe_load(clustersequence)
     clusterseq = ClusterSequence{T}(c_clusterseq)
-    jets_result = selector(clusterseq; kwargs...)
-    println(jets_result)
-    c_results = C_JetsResult{U}(C_NULL, 0) # TODO convert and write to result
+    jets_result = selector(clusterseq; T = U, kwargs...)
+    c_results = C_JetsResult{U}(make_c_array(jets_result)...)
     unsafe_store!(result, c_results)
     return 0
 end

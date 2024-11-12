@@ -42,6 +42,13 @@ void printClusterSequence(const jetreconstruction_ClusterSequence *sequence) {
   }
 }
 
+void printJetsResult(const jetreconstruction_JetsResult *results) {
+  assert(results != NULL);
+  for (size_t i = 0; i < results->length; ++i) {
+    printPseudoJet(results->data + i);
+  }
+}
+
 int main(int argc, char *argv[]) {
   init_julia(argc, argv);
   size_t len = 2;
@@ -60,6 +67,8 @@ int main(int argc, char *argv[]) {
   printClusterSequence(&cluster_seq);
   jetreconstruction_JetsResult result;
   jetreconstruction_exclusive_jets_njets(&cluster_seq, 2, &result);
+  printJetsResult(&result);
+
   jetreconstruction_JetsResult_free_members(&result);
   jetreconstruction_ClusterSequence_free_members(&cluster_seq);
   shutdown_julia(0);
