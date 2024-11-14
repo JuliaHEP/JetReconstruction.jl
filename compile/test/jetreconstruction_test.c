@@ -3,6 +3,7 @@
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 void printPseudoJet(const jetreconstruction_PseudoJet *jet) {
   assert(jet != NULL);
@@ -50,6 +51,7 @@ void printJetsResult(const jetreconstruction_JetsResult *results) {
 }
 
 int main(int argc, char *argv[]) {
+  clock_t start_time = clock();
   init_julia(argc, argv);
   size_t len = 2;
   jetreconstruction_PseudoJet particles[2];
@@ -72,5 +74,9 @@ int main(int argc, char *argv[]) {
   jetreconstruction_JetsResult_free_members(&result);
   jetreconstruction_ClusterSequence_free_members(&cluster_seq);
   shutdown_julia(0);
+
+  clock_t end_time = clock();
+  double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
+  printf("Execution time: %f seconds\n", time_spent);
   return 0;
 }
