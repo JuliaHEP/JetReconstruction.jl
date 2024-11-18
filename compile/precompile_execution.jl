@@ -1,3 +1,5 @@
+# Dummy code to call and cache compilation of all C-bindings
+# The numeric values doesn't make sense and are used only to select correct dispatch
 
 using JetReconstruction
 using JetReconstruction.C_JetReconstruction: jetreconstruction_PseudoJet_init,

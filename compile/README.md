@@ -63,3 +63,21 @@ In case the compiled library resides in non-standard location, add its location 
 LD_LIBRARY_PATH=JetReconstructionCompiled/lib/:${LD_LIBRARY_PATH} ./jetreconstruction_test
 ```
 
+### Compilation with CMake
+
+The JetReconstruction library comes with a CMake target `JetReconstruction::JetReconstruction`. Example usage in CMake file:
+
+```cmake
+find_package(JetReconstruction REQUIRED)
+
+target_link_libraries(myTarget PUBLIC JetReconstruction::JetReconstruction)
+```
+
+## Limitations
+
+Currently it's not possible to create libraries for different platforms - no cross-compilation!
+
+The library is relocatable given the whole installation tree is moved, including libraries in the `lib/julia/` directory.
+
+It's advised to install the library in a separate directory to avoid possible conflicts.  
+The library must not be installed in the same directory as another Julia package compiled with `PackageCompiler.jl` as they would overwrite the package specific files in `share/julia`.
