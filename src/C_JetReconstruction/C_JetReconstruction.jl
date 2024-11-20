@@ -6,6 +6,58 @@ module C_JetReconstruction
 using ..JetReconstruction: JetAlgorithm, RecoStrategy, PseudoJet, ClusterSequence,
                            HistoryElement, jet_reconstruct,
                            exclusive_jets, inclusive_jets
+using EnumX
+
+"""
+    @enumx StatusCode
+
+An enumeration of common status codes used in the JetReconstruction C-bindings.
+
+## Fields
+- `OK` - The operation succeeded.
+- `GenericException`- An unspecified error, not covered by other status codes occurred.
+- The rest of the status codes have corresponding standard Julia exception.
+"""
+@enumx StatusCode OK=0 GenericException=1 ArgumentError=2 BoundsError=3 CompositeException=4 DimensionMismatch=5 DivideError=6 DomainError=7 EOFError=8 ErrorException=9 InexactError=10 InitError=11 InterruptException=12 InvalidStateException=13 KeyError=14 LoadError=15 OutOfMemoryError=16 ReadOnlyMemoryError=17 RemoteException=18 MethodError=19 OverflowError=20 ParseError=21 SystemError=22 TypeError=23 UndefRefError=24 UndefVarError=25 StringIndexError=26
+
+function handle_exception(exception)::Cint
+    @error exception
+    return Cint(exception_to_enum(exception))
+end
+
+"""
+    exception_to_enum(::Any)::Cint
+
+Helper function matching Julia exception with C-style status code.
+# Returns
+- A numerical representation of the corresponding status code from the `StatusCode.T`.
+"""
+exception_to_enum(::Any) = Cint(StatusCode.GenericException)
+exception_to_enum(::ArgumentError) = Cint(StatusCode.ArgumentError)
+exception_to_enum(::BoundsError) = Cint(StatusCode.BoundsError)
+exception_to_enum(::CompositeException) = Cint(StatusCode.CompositeException)
+exception_to_enum(::DimensionMismatch) = Cint(StatusCode.DimensionMismatch)
+exception_to_enum(::DivideError) = Cint(StatusCode.DivideError)
+exception_to_enum(::DomainError) = Cint(StatusCode.DomainError)
+exception_to_enum(::EOFError) = Cint(StatusCode.EOFError)
+exception_to_enum(::ErrorException) = Cint(StatusCode.ErrorException)
+exception_to_enum(::InexactError) = Cint(StatusCode.InexactError)
+exception_to_enum(::InitError) = Cint(StatusCode.InitError)
+exception_to_enum(::InterruptException) = Cint(StatusCode.InterruptException)
+exception_to_enum(::InvalidStateException) = Cint(StatusCode.InvalidStateException)
+exception_to_enum(::KeyError) = Cint(StatusCode.KeyError)
+exception_to_enum(::LoadError) = Cint(StatusCode.LoadError)
+exception_to_enum(::OutOfMemoryError) = Cint(StatusCode.OutOfMemoryError)
+exception_to_enum(::ReadOnlyMemoryError) = Cint(StatusCode.ReadOnlyMemoryError)
+# exception_to_enum(::Distributed.RemoteException) = Cint(StatusCode.RemoteException)
+exception_to_enum(::MethodError) = Cint(StatusCode.MethodError)
+exception_to_enum(::OverflowError) = Cint(StatusCode.OverflowError)
+# exception_to_enum(::Meta.ParseError) = Cint(StatusCode.ParseError)
+exception_to_enum(::SystemError) = Cint(StatusCode.SystemError)
+exception_to_enum(::TypeError) = Cint(StatusCode.TypeError)
+exception_to_enum(::UndefRefError) = Cint(StatusCode.UndefRefError)
+exception_to_enum(::UndefVarError) = Cint(StatusCode.UndefVarError)
+exception_to_enum(::StringIndexError) = Cint(StatusCode.StringIndexError)
 
 """
     unsafe_wrap_c_array(ptr::Ptr{T}, array_length::Csize_t) where {T}
@@ -85,9 +137,13 @@ C-binding for `PseudoJet` initialization.
 Base.@ccallable function jetreconstruction_PseudoJet_init(ptr::Ptr{PseudoJet}, px::Cdouble,
                                                           py::Cdouble, pz::Cdouble,
                                                           E::Cdouble)::Cint
-    pseudojet = PseudoJet(px, py, pz, E)
-    unsafe_store!(ptr, pseudojet)
-    return 0
+    try
+        pseudojet = PseudoJet(px, py, pz, E)
+        unsafe_store!(ptr, pseudojet)
+    catch e
+        return handle_exception(e)
+    end
+    return Cint(StatusCode.OK)
 end
 
 """
@@ -219,12 +275,16 @@ function c_jet_reconstruct(particles::Ptr{T},
                            R::Cdouble,
                            strategy::RecoStrategy.Strategy,
                            result::Ptr{C_ClusterSequence{U}}) where {T, U}
-    particles_v = unsafe_wrap_c_array(particles, particles_length)
-    clusterseq = jet_reconstruct(particles_v; p = nothing, algorithm = algorithm, R = R,
-                                 strategy = strategy)
-    c_clusterseq = C_ClusterSequence{U}(clusterseq)
-    unsafe_store!(result, c_clusterseq)
-    return 0
+    try
+        particles_v = unsafe_wrap_c_array(particles, particles_length)
+        clusterseq = jet_reconstruct(particles_v; p = nothing, algorithm = algorithm, R = R,
+                                     strategy = strategy)
+        c_clusterseq = C_ClusterSequence{U}(clusterseq)
+        unsafe_store!(result, c_clusterseq)
+    catch e
+        return handle_exception(e)
+    end
+    return Cint(StatusCode.OK)
 end
 
 """
@@ -257,8 +317,7 @@ Base.@ccallable function jetreconstruction_jet_reconstruct(particles::Ptr{Pseudo
                                                            R::Cdouble,
                                                            strategy::RecoStrategy.Strategy,
                                                            result::Ptr{C_ClusterSequence{PseudoJet}})::Cint
-    c_jet_reconstruct(particles, particles_length, algorithm, R, strategy, result)
-    return 0
+    return c_jet_reconstruct(particles, particles_length, algorithm, R, strategy, result)
 end
 
 """
@@ -324,12 +383,16 @@ An internal helper function for calling calling functions selecting jets from a 
 """
 function jets_selection(selector, clustersequence::Ptr{C_ClusterSequence{T}},
                         result::Ptr{C_JetsResult{U}}; kwargs...)::Cint where {T, U}
-    c_clusterseq = unsafe_load(clustersequence)
-    clusterseq = ClusterSequence{T}(c_clusterseq)
-    jets_result = selector(clusterseq; T = U, kwargs...)
-    c_results = C_JetsResult{U}(make_c_array(jets_result)...)
-    unsafe_store!(result, c_results)
-    return 0
+    try
+        c_clusterseq = unsafe_load(clustersequence)
+        clusterseq = ClusterSequence{T}(c_clusterseq)
+        jets_result = selector(clusterseq; T = U, kwargs...)
+        c_results = C_JetsResult{U}(make_c_array(jets_result)...)
+        unsafe_store!(result, c_results)
+    catch e
+        return handle_exception(e)
+    end
+    return Cint(StatusCode.OK)
 end
 
 """

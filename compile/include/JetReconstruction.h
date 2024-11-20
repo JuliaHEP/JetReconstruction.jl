@@ -25,6 +25,47 @@
 #define JETRECONSTRUCTION_BEAMJET -1
 
 /**
+ * @enum jetreconstruction_StatusCode
+ * @brief Status codes for Jet Reconstruction operations.
+ *
+ * Common status codes for Jet Reconstruction operations. Most of the standard
+ * Julia
+ * https://docs.julialang.org/en/v1/manual/control-flow/#Exception-Handling
+ * exceptions are mapped to corresponding codes.
+ */
+typedef enum {
+  JETRECONSTRUCTION_STATUSCODE_OK = 0, /**< The operation succeeded. */
+  JETRECONSTRUCTION_STATUSCODE_GENERICEXCEPTION =
+      1, /**< An unspecified error, not covered by other status codes occurred.
+          */
+  JETRECONSTRUCTION_STATUSCODE_ARGUMENTERROR = 2,
+  JETRECONSTRUCTION_STATUSCODE_BOUNDSERROR = 3,
+  JETRECONSTRUCTION_STATUSCODE_COMPOSITEEXCEPTION = 4,
+  JETRECONSTRUCTION_STATUSCODE_DIMENSIONMISMATCH = 5,
+  JETRECONSTRUCTION_STATUSCODE_DIVIDEERROR = 6,
+  JETRECONSTRUCTION_STATUSCODE_DOMAINERROR = 7,
+  JETRECONSTRUCTION_STATUSCODE_EOFERROR = 8,
+  JETRECONSTRUCTION_STATUSCODE_ERROREXCEPTION = 9,
+  JETRECONSTRUCTION_STATUSCODE_INEXACTERROR = 10,
+  JETRECONSTRUCTION_STATUSCODE_INITERROR = 11,
+  JETRECONSTRUCTION_STATUSCODE_INTERRUPTEXCEPTION = 12,
+  JETRECONSTRUCTION_STATUSCODE_INVALIDSTATEEXCEPTION = 13,
+  JETRECONSTRUCTION_STATUSCODE_KEYERROR = 14,
+  JETRECONSTRUCTION_STATUSCODE_LOADERROR = 15,
+  JETRECONSTRUCTION_STATUSCODE_OUTOFMEMORYERROR = 16,
+  JETRECONSTRUCTION_STATUSCODE_READONLYMEMORYERROR = 17,
+  /*JETRECONSTRUCTION_STATUSCODE_REMOTEEXCEPTION = 18, distributed only */
+  JETRECONSTRUCTION_STATUSCODE_METHODERROR = 19,
+  JETRECONSTRUCTION_STATUSCODE_OVERFLOWERROR = 20,
+  /*JETRECONSTRUCTION_STATUSCODE_PARSEERROR = 21, meta only*/
+  JETRECONSTRUCTION_STATUSCODE_SYSTEMERROR = 22,
+  JETRECONSTRUCTION_STATUSCODE_TYPEERROR = 23,
+  JETRECONSTRUCTION_STATUSCODE_UNDEFREFERROR = 24,
+  JETRECONSTRUCTION_STATUSCODE_UNDEFVARERROR = 25,
+  JETRECONSTRUCTION_STATUSCODE_STRINGINDEXERROR = 26
+} jetreconstruction_StatusCode;
+
+/**
  * @enum jetreconstruction_JetAlgorithm
  * @brief Enumeration representing different jet algorithms used in
  * the JetReconstruction.
@@ -81,10 +122,12 @@ typedef struct {
  * @param[in] py The y-component of the momentum.
  * @param[in] pz The z-component of the momentum.
  * @param[in] E The energy component of the momentum.
- * @return An integer status code indicating the success or failure.
+ * @return An integer status code indicating the success or failure. See common
+ * status codes jetreconstruction_StatusCode.
  */
-int jetreconstruction_PseudoJet_init(jetreconstruction_PseudoJet *ptr,
-                                     double px, double py, double pz, double E);
+jetreconstruction_StatusCode
+jetreconstruction_PseudoJet_init(jetreconstruction_PseudoJet *ptr, double px,
+                                 double py, double pz, double E);
 
 /**
  * @struct jetreconstruction_HistoryElement
@@ -92,12 +135,12 @@ int jetreconstruction_PseudoJet_init(jetreconstruction_PseudoJet *ptr,
  */
 typedef struct {
   long parent1; /**< Index in history where first parent of this jet was
-                  created (@ref JETRECONSTRUCTION_NONEXISTENTPARENT if this jet is
-                  an original    particle) */
+                  created (@ref JETRECONSTRUCTION_NONEXISTENTPARENT if this jet
+                  is an original    particle) */
   long parent2; /**< Index in history where second parent of this jet was
-                  created (@ref JETRECONSTRUCTION_NONEXISTENTPARENT if this jet is
-                  an original    particle); @ref JETRECONSTRUCTION_BEAMJET if this
-                  history entry just labels the    fact that the jet has
+                  created (@ref JETRECONSTRUCTION_NONEXISTENTPARENT if this jet
+                  is an original    particle); @ref JETRECONSTRUCTION_BEAMJET if
+                  this history entry just labels the    fact that the jet has
                   recombined    with the beam */
   long child;   /**< Index in history where the current jet is recombined with
                                   another jet to form its child. It is Invalid
@@ -106,7 +149,8 @@ typedef struct {
                      PseudoJet object corresponding to this jet (i.e. the
                      jet created at this entry of the history). NB: if this
                      element of the history corresponds to a beam
-                     recombination, then @p jetp_index = @ref JETRECONSTRUCTION_INVALID.
+                     recombination, then @p jetp_index = @ref
+                     JETRECONSTRUCTION_INVALID.
                    */
   double dij;      /**< The distance corresponding to the recombination at this
                       stage of the clustering. */
@@ -182,9 +226,10 @@ static inline void jetreconstruction_ClusterSequence_free_members(
  * @param[in] strategy The jet reconstruction strategy to use.
  * @param[out] result A pointer to which a cluster sequence containing the
  * reconstructed jets and the merging history will be stored.
- * @return An integer status code indicating the success or failure.
+ * @return An integer status code indicating the success or failure. See common
+ * status codes jetreconstruction_StatusCode.
  */
-int jetreconstruction_jet_reconstruct(
+jetreconstruction_StatusCode jetreconstruction_jet_reconstruct(
     const jetreconstruction_PseudoJet *particles, size_t particles_length,
     jetreconstruction_JetAlgorithm algorithm, double R,
     jetreconstruction_RecoStrategy strategy,
@@ -195,8 +240,9 @@ int jetreconstruction_jet_reconstruct(
  * @brief A structure to hold the inclusive or exclusive jets.
  */
 typedef struct {
-  jetreconstruction_PseudoJet *data; /**< Pointer to an array of jetreconstruction_PseudoJet. */
-  size_t length;                     /**< The length of the @ref data array. */
+  jetreconstruction_PseudoJet
+      *data;     /**< Pointer to an array of jetreconstruction_PseudoJet. */
+  size_t length; /**< The length of the @ref data array. */
 } jetreconstruction_JetsResult;
 
 /** @private */
@@ -235,9 +281,10 @@ jetreconstruction_JetsResult_free_members(jetreconstruction_JetsResult *ptr) {
  * @param[in] dcut The distance parameter used to define the exclusive jets.
  * @param[out] result A pointer to the jetreconstruction_JetsResult object where
  * the resulting jets will be stored.
- * @return An integer status code indicating the success or failure.
+ * @return An integer status code indicating the success or failure. See common
+ * status codes jetreconstruction_StatusCode.
  */
-int jetreconstruction_exclusive_jets_dcut(
+jetreconstruction_StatusCode jetreconstruction_exclusive_jets_dcut(
     const jetreconstruction_ClusterSequence *clustersequence, double dcut,
     jetreconstruction_JetsResult *result);
 
@@ -257,9 +304,10 @@ int jetreconstruction_exclusive_jets_dcut(
  * @param[in] njets The number of exclusive jets to be calculated.
  * @param[out] result A pointer to the jetreconstruction_JetsResult object where
  * the resulting jets will be stored.
- * @return An integer status code indicating the success or failure.
+ * @return An integer status code indicating the success or failure. See common
+ * status codes jetreconstruction_StatusCode.
  */
-int jetreconstruction_exclusive_jets_njets(
+jetreconstruction_StatusCode jetreconstruction_exclusive_jets_njets(
     const jetreconstruction_ClusterSequence *clustersequence, size_t njets,
     jetreconstruction_JetsResult *result);
 
@@ -283,8 +331,9 @@ int jetreconstruction_exclusive_jets_njets(
  *              inclusive jets.
  * @param[out] result A pointer to the jetreconstruction_JetsResult object where
  * the resulting jets will be stored.
- * @return An integer status code indicating the success or failure.
+ * @return An integer status code indicating the success or failure. See common
+ * status codes jetreconstruction_StatusCode.
  */
-int jetreconstruction_inclusive_jets(
+jetreconstruction_StatusCode jetreconstruction_inclusive_jets(
     const jetreconstruction_ClusterSequence *clustersequence, double ptmin,
     jetreconstruction_JetsResult *result);

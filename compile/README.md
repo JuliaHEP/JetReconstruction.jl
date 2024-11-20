@@ -2,7 +2,7 @@
 
 Minimal C bindings for JetReconstruction.jl
 
-- [C-header](JetReconstruction.h)
+- [C-header](include/JetReconstruction.h)
 - shared library compiled with [PackageCompiler.jl](https://github.com/JuliaLang/PackageCompiler.jl)
 
 ## Building library
@@ -37,10 +37,14 @@ int main(int argc, char *argv[]) {
   jetreconstruction_RecoStrategy strategy = JETRECONSTRUCTION_RECOSTRATEGY_BEST;
 
   jetreconstruction_ClusterSequence cluster_seq;
-  jetreconstruction_jet_reconstruct(particles, len, algorithm, R, strategy,
-                                    &cluster_seq);
+  int ret = jetreconstruction_jet_reconstruct(particles, len, algorithm, R, strategy,
+                                              &cluster_seq);
+  if (ret != JETRECONSTRUCTION_STATUSCODE_OK){
+    /*An error occurred check the value or stderr for more information*/
+    return 1;
+  }
 
-  /*Use the cluster sequence  in your application
+  /*Use the cluster sequence in your application
   then free memory allocations done by library*/
   jetreconstruction_ClusterSequence_free_members(&cluster_seq);
   shutdown_julia(0); /*teardown of julia runtime*/

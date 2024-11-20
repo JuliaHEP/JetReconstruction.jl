@@ -52,23 +52,28 @@ void printJetsResult(const jetreconstruction_JetsResult *results) {
 
 int main(int argc, char *argv[]) {
   clock_t start_time = clock();
+  int sc = 0;
   init_julia(argc, argv);
   size_t len = 2;
   jetreconstruction_PseudoJet particles[2];
-  jetreconstruction_PseudoJet_init(&particles[0], 0.0, 1.0, 2.0, 3.0);
-  jetreconstruction_PseudoJet_init(&particles[1], 1.0, 2.0, 3.0, 4.0);
+  sc = jetreconstruction_PseudoJet_init(&particles[0], 0.0, 1.0, 2.0, 3.0);
+  assert(sc == JETRECONSTRUCTION_STATUSCODE_OK);
+  sc = jetreconstruction_PseudoJet_init(&particles[1], 1.0, 2.0, 3.0, 4.0);
+  assert(sc == JETRECONSTRUCTION_STATUSCODE_OK);
 
   jetreconstruction_JetAlgorithm algorithm = JETRECONSTRUCTION_JETALGORITHM_CA;
   double R = 3.0;
   jetreconstruction_RecoStrategy strategy = JETRECONSTRUCTION_RECOSTRATEGY_BEST;
 
   jetreconstruction_ClusterSequence cluster_seq;
-  jetreconstruction_jet_reconstruct(particles, len, algorithm, R, strategy,
-                                    &cluster_seq);
+  sc = jetreconstruction_jet_reconstruct(particles, len, algorithm, R, strategy,
+                                         &cluster_seq);
+  assert(sc == JETRECONSTRUCTION_STATUSCODE_OK);
 
   printClusterSequence(&cluster_seq);
   jetreconstruction_JetsResult result;
-  jetreconstruction_exclusive_jets_njets(&cluster_seq, 2, &result);
+  sc = jetreconstruction_exclusive_jets_njets(&cluster_seq, 2, &result);
+  assert(sc == JETRECONSTRUCTION_STATUSCODE_OK);
   printJetsResult(&result);
 
   jetreconstruction_JetsResult_free_members(&result);
