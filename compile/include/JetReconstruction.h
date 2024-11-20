@@ -12,6 +12,9 @@
  * reconstruction.
  */
 
+#ifndef JET_RECONSTRUCTION_JL_H_
+#define JET_RECONSTRUCTION_JL_H_
+
 #include <stddef.h>
 
 /*Special states in a history.*/
@@ -337,3 +340,5 @@ jetreconstruction_StatusCode jetreconstruction_exclusive_jets_njets(
 jetreconstruction_StatusCode jetreconstruction_inclusive_jets(
     const jetreconstruction_ClusterSequence *clustersequence, double ptmin,
     jetreconstruction_JetsResult *result);
+
+#endif /* JET_RECONSTRUCTION_JL_H_ */
