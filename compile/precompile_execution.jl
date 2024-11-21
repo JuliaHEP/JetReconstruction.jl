@@ -27,8 +27,7 @@ jetreconstruction_jet_reconstruct(pseudoJets_ptr, pseudoJets_len, algorithm, R,
                                   RecoStrategy.Best,
                                   clustersequence_ptr)
 
-results = C_JetsResult{PseudoJet}(C_NULL, 0)
-results_ptr = Base.unsafe_convert(Ptr{C_JetsResult{PseudoJet}}, Ref(results))
+results_ptr = Ptr{C_JetsResult{PseudoJet}}(Libc.malloc(sizeof(C_JetsResult{PseudoJet})))
 jetreconstruction_exclusive_jets_njets(clustersequence_ptr, Csize_t(2), results_ptr)
 jetreconstruction_JetsResult_free_members_(results_ptr)
 
@@ -41,3 +40,4 @@ jetreconstruction_JetsResult_free_members_(results_ptr)
 jetreconstruction_ClusterSequence_free_members_(clustersequence_ptr)
 Libc.free(pseudoJets_ptr)
 Libc.free(clustersequence_ptr)
+Libc.free(results_ptr)
