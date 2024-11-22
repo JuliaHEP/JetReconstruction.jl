@@ -1,34 +1,39 @@
 """
-    struct EEjet
+    struct EEjet{T <: Real} <: FourMomentum
 
-The `EEjet` struct is a 4-momentum object used for the e+e jet reconstruction routines.
+The `EEjet` struct is a 4-momentum object used for the e+e jet reconstruction
+routines. Internal fields are used to track the reconstuction and to cache
+values needed during the execution of the algorithm.
 
 # Fields
-- `px::Float64`: The x-component of the jet momentum.
-- `py::Float64`: The y-component of the jet momentum.
-- `pz::Float64`: The z-component of the jet momentum.
-- `E::Float64`: The energy of the jet.
+- `px::T`: The x-component of the jet momentum.
+- `py::T`: The y-component of the jet momentum.
+- `pz::T`: The z-component of the jet momentum.
+- `E::T`: The energy of the jet.
 - `_cluster_hist_index::Int`: The index of the cluster histogram.
-- `_p2::Float64`: The squared momentum of the jet.
-- `_inv_p::Float64`: The inverse momentum of the jet.
+- `_p2::T`: The squared momentum of the jet.
+- `_inv_p::T`: The inverse momentum of the jet.
+
+# Type Parameters
+- `T <: Real`: The type of the numerical values.
 """
-mutable struct EEjet <: FourMomentum
-    px::Float64
-    py::Float64
-    pz::Float64
-    E::Float64
-    _p2::Float64
-    _inv_p::Float64
+mutable struct EEjet{T <: Real} <: FourMomentum
+    px::T
+    py::T
+    pz::T
+    E::T
+    _p2::T
+    _inv_p::T
     _cluster_hist_index::Int
 end
 
-function EEjet(px::Real, py::Real, pz::Real, E::Real, _cluster_hist_index::Int)
+function EEjet(px::T, py::T, pz::T, E::T, _cluster_hist_index::Int) where {T <: Real}
     @muladd p2 = px * px + py * py + pz * pz
     inv_p = @fastmath 1.0 / sqrt(p2)
-    EEjet(px, py, pz, E, p2, inv_p, _cluster_hist_index)
+    EEjet{T}(px, py, pz, E, p2, inv_p, _cluster_hist_index)
 end
 
-EEjet(px::Real, py::Real, pz::Real, E::Real) = EEjet(px, py, pz, E, 0)
+EEjet(px::T, py::T, pz::T, E::T) where {T <: Real} = EEjet{T}(px, py, pz, E, 0)
 
 EEjet(pj::PseudoJet) = EEjet(px(pj), py(pj), pz(pj), energy(pj), cluster_hist_index(pj))
 
@@ -87,15 +92,31 @@ function show(io::IO, eej::EEjet)
           " cluster_hist_index: ", eej._cluster_hist_index, ")")
 end
 
-# Optimised reconstruction struct for e+e jets
+"""
+    mutable struct EERecoJet{T <: Real}
 
-mutable struct EERecoJet
+Optimised struct for e+e jets reconstruction, to be used with StructArrays.
+
+# Fields
+- `index::Int`: The index of the jet.
+- `nni::Int`: The nearest neighbour index.
+- `nndist::T`: The distance to the nearest neighbour.
+- `dijdist::T`: The distance between jets.
+- `nx::T`: The x-component of the jet's momentum.
+- `ny::T`: The y-component of the jet's momentum.
+- `nz::T`: The z-component of the jet's momentum.
+- `E2p::T`: The energy-to-momentum ratio of the jet.
+
+# Type Parameters
+- `T <: Real`: The type of the numerical values.
+"""
+mutable struct EERecoJet{T <: Real}
     index::Int
     nni::Int
-    nndist::Float64
-    dijdist::Float64
-    nx::Float64
-    ny::Float64
-    nz::Float64
-    E2p::Float64
+    nndist::T
+    dijdist::T
+    nx::T
+    ny::T
+    nz::T
+    E2p::T
 end
