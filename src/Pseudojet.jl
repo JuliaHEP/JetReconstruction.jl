@@ -18,7 +18,7 @@ const _invalid_phi = -100.0
 const _invalid_rap = -1.e200
 
 """
-    mutable struct PseudoJet <: FourMomentum
+    mutable struct PseudoJet{T <: Real} <: FourMomentum
 
 The `PseudoJet` struct represents a pseudojet, a four-momentum object used in
 jet reconstruction algorithms. Additional information for the link back into the
@@ -26,70 +26,70 @@ history of the clustering is stored in the `_cluster_hist_index` field. There is
 caching of the more expensive calculations for rapidity and azimuthal angle.
 
 # Fields
-- `px::Float64`: The x-component of the momentum.
-- `py::Float64`: The y-component of the momentum.
-- `pz::Float64`: The z-component of the momentum.
-- `E::Float64`: The energy component of the momentum.
+- `px::T`: The x-component of the momentum.
+- `py::T`: The y-component of the momentum.
+- `pz::T`: The z-component of the momentum.
+- `E::T`: The energy component of the momentum.
 - `_cluster_hist_index::Int`: The index of the cluster history.
-- `_pt2::Float64`: The squared transverse momentum.
-- `_inv_pt2::Float64`: The inverse squared transverse momentum.
-- `_rap::Float64`: The rapidity.
-- `_phi::Float64`: The azimuthal angle.
+- `_pt2::T`: The squared transverse momentum.
+- `_inv_pt2::T`: The inverse squared transverse momentum.
+- `_rap::T`: The rapidity.
+- `_phi::T`: The azimuthal angle.
 
 """
-mutable struct PseudoJet <: FourMomentum
-    px::Float64
-    py::Float64
-    pz::Float64
-    E::Float64
+mutable struct PseudoJet{T <: Real} <: FourMomentum
+    px::T
+    py::T
+    pz::T
+    E::T
     _cluster_hist_index::Int
-    _pt2::Float64
-    _inv_pt2::Float64
-    _rap::Float64
-    _phi::Float64
+    _pt2::T
+    _inv_pt2::T
+    _rap::T
+    _phi::T
 end
 
 """
-    PseudoJet(px::Real, py::Real, pz::Real, E::Real,
+    PseudoJet(px::T, py::T, pz::T, E::T,
         _cluster_hist_index::Int,
-        pt2::Real)
+        pt2::T) where {T <: Real}
 
 Constructs a PseudoJet object with the given momentum components and energy and
 history index.
 
 # Arguments
-- `px::Real`: The x-component of the momentum.
-- `py::Real`: The y-component of the momentum.
-- `pz::Real`: The z-component of the momentum.
-- `E::Real`: The energy.
+- `px::T`: The x-component of the momentum.
+- `py::T`: The y-component of the momentum.
+- `pz::T`: The z-component of the momentum.
+- `E::T`: The energy.
 - `_cluster_hist_index::Int`: The cluster history index.
-- `pt2::Real`: The transverse momentum squared.
+- `pt2::T`: The transverse momentum squared.
 
 # Returns
 A `PseudoJet` object.
 """
-PseudoJet(px::Real, py::Real, pz::Real, E::Real,
+PseudoJet(px::T, py::T, pz::T, E::T,
 _cluster_hist_index::Int,
-pt2::Real) = PseudoJet(px,
-                       py, pz, E, _cluster_hist_index,
-                       pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
+pt2::T) where {T <: Real} = PseudoJet{T}(px,
+                                         py, pz, E, _cluster_hist_index,
+                                         pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
 
 """
-    PseudoJet(px::Real, py::Real, pz::Real, E::Real)
+    PseudoJet(px::T, py::T, pz::T, E::T) where T <: Real
 
 Constructs a PseudoJet object with the given momentum components and energy.
 
 # Arguments
-- `px::Real`: The x-component of the momentum.
-- `py::Real`: The y-component of the momentum.
-- `pz::Real`: The z-component of the momentum.
-- `E::Real`: The energy.
+- `px::T`: The x-component of the momentum.
+- `py::T`: The y-component of the momentum.
+- `pz::T`: The z-component of the momentum.
+- `E::T`: The energy.
 
 # Returns
 A PseudoJet object.
 """
-PseudoJet(px::Real, py::Real,
-pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
+PseudoJet(px::T, py::T,
+pz::T, E::T) where {T <: Real} = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
 
 import Base.show
 """
