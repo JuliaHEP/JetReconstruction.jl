@@ -273,6 +273,9 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     # R squared
     R2 = R^2
 
+    # Numerical type?
+    ParticleType = typeof(particles[1].E)
+
     # Constant factor for the dij metric and the beam distance function
     if algorithm == JetAlgorithm.Durham
         dij_factor = 2.0
@@ -289,7 +292,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     # For optimised reconstruction generate an SoA containing the necessary
     # jet information and populate it accordingly
     # We need N slots for this array
-    eereco = StructArray{EERecoJet}(undef, N)
+    eereco = StructArray{EERecoJet{ParticleType}}(undef, N)
     fill_reco_array!(eereco, particles, R2, p)
 
     # Setup the initial history and get the total energy
