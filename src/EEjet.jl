@@ -34,6 +34,7 @@ function EEjet(px::T, py::T, pz::T, E::T, _cluster_hist_index::Integer) where {T
 end
 
 EEjet(px::T, py::T, pz::T, E::T) where {T <: Real} = EEjet(px, py, pz, E, 0)
+EEjet{T}(px::T, py::T, pz::T, E::T) where {T <: Real} = EEjet(px, py, pz, E, 0)
 
 EEjet(pj::PseudoJet) = EEjet(px(pj), py(pj), pz(pj), energy(pj), cluster_hist_index(pj))
 
