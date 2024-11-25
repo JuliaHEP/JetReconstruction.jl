@@ -3,6 +3,8 @@
 const large_distance = 16.0 # = 4^2
 const large_dij = 1.0e6
 
+using Infiltrator
+
 """
     angular_distance(eereco, i, j) -> Float64
 
@@ -242,11 +244,12 @@ function ee_genkt_algorithm(particles::AbstractArray{T, 1}; p = 1, R = 4.0,
         recombination_particles = copy(particles)
         sizehint!(recombination_particles, length(particles) * 2)
     else
-        recombination_particles = EEjet[]
+        ParticleType = typeof(px(particles[1]))
+        recombination_particles = EEjet{ParticleType}[]
         sizehint!(recombination_particles, length(particles) * 2)
         for i in eachindex(particles)
             push!(recombination_particles,
-                  EEjet(px(particles[i]), py(particles[i]), pz(particles[i]),
+                  EEjet{ParticleType}(px(particles[i]), py(particles[i]), pz(particles[i]),
                         energy(particles[i])))
         end
     end
@@ -264,9 +267,9 @@ end
 
 This function is the actual implementation of the e+e- jet clustering algorithm.
 """
-function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
+function _ee_genkt_algorithm(; particles::Vector{EEjet{T}}, p = 1, R = 4.0,
                              algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                             recombine = +)
+                             recombine = +) where {T <: Real}
     # Bounds
     N::Int = length(particles)
 
@@ -298,7 +301,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     # Setup the initial history and get the total energy
     history, Qtot = initial_history(particles)
 
-    clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Plain, particles, history,
+    clusterseq = ClusterSequence{EEjet{ParticleType}}(algorithm, p, R, RecoStrategy.N2Plain, particles, history,
                                  Qtot)
 
     # Run over initial pairs of jets to find nearest neighbours
@@ -306,6 +309,8 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
 
     # Only for debugging purposes...
     # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, "Start")
+
+    #@infiltrate
 
     # Now we can start the main loop
     iter = 0
