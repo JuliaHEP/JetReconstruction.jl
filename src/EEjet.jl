@@ -27,13 +27,13 @@ mutable struct EEjet{T <: Real} <: FourMomentum
     _cluster_hist_index::Int
 end
 
-function EEjet(px::T, py::T, pz::T, E::T, _cluster_hist_index::Int) where {T <: Real}
+function EEjet(px::T, py::T, pz::T, E::T, _cluster_hist_index::Integer) where {T <: Real}
     @muladd p2 = px * px + py * py + pz * pz
     inv_p = @fastmath 1.0 / sqrt(p2)
     EEjet{T}(px, py, pz, E, p2, inv_p, _cluster_hist_index)
 end
 
-EEjet(px::T, py::T, pz::T, E::T) where {T <: Real} = EEjet{T}(px, py, pz, E, 0)
+EEjet(px::T, py::T, pz::T, E::T) where {T <: Real} = EEjet(px, py, pz, E, 0)
 
 EEjet(pj::PseudoJet) = EEjet(px(pj), py(pj), pz(pj), energy(pj), cluster_hist_index(pj))
 
