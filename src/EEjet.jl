@@ -2,7 +2,7 @@
     struct EEjet{T <: Real} <: FourMomentum
 
 The `EEjet` struct is a 4-momentum object used for the e+e jet reconstruction
-routines. Internal fields are used to track the reconstuction and to cache
+routines. Internal fields are used to track the reconstruction and to cache
 values needed during the execution of the algorithm.
 
 # Fields
@@ -105,7 +105,7 @@ Optimised struct for e+e jets reconstruction, to be used with StructArrays.
 - `nx::T`: The x-component of the jet's momentum.
 - `ny::T`: The y-component of the jet's momentum.
 - `nz::T`: The z-component of the jet's momentum.
-- `E2p::T`: The energy-to-momentum ratio of the jet.
+- `E2p::T`: The energy raised to the power of 2p for this jet.
 
 # Type Parameters
 - `T <: Real`: The type of the numerical values.
