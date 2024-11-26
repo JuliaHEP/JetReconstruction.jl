@@ -385,8 +385,9 @@ function tiled_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, No
         sizehint!(recombination_particles, length(particles) * 2)
         for i in eachindex(particles)
             push!(recombination_particles,
-                  PseudoJet{ParticleType}(px(particles[i]), py(particles[i]), pz(particles[i]),
-                            energy(particles[i])))
+                  PseudoJet{ParticleType}(px(particles[i]), py(particles[i]),
+                                          pz(particles[i]),
+                                          energy(particles[i])))
         end
     end
 
@@ -424,7 +425,7 @@ tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 1.0, recombine = 
 """
 function _tiled_jet_reconstruct(particles::Vector{PseudoJet{T}}; p::Real = -1, R = 1.0,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                recombine = +) where T <: Real
+                                recombine = +) where {T <: Real}
     # Bounds
     N::Int = length(particles)
 
@@ -468,7 +469,9 @@ function _tiled_jet_reconstruct(particles::Vector{PseudoJet{T}}; p::Real = -1, R
     tiling = Tiling(setup_tiling(_eta, R))
 
     # ClusterSequence is the struct that holds the state of the reconstruction
-    clusterseq = ClusterSequence{PseudoJet{ParticleType}}(algorithm, p, R, RecoStrategy.N2Tiled, jets, history, Qtot)
+    clusterseq = ClusterSequence{PseudoJet{ParticleType}}(algorithm, p, R,
+                                                          RecoStrategy.N2Tiled, jets,
+                                                          history, Qtot)
 
     # Tiled jets is a structure that has additional variables for tracking which tile a jet is in
     tiledjets = similar(clusterseq.jets, TiledJet)

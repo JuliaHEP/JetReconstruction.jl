@@ -248,7 +248,7 @@ function ee_genkt_algorithm(particles::AbstractArray{T, 1}; p = 1, R = 4.0,
         for i in eachindex(particles)
             push!(recombination_particles,
                   EEjet{ParticleType}(px(particles[i]), py(particles[i]), pz(particles[i]),
-                        energy(particles[i])))
+                                      energy(particles[i])))
         end
     end
 
@@ -299,8 +299,9 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet{T}}, p = 1, R = 4.0,
     # Setup the initial history and get the total energy
     history, Qtot = initial_history(particles)
 
-    clusterseq = ClusterSequence{EEjet{ParticleType}}(algorithm, p, R, RecoStrategy.N2Plain, particles, history,
-                                 Qtot)
+    clusterseq = ClusterSequence{EEjet{ParticleType}}(algorithm, p, R, RecoStrategy.N2Plain,
+                                                      particles, history,
+                                                      Qtot)
 
     # Run over initial pairs of jets to find nearest neighbours
     get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)
