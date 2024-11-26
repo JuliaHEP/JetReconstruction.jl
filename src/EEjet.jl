@@ -35,19 +35,93 @@ Return the element type of the `EEjet` struct.
 """
 Base.eltype(::Type{EEjet{T}}) where T = T
 
+
+"""
+    EEjet(px::T, py::T, pz::T, E::T, _cluster_hist_index::Integer) where {T <: Real}
+
+Constructs an `EEjet` object with the given momentum components `px`, `py`,
+`pz`, energy `E`, and cluster histogram index `_cluster_hist_index`.
+
+The constructed EEjet object will be parametrised by the type `T`.
+
+# Arguments
+- `px::T`: The x-component of the momentum.
+- `py::T`: The y-component of the momentum.
+- `pz::T`: The z-component of the momentum.
+- `E::T`: The energy of the jet.
+- `_cluster_hist_index::Integer`: The index of the cluster histogram.
+
+# Returns
+- The initialised `EEjet` object.
+
+# Note
+- `T` must be a subtype of `Real`.
+- The `@muladd` macro is used to perform fused multiply-add operations for
+  computing `p2`.
+- The `@fastmath` macro is used to allow the compiler to perform optimizations
+  for computing `inv_p`.
+"""
 function EEjet(px::T, py::T, pz::T, E::T, _cluster_hist_index::Integer) where {T <: Real}
     @muladd p2 = px * px + py * py + pz * pz
     inv_p = @fastmath 1.0 / sqrt(p2)
     EEjet{T}(px, py, pz, E, p2, inv_p, _cluster_hist_index)
 end
 
-# Constructor with type T passes through without history index
+"""
+    EEjet(px::T, py::T, pz::T, E::T) where {T <: Real}
+
+Constructs an `EEjet` object with the given momentum components `px`, `py`,
+`pz`, energy `E`, and the cluster histogram index set to zero.
+
+The constructed EEjet object will be parametrised by the type `T`.
+
+# Arguments
+- `px::T`: The x-component of the momentum.
+- `py::T`: The y-component of the momentum.
+- `pz::T`: The z-component of the momentum.
+- `E::T`: The energy of the jet.
+
+# Returns
+- The initialised `EEjet` object.
+"""
 EEjet(px::T, py::T, pz::T, E::T) where {T <: Real} = EEjet(px, py, pz, E, 0)
 
-# Constructor with type U does type conversion before initialising
+"""
+    EEjet{U}(px::T, py::T, pz::T, E::T) where {T <: Real, U <: Real}
+
+Constructs an `EEjet` object with conversion of the given momentum components
+(`px`, `py`, `pz`) and energy (`E`) from type `T` to type `U`.
+
+# Arguments
+- `px::T`: The x-component of the momentum.
+- `py::T`: The y-component of the momentum.
+- `pz::T`: The z-component of the momentum.
+- `E::T`: The energy.
+
+# Type Parameters
+- `T <: Real`: The type of the input momentum components and energy.
+- `U <: Real`: The type to which the input values will be converted
+
+# Returns
+An `EEjet` object with the momentum components and energy parametrised to type
+`U`.
+"""
 EEjet{U}(px::T, py::T, pz::T, E::T) where {T <: Real, U <: Real} = EEjet(U(px), U(py), U(pz), U(E), 0)
 
+
+"""
+    EEjet(pj::PseudoJet) -> EEjet
+
+Constructs an `EEjet` object from a given `PseudoJet` object `pj`.
+
+# Arguments
+- `pj::PseudoJet`: A `PseudoJet` object used to create the `EEjet`.
+
+# Returns
+- An `EEjet` object initialized with the same properties of the given `PseudoJet`.
+"""
 EEjet(pj::PseudoJet) = EEjet(px(pj), py(pj), pz(pj), energy(pj), cluster_hist_index(pj))
+
 
 p2(eej::EEjet) = eej._p2
 pt2(eej::EEjet) = eej.px^2 + eej.py^2
