@@ -148,11 +148,12 @@ ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64, strategy
                        Qtot)
 end
 
-ClusterSequence{T}(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64, strategy::RecoStrategy.Strategy, jets::Vector{T}, history, Qtot) where {T <: FourMomentum} = begin
+function ClusterSequence{T}(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64,
+                            strategy::RecoStrategy.Strategy, jets::Vector{T}, history,
+                            Qtot) where {T <: FourMomentum}
     ClusterSequence{T}(algorithm, Float64(p), R, strategy, jets, length(jets), history,
                        Qtot)
 end
-
 
 """
     add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, dij)

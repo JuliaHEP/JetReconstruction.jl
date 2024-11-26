@@ -53,7 +53,7 @@ end
 
 Return the element type of the `PseudoJet` struct.
 """
-Base.eltype(::Type{PseudoJet{T}}) where T = T
+Base.eltype(::Type{PseudoJet{T}}) where {T} = T
 
 """
     PseudoJet(px::T, py::T, pz::T, E::T,
@@ -75,10 +75,10 @@ history index.
 A `PseudoJet` object.
 """
 PseudoJet(px::T, py::T, pz::T, E::T,
-    _cluster_hist_index::Int,
-    pt2::T) where {T <: Real} = PseudoJet{T}(px,
-                                            py, pz, E, _cluster_hist_index,
-                                             pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
+_cluster_hist_index::Int,
+pt2::T) where {T <: Real} = PseudoJet{T}(px,
+                                         py, pz, E, _cluster_hist_index,
+                                         pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
 
 """
     PseudoJet{T}(px::T, py::T, pz::T, E::T,
@@ -100,10 +100,10 @@ and energy and history index.
 A `PseudoJet` object.
 """
 PseudoJet{T}(px::T, py::T, pz::T, E::T,
-            _cluster_hist_index::Int,
-            pt2::T) where {T <: Real} = PseudoJet{T}(px,
-                                                    py, pz, E, _cluster_hist_index,
-                                                    pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
+_cluster_hist_index::Int,
+pt2::T) where {T <: Real} = PseudoJet{T}(px,
+                                         py, pz, E, _cluster_hist_index,
+                                         pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
 
 """
     PseudoJet(px::T, py::T, pz::T, E::T) where T <: Real
@@ -125,8 +125,12 @@ pz::T, E::T) where {T <: Real} = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
 """
     PseudoJet{U}(px::T, py::T, pz::T, E::T) where T <: Real, U <: Real
 """
-PseudoJet{U}(px::T, py::T, pz::T, E::T) where {T <: Real, U <: Real} = PseudoJet{U}(U(px), U(py), U(pz), U(E), 0, U(px^2 + py^2))
-
+PseudoJet{U}(px::T, py::T, pz::T, E::T) where {T <: Real, U <: Real} = PseudoJet{U}(U(px),
+                                                                                    U(py),
+                                                                                    U(pz),
+                                                                                    U(E), 0,
+                                                                                    U(px^2 +
+                                                                                      py^2))
 
 import Base.show
 """
