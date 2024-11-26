@@ -275,7 +275,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet{T}}, p = 1, R = 4.0,
     R2 = R^2
 
     # Numerical type?
-    ParticleType = typeof(particles[1].E)
+    ParticleType = eltype(particles[1])
 
     # Constant factor for the dij metric and the beam distance function
     if algorithm == JetAlgorithm.Durham
