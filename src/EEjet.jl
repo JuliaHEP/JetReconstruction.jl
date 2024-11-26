@@ -27,6 +27,14 @@ mutable struct EEjet{T <: Real} <: FourMomentum
     _cluster_hist_index::Int
 end
 
+
+"""
+    Base.eltype(::Type{EEjet{T}}) where T
+
+Return the element type of the `EEjet` struct.
+"""
+Base.eltype(::Type{EEjet{T}}) where T = T
+
 function EEjet(px::T, py::T, pz::T, E::T, _cluster_hist_index::Integer) where {T <: Real}
     @muladd p2 = px * px + py * py + pz * pz
     inv_p = @fastmath 1.0 / sqrt(p2)

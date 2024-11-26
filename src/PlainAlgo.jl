@@ -287,8 +287,8 @@ function _plain_jet_reconstruct(; particles::Vector{PseudoJet{T}}, p = -1, R = 1
     # Parameters
     R2 = R^2
 
-    # Numerical type?
-    ParticleType = typeof(particles[1].E)
+    # Numerical type for this reconstruction
+    ParticleType = eltype(particles[1])
 
     # Optimised compact arrays for determining the next merge step
     # We make sure these arrays are type stable - have seen issues where, depending on the values

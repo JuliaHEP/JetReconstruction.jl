@@ -440,8 +440,8 @@ function _tiled_jet_reconstruct(particles::Vector{PseudoJet{T}}; p::Real = -1, R
     R2::Float64 = R * R
     p = (round(p) == p) ? Int(p) : p # integer p if possible
 
-    # Numerical type?
-    ParticleType = typeof(particles[1].E)
+    # Numerical type for this reconstruction
+    ParticleType = eltype(particles[1])
 
     # This will be used quite deep inside loops, so declare it here so that
     # memory (de)allocation gets done only once
