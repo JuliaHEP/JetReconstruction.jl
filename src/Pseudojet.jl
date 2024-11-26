@@ -50,6 +50,13 @@ mutable struct PseudoJet{T <: Real} <: FourMomentum
 end
 
 """
+    Base.eltype(::Type{PseudoJet{T}}) where T
+
+Return the element type of the `PseudoJet` struct.
+"""
+Base.eltype(::Type{PseudoJet{T}}) where T = T
+
+"""
     PseudoJet(px::T, py::T, pz::T, E::T,
         _cluster_hist_index::Int,
         pt2::T) where {T <: Real}
