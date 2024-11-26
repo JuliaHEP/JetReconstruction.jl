@@ -69,10 +69,16 @@ history index.
 A `PseudoJet` object.
 """
 PseudoJet(px::T, py::T, pz::T, E::T,
-_cluster_hist_index::Int,
-pt2::T) where {T <: Real} = PseudoJet{T}(px,
-                                         py, pz, E, _cluster_hist_index,
-                                         pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
+    _cluster_hist_index::Int,
+    pt2::T) where {T <: Real} = PseudoJet{T}(px,
+                                            py, pz, E, _cluster_hist_index,
+                                             pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
+
+PseudoJet{T}(px::T, py::T, pz::T, E::T,
+            _cluster_hist_index::Int,
+            pt2::T) where {T <: Real} = PseudoJet{T}(px,
+                                                    py, pz, E, _cluster_hist_index,
+                                                    pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
 
 """
     PseudoJet(px::T, py::T, pz::T, E::T) where T <: Real
@@ -90,6 +96,9 @@ A PseudoJet object.
 """
 PseudoJet(px::T, py::T,
 pz::T, E::T) where {T <: Real} = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
+PseudoJet{T}(px::T, py::T,
+pz::T, E::T) where {T <: Real} = PseudoJet{T}(px, py, pz, E, 0, px^2 + py^2)
+
 
 import Base.show
 """
