@@ -3,8 +3,6 @@
 const large_distance = 16.0 # = 4^2
 const large_dij = 1.0e6
 
-using Infiltrator
-
 """
     angular_distance(eereco, i, j) -> Float64
 
@@ -309,8 +307,6 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet{T}}, p = 1, R = 4.0,
 
     # Only for debugging purposes...
     # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, "Start")
-
-    #@infiltrate
 
     # Now we can start the main loop
     iter = 0
