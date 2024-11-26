@@ -33,8 +33,11 @@ function EEjet(px::T, py::T, pz::T, E::T, _cluster_hist_index::Integer) where {T
     EEjet{T}(px, py, pz, E, p2, inv_p, _cluster_hist_index)
 end
 
+# Constructor with type T passes through without history index
 EEjet(px::T, py::T, pz::T, E::T) where {T <: Real} = EEjet(px, py, pz, E, 0)
-EEjet{T}(px::T, py::T, pz::T, E::T) where {T <: Real} = EEjet(px, py, pz, E, 0)
+
+# Constructor with type U does type conversion before initialising
+EEjet{U}(px::T, py::T, pz::T, E::T) where {T <: Real, U <: Real} = EEjet(U(px), U(py), U(pz), U(E), 0)
 
 EEjet(pj::PseudoJet) = EEjet(px(pj), py(pj), pz(pj), energy(pj), cluster_hist_index(pj))
 
