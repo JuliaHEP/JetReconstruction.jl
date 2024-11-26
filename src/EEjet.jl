@@ -27,14 +27,12 @@ mutable struct EEjet{T <: Real} <: FourMomentum
     _cluster_hist_index::Int
 end
 
-
 """
     Base.eltype(::Type{EEjet{T}}) where T
 
 Return the element type of the `EEjet` struct.
 """
-Base.eltype(::Type{EEjet{T}}) where T = T
-
+Base.eltype(::Type{EEjet{T}}) where {T} = T
 
 """
     EEjet(px::T, py::T, pz::T, E::T, _cluster_hist_index::Integer) where {T <: Real}
@@ -106,8 +104,8 @@ Constructs an `EEjet` object with conversion of the given momentum components
 An `EEjet` object with the momentum components and energy parametrised to type
 `U`.
 """
-EEjet{U}(px::T, py::T, pz::T, E::T) where {T <: Real, U <: Real} = EEjet(U(px), U(py), U(pz), U(E), 0)
-
+EEjet{U}(px::T, py::T, pz::T, E::T) where {T <: Real, U <: Real} = EEjet(U(px), U(py),
+                                                                         U(pz), U(E), 0)
 
 """
     EEjet(pj::PseudoJet) -> EEjet
@@ -121,7 +119,6 @@ Constructs an `EEjet` object from a given `PseudoJet` object `pj`.
 - An `EEjet` object initialized with the same properties of the given `PseudoJet`.
 """
 EEjet(pj::PseudoJet) = EEjet(px(pj), py(pj), pz(pj), energy(pj), cluster_hist_index(pj))
-
 
 p2(eej::EEjet) = eej._p2
 pt2(eej::EEjet) = eej.px^2 + eej.py^2
