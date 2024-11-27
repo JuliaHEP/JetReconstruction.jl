@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.19.46
+# v0.20.3
 
 using Markdown
 using InteractiveUtils
@@ -23,8 +23,6 @@ Perform a simple reconstruction example and show how to retrieve constituent jet
 
 # ╔═╡ b16f99a0-31ec-4e8f-99c6-7a6fcb16cbee
 md"As this is running in development, use `Pkg` to activate the local development version of the package and use `Revise` to track code changes.
-
-(Currently you must use the `jet-constituents` branch of `JetReconstruction`.)
 "
 
 # ╔═╡ 79f24ec1-a63e-4e96-bd67-49661125be66

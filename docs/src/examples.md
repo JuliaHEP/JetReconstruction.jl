@@ -61,3 +61,8 @@ showing how the jets merge from their different constituents.
 The `examples/EDM4hep` folder contains examples of using EDM4hep reconstructed
 particles as input to jet reconstruction. See the specific `README.md` file in
 that directory as well as [EDM4hep Inputs](@ref).
+
+## Jet Constituents
+
+The `examples/constituents` folder shows an example of the two mechanisms to
+retrieve jet constituents.
