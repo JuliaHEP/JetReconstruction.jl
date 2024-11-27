@@ -567,20 +567,21 @@ function reco_state(cs::ClusterSequence, ranks; iteration = 0, ignore_beam_merge
 end
 
 """
-    constituents(j::PseudoJet, cs::ClusterSequence)
+    constituents(jet::T, cs::ClusterSequence{T}) where T <: FourMomentum
 
 Get the constituents of a given jet in a cluster sequence.
 
 # Arguments
-- `cs::ClusterSequence`: The cluster sequence object.
-- `j::PseudoJet`: The jet for which to retrieve the constituents.
+- `cs::ClusterSequence{T}`: The cluster sequence object.
+- `jet::T`: The jet for which to retrieve the constituents.
 
 # Returns
-An array of jet objects representing the constituents of the given jet.
+An array of jet objects (which are of the same type as the input jet)
+representing the constituents of the given jet,  
 
 """
-function constituents(j::T, cs::ClusterSequence{T}) where T <: FourMomentum
-    constituent_idxs = constituent_indexes(j, cs)
+function constituents(jet::T, cs::ClusterSequence{T}) where T <: FourMomentum
+    constituent_idxs = constituent_indexes(jet, cs)
     constituents = Vector{T}()
     for idx in constituent_idxs
         push!(constituents, cs.jets[idx])
@@ -590,19 +591,19 @@ end
 
 
 """
-    constituent_indexes(j::T:<FourMomentum, cs::ClusterSequence)
+    constituent_indexes(jet::T, cs::ClusterSequence{T}) where T <: FourMomentum
 
 Return the indexes of the original particles which are the constituents of the
 given jet.
 
 # Arguments
-- `j::T<:FourMomentum`: The jet for which to retrieve the constituents.
-- `cs::ClusterSequence`: The cluster sequence object.
+- `jet::T`: The jet for which to retrieve the constituents.
+- `cs::ClusterSequence{T}`: The cluster sequence object.
 
 # Returns
 
 An vector of indices representing the original constituents of the given jet.
 """
-function constituent_indexes(j::T, cs::ClusterSequence{T}) where T <: FourMomentum
-    get_all_ancestors(cs.history[j._cluster_hist_index].jetp_index, cs)
+function constituent_indexes(jet::T, cs::ClusterSequence{T}) where T <: FourMomentum
+    get_all_ancestors(cs.history[jet._cluster_hist_index].jetp_index, cs)
 end
