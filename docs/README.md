@@ -2,7 +2,7 @@
 
 ## Adding Documentation
 
-`Documenter.jl` is used to generate package documentation. 
+`Documenter.jl` is used to generate package documentation.
 
 The general guidelines are to have documentation split into meaningful sections,
 none of which are too long. If a new functionality is added then create a new
