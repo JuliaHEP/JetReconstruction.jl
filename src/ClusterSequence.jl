@@ -580,7 +580,7 @@ An array of jet objects (which are of the same type as the input jet)
 representing the constituents of the given jet,  
 
 """
-function constituents(jet::T, cs::ClusterSequence{T}) where T <: FourMomentum
+function constituents(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
     constituent_idxs = constituent_indexes(jet, cs)
     constituents = Vector{T}()
     for idx in constituent_idxs
@@ -588,7 +588,6 @@ function constituents(jet::T, cs::ClusterSequence{T}) where T <: FourMomentum
     end
     constituents
 end
-
 
 """
     constituent_indexes(jet::T, cs::ClusterSequence{T}) where T <: FourMomentum
@@ -604,6 +603,6 @@ given jet.
 
 An vector of indices representing the original constituents of the given jet.
 """
-function constituent_indexes(jet::T, cs::ClusterSequence{T}) where T <: FourMomentum
+function constituent_indexes(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
     get_all_ancestors(cs.history[jet._cluster_hist_index].jetp_index, cs)
 end

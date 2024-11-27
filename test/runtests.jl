@@ -45,6 +45,9 @@ function main()
     do_test_compare_types(RecoStrategy.N2Plain, algname = pp_algorithms[-1], power = -1)
     do_test_compare_types(RecoStrategy.N2Tiled, algname = pp_algorithms[-1], power = -1)
 
+    # Check jet constituents
+    include("test-constituents.jl")
+
     # Suppress these tests for now, as the examples Project.toml is rather heavy
     # because of the GLMakie dependency, plus on a CI there is no GL subsystem,
     # so things fail. The examples should be restructured to have a cleaner set
