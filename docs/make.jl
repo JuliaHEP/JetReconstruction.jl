@@ -17,6 +17,7 @@ makedocs(sitename = "JetReconstruction.jl",
              "Visualisation" => "visualisation.md",
              "Particle Inputs" => "particles.md",
              "Reconstruction Strategies" => "strategy.md",
+             "Substructure" => "substructure.md",
              "Reference Docs" => Any["Public API" => "lib/public.md",
                                      "Internal API" => "lib/internal.md"],
              "Extras" => Any["Serialisation" => "extras/serialisation.md"]
