@@ -1,35 +1,123 @@
 """
-    struct EEjet
+    struct EEjet{T <: Real} <: FourMomentum
 
-The `EEjet` struct is a 4-momentum object used for the e+e jet reconstruction routines.
+The `EEjet` struct is a 4-momentum object used for the e+e jet reconstruction
+routines. Internal fields are used to track the reconstruction and to cache
+values needed during the execution of the algorithm.
 
 # Fields
-- `px::Float64`: The x-component of the jet momentum.
-- `py::Float64`: The y-component of the jet momentum.
-- `pz::Float64`: The z-component of the jet momentum.
-- `E::Float64`: The energy of the jet.
+- `px::T`: The x-component of the jet momentum.
+- `py::T`: The y-component of the jet momentum.
+- `pz::T`: The z-component of the jet momentum.
+- `E::T`: The energy of the jet.
 - `_cluster_hist_index::Int`: The index of the cluster histogram.
-- `_p2::Float64`: The squared momentum of the jet.
-- `_inv_p::Float64`: The inverse momentum of the jet.
+- `_p2::T`: The squared momentum of the jet.
+- `_inv_p::T`: The inverse momentum of the jet.
+
+# Type Parameters
+- `T <: Real`: The type of the numerical values.
 """
-mutable struct EEjet <: FourMomentum
-    px::Float64
-    py::Float64
-    pz::Float64
-    E::Float64
-    _p2::Float64
-    _inv_p::Float64
+mutable struct EEjet{T <: Real} <: FourMomentum
+    px::T
+    py::T
+    pz::T
+    E::T
+    _p2::T
+    _inv_p::T
     _cluster_hist_index::Int
 end
 
-function EEjet(px::Real, py::Real, pz::Real, E::Real, _cluster_hist_index::Int)
+"""
+    Base.eltype(::Type{EEjet{T}}) where T
+
+Return the element type of the `EEjet` struct.
+"""
+Base.eltype(::Type{EEjet{T}}) where {T} = T
+
+"""
+    EEjet(px::T, py::T, pz::T, E::T, _cluster_hist_index::Integer) where {T <: Real}
+
+Constructs an `EEjet` object with the given momentum components `px`, `py`,
+`pz`, energy `E`, and cluster histogram index `_cluster_hist_index`.
+
+The constructed EEjet object will be parametrised by the type `T`.
+
+# Arguments
+- `px::T`: The x-component of the momentum.
+- `py::T`: The y-component of the momentum.
+- `pz::T`: The z-component of the momentum.
+- `E::T`: The energy of the jet.
+- `_cluster_hist_index::Integer`: The index of the cluster histogram.
+
+# Returns
+- The initialised `EEjet` object.
+
+# Note
+- `T` must be a subtype of `Real`.
+- The `@muladd` macro is used to perform fused multiply-add operations for
+  computing `p2`.
+- The `@fastmath` macro is used to allow the compiler to perform optimizations
+  for computing `inv_p`.
+"""
+function EEjet(px::T, py::T, pz::T, E::T, _cluster_hist_index::Integer) where {T <: Real}
     @muladd p2 = px * px + py * py + pz * pz
     inv_p = @fastmath 1.0 / sqrt(p2)
-    EEjet(px, py, pz, E, p2, inv_p, _cluster_hist_index)
+    EEjet{T}(px, py, pz, E, p2, inv_p, _cluster_hist_index)
 end
 
-EEjet(px::Real, py::Real, pz::Real, E::Real) = EEjet(px, py, pz, E, 0)
+"""
+    EEjet(px::T, py::T, pz::T, E::T) where {T <: Real}
 
+Constructs an `EEjet` object with the given momentum components `px`, `py`,
+`pz`, energy `E`, and the cluster histogram index set to zero.
+
+The constructed EEjet object will be parametrised by the type `T`.
+
+# Arguments
+- `px::T`: The x-component of the momentum.
+- `py::T`: The y-component of the momentum.
+- `pz::T`: The z-component of the momentum.
+- `E::T`: The energy of the jet.
+
+# Returns
+- The initialised `EEjet` object.
+"""
+EEjet(px::T, py::T, pz::T, E::T) where {T <: Real} = EEjet(px, py, pz, E, 0)
+
+"""
+    EEjet{U}(px::T, py::T, pz::T, E::T) where {T <: Real, U <: Real}
+
+Constructs an `EEjet` object with conversion of the given momentum components
+(`px`, `py`, `pz`) and energy (`E`) from type `T` to type `U`.
+
+# Arguments
+- `px::T`: The x-component of the momentum.
+- `py::T`: The y-component of the momentum.
+- `pz::T`: The z-component of the momentum.
+- `E::T`: The energy.
+
+# Type Parameters
+- `T <: Real`: The type of the input momentum components and energy.
+- `U <: Real`: The type to which the input values will be converted
+
+# Returns
+An `EEjet` object with the momentum components and energy parametrised to type
+`U`.
+"""
+EEjet{U}(px::T, py::T, pz::T, E::T) where {T <: Real, U <: Real} = EEjet(U(px), U(py),
+                                                                         U(pz), U(E), 0)
+
+"""
+    EEjet(pj::PseudoJet) -> EEjet
+
+Constructs an `EEjet` object from a given `PseudoJet` object `pj`.
+
+# Arguments
+- `pj::PseudoJet`: A `PseudoJet` object used to create the `EEjet`.
+
+# Returns
+- An `EEjet` object initialized with the same properties of the given `PseudoJet`.
+"""
 EEjet(pj::PseudoJet) = EEjet(px(pj), py(pj), pz(pj), energy(pj), cluster_hist_index(pj))
 
 p2(eej::EEjet) = eej._p2
@@ -87,15 +175,31 @@ function show(io::IO, eej::EEjet)
           " cluster_hist_index: ", eej._cluster_hist_index, ")")
 end
 
-# Optimised reconstruction struct for e+e jets
+"""
+    mutable struct EERecoJet{T <: Real}
 
-mutable struct EERecoJet
+Optimised struct for e+e jets reconstruction, to be used with StructArrays.
+
+# Fields
+- `index::Int`: The index of the jet.
+- `nni::Int`: The nearest neighbour index.
+- `nndist::T`: The distance to the nearest neighbour.
+- `dijdist::T`: The distance between jets.
+- `nx::T`: The x-component of the jet's momentum.
+- `ny::T`: The y-component of the jet's momentum.
+- `nz::T`: The z-component of the jet's momentum.
+- `E2p::T`: The energy raised to the power of 2p for this jet.
+
+# Type Parameters
+- `T <: Real`: The type of the numerical values.
+"""
+mutable struct EERecoJet{T <: Real}
     index::Int
     nni::Int
-    nndist::Float64
-    dijdist::Float64
-    nx::Float64
-    ny::Float64
-    nz::Float64
-    E2p::Float64
+    nndist::T
+    dijdist::T
+    nx::T
+    ny::T
+    nz::T
+    E2p::T
 end
