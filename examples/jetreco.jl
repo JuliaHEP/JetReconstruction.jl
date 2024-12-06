@@ -140,17 +140,19 @@ function main()
     logger = ConsoleLogger(stdout, Logging.Info)
     global_logger(logger)
     # Try to read events into the correct type!
-    if JetReconstruction.is_ee(args[:algorithm])
-        jet_type = EEjet
+    # If we don't have an algorithm we default to PseudoJet
+    if !isnothing(args[:algorithm])
+        JetReconstruction.is_ee(args[:algorithm])
+        jet_type = EEjet{Float64}
     else
-        jet_type = PseudoJet
+        jet_type = PseudoJet{Float64}
     end
     events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file],
                                                                   maxevents = args[:maxevents],
                                                                   skipevents = args[:skip],
                                                                   T = jet_type)
     if isnothing(args[:algorithm]) && isnothing(args[:power])
-        @warn "Neither algorithm nor power specified, defaulting to AntiKt"
+        @warn "Neither algorithm nor power specified, defaulting to pp event AntiKt"
         args[:algorithm] = JetAlgorithm.AntiKt
     end
     jet_process(events, distance = args[:distance], algorithm = args[:algorithm],
