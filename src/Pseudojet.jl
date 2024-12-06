@@ -56,31 +56,6 @@ Return the element type of the `PseudoJet` struct.
 Base.eltype(::Type{PseudoJet{T}}) where {T} = T
 
 """
-    PseudoJet(px::T, py::T, pz::T, E::T,
-        _cluster_hist_index::Int,
-        pt2::T) where {T <: Real}
-
-Constructs a PseudoJet object with the given momentum components and energy and
-history index.
-
-# Arguments
-- `px::T`: The x-component of the momentum.
-- `py::T`: The y-component of the momentum.
-- `pz::T`: The z-component of the momentum.
-- `E::T`: The energy.
-- `_cluster_hist_index::Int`: The cluster history index.
-- `pt2::T`: The transverse momentum squared.
-
-# Returns
-A `PseudoJet` object.
-"""
-PseudoJet(px::T, py::T, pz::T, E::T,
-_cluster_hist_index::Int,
-pt2::T) where {T <: Real} = PseudoJet{T}(px,
-                                         py, pz, E, _cluster_hist_index,
-                                         pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
-
-"""
     PseudoJet{T}(px::T, py::T, pz::T, E::T,
         _cluster_hist_index::Int,
         pt2::T) where {T <: Real}
@@ -120,10 +95,24 @@ Constructs a PseudoJet object with the given momentum components and energy.
 A PseudoJet object, with type parameter `T`.
 """
 PseudoJet(px::T, py::T,
-pz::T, E::T) where {T <: Real} = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
+pz::T, E::T) where {T <: Real} = PseudoJet{T}(px, py, pz, E, 0, px^2 + py^2)
 
 """
     PseudoJet{U}(px::T, py::T, pz::T, E::T) where T <: Real, U <: Real
+
+Constructs a PseudoJet object with the given momentum components and energy,
+parameterised by `U`.
+
+# Arguments
+- `px::T`: The x-component of the momentum.
+- `py::T`: The y-component of the momentum.
+- `pz::T`: The z-component of the momentum.
+- `E::T`: The energy.
+
+- U <: Real: The type parameter for the PseudoJet object.
+
+# Returns
+A PseudoJet object, with type parameter `U`.
 """
 PseudoJet{U}(px::T, py::T, pz::T, E::T) where {T <: Real, U <: Real} = PseudoJet{U}(U(px),
                                                                                     U(py),
