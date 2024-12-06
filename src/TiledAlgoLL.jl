@@ -380,6 +380,8 @@ function tiled_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, No
         recombination_particles = copy(particles)
         sizehint!(recombination_particles, length(particles) * 2)
     else
+        # We don't really know what element type we have here, so we need to
+        # drill down to a component to get that underlying type
         ParticleType = typeof(px(particles[1]))
         recombination_particles = PseudoJet{ParticleType}[]
         sizehint!(recombination_particles, length(particles) * 2)
@@ -442,7 +444,7 @@ function _tiled_jet_reconstruct(particles::Vector{PseudoJet{T}}; p::Real = -1, R
     p = (round(p) == p) ? Int(p) : p # integer p if possible
 
     # Numerical type for this reconstruction
-    ParticleType = eltype(particles[1])
+    ParticleType = T
 
     # This will be used quite deep inside loops, so declare it here so that
     # memory (de)allocation gets done only once

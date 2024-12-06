@@ -236,6 +236,8 @@ function plain_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, No
         recombination_particles = copy(particles)
         sizehint!(recombination_particles, length(particles) * 2)
     else
+        # We don't really know what element type we have here, so we need to
+        # drill down to a component to get that underlying type
         ParticleType = typeof(px(particles[1]))
         recombination_particles = PseudoJet{ParticleType}[]
         sizehint!(recombination_particles, length(particles) * 2)
@@ -288,7 +290,7 @@ function _plain_jet_reconstruct(; particles::Vector{PseudoJet{T}}, p = -1, R = 1
     R2 = R^2
 
     # Numerical type for this reconstruction
-    ParticleType = eltype(particles[1])
+    ParticleType = T
 
     # Optimised compact arrays for determining the next merge step
     # We make sure these arrays are type stable - have seen issues where, depending on the values

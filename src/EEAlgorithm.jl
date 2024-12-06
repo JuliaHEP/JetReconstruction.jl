@@ -242,6 +242,8 @@ function ee_genkt_algorithm(particles::AbstractArray{T, 1}; p = 1, R = 4.0,
         recombination_particles = copy(particles)
         sizehint!(recombination_particles, length(particles) * 2)
     else
+        # We don't really know what element type we have here, so we need to
+        # drill down to a component to get that underlying type
         ParticleType = typeof(px(particles[1]))
         recombination_particles = EEjet{ParticleType}[]
         sizehint!(recombination_particles, length(particles) * 2)
@@ -275,7 +277,7 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet{T}}, p = 1, R = 4.0,
     R2 = R^2
 
     # Numerical type?
-    ParticleType = eltype(particles[1])
+    ParticleType = T
 
     # Constant factor for the dij metric and the beam distance function
     if algorithm == JetAlgorithm.Durham
