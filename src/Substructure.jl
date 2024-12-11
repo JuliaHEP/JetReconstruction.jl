@@ -43,15 +43,6 @@ function deltaR(jet1::PseudoJet, jet2::PseudoJet)
     return sqrt(d_y^2 + d_phi^2)
 end
 
-# Function to calculate kt distance between two pseudojets
-function kt_distance(jet1::PseudoJet, jet2::PseudoJet)
-    p1 = pt2(jet1)
-    p2 = pt2(jet2)
-
-    d_R = deltaR(jet1, jet2)
-    return min(p1, p2) * d_R^2
-end
-
 """
     recluster(jet, clusterseq, rad, mtd) -> ClusterSequence
 
@@ -75,22 +66,15 @@ function recluster(jet::PseudoJet, clusterseq::ClusterSequence; R = 1.0,
     return new_clusterseq
 end
 
-function sort_jets!(event_jet_array)
-    jet_pt(jet) = pt2(jet)
-    sort!(event_jet_array, by = jet_pt, rev = true)
-end
-
-# Defining suitable structures to be used for jet grooming and tagging
 """
     struct MassDropTagger
 
 Used for tagging jets that undergo mass drop, a common technique in jet substructure.
 
-Fields:
+# Fields:
 - mu: Maximum allowed mass ratio for a jet to pass tagging
 - y: Minimum kT distance threshold for parent separation
 """
-
 struct MassDropTagger
     mu::Float64
     y::Float64
@@ -101,7 +85,7 @@ end
 
 Applies a soft-drop condition on jets, trimming away soft, wide-angle radiation.
 
-Fields:
+# Fields:
 - zcut: Minimum allowed energy fraction for subjets
 - b: Angular exponent controlling soft radiation suppression
 - cluster_rad: The new radius that will be used to recluster the components of the jet
@@ -119,11 +103,10 @@ SoftDropTagger(z::Float64, b::Float64) = SoftDropTagger(z, b, 1.0)
 
 Filters jets based on radius and number of hardest subjets, reducing contamination.
 
-Fields:
+# Fields:
 - filter_radius: Radius parameter to recluster subjets
 - num_hardest_jets: Number of hardest jets to retain in the filtered result
 """
-
 struct JetFilter
     filter_radius::Float64
     num_hardest_jets::Int
@@ -134,12 +117,11 @@ end
 
 Trims soft, large-angle components from jets based on fraction and radius.
 
-Fields:
+# Fields:
 - trim_radius: Radius used for reclustering in trimming
 - trim_fraction: Minimum momentum fraction for retained subjets
 - recluster_method: Method identifier for reclustering
 """
-
 struct JetTrim
     trim_radius::Float64
     trim_fraction::Float64
@@ -152,15 +134,14 @@ end
 Identifies subjets in a jet that pass the mass drop tagging condition.
 The method stops at the first jet satisfying the mass and distance thresholds.
 
-Arguments:
+# Arguments:
 - jet: PseudoJet instance representing the jet to tag
 - clusterseq: ClusterSequence with jet clustering history
 - tag: MassDropTagger instance providing mass drop parameters
 
-Returns:
+# Returns:
 - PseudoJet: The jet (or subjet) satisfying the mass drop conditions, if tagging is successful, otherwise a zero-momentum PseudoJet
 """
-
 function mass_drop(jet::PseudoJet, clusterseq::ClusterSequence, tag::MassDropTagger)
     all_jets = clusterseq.jets
     hist = clusterseq.history
@@ -177,8 +158,11 @@ function mass_drop(jet::PseudoJet, clusterseq::ClusterSequence, tag::MassDropTag
                 parent1, parent2 = parent2, parent1
             end
 
+            pt1 = pt(parent1)
+            pt2 = pt(parent2)
+
             if m2(parent1) < m2(jet) * tag.mu^2 &&
-               kt_distance(parent1, parent2) > tag.y * m2(jet)
+               (min(pt1, pt2) * deltaR(parent1, parent2))^2 > tag.y * m2(jet)
                 return jet
             else
                 jet = parent1
@@ -196,20 +180,19 @@ end
 Applies soft-drop grooming to remove soft, wide-angle radiation from jets.
 This function reclusters the jet and iteratively checks the soft-drop condition on subjets.
 
-Arguments:
+# Arguments:
 - jet: PseudoJet instance to groom
 - clusterseq: ClusterSequence containing jet history
 - tag: SoftDropTagger instance with soft-drop parameters
 
-Returns:
+# Returns:
 - PseudoJet: Groomed jet or zero-momentum PseudoJet if grooming fails
 """
-
 function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence,
                    tag::SoftDropTagger)
     rad = tag.cluster_rad
     new_clusterseq = recluster(jet, clusterseq; R = rad, algorithm = JetAlgorithm.CA)
-    new_jet = sort_jets!(inclusive_jets(new_clusterseq; T = PseudoJet))[1]
+    new_jet = sort!(inclusive_jets(new_clusterseq; T = PseudoJet), by = pt2, rev = true)[1]
 
     all_jets = new_clusterseq.jets
     hist = new_clusterseq.history
@@ -226,8 +209,8 @@ function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence,
                 parent1, parent2 = parent2, parent1
             end
 
-            pti = pt2(parent1)^0.5
-            ptj = pt2(parent2)^0.5
+            pti = pt(parent1)
+            ptj = pt(parent2)
 
             if min(pti, ptj) / (pti + ptj) >
                tag.zcut * (deltaR(parent1, parent2) / rad)^tag.b
@@ -237,7 +220,7 @@ function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence,
             end
 
         else
-            return PseudoJet(0.0, 0.0, 0.0, 0.0)
+            return nothing
         end
     end
 end
@@ -247,19 +230,18 @@ end
 
 Filters a jet to retain only the hardest subjets based on a specified radius and number.
 
-Arguments:
+# Arguments:
 - jet: PseudoJet instance representing the jet to filter
 - clusterseq: ClusterSequence containing jet history
 - filter: Filter instance specifying radius and number of subjets
 
-Returns:
+# Returns:
 - PseudoJet: Filtered jet composed of the hardest subjets
-
 """
 function jet_filtering(jet::PseudoJet, clusterseq::ClusterSequence, filter::JetFilter)
     rad = filter.filter_radius
     new_clusterseq = recluster(jet, clusterseq; R = rad, algorithm = JetAlgorithm.CA)
-    reclustered = sort_jets!(inclusive_jets(new_clusterseq; T = PseudoJet))
+    reclustered = sort!(inclusive_jets(new_clusterseq; T = PseudoJet), by = pt2, rev = true)
 
     n = length(reclustered) <= filter.num_hardest_jets ? length(reclustered) :
         filter.num_hardest_jets
@@ -275,22 +257,21 @@ end
 
 Trims a jet by removing subjets with transverse momentum below a specified fraction.
 
-Arguments:
+# Arguments:
 - jet: PseudoJet instance representing the jet to trim
 - clusterseq: ClusterSequence containing jet history
 - trim: Trim instance specifying trimming parameters
 
-Returns:
+# Returns:
 - PseudoJet: Trimmed jet composed of retained subjets
 """
-
 function jet_trimming(jet::PseudoJet, clusterseq::ClusterSequence, trim::JetTrim)
     rad = trim.trim_radius
     alg = trim.recluster_method
     frac2 = trim.trim_fraction^2
 
     new_clusterseq = recluster(jet, clusterseq; R = rad, algorithm = alg)
-    reclustered = sort_jets!(inclusive_jets(new_clusterseq; T = PseudoJet))
+    reclustered = sort!(inclusive_jets(new_clusterseq; T = PseudoJet), by = pt2, rev = true)
 
     hard = Vector{PseudoJet}(undef, 0)
     for item in reclustered

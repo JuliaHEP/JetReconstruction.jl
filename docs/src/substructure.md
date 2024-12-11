@@ -1,129 +1,88 @@
 # Jet Substructure
+Jet substructure techniques provide powerful tools for analyzing and refining the properties of jets. Below are some of the key jet substructure functions, that are available.
 
-## Structures
-
-### `MassDropTagger`
-
-The `MassDropTagger` structure is used for tagging jets based on mass drop conditions, which helps in identifying subjets within a jet that undergo a significant drop in mass.
-
-**Fields**:
-
-- `mu::Float64`: Maximum allowed mass ratio for a jet to pass the tagging condition.
-- `y::Float64`: Minimum kT distance threshold for parent jet separation.
-
----
-
-### `SoftDropTagger`
-
-The `SoftDropTagger` instance is used to apply soft-drop grooming to jets, removing soft, wide-angle radiation. This approach is commonly used in jet grooming to reduce contamination from soft particles.
-
-**Fields**:
-
-- `zcut::Float64`: Minimum allowed energy fraction for subjets.
-- `b::Float64`: Angular exponent controlling soft radiation suppression.
-- `cluster_rad::Float64`: New radius used to recluster components of the jet. Defaults to `1.0` if no value is specified.
-
----
-
-### `JetFilter`
-
-The `JetFilter` structure is used to filter jets based on a specific radius and the number of hardest subjets. This technique reduces contamination from peripheral soft particles.
-
-**Fields**:
-
-- `filter_radius::Float64`: Radius parameter used to recluster subjets.
-- `num_hardest_jets::Int`: Number of hardest subjets retained in the filtered result.
-
----
-
-### `JetTrim`
-
-`JetTrim` instance is used to trim jets by removing soft, large-angle components from the jet. This is useful in cleaning up jets to remove softer particles at wide angles.
-
-**Fields**:
-
-- `trim_radius::Float64`: Radius used for reclustering in trimming.
-- `trim_fraction::Float64`: Minimum momentum fraction for retained subjets.
-- `recluster_method::JetAlgorithm.Algorithm`: Method identifier for reclustering.
-
----
-
-## Functions
-
-### `mass_drop`
+### Mass Drop Tagging
 
 ```julia
 mass_drop(jet::PseudoJet, clusterseq::ClusterSequence, tag::MassDropTagger) -> PseudoJet
 ```
 
-The `mass_drop` function identifies subjets in a jet that pass the mass drop tagging condition. It iterates through the clustering history of the jet, stopping at the first jet that satisfies the mass and distance thresholds.
+The [mass_drop](@ref) function identifies subjets in a jet that pass the mass drop tagging condition. To use the `mass_drop` function:
 
-**Arguments** :
-
-* `jet`: `PseudoJet` instance representing the jet to be tagged.
-* `clusterseq`: `ClusterSequence` with jet clustering history.
-* `tag`: `MassDropTagger` instance providing mass drop parameters.
-
-**Returns** :
-
-`PseudoJet`: The jet (or subjet) that satisfies the mass drop condition, or a zero-momentum `PseudoJet` if no tagging occurs.
-
+-  Configure the [MassDropTagger](@ref) with parameters tailored to the expected mass drop and distance thresholds for analysis.
+``` julia
+tagger = MassDropTagger(mu=0.67, y=0.09)
+```
+- Apply the `mass_drop` function to the jet and its clustering sequence.
+``` julia 
+tagged_jet = mass_drop(jet, clusterseq, tagger)
+```
+- If the jet is tagged successfully, the function returns the identified subjet. Else it returns `PseudoJet(0.0, 0.0, 0.0, 0.0)`.
 ---
 
-### `soft_drop`
+### Soft Drop Tagging
 
 ```julia
 soft_drop(jet::PseudoJet, clusterseq::ClusterSequence, tag::SoftDropTagger) -> PseudoJet
 ```
 
-The `soft_drop` function applies soft-drop grooming to remove soft, wide-angle radiation from jets. It reclusters the jet with a specified radius and clustering method, iteratively checking the soft-drop condition on subjets.
+The [soft_drop](@ref) function applies soft-drop grooming to remove soft, wide-angle radiation from jets. It reclusters the jet with a specified radius and clustering method, iteratively checking the soft-drop condition on subjets. To use the `soft_drop` function:
 
-**Arguments** :
-
-* `jet`: `PseudoJet` instance to groom.
-* `clusterseq`: `ClusterSequence` containing jet history.
-* `tag`: `SoftDropTagger` instance with soft-drop parameters.
-
-**Returns** :
-
-`PseudoJet`: Groomed jet or zero-momentum `PseudoJet` if grooming fails.
+- Construct the [SoftDropTagger](@ref) by defining the parameters for the grooming process, such as the energy fraction (`zcut`) and angular exponent (`b`)
+``` julia
+tagger = SoftDropTagger(zcut=0.1, b=2.0)
+```
+By default, the reclustering radius is set to `1.0` which can be modified by defing the `tagger` object as
+``` julia
+tagger = SoftDropTagger(zcut=0.1, b=2.0, cluster_rad=0.4)
+```
+- Apply the `soft_drop` function to the jet and its clustering sequence.
+``` julia 
+tagged_jet = soft_drop(jet, clusterseq, tagger)
+```
+- If the jet is tagged successfully, the function returns the identified subjet. Else it returns `nothing`.
 
 ---
 
-### `jet_filtering`
+### Jet Filtering
 
-```julia-repl
+```julia
 jet_filtering(jet::PseudoJet, clusterseq::ClusterSequence, filter::JetFilter) -> PseudoJet
 ```
 
-The `jet_filtering` function filters a jet to retain only the hardest subjets based on a specified radius and number. This helps in refining the jet structure by reducing soft particle contamination.
+The [jet_filtering](@ref) function filters a jet to retain only the hardest subjets based on a specified radius and number. To use the function:
 
-**Arguments** :
-
-* `jet`: `PseudoJet` instance representing the jet to filter.
-* `clusterseq`: `ClusterSequence` containing jet history.
-* `filter`: `JetFilter` instance specifying radius and number of subjets.
-
-**Returns** :
-
-`PseudoJet`: Filtered jet composed of the hardest subjets.
-
+- Set the radius for subjet clustering and the number of hardest subjets to retain in a [JetFilter](@ref) method.
+```julia
+filter = JetFilter(filter_radius=0.3, num_hardest_jets=3)
+```
+- Apply the `jet_filtering` function to refine the jet.
+```julia
+filtered_jet = jet_filtering(jet, clusterseq, filter)
+```
+- The function returns the filtered jet that retains only the most significant subjets, reducing noise.
 ---
 
-### `jet_trimming`
+### Jet Trimming
 
 ```julia
 jet_trimming(jet::PseudoJet, clusterseq::ClusterSequence, trim::JetTrim) -> PseudoJet
 ```
 
-The `jet_trimming` function trims a jet by removing subjets with transverse momentum below a specified fraction of the main jet's momentum. This method cleans up jets by removing soft particles.
+The [jet_trimming](@ref) function trims a jet by removing subjets with transverse momentum below a specified fraction of the main jet's momentum. This method cleans up jets by removing soft particles. To use this function:
 
-**Arguments** :
+- Configure the trimming radius and momentum fraction threshold in [JetTrim](@ref)
+```julia
+trim = JetTrim(trim_radius=0.3, trim_fraction=0.3, recluster_method=JetAlgorithm.CA)
+```
+It is to be noted that the `jet_trimming` function reclusters the constituents of the jet using either `C/A` or `kT
+` algorithm, which needs to be specified.
+- Apply the `jet_trimming` function to clean the jet.
+```julia
+trimmed_jet = jet_trimming(jet, clusterseq, trim)
+```
+- The function returns the trimmed jet. 
 
-* `jet`: `PseudoJet` instance representing the jet to trim.
-* `clusterseq`: `ClusterSequence` containing jet history.
-* `trim`: `JetTrim` instance specifying trimming parameters.
+---
 
-**Returns** :
-
-`PseudoJet`: Trimmed jet composed of retained subjets.
+For a more detailed guide to use these substructure modules, one can refer to the provided examples in the `examples/Substructure` directory.

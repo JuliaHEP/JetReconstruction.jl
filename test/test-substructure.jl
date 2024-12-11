@@ -10,7 +10,7 @@ methods = Dict("jet-filter" => jet_filtering,
 
 for m in keys(methods)
     test_file = joinpath(@__DIR__, "data",
-                         "fastjet-$m.json")
+                         "fastjet-$m.json.gz")
 
     test_data = read_fastjet_outputs(test_file)
     tol = 1e-7
@@ -37,8 +37,8 @@ for m in keys(methods)
         for (ievt, evt) in enumerate(events)
             cluster_seq = jet_reconstruct(evt, p = 0, R = 1.0)
             jets = inclusive_jets(cluster_seq; ptmin = 5.0, T = PseudoJet)
-            groomed = JetReconstruction.sort_jets!([methods[m](jet, cluster_seq, groomer)
-                                                    for jet in jets])
+            groomed = sort!([methods[m](jet, cluster_seq, groomer)
+                             for jet in jets], by = JetReconstruction.pt2, rev = true)
 
             @test length(groomed) === length(test_data[ievt]["jets"])
             for (ijet, jet) in enumerate(groomed)
