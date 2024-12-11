@@ -36,7 +36,7 @@ default is simply `+(jet1,jet2)`, i.e. 4-momenta addition or the *E*-scheme.
 ## Consistency of `p`, `algorithm` and `R` arguments
 If an algorithm is explicitly specified the `p` value should be consistent with
 it or `nothing`. If the algorithm is one where `p` can vary, then it has to be
-given, along with the algorithm.``
+given, along with the algorithm.
 
 If the `p` parameter is passed and `algorithm=nothing`, then pp-type
 reconstruction is implied (i.e., AntiKt, CA, Kt or GenKt will be used,
@@ -66,7 +66,7 @@ function jet_reconstruct(particles; p::Union{Real, Nothing} = -1, R = 1.0,
     if (algorithm === nothing) || is_pp(algorithm)
         # We assume a pp reconstruction
         if strategy == RecoStrategy.Best
-            # The breakpoint of ~80 is determined empirically on e+e- -> H and 0.5TeV pp -> 5GeV jets
+            # The breakpoint of ~80 is determined empirically on e+e- -> H and 0.5 TeV pp -> 5 GeV jets
             alg = length(particles) > 80 ? tiled_jet_reconstruct : plain_jet_reconstruct
         elseif strategy == RecoStrategy.N2Plain
             alg = plain_jet_reconstruct

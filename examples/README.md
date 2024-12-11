@@ -6,6 +6,9 @@ This directory has a number of example files that show how to used the
 Because of extra dependencies in these scripts, one must use the `Project.toml`
 file in this directory.
 
+Some features are demonstrated in their own subdirectories, in which case use
+the `Project.toml` file in that folder.
+
 ## `jetreco.jl`
 
 This is a basic jet reconstruction example that shows how to call the package to

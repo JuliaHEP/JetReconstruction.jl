@@ -47,7 +47,8 @@ export RecoStrategy, JetAlgorithm
 
 # ClusterSequence type
 include("ClusterSequence.jl")
-export ClusterSequence, inclusive_jets, exclusive_jets, n_exclusive_jets, constituents
+export ClusterSequence, inclusive_jets, exclusive_jets, n_exclusive_jets, constituents,
+       constituent_indexes
 
 ## N2Plain algorithm
 # Algorithmic part for simple sequential implementation

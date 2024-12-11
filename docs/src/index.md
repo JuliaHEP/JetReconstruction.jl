@@ -88,6 +88,25 @@ sorted_jets = sort!(inclusive_jets(cs::ClusterSequence; ptmin=5.0),
   by=JetReconstruction.energy, rev=true)
 ```
 
+## Jet Constituents
+
+There are two ways to retrieve jet constituents. The first way is just to
+retrieve the *indexes* of the constituent jets. These indexes refer to the
+original collection of particles passed in to the reconstruction.
+
+- [`constituent_indexes`](@ref)
+
+The alternative it to retrieve the actual jets from the reconstruction sequence.
+In this case the returned array contains references to the jet objects (of type
+`T`) used internally in the reconstruction.
+
+- [`constituents`](@ref)
+
+Note that in both these cases the cluster sequence object from the
+reconstruction is required (to avoid circular dependencies and improve memory
+management reconstructed jets do not contain a link back to their cluster
+sequence).
+
 ## References
 
 Although it has been developed further since the CHEP2023 conference, the CHEP
