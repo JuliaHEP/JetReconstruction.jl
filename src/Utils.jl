@@ -21,7 +21,8 @@ the particles of a particular event. In particular T can be `PseudoJet` or
 a `LorentzVector` type. Note, if T is not `PseudoJet`, the order of the
 arguments in the constructor must be `(t, x, y, z)`.
 """
-function read_final_state_particles(fname; maxevents = -1, skipevents = 0, T = PseudoJet)
+function read_final_state_particles(fname; maxevents = -1, skipevents = 0,
+                                    T = PseudoJet{Float64})
     f = open(fname)
     if endswith(fname, ".gz")
         @debug "Reading gzipped file $fname"

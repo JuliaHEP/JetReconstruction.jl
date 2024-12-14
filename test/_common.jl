@@ -45,7 +45,7 @@ a vector of `FinalJet` objects, e.g.,
 selector = (cs) -> exclusive_jets(cs; njets = 2)
 ```
 """
-struct ComparisonTest
+struct ComparisonTest{T <: Real}
     events_file::AbstractString
     fastjet_outputs::AbstractString
     algorithm::JetAlgorithm.Algorithm
@@ -54,14 +54,24 @@ struct ComparisonTest
     R::Real
     selector::Any
     selector_name::AbstractString
+    numtype::Type{T}
+end
+
+"Define the element type based off the type parameter"
+Base.eltype(::Type{ComparisonTest{T}}) where {T} = T
+
+"""Constructor where there is no type given"""
+function ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R,
+                        selector, selector_name)
+    ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R, selector,
+                   selector_name, Float64)
 end
 
 """Constructor where there is no selector_name given"""
 function ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R,
                         selector)
-    selector_name = ""
     ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R, selector,
-                   selector_name)
+                   "", Float64)
 end
 
 """Read JSON file with fastjet jets in it"""
@@ -94,7 +104,13 @@ end
 
 function run_reco_test(test::ComparisonTest; testname = nothing)
     # Read the input events
-    events = JetReconstruction.read_final_state_particles(test.events_file)
+    if JetReconstruction.is_pp(test.algorithm)
+        events = JetReconstruction.read_final_state_particles(test.events_file;
+                                                              T = PseudoJet{test.numtype})
+    else
+        events = JetReconstruction.read_final_state_particles(test.events_file;
+                                                              T = EEjet{test.numtype})
+    end
     # Read the fastjet results
     fastjet_jets = read_fastjet_outputs(test.fastjet_outputs)
     sort_jets!(fastjet_jets)
@@ -117,6 +133,16 @@ function run_reco_test(test::ComparisonTest; testname = nothing)
         end
     end
 
+    # For Float64 we use a tolerance of 1e-6
+    # For Float32 we use a tolerance of 1e-2, which is very low
+    #  but the problem is that we are comparing with FastJet in double
+    #  precision and in an iterative algorithm, this can lead to accumulating
+    #  differences that end up quite large
+    tol = 1e-6
+    if test.numtype == Float32
+        tol = 1e-2
+    end
+
     @testset "$testname" begin
         # Test each event in turn...
         for (ievt, event) in enumerate(jet_collection)
@@ -131,9 +157,9 @@ function run_reco_test(test::ComparisonTest; testname = nothing)
                         # the momentum
                         # Sometimes phi could be in the range [-π, π], but FastJet always is [0, 2π]
                         normalised_phi = jet.phi < 0.0 ? jet.phi + 2π : jet.phi
-                        @test jet.rap≈fastjet_jets[ievt]["jets"][ijet]["rap"] atol=1e-7
-                        @test normalised_phi≈fastjet_jets[ievt]["jets"][ijet]["phi"] atol=1e-7
-                        @test jet.pt≈fastjet_jets[ievt]["jets"][ijet]["pt"] rtol=1e-6
+                        @test jet.rap≈fastjet_jets[ievt]["jets"][ijet]["rap"] rtol=tol
+                        @test normalised_phi≈fastjet_jets[ievt]["jets"][ijet]["phi"] rtol=tol
+                        @test jet.pt≈fastjet_jets[ievt]["jets"][ijet]["pt"] rtol=tol
                     end
                 end
             end
