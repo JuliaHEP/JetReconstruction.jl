@@ -244,6 +244,11 @@ function parse_command_line(args)
         arg_type = RecoStrategy.Strategy
         default = RecoStrategy.Best
 
+        "--type", "-T"
+        help = """Numerical type to use for the reconstruction (Float32, Float64)"""
+        arg_type = Symbol
+        default = :Float64
+
         "--nsamples", "-m"
         help = "Number of measurement points to acquire."
         arg_type = Int
@@ -296,9 +301,9 @@ function main()
     global_logger(logger)
     # Try to read events into the correct type!
     if JetReconstruction.is_ee(args[:algorithm])
-        jet_type = EEjet
+        jet_type = EEjet{eval(args[:type])}
     else
-        jet_type = PseudoJet
+        jet_type = PseudoJet{eval(args[:type])}
     end
     events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file],
                                                                   maxevents = args[:maxevents],
