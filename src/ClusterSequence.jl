@@ -518,12 +518,13 @@ particles. Then, it walks over the iteration sequence and updates the
 reconstruction state based on the history of recombination and finalization/beam
 merger steps.
 """
-function reco_state(cs::ClusterSequence{T}, ranks; iteration = 0, ignore_beam_merge = true) where {T <: FourMomentum}
+function reco_state(cs::ClusterSequence{T}, ranks; iteration = 0,
+                    ignore_beam_merge = true) where {T <: FourMomentum}
     # Get the initial particles
     reco_state = Dict{Int, JetWithAncestors{T}}()
     for jet_index in 1:(cs.n_initial_jets)
         reco_state[jet_index] = JetWithAncestors{T}(cs.jets[cs.history[jet_index].jetp_index],
-                                                 jet_index, Set([]), ranks[jet_index])
+                                                    jet_index, Set([]), ranks[jet_index])
     end
     # Now update the reconstruction state by walking over the iteration sequence
     iterations_done = 0
@@ -548,8 +549,8 @@ function reco_state(cs::ClusterSequence{T}, ranks; iteration = 0, ignore_beam_me
             end
 
             reco_state[h_entry.jetp_index] = JetWithAncestors{T}(cs.jets[h_entry.jetp_index],
-                                                              h_entry.jetp_index,
-                                                              my_ancestors, pt_rank)
+                                                                 h_entry.jetp_index,
+                                                                 my_ancestors, pt_rank)
             delete!(reco_state, cs.history[h_entry.parent1].jetp_index)
             delete!(reco_state, cs.history[h_entry.parent2].jetp_index)
         else
