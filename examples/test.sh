@@ -8,3 +8,10 @@ julia --project instrumented-jetreco.jl --algorithm=AntiKt -R 0.4 ../test/data/e
 
 echo "ee H Durham allocation test"
 julia --project instrumented-jetreco.jl --algorithm=Durham --alloc ../test/data/events.eeH.hepmc3.gz
+
+echo "pp basic reco test"
+julia --project jetreco.jl --algorithm=CA -R 1.0 ../test/data/events.pp13TeV.hepmc3.gz
+
+echo "ee basic reco test"
+julia --project jetreco.jl --algorithm=EEKt -R 1.0 -p -1.0 ../test/data/events.eeH.hepmc3.gz
+
