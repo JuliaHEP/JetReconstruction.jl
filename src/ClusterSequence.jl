@@ -472,12 +472,12 @@ function jet_ranks(clusterseq::ClusterSequence; compare_fn = JetReconstruction.p
 end
 
 """
-    struct JetWithAncestors
+    struct JetWithAncestors{T <: FourMomentum}
 
 A struct representing a jet with its origin ancestors.
 
 # Fields
-- `self::PseudoJet`: The PseudoJet object for this jet.
+- `self::T`: The jet object itself.
 - `jetp_index::Int`: The index of the jet in the corresponding cluster sequence.
 - `ancestors::Set{Int}`: A set of indices representing the jetp_indexes of
   ancestors of the jet (in the cluster sequence).
@@ -487,8 +487,8 @@ A struct representing a jet with its origin ancestors.
 # Note
 This structure needs its associated cluster sequence origin to be useful.
 """
-struct JetWithAncestors
-    self::PseudoJet
+struct JetWithAncestors{T <: FourMomentum}
+    self::T
     jetp_index::Int
     ancestors::Set{Int}
     jet_rank::Int
@@ -518,11 +518,11 @@ particles. Then, it walks over the iteration sequence and updates the
 reconstruction state based on the history of recombination and finalization/beam
 merger steps.
 """
-function reco_state(cs::ClusterSequence, ranks; iteration = 0, ignore_beam_merge = true)
+function reco_state(cs::ClusterSequence{T}, ranks; iteration = 0, ignore_beam_merge = true) where {T <: FourMomentum}
     # Get the initial particles
-    reco_state = Dict{Int, JetWithAncestors}()
+    reco_state = Dict{Int, JetWithAncestors{T}}()
     for jet_index in 1:(cs.n_initial_jets)
-        reco_state[jet_index] = JetWithAncestors(cs.jets[cs.history[jet_index].jetp_index],
+        reco_state[jet_index] = JetWithAncestors{T}(cs.jets[cs.history[jet_index].jetp_index],
                                                  jet_index, Set([]), ranks[jet_index])
     end
     # Now update the reconstruction state by walking over the iteration sequence
@@ -547,7 +547,7 @@ function reco_state(cs::ClusterSequence, ranks; iteration = 0, ignore_beam_merge
                 (ranks[ancestor] < pt_rank) && (pt_rank = ranks[ancestor])
             end
 
-            reco_state[h_entry.jetp_index] = JetWithAncestors(cs.jets[h_entry.jetp_index],
+            reco_state[h_entry.jetp_index] = JetWithAncestors{T}(cs.jets[h_entry.jetp_index],
                                                               h_entry.jetp_index,
                                                               my_ancestors, pt_rank)
             delete!(reco_state, cs.history[h_entry.parent1].jetp_index)
