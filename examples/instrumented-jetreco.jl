@@ -22,35 +22,50 @@ using JetReconstruction
 # Parsing for algorithm and strategy enums
 include(joinpath(@__DIR__, "parse-options.jl"))
 
-function profile_code(profile, jet_reconstruction, events, niters; R = 0.4, p = -1,
+"""
+    profile_code(events::Vector{Vector{T}}, profile_subdir, nsamples; R = 0.4, p = -1,
                       algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                      strategy = RecoStrategy.N2Tiled)
+                      strategy = RecoStrategy.N2Tiled) where {T <:
+                                                              JetReconstruction.FourMomentum}
+
+Profile the jet reconstruction code using the `@profile` macro and generate a
+flamegraph which is saved to the `profile/profile_subdir` directory.
+"""
+function profile_code(events::Vector{Vector{T}}, profile, nsamples; R = 0.4, p = -1,
+                      algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
+                      strategy = RecoStrategy.N2Tiled) where {T <:
+                                                              JetReconstruction.FourMomentum}
     Profile.init(n = 5 * 10^6, delay = 0.00001)
     function profile_events(events)
         for evt in events
-            jet_reconstruction(evt, R = R, p = p, algorithm = algorithm,
-                               strategy = strategy)
+            jet_reconstruct(evt, R = R, p = p, algorithm = algorithm,
+                            strategy = strategy)
         end
     end
-    profile_events(events[1:1])
-    @profile for i in 1:niters
+    # Do a warm up run first to avoid JIT compilation costs
+    profile_events(events)
+
+    # Now take the actual profile
+    @profile for i in 1:nsamples
         profile_events(events)
     end
-    profile_path = joinpath("profile", profile, "profsvg.svg")
-    mkpath(dirname(profile_path))
-    statprofilehtml(path = dirname(profile_path))
+    profile_dir = joinpath("profile", profile)
+    mkpath(profile_dir)
+    println("""Generating HTML flame graph at $(joinpath(profile_dir, "index.html"))""")
+    statprofilehtml(path = profile_dir)
     fcolor = FlameGraphs.FlameColors(reverse(colormap("Blues", 15))[1:5],
                                      colorant"slategray4",
                                      colorant"gray95",
                                      reverse(colormap("Reds", 15))[1:5],
                                      reverse(sequential_palette(39, 10; s = 38, b = 2))[1:5])
+    profile_svg_path = joinpath("profile", profile, "profsvg.svg")
     ProfileSVG.save(fcolor,
-                    profile_path,
+                    profile_svg_path,
                     combine = true,
                     timeunit = :ms,
                     font = "Arial, Helvetica, sans-serif")
     println("Flame graph from ProfileSVG.jl at file://",
-            abspath(profile_path),
+            abspath(profile_svg_path),
             "\n",
             """
             \tRed tint:          Runtime dispatch
@@ -58,29 +73,66 @@ function profile_code(profile, jet_reconstruction, events, niters; R = 0.4, p = 
             \tBlue tint:         OK
             """)
 end
-"""
-Top level call function for demonstrating the use of jet reconstruction
 
-This uses the "jet_reconstruct" wrapper, so algorithm switching
-happens inside the JetReconstruction package itself.
-
-Some other utilities are also supported here, such as profiling and
-serialising the reconstructed jet outputs.
 """
-function jet_process(events::Vector{Vector{T}};
-                     distance::Real = 0.4,
-                     algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                     p::Union{Real, Nothing} = nothing,
-                     ptmin::Real = 5.0,
-                     dcut = nothing,
-                     njets = nothing,
-                     strategy::RecoStrategy.Strategy,
-                     nsamples::Integer = 1,
-                     gcoff::Bool = false,
-                     profile = nothing,
-                     alloc::Bool = false,
-                     dump::Union{String, Nothing} = nothing,
-                     dump_cs = false) where {T <: JetReconstruction.FourMomentum}
+    allocation_stats(events::Vector{Vector{T}}; distance::Real = 0.4,
+                          p::Union{Real, Nothing} = nothing,
+                          algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
+                          strategy::RecoStrategy.Strategy,
+                          ptmin::Real = 5.0) where {T <: JetReconstruction.FourMomentum}
+
+Take a memory allocation profile of the jet reconstruction code, printing the
+output.
+"""
+function allocation_stats(events::Vector{Vector{T}}; distance::Real = 0.4,
+                          p::Union{Real, Nothing} = nothing,
+                          algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
+                          strategy::RecoStrategy.Strategy,
+                          ptmin::Real = 5.0) where {T <: JetReconstruction.FourMomentum}
+    println("Memory allocation statistics:")
+    @timev for event in events
+        _ = inclusive_jets(jet_reconstruct(event, R = distance, p = p,
+                                           algorithm = algorithm,
+                                           strategy = strategy), ptmin = ptmin)
+    end
+    nothing
+end
+
+"""
+    benchmark_jet_reco(events::Vector{Vector{T}};
+                            distance::Real = 0.4,
+                            algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
+                            p::Union{Real, Nothing} = nothing,
+                            ptmin::Real = 5.0,
+                            dcut = nothing,
+                            njets = nothing,
+                            strategy::RecoStrategy.Strategy,
+                            nsamples::Integer = 1,
+                            gcoff::Bool = false,
+                            dump::Union{String, Nothing} = nothing,
+                            dump_cs = false) where {T <: JetReconstruction.FourMomentum}
+
+Benchmark the jet reconstruction code with given reconstruction parameters and
+print summary statistics on the runtime.
+
+# Notable Optional Arguments
+
+- `dump`: If not `nothing`, write the list of reconstructed jets to a JSON
+  formatted file.
+- `dump_cs`: If `true`, dump the cluster sequence for each event.
+"""
+function benchmark_jet_reco(events::Vector{Vector{T}};
+                            distance::Real = 0.4,
+                            algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
+                            p::Union{Real, Nothing} = nothing,
+                            ptmin::Real = 5.0,
+                            dcut = nothing,
+                            njets = nothing,
+                            strategy::RecoStrategy.Strategy,
+                            nsamples::Integer = 1,
+                            gcoff::Bool = false,
+                            dump::Union{String, Nothing} = nothing,
+                            dump_cs = false) where {T <: JetReconstruction.FourMomentum}
 
     # If we are dumping the results, setup the JSON structure
     if !isnothing(dump)
@@ -92,39 +144,14 @@ function jet_process(events::Vector{Vector{T}};
                                                                        algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
 
-    # Warmup code if we are doing a multi-sample timing run
-    if nsamples > 1 || !isnothing(profile)
-        @info "Doing initial warm-up run"
-        for event in events
-            _ = inclusive_jets(jet_reconstruct(event, R = distance, p = p,
-                                               algorithm = algorithm,
-                                               strategy = strategy); ptmin = ptmin)
-        end
-    end
-
-    if !isnothing(profile)
-        profile_code(profile, jet_reconstruct, events, nsamples, algorithm = algorithm,
-                     R = distance, p = p,
-                     strategy = strategy)
-        return nothing
-    end
-
-    if alloc
-        println("Memory allocation statistics:")
-        @timev for event in events
-            _ = inclusive_jets(jet_reconstruct(event, R = distance, p = p,
-                                               algorithm = algorithm,
-                                               strategy = strategy), ptmin = ptmin)
-        end
-        return nothing
-    end
-
     # Now setup timers and run the loop
     GC.gc()
-    cummulative_time = 0.0
-    cummulative_time2 = 0.0
+    cumulative_time = 0.0
+    cumulative_time2 = 0.0
     lowest_time = typemax(Float64)
-    for irun in 1:nsamples
+    # Do a warm up run if we are running more than once
+    start = nsamples > 1 ? 0 : 1
+    for irun in start:nsamples
         gcoff && GC.enable(false)
         t_start = time_ns()
         for (ievt, event) in enumerate(events)
@@ -138,7 +165,7 @@ function jet_process(events::Vector{Vector{T}};
                 finaljets = inclusive_jets(cs; ptmin = ptmin)
             end
             # Only print the jet content once
-            if irun == 1
+            if irun == 0 || nsamples == 1
                 @info begin
                     jet_output = "Event $(ievt)\n"
                     sort!(finaljets, by = x -> pt(x), rev = true)
@@ -163,19 +190,21 @@ function jet_process(events::Vector{Vector{T}};
         end
         t_stop = time_ns()
         gcoff && GC.enable(true)
-        dt_μs = convert(Float64, t_stop - t_start) * 1.e-3
-        if nsamples > 1
-            @info "$(irun)/$(nsamples) $(dt_μs)"
+        if irun > 0
+            dt_μs = convert(Float64, t_stop - t_start) * 1.e-3
+            if nsamples > 1
+                @info "$(irun)/$(nsamples) $(dt_μs)"
+            end
+            cumulative_time += dt_μs
+            cumulative_time2 += dt_μs^2
+            lowest_time = dt_μs < lowest_time ? dt_μs : lowest_time
         end
-        cummulative_time += dt_μs
-        cummulative_time2 += dt_μs^2
-        lowest_time = dt_μs < lowest_time ? dt_μs : lowest_time
     end
 
-    mean = cummulative_time / nsamples
-    cummulative_time2 /= nsamples
+    mean = cumulative_time / nsamples
+    cumulative_time2 /= nsamples
     if nsamples > 1
-        sigma = sqrt(nsamples / (nsamples - 1) * (cummulative_time2 - mean^2))
+        sigma = sqrt(nsamples / (nsamples - 1) * (cumulative_time2 - mean^2))
     else
         sigma = 0.0
     end
@@ -294,6 +323,12 @@ function main()
         logger = ConsoleLogger(stdout, Logging.Warn)
     end
     global_logger(logger)
+
+    if isnothing(args[:algorithm]) && isnothing(args[:power])
+        @warn "Neither algorithm nor power specified, defaulting to AntiKt"
+        args[:algorithm] = JetAlgorithm.AntiKt
+    end
+
     # Try to read events into the correct type!
     if JetReconstruction.is_ee(args[:algorithm])
         jet_type = EEjet
@@ -304,17 +339,25 @@ function main()
                                                                   maxevents = args[:maxevents],
                                                                   skipevents = args[:skip],
                                                                   T = jet_type)
-    if isnothing(args[:algorithm]) && isnothing(args[:power])
-        @warn "Neither algorithm nor power specified, defaulting to AntiKt"
-        args[:algorithm] = JetAlgorithm.AntiKt
+
+    # Major switch between modes of running 
+    if args[:alloc]
+        allocation_stats(events; distance = args[:distance],
+                         p = args[:power], algorithm = args[:algorithm],
+                         strategy = args[:strategy], ptmin = args[:ptmin])
+    elseif !isnothing(args[:profile])
+        profile_code(events, args[:profile], args[:nsamples];
+                     R = args[:distance], p = args[:power],
+                     algorithm = args[:algorithm], strategy = args[:strategy])
+    else
+        benchmark_jet_reco(events, distance = args[:distance], algorithm = args[:algorithm],
+                           p = args[:power],
+                           strategy = args[:strategy],
+                           ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
+                           njets = args[:exclusive_njets],
+                           nsamples = args[:nsamples], gcoff = args[:gcoff],
+                           dump = args[:dump], dump_cs = args[:dump_clusterseq])
     end
-    jet_process(events, distance = args[:distance], algorithm = args[:algorithm],
-                p = args[:power],
-                strategy = args[:strategy],
-                ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
-                njets = args[:exclusive_njets],
-                nsamples = args[:nsamples], gcoff = args[:gcoff], profile = args[:profile],
-                alloc = args[:alloc], dump = args[:dump], dump_cs = args[:dump_clusterseq])
     nothing
 end
 
