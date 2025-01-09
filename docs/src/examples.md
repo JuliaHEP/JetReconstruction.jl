@@ -8,7 +8,7 @@ browsed directly on
 *Note:* because of extra dependencies in these scripts, one must use the
 `Project.toml` file in the `examples` directory.
 
-## Standalone Examples
+## Standalone Basic Reconstruction Examples
 
 ### `jetreco.jl`
 
@@ -38,23 +38,42 @@ performance for the AntiKt algorithm using the tiled strategy:
 julia --project instrumented-jetreco.jl -S N2Tiled -A AntiKt --nsamples 100 ../test/data/events.hepmc3
 ```
 
+## Visualisation
+
+This subdirectory contains examples showing how to use built in support for
+visualising jets - either a final reconstruction state or an animation of the
+reconstruction process.
+
+Particularly here the heavy Makie dependency is contained in the `Project.toml`
+file for these examples only.
+
 ### `visualise-jets.jl`
 
 This script will produce a PNG/PDF showing the results of a jet reconstruction.
 This is a 3D plot where all the initial energy deposits are visualised, with
 colours that indicate in which final cluster the deposit ended up in.
 
-### `visualise-jets.ipynb`
+```sh
+julia --project visualise-jets.jl -A AntiKt -R 1.0 ../../test/data/events.pp13TeV.hepmc3.gz test-pp.png
+```
 
-Similar to `visualise-jets.jl` this notebook will produce a visualisation of jet
-reconstruction in the browser. This is a 3D plot where all the initial energy
-deposits are visualised, with colours that indicate in which final cluster the
-deposit ended up in.
+### `visualise-jets.ipynb` and `visualise-jets-nb.ipynb`
+
+Similar to `visualise-jets.jl` these notebooks will produce a visualisation of
+jet reconstruction in the browser. This is a 3D plot where all the initial
+energy deposits are visualised, with colours that indicate in which final
+cluster the deposit ended up in.
+
+The first example is a Jupyter notbook, the second runs in Pluto.
 
 ### `animate-reconstruction.jl`
 
 Performs jet reconstruction and then produces and animation of the process,
 showing how the jets merge from their different constituents.
+
+```sh
+julia --project animate-reconstruction.jl -A AntiKt -R 1.0 ../../test/data/events.pp13TeV.hepmc3.gz test-pp.mp4
+```
 
 ## EDM4hep
 

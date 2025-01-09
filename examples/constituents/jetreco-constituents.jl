@@ -30,7 +30,7 @@ end
 
 # Just retrieve the indexes of the constituents
 my_constituent_indexes = constituent_indexes(pj_jets[1], cluster_seq)
-println("\nConsitituent indexes for jet number $(event_no): $my_constituent_indexes")
+println("\nConstituent indexes for jet number $(event_no): $my_constituent_indexes")
 for i in my_constituent_indexes
     println("  Constituent jet $i: $(events[1][i])")
 end
