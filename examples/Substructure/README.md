@@ -1,13 +1,13 @@
 # Examples for Substructure Modules
 
-The `JetGrooming.jl` file shows the usage of `jet_filtering` and `jet_trimming` functions while the `JetTagging.jl` file demonstrates how to use `mass_drop` and `soft_drop` functions. 
+The `jet-grooming.jl` file shows the usage of `jet_filtering` and `jet_trimming` functions while the `jet-tagging.jl` file demonstrates how to use `mass_drop` and `soft_drop` functions.
 
 To use these examples run
 
 ```julia
-julia --project JetTagging.jl
+julia --project jet-tagging.jl
 ...
-julia --project JetGrooming.jl
+julia --project jet-grooming.jl
 ...
 ```
 
