@@ -90,4 +90,7 @@ export jetsplot, animatereco
 include("JSONresults.jl")
 export FinalJet, FinalJets
 
+# C bindings sub-module
+include("C_JetReconstruction/C_JetReconstruction.jl")
+
 end
