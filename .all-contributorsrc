@@ -32,6 +32,18 @@
         "code",
         "example"
       ]
+    },
+    {
+      "login": "gojakuch",
+      "name": "Atell Krasnopolski",
+      "avatar_url": "https://avatars.githubusercontent.com/u/65173069?v=4",
+      "profile": "https://atell.neocities.org/",
+      "contributions": [
+        "test",
+        "doc",
+        "code",
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
