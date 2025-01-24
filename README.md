@@ -1,4 +1,7 @@
 # JetReconstruction.jl
+<!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
+[![All Contributors](https://img.shields.io/badge/all_contributors-1-orange.svg?style=flat-square)](#contributors-)
+<!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Build Status](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml?query=branch%3Amain)
 [![DOI](https://zenodo.org/badge/507671522.svg)](https://zenodo.org/doi/10.5281/zenodo.12671414)
@@ -162,3 +165,25 @@ Code in this package is authored by:
 and is Copyright 2022-2024 The Authors, CERN.
 
 The code is under the MIT License.
+
+## Contributors ✨
+
+Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+
+<!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
+<!-- prettier-ignore-start -->
+<!-- markdownlint-disable -->
+<table>
+  <tbody>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://graeme-a-stewart.github.io"><img src="https://avatars.githubusercontent.com/u/8511620?v=4?s=100" width="100px;" alt="Graeme A Stewart"/><br /><sub><b>Graeme A Stewart</b></sub></a><br /><a href="#infra-graeme-a-stewart" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=graeme-a-stewart" title="Tests">⚠️</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=graeme-a-stewart" title="Documentation">📖</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=graeme-a-stewart" title="Code">💻</a> <a href="#example-graeme-a-stewart" title="Examples">💡</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/pulls?q=is%3Apr+reviewed-by%3Agraeme-a-stewart" title="Reviewed Pull Requests">👀</a></td>
+    </tr>
+  </tbody>
+</table>
+
+<!-- markdownlint-restore -->
+<!-- prettier-ignore-end -->
+
+<!-- ALL-CONTRIBUTORS-LIST:END -->
+
+This project follows the [all-contributors](https://github.com/all-contributors/all-contributors) specification. Contributions of any kind welcome!
