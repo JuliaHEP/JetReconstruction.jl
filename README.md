@@ -154,21 +154,15 @@ should be cited if you use this package:
 }
 ```
 
-## Authors and Copyright
+## Copyright
 
-Code in this package is authored by:
-
-- Atell Krasnopolski <delta_atell@protonmail.com>
-- Graeme A Stewart <graeme.andrew.stewart@cern.ch>
-- Philippe Gras <philippe.gras@cern.ch>
-
-and is Copyright 2022-2024 The Authors, CERN.
+Code in this package is Copyright 2022-2025 Graeme A Stewart, Philippe Gras, Atell Krasnopolski, CERN.
 
 The code is under the MIT License.
 
 ## Contributors ✨
 
-Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
+Thanks goes to these contributors to this code ([emoji key](https://allcontributors.org/docs/en/emoji-key)):
 
 <!-- ALL-CONTRIBUTORS-LIST:START - Do not remove or modify this section -->
 <!-- prettier-ignore-start -->
