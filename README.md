@@ -1,6 +1,6 @@
 # JetReconstruction.jl
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-4-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-5-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Build Status](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml?query=branch%3Amain)
@@ -180,6 +180,7 @@ Thanks goes to these wonderful people ([emoji key](https://allcontributors.org/d
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/grasph"><img src="https://avatars.githubusercontent.com/u/5365086?v=4?s=100" width="100px;" alt="Philippe Gras"/><br /><sub><b>Philippe Gras</b></sub></a><br /><a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=grasph" title="Tests">⚠️</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=grasph" title="Documentation">📖</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=grasph" title="Code">💻</a> <a href="#example-grasph" title="Examples">💡</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://atell.neocities.org/"><img src="https://avatars.githubusercontent.com/u/65173069?v=4?s=100" width="100px;" alt="Atell Krasnopolski"/><br /><sub><b>Atell Krasnopolski</b></sub></a><br /><a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=gojakuch" title="Tests">⚠️</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=gojakuch" title="Documentation">📖</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=gojakuch" title="Code">💻</a> <a href="#example-gojakuch" title="Examples">💡</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/sattwamo"><img src="https://avatars.githubusercontent.com/u/107874535?v=4?s=100" width="100px;" alt="Sattwamo Ghosh"/><br /><sub><b>Sattwamo Ghosh</b></sub></a><br /><a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=sattwamo" title="Tests">⚠️</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=sattwamo" title="Documentation">📖</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=sattwamo" title="Code">💻</a> <a href="#example-sattwamo" title="Examples">💡</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="http://blog.jling.dev"><img src="https://avatars.githubusercontent.com/u/5306213?v=4?s=100" width="100px;" alt="Jerry Ling"/><br /><sub><b>Jerry Ling</b></sub></a><br /><a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=Moelf" title="Documentation">📖</a></td>
     </tr>
   </tbody>
 </table>
