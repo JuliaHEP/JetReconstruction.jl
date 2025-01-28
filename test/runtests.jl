@@ -56,6 +56,9 @@ function main()
     # Now run a few tests with our examples
     # include("tests_examples.jl")
     include("test-substructure.jl")
+
+    # Test with Aqua (https://juliatesting.github.io/Aqua.jl/stable/)
+    include("test-aqua.jl")
 end
 
 """

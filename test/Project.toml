@@ -1,0 +1,12 @@
+[deps]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+JetReconstruction = "44e8cb2c-dfab-4825-9c70-d4808a591196"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+LorentzVectorHEP = "f612022c-142a-473f-8cfd-a09cf3793c6c"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+
+[compat]
+Aqua = "0.8"
+JSON = "0.21"
