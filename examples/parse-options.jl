@@ -1,20 +1,26 @@
 """
-Add `parse_item` code for interpreting `JetAlgorithm.Algorithm` and `RecoStrategy.Strategy` types
-from the command line.
+Add `parse_item` code for interpreting `JetAlgorithm.Algorithm` and
+`RecoStrategy.Strategy` types from the command line.
 """
 
-function ArgParse.parse_item(::Type{RecoStrategy.Strategy}, x::AbstractString)
-    s = tryparse(RecoStrategy.Strategy, x)
-    if s === nothing
-        throw(ErrorException("Invalid value for strategy: $(x)"))
-    end
-    s
+function do_enum_parse(E::Type, x::AbstractString)
+    insts = instances(E)
+    p = findfirst(==(Symbol(x)) ∘ Symbol, insts)
+    p !== nothing ? insts[p] : nothing
 end
 
-function ArgParse.parse_item(::Type{JetAlgorithm.Algorithm}, x::AbstractString)
-    s = tryparse(JetAlgorithm.Algorithm, x)
-    if s === nothing
+function ArgParse.parse_item(E::Type{JetAlgorithm.Algorithm}, x::AbstractString)
+    p = do_enum_parse(E, x)
+    if p === nothing
         throw(ErrorException("Invalid value for algorithm: $(x)"))
     end
-    s
+    p
+end
+
+function ArgParse.parse_item(E::Type{RecoStrategy.Strategy}, x::AbstractString)
+    p = do_enum_parse(E, x)
+    if p === nothing
+        throw(ErrorException("Invalid value for strategy: $(x)"))
+    end
+    p
 end

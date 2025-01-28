@@ -58,19 +58,6 @@ The dictionary is created by iterating over the `power2algorithm` dictionary and
 const algorithm2power = Dict((i.second, i.first) for i in power2algorithm)
 
 """
-    Base.tryparse(E::Type{<:Union{JetAlgorithm.Algorithm,RecoStrategy.Strategy}}, str::String)
-
-Parser that converts a string to an enum value if it exists, otherwise returns
-nothing. This is only defined for our package's enums.
-"""
-Base.tryparse(E::Type{Union{JetAlgorithm.Algorithm,RecoStrategy.Strategy}}, str::String) =
-    let insts = instances(E),
-        p = findfirst(==(Symbol(str)) ∘ Symbol, insts)
-
-        p !== nothing ? insts[p] : nothing
-    end
-
-"""
     get_algorithm_power_consistency(; p::Union{Real, Nothing}, algorithm::Union{JetAlgorithm, Nothing})
 
 Get the algorithm and power consistency correct
