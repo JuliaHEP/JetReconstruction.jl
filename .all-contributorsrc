@@ -81,7 +81,9 @@
       "avatar_url": "https://avatars.githubusercontent.com/u/37295697?v=4",
       "profile": "http://m-fila.github.io",
       "contributions": [
-        "doc"
+        "doc",
+        "infra",
+        "test"
       ]
     }
   ],
