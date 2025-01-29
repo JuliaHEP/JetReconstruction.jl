@@ -3,4 +3,6 @@
 using Aqua
 
 include("common.jl")
-Aqua.test_all(JetReconstruction)
+@testset "Aqua.jl" begin
+    Aqua.test_all(JetReconstruction)
+end
