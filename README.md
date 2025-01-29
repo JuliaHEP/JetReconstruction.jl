@@ -7,6 +7,7 @@
 [![DOI](https://zenodo.org/badge/507671522.svg)](https://zenodo.org/doi/10.5281/zenodo.12671414)
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliahep.github.io/JetReconstruction.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliahep.github.io/JetReconstruction.jl/dev)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
 
 ## This package implements sequential Jet Reconstruction (clustering)
 
