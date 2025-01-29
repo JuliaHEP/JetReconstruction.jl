@@ -1,11 +1,5 @@
 #! /usr/bin/env julia
 
-using JetReconstruction
-using Test
-using JSON
-using LorentzVectorHEP
-using Logging
-
 include("common.jl")
 
 function main()

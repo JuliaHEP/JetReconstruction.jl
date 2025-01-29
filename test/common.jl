@@ -6,5 +6,9 @@
 # to avoid double-including the common file.
 
 if !@isdefined JETRECO_TEST_COMMON
+    if !isempty(PROGRAM_FILE)
+        import TestEnv
+        TestEnv.activate()
+    end
     include("_common.jl")
 end
