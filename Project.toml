@@ -24,9 +24,11 @@ JetVisualisation = "Makie"
 
 [compat]
 Accessors = "0.1.36"
+Aqua = "0.8"
 CodecZlib = "0.7.4"
 EDM4hep = "0.4.0"
 EnumX = "1.0.4"
+JSON = "0.21"
 Logging = "1.9"
 LoopVectorization = "0.12.170"
 LorentzVectorHEP = "0.1.6"
@@ -38,7 +40,9 @@ Test = "1.9"
 julia = "1.9"
 
 [extras]
+Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 
 [targets]
-test = ["Test"]
+test = ["Aqua", "Test", "JSON"]
