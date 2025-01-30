@@ -214,7 +214,7 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
 end
 
 """
-    inclusive_jets(clusterseq::ClusterSequence; ptmin = 0.0, T = LorentzVectorCyl)
+    inclusive_jets(clusterseq::ClusterSequence{U}; ptmin = 0.0, T = LorentzVectorCyl) where {U}
 
 Return all inclusive jets of a ClusterSequence with pt > ptmin.
 
@@ -234,16 +234,18 @@ It iterates over the clustering history and checks the transverse momentum of
 each parent jet. If the transverse momentum is greater than or equal to `ptmin`,
 the jet is added to the array of inclusive jets.
 
-Valid return types are `LorentzVectorCyl` and `PseudoJet` (N.B. this will evolve
-in the future to be any subtype of `FourMomemntumBase`; currently unrecognised types
-will return `LorentzVectorCyl`).
+Valid return types are `LorentzVectorCyl` and the jet type of the input `clusterseq`
+(`U` - either `PseudoJet` or `EEjet` depending which algorithm was used)
+(N.B. this will evolve in the future to be any subtype of `FourMomentumBase`;
+currently unrecognised types will return `LorentzVectorCyl`).
 
 # Example
 ```julia
 inclusive_jets(clusterseq; ptmin = 10.0)
 ```
 """
-function inclusive_jets(clusterseq::ClusterSequence; ptmin = 0.0, T = LorentzVectorCyl)
+function inclusive_jets(clusterseq::ClusterSequence{U}; ptmin = 0.0,
+                        T = LorentzVectorCyl) where {U}
     pt2min = ptmin * ptmin
     jets_local = T[]
     # sizehint!(jets_local, length(clusterseq.jets))
@@ -257,7 +259,7 @@ function inclusive_jets(clusterseq::ClusterSequence; ptmin = 0.0, T = LorentzVec
         jet = clusterseq.jets[iparent_jet]
         if pt2(jet) >= pt2min
             @debug "Added inclusive jet index $iparent_jet"
-            if T == PseudoJet
+            if T == U
                 push!(jets_local, jet)
             else
                 push!(jets_local,
@@ -269,7 +271,7 @@ function inclusive_jets(clusterseq::ClusterSequence; ptmin = 0.0, T = LorentzVec
 end
 
 """
-    exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing, T = LorentzVectorCyl)
+    exclusive_jets(clusterseq::ClusterSequence{U}; dcut = nothing, njets = nothing, T = LorentzVectorCyl) where {U}
 
 Return all exclusive jets of a ClusterSequence, with either a specific number of
 jets or a cut on the maximum distance parameter.
@@ -290,9 +292,10 @@ jets or a cut on the maximum distance parameter.
 # Returns
 - An array of `T` objects representing the exclusive jets.
 
-Valid return types are `LorentzVectorCyl` and `PseudoJet` (N.B. this will evolve
-in the future to be any subtype of `FourMomemntumBase`; currently unrecognised types
-will return `LorentzVectorCyl`)
+Valid return types are `LorentzVectorCyl` and the jet type of the input `clusterseq`
+(`U` - either `PseudoJet` or `EEjet` depending which algorithm was used)
+(N.B. this will evolve in the future to be any subtype of `FourMomentumBase`;
+currently unrecognised types will return `LorentzVectorCyl`).
 
 # Exceptions
 - `ArgumentError`: If neither `dcut` nor `njets` is provided.
@@ -307,8 +310,8 @@ exclusive_jets(clusterseq, dcut = 20.0)
 exclusive_jets(clusterseq, njets = 3, T = PseudoJet)
 ```
 """
-function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = nothing,
-                        T = LorentzVectorCyl)
+function exclusive_jets(clusterseq::ClusterSequence{U}; dcut = nothing, njets = nothing,
+                        T = LorentzVectorCyl) where {U}
     if isnothing(dcut) && isnothing(njets)
         throw(ArgumentError("Must pass either a dcut or an njets value"))
     end
@@ -343,7 +346,7 @@ function exclusive_jets(clusterseq::ClusterSequence; dcut = nothing, njets = not
             if (parent < stop_point && parent > 0)
                 @debug "Added exclusive jet index $(clusterseq.history[parent].jetp_index)"
                 jet = clusterseq.jets[clusterseq.history[parent].jetp_index]
-                if (T == PseudoJet) || (T == EEjet)
+                if T == U
                     push!(excl_jets, jet)
                 else
                     push!(excl_jets,
