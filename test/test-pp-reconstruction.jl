@@ -4,14 +4,22 @@
 include("common.jl")
 
 # Test inclusive jets for each algorithm and strategy
-for alg in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt],
+for alg in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.GenKt],
     stg in [RecoStrategy.N2Plain, RecoStrategy.N2Tiled]
 
-    fastjet_file = joinpath(@__DIR__, "data",
-                            "jet-collections-fastjet-inclusive-$(alg).json.gz")
+    if alg == JetAlgorithm.GenKt
+        power = 1.5
+        fastjet_file = joinpath(@__DIR__, "data",
+                                "jet-collections-fastjet-inclusive-$(alg)-p$(power).json.gz")
+    else
+        power = JetReconstruction.algorithm2power[alg]
+        fastjet_file = joinpath(@__DIR__, "data",
+                                "jet-collections-fastjet-inclusive-$(alg).json.gz")
+    end
+
     test = ComparisonTest(events_file_pp, fastjet_file,
                           alg, stg,
-                          JetReconstruction.algorithm2power[alg], 0.4,
+                          power, 0.4,
                           (cs) -> inclusive_jets(cs; ptmin = 5.0), "inclusive")
     run_reco_test(test)
 end
