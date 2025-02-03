@@ -243,8 +243,9 @@ function plain_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, No
         sizehint!(recombination_particles, length(particles) * 2)
         for i in eachindex(particles)
             push!(recombination_particles,
-                  PseudoJet{ParticleType}(px(particles[i]), py(particles[i]), pz(particles[i]),
-                            energy(particles[i])))
+                  PseudoJet{ParticleType}(px(particles[i]), py(particles[i]),
+                                          pz(particles[i]),
+                                          energy(particles[i])))
         end
     end
 
