@@ -374,7 +374,7 @@ function tiled_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, No
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
 
     # If we have PseudoJets, we can just call the main algorithm...
-    if T isa PseudoJet
+    if T <: PseudoJet
         # recombination_particles will become part of the cluster sequence, so size it for
         # the starting particles and all N recombinations
         recombination_particles = copy(particles)

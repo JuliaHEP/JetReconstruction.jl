@@ -230,7 +230,7 @@ function plain_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, No
     # Integer p if possible
     p = (round(p) == p) ? Int(p) : p
 
-    if T isa PseudoJet
+    if T <: PseudoJet
         # recombination_particles will become part of the cluster sequence, so size it for
         # the starting particles and all N recombinations
         recombination_particles = copy(particles)
@@ -243,7 +243,7 @@ function plain_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, No
         sizehint!(recombination_particles, length(particles) * 2)
         for i in eachindex(particles)
             push!(recombination_particles,
-                  PseudoJet(px(particles[i]), py(particles[i]), pz(particles[i]),
+                  PseudoJet{ParticleType}(px(particles[i]), py(particles[i]), pz(particles[i]),
                             energy(particles[i])))
         end
     end
@@ -255,12 +255,12 @@ function plain_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, No
 end
 
 """
-    _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0, recombine = +)
+    _plain_jet_reconstruct(; particles::Vector{PseudoJet{T}}, p = -1, R = 1.0, recombine = +)
 
 This is the internal implementation of jet reconstruction using the plain
 algorithm. It takes a vector of `particles` representing the input particles and
 reconstructs jets based on the specified parameters. Here the particles must be
-of type `PseudoJet`.
+of type `PseudoJet{T}`.
 
 Users of the package should use the `plain_jet_reconstruct` function as their
 entry point to this jet reconstruction.

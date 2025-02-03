@@ -236,7 +236,7 @@ function ee_genkt_algorithm(particles::AbstractArray{T, 1}; p = 1, R = 4.0,
         R = 4.0
     end
 
-    if T == EEjet
+    if T <: EEjet
         # recombination_particles will become part of the cluster sequence, so size it for
         # the starting particles and all N recombinations
         recombination_particles = copy(particles)
@@ -261,7 +261,7 @@ function ee_genkt_algorithm(particles::AbstractArray{T, 1}; p = 1, R = 4.0,
 end
 
 """
-    _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
+    _ee_genkt_algorithm(; particles::Vector{EEjet{T}}, p = 1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
                        recombine = +)
 
