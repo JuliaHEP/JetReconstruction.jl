@@ -158,7 +158,7 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
 
     # Now run our jet reconstruction...
     # From PseudoJets
-    events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file_pp)
+    events::Vector{Vector{PseudoJet{Float64}}} = read_final_state_particles(events_file_pp)
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
         finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance,

@@ -266,7 +266,7 @@ function inclusive_jets(clusterseq::ClusterSequence{U}; ptmin = 0.0,
         jet = clusterseq.jets[iparent_jet]
         if pt2(jet) >= pt2min
             @debug "Added inclusive jet index $iparent_jet"
-            if T == U
+            if T <: U
                 push!(jets_local, jet)
             else
                 push!(jets_local,
