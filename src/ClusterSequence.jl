@@ -148,6 +148,13 @@ ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64, strategy
                        Qtot)
 end
 
+function ClusterSequence{T}(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64,
+                            strategy::RecoStrategy.Strategy, jets::Vector{T}, history,
+                            Qtot) where {T <: FourMomentum}
+    ClusterSequence{T}(algorithm, Float64(p), R, strategy, jets, length(jets), history,
+                       Qtot)
+end
+
 """
     add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, dij)
 
@@ -259,7 +266,7 @@ function inclusive_jets(clusterseq::ClusterSequence{U}; ptmin = 0.0,
         jet = clusterseq.jets[iparent_jet]
         if pt2(jet) >= pt2min
             @debug "Added inclusive jet index $iparent_jet"
-            if T == U
+            if T <: U
                 push!(jets_local, jet)
             else
                 push!(jets_local,

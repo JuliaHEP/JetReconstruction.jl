@@ -374,18 +374,22 @@ function tiled_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, No
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
 
     # If we have PseudoJets, we can just call the main algorithm...
-    if T == PseudoJet
+    if T <: PseudoJet
         # recombination_particles will become part of the cluster sequence, so size it for
         # the starting particles and all N recombinations
         recombination_particles = copy(particles)
         sizehint!(recombination_particles, length(particles) * 2)
     else
-        recombination_particles = PseudoJet[]
+        # We don't really know what element type we have here, so we need to
+        # drill down to a component to get that underlying type
+        ParticleType = typeof(px(particles[1]))
+        recombination_particles = PseudoJet{ParticleType}[]
         sizehint!(recombination_particles, length(particles) * 2)
         for i in eachindex(particles)
             push!(recombination_particles,
-                  PseudoJet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                            energy(particles[i])))
+                  PseudoJet{ParticleType}(px(particles[i]), py(particles[i]),
+                                          pz(particles[i]),
+                                          energy(particles[i])))
         end
     end
 
@@ -421,9 +425,9 @@ of data types are done.
 tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 1.0, recombine = +)
 ```
 """
-function _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1, R = 1.0,
+function _tiled_jet_reconstruct(particles::Vector{PseudoJet{T}}; p::Real = -1, R = 1.0,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                recombine = +)
+                                recombine = +) where {T <: Real}
     # Bounds
     N::Int = length(particles)
 
@@ -439,13 +443,16 @@ function _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1, R = 
     R2::Float64 = R * R
     p = (round(p) == p) ? Int(p) : p # integer p if possible
 
+    # Numerical type for this reconstruction
+    ParticleType = T
+
     # This will be used quite deep inside loops, so declare it here so that
     # memory (de)allocation gets done only once
     tile_union = Vector{Int}(undef, 3 * _n_tile_neighbours)
 
     # Container for pseudojets, sized for all initial particles, plus all of the
     # merged jets that can be created during reconstruction
-    jets = PseudoJet[]
+    jets = PseudoJet{ParticleType}[]
     sizehint!(jets, N * 2)
     resize!(jets, N)
 
@@ -456,7 +463,7 @@ function _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1, R = 
     history, Qtot = initial_history(jets)
 
     # Now get the tiling setup
-    _eta = Vector{Float64}(undef, length(particles))
+    _eta = Vector{ParticleType}(undef, length(particles))
     for ijet in 1:length(particles)
         _eta[ijet] = rapidity(particles[ijet])
     end
@@ -464,7 +471,9 @@ function _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1, R = 
     tiling = Tiling(setup_tiling(_eta, R))
 
     # ClusterSequence is the struct that holds the state of the reconstruction
-    clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Tiled, jets, history, Qtot)
+    clusterseq = ClusterSequence{PseudoJet{ParticleType}}(algorithm, p, R,
+                                                          RecoStrategy.N2Tiled, jets,
+                                                          history, Qtot)
 
     # Tiled jets is a structure that has additional variables for tracking which tile a jet is in
     tiledjets = similar(clusterseq.jets, TiledJet)

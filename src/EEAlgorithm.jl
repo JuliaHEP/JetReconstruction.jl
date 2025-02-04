@@ -236,18 +236,21 @@ function ee_genkt_algorithm(particles::AbstractArray{T, 1}; p = 1, R = 4.0,
         R = 4.0
     end
 
-    if T == EEjet
+    if T <: EEjet
         # recombination_particles will become part of the cluster sequence, so size it for
         # the starting particles and all N recombinations
         recombination_particles = copy(particles)
         sizehint!(recombination_particles, length(particles) * 2)
     else
-        recombination_particles = EEjet[]
+        # We don't really know what element type we have here, so we need to
+        # drill down to a component to get that underlying type
+        ParticleType = typeof(px(particles[1]))
+        recombination_particles = EEjet{ParticleType}[]
         sizehint!(recombination_particles, length(particles) * 2)
         for i in eachindex(particles)
             push!(recombination_particles,
-                  EEjet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                        energy(particles[i])))
+                  EEjet{ParticleType}(px(particles[i]), py(particles[i]), pz(particles[i]),
+                                      energy(particles[i])))
         end
     end
 
@@ -258,20 +261,23 @@ function ee_genkt_algorithm(particles::AbstractArray{T, 1}; p = 1, R = 4.0,
 end
 
 """
-    _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
+    _ee_genkt_algorithm(; particles::Vector{EEjet{T}}, p = 1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
                        recombine = +)
 
 This function is the actual implementation of the e+e- jet clustering algorithm.
 """
-function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
+function _ee_genkt_algorithm(; particles::Vector{EEjet{T}}, p = 1, R = 4.0,
                              algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                             recombine = +)
+                             recombine = +) where {T <: Real}
     # Bounds
     N::Int = length(particles)
 
     # R squared
     R2 = R^2
+
+    # Numerical type?
+    ParticleType = T
 
     # Constant factor for the dij metric and the beam distance function
     if algorithm == JetAlgorithm.Durham
@@ -289,14 +295,15 @@ function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
     # For optimised reconstruction generate an SoA containing the necessary
     # jet information and populate it accordingly
     # We need N slots for this array
-    eereco = StructArray{EERecoJet}(undef, N)
+    eereco = StructArray{EERecoJet{ParticleType}}(undef, N)
     fill_reco_array!(eereco, particles, R2, p)
 
     # Setup the initial history and get the total energy
     history, Qtot = initial_history(particles)
 
-    clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Plain, particles, history,
-                                 Qtot)
+    clusterseq = ClusterSequence{EEjet{ParticleType}}(algorithm, p, R, RecoStrategy.N2Plain,
+                                                      particles, history,
+                                                      Qtot)
 
     # Run over initial pairs of jets to find nearest neighbours
     get_angular_nearest_neighbours!(eereco, algorithm, dij_factor)

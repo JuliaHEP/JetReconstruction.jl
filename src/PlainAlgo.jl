@@ -230,18 +230,22 @@ function plain_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, No
     # Integer p if possible
     p = (round(p) == p) ? Int(p) : p
 
-    if T == PseudoJet
+    if T <: PseudoJet
         # recombination_particles will become part of the cluster sequence, so size it for
         # the starting particles and all N recombinations
         recombination_particles = copy(particles)
         sizehint!(recombination_particles, length(particles) * 2)
     else
-        recombination_particles = PseudoJet[]
+        # We don't really know what element type we have here, so we need to
+        # drill down to a component to get that underlying type
+        ParticleType = typeof(px(particles[1]))
+        recombination_particles = PseudoJet{ParticleType}[]
         sizehint!(recombination_particles, length(particles) * 2)
         for i in eachindex(particles)
             push!(recombination_particles,
-                  PseudoJet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                            energy(particles[i])))
+                  PseudoJet{ParticleType}(px(particles[i]), py(particles[i]),
+                                          pz(particles[i]),
+                                          energy(particles[i])))
         end
     end
 
@@ -252,12 +256,12 @@ function plain_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, No
 end
 
 """
-    _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0, recombine = +)
+    _plain_jet_reconstruct(; particles::Vector{PseudoJet{T}}, p = -1, R = 1.0, recombine = +)
 
 This is the internal implementation of jet reconstruction using the plain
 algorithm. It takes a vector of `particles` representing the input particles and
 reconstructs jets based on the specified parameters. Here the particles must be
-of type `PseudoJet`.
+of type `PseudoJet{T}`.
 
 Users of the package should use the `plain_jet_reconstruct` function as their
 entry point to this jet reconstruction.
@@ -278,23 +282,26 @@ generalised k_t algorithm.
 - `clusterseq`: The resulting `ClusterSequence` object representing the
   reconstructed jets.
 """
-function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0,
+function _plain_jet_reconstruct(; particles::Vector{PseudoJet{T}}, p = -1, R = 1.0,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                recombine = +)
+                                recombine = +) where {T <: Real}
     # Bounds
     N::Int = length(particles)
     # Parameters
     R2 = R^2
 
+    # Numerical type for this reconstruction
+    ParticleType = T
+
     # Optimised compact arrays for determining the next merge step
     # We make sure these arrays are type stable - have seen issues where, depending on the values
     # returned by the methods, they can become unstable and performance degrades
-    kt2_array::Vector{Float64} = pt2.(particles) .^ p
-    phi_array::Vector{Float64} = phi.(particles)
-    rapidity_array::Vector{Float64} = rapidity.(particles)
+    kt2_array::Vector{ParticleType} = pt2.(particles) .^ p
+    phi_array::Vector{ParticleType} = phi.(particles)
+    rapidity_array::Vector{ParticleType} = rapidity.(particles)
     nn::Vector{Int} = Vector(1:N) # nearest neighbours
-    nndist::Vector{Float64} = fill(float(R2), N) # geometric distances to the nearest neighbour
-    nndij::Vector{Float64} = zeros(N) # dij metric distance
+    nndist::Vector{ParticleType} = fill(float(R2), N) # geometric distances to the nearest neighbour
+    nndij::Vector{ParticleType} = zeros(N) # dij metric distance
 
     # Maps index from the compact array to the clusterseq jet vector
     clusterseq_index::Vector{Int} = collect(1:N)
@@ -304,8 +311,10 @@ function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0,
     # Current implementation mutates the particles vector, so need to copy it
     # for the cluster sequence (there is too much copying happening, so this
     # needs to be rethought and reoptimised)
-    clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Plain, particles, history,
-                                 Qtot)
+    clusterseq = ClusterSequence{PseudoJet{ParticleType}}(algorithm, p, R,
+                                                          RecoStrategy.N2Plain, particles,
+                                                          history,
+                                                          Qtot)
 
     # Initialize nearest neighbours
     @simd for i in 1:N

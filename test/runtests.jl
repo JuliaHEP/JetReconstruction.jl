@@ -35,6 +35,9 @@ function main()
     include("test-pp-reconstruction.jl")
     include("test-ee-reconstruction.jl")
 
+    # Also test reconstruction with Float32
+    include("test-f32-reconstruction.jl")
+
     # Compare inputting data in PseudoJet with using a LorentzVector
     do_test_compare_types(RecoStrategy.N2Plain, algname = pp_algorithms[-1], power = -1)
     do_test_compare_types(RecoStrategy.N2Tiled, algname = pp_algorithms[-1], power = -1)
@@ -155,7 +158,7 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
 
     # Now run our jet reconstruction...
     # From PseudoJets
-    events::Vector{Vector{PseudoJet}} = read_final_state_particles(events_file_pp)
+    events::Vector{Vector{PseudoJet{Float64}}} = read_final_state_particles(events_file_pp)
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
         finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance,

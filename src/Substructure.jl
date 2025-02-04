@@ -142,7 +142,8 @@ The method stops at the first jet satisfying the mass and distance thresholds.
 # Returns:
 - `PseudoJet`: The jet (or subjet) satisfying the mass drop conditions, if tagging is successful, otherwise a zero-momentum PseudoJet
 """
-function mass_drop(jet::PseudoJet, clusterseq::ClusterSequence, tag::MassDropTagger)
+function mass_drop(jet::PseudoJet{T}, clusterseq::ClusterSequence,
+                   tag::MassDropTagger) where {T <: Real}
     all_jets = clusterseq.jets
     hist = clusterseq.history
 
@@ -188,11 +189,11 @@ This function reclusters the jet and iteratively checks the soft-drop condition 
 # Returns:
 - `PseudoJet`: Groomed jet or zero-momentum PseudoJet if grooming fails
 """
-function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence,
-                   tag::SoftDropTagger)
+function soft_drop(jet::PseudoJet{T}, clusterseq::ClusterSequence,
+                   tag::SoftDropTagger) where {T <: Real}
     rad = tag.cluster_rad
     new_clusterseq = recluster(jet, clusterseq; R = rad, algorithm = JetAlgorithm.CA)
-    new_jet = sort!(inclusive_jets(new_clusterseq; T = PseudoJet), by = pt2, rev = true)[1]
+    new_jet = sort!(inclusive_jets(new_clusterseq; T = PseudoJet{T}), by = pt2, rev = true)[1]
 
     all_jets = new_clusterseq.jets
     hist = new_clusterseq.history
@@ -238,10 +239,12 @@ Filters a jet to retain only the hardest subjets based on a specified radius and
 # Returns:
 - `PseudoJet`: Filtered jet composed of the hardest subjets
 """
-function jet_filtering(jet::PseudoJet, clusterseq::ClusterSequence, filter::JetFilter)
+function jet_filtering(jet::PseudoJet{T}, clusterseq::ClusterSequence,
+                       filter::JetFilter) where {T <: Real}
     rad = filter.filter_radius
     new_clusterseq = recluster(jet, clusterseq; R = rad, algorithm = JetAlgorithm.CA)
-    reclustered = sort!(inclusive_jets(new_clusterseq; T = PseudoJet), by = pt2, rev = true)
+    reclustered = sort!(inclusive_jets(new_clusterseq; T = PseudoJet{T}), by = pt2,
+                        rev = true)
 
     n = length(reclustered) <= filter.num_hardest_jets ? length(reclustered) :
         filter.num_hardest_jets
@@ -265,13 +268,15 @@ Trims a jet by removing subjets with transverse momentum below a specified fract
 # Returns:
 - `PseudoJet`: Trimmed jet composed of retained subjets
 """
-function jet_trimming(jet::PseudoJet, clusterseq::ClusterSequence, trim::JetTrim)
+function jet_trimming(jet::PseudoJet{T}, clusterseq::ClusterSequence,
+                      trim::JetTrim) where {T <: Real}
     rad = trim.trim_radius
     alg = trim.recluster_method
     frac2 = trim.trim_fraction^2
 
     new_clusterseq = recluster(jet, clusterseq; R = rad, algorithm = alg)
-    reclustered = sort!(inclusive_jets(new_clusterseq; T = PseudoJet), by = pt2, rev = true)
+    reclustered = sort!(inclusive_jets(new_clusterseq; T = PseudoJet{T}), by = pt2,
+                        rev = true)
 
     hard = Vector{PseudoJet}(undef, 0)
     for item in reclustered
