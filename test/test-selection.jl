@@ -1,7 +1,6 @@
-# File: test/test_test-selection.jl
+# Tests of jets selection functionality
 
 include("common.jl")
-const test_cone_size = 0.4
 
 """ Helper function to test exclusive jets selection with given algorithm power argument."""
 function test_exclusive_jets_power(event, algo; p = nothing, should_throw::Bool)
@@ -23,7 +22,7 @@ function test_exclusive_jets_power(event, algo; p = nothing, should_throw::Bool)
     end
 end
 
-@testset "Exclusive jets selection algorithm power requirements" verbose=true begin
+@testset "Exclusive jets selection algorithm power requirements" begin
     pp_event = first(JetReconstruction.read_final_state_particles(events_file_pp))
     ee_event = first(JetReconstruction.read_final_state_particles(events_file_ee))
 
