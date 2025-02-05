@@ -131,7 +131,12 @@ Check if the algorithm is a pp reconstruction algorithm.
 `true` if the algorithm is a pp reconstruction algorithm, `false` otherwise.
 """
 function is_pp(algorithm::JetAlgorithm.Algorithm)
-    return algorithm in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt]
+    return algorithm in [
+        JetAlgorithm.AntiKt,
+        JetAlgorithm.CA,
+        JetAlgorithm.Kt,
+        JetAlgorithm.GenKt
+    ]
 end
 
 """
