@@ -35,6 +35,9 @@ function main()
     include("test-pp-reconstruction.jl")
     include("test-ee-reconstruction.jl")
 
+    # Test jets selection
+    include("test-selection.jl")
+
     # Compare inputting data in PseudoJet with using a LorentzVector
     do_test_compare_types(RecoStrategy.N2Plain, algname = pp_algorithms[-1], power = -1)
     do_test_compare_types(RecoStrategy.N2Tiled, algname = pp_algorithms[-1], power = -1)
