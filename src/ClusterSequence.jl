@@ -610,3 +610,57 @@ An vector of indices representing the original constituents of the given jet.
 function constituent_indexes(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
     get_all_ancestors(cs.history[jet._cluster_hist_index].jetp_index, cs)
 end
+
+"""
+    has_parents(p::FourMomentum, clusterseq::ClusterSequence)::Tuple{boolean, Int64, Int64}
+
+Checks if the jet `p` is a child of two other jets, after clustering 
+
+# Arguments
+- `p`: The jet to check.
+- `clusterseq`: The cluster sequence object.
+
+# Returns
+`Tuple{Bool, Int64, Int64}`: First element is true or false depending if the jet
+ has a parent or not. If the jet has parents, returns the *indices* of the
+ parent jets in the *history element* as elements 2 and 3. Otherwise, returns
+ JetReconstruction.NonexistentParent
+"""
+function has_parents(p::FourMomentum,
+                     clusterseq::ClusterSequence)::Tuple{Bool, Int64, Int64}
+    history = clusterseq.history
+    N = p._cluster_hist_index
+    p1 = history[N].parent1
+    p2 = history[N].parent2
+
+    p1 == p2 == NonexistentParent ? result = false : result = true
+    return (result, p1, p2)
+end
+
+"""
+    parent_jets(jet::T, cs::ClusterSequence)::Tuple{Union{Nothing, T}, Union{Nothing, T}} where {T <: FourMomentum}
+
+Find the parent jets of a given jet in a cluster sequence.
+
+# Arguments
+- `jet::T`: The jet for which to find the parent jets.
+- `cs::ClusterSequence`: The cluster sequence object.
+
+# Returns
+A tuple of two elements, each of which is either the parent jet object or
+`nothing` (if the jet has no parent).
+"""
+function parent_jets(jet::T,
+                     cs::ClusterSequence)::Tuple{Union{Nothing, T},
+                                                 Union{Nothing, T}} where {T <:
+                                                                           FourMomentum}
+    hist_idx = jet._cluster_hist_index
+    jet_history = cs.history[hist_idx]
+
+    parent1_idx, parent2_idx = jet_history.parent1, jet_history.parent2
+
+    parent1_jet = parent1_idx > 0 ? cs.jets[cs.history[parent1_idx].jetp_index] : nothing
+    parent2_jet = parent2_idx > 0 ? cs.jets[cs.history[parent2_idx].jetp_index] : nothing
+
+    return parent1_jet, parent2_jet
+end

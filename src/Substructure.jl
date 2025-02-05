@@ -1,26 +1,4 @@
 """
-    has_parents(p, clusterseq) -> (boolean, Int64, Int64)
-
-Checks if the jet `p` is a child of two other jets, after clustering 
-
-# Arguments
-- `p::PseudoJet`: The jet to check.
-- `clusterseq::ClusterSequence`: The cluster sequence object.
-
-# Returns
-- `(boolean, Int64, Int64)`: true or false depending on if the jet has a parent or not. If the jet has a parent, returns the indices of the parent jets in the history element. Otherwise, returns -2 (NonexistentParent).
-"""
-function has_parents(p::PseudoJet, clusterseq::ClusterSequence)
-    history = clusterseq.history
-    N = p._cluster_hist_index
-    p1 = history[N].parent1
-    p2 = history[N].parent2
-
-    p1 == p2 == NonexistentParent ? result = false : result = true
-    return (result, p1, p2)
-end
-
-"""
     deltaR(jet1, jet2) -> Float64
 
 Function to calculate the distance in the y-ϕ plane between two jets `jet1` and `jet2`

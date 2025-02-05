@@ -1,4 +1,4 @@
-# Tests of jet constituent retrieval
+# Tests of jet constituent retrieval and parentage
 
 include("common.jl")
 
@@ -8,8 +8,9 @@ function Base.isapprox(j1::PseudoJet, j2::PseudoJet)
         isapprox(j1.py, j2.py) && isapprox(j1.pz, j2.pz)
 end
 
-# Expected constituent indexes
+# Expected constituent indexes and parent indexes
 const expected_constituent_indexes = [84, 85, 139, 86, 133, 74, 79, 124, 76, 75, 163]
+const expected_parent_indexes = [320, 335]
 
 input_file = joinpath(dirname(pathof(JetReconstruction)), "..", "test", "data",
                       "events.pp13TeV.hepmc3.gz")
@@ -25,20 +26,44 @@ pj_jets = inclusive_jets(cluster_seq; ptmin = 5.0, T = PseudoJet)
 
 @testset "Jet constituents" begin
     @testset "Constituents of jet number $(event_no)" begin
-        my_constituents = JetReconstruction.constituents(pj_jets[1], cluster_seq)
+        my_constituents = JetReconstruction.constituents(pj_jets[event_no], cluster_seq)
         @test size(my_constituents)[1] == 11
         for (i, idx) in enumerate(expected_constituent_indexes)
             @test my_constituents[i] ≈ events[1][idx]
         end
-        # @test my_constituents[1] ≈ events[1][84]
-        # @test my_constituents[1] ≈ LorentzVectorHEP.LorentzVector(0.0, 0.0, 0.0, 0.0)
-        # @test my_constituents[2] ≈ LorentzVectorHEP.LorentzVector(0.0, 0.0, 0.0, 0.0)
     end
 
     @testset "Constituent indexes for jet number $(event_no)" begin
-        my_constituent_indexes = constituent_indexes(pj_jets[1], cluster_seq)
+        my_constituent_indexes = constituent_indexes(pj_jets[event_no], cluster_seq)
         @test size(my_constituent_indexes)[1] == 11
         # Testing the index values is sufficient, the content came from the original input file!
         @test my_constituent_indexes == expected_constituent_indexes
+    end
+end
+
+@testset "Jet parents" begin
+    @testset "Parent of jet number $(event_no)" begin
+        my_parents = JetReconstruction.parent_jets(pj_jets[event_no], cluster_seq)
+        @test my_parents[1] ≈
+              cluster_seq.jets[cluster_seq.history[expected_parent_indexes[1]].jetp_index]
+        @test my_parents[2] ≈
+              cluster_seq.jets[cluster_seq.history[expected_parent_indexes[2]].jetp_index]
+    end
+    @testset "Parents of input cluster" begin
+        no_parents = JetReconstruction.parent_jets(cluster_seq.jets[1], cluster_seq)
+        @test isnothing(no_parents[1]) && isnothing(no_parents[2])
+    end
+
+    @testset "Parent indexes for jet number $(event_no)" begin
+        my_parent_indexes = JetReconstruction.has_parents(pj_jets[event_no], cluster_seq)
+        @test my_parent_indexes[1] == true
+        @test my_parent_indexes[2] == expected_parent_indexes[1]
+        @test my_parent_indexes[3] == expected_parent_indexes[2]
+    end
+    @testset "Parent indexes of input cluster" begin
+        no_parent_indexes = JetReconstruction.has_parents(cluster_seq.jets[1], cluster_seq)
+        @test no_parent_indexes[1] == false
+        @test (no_parent_indexes[2] == JetReconstruction.NonexistentParent) &&
+              (no_parent_indexes[3] == JetReconstruction.NonexistentParent)
     end
 end
