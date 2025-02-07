@@ -88,7 +88,7 @@ sorted_jets = sort!(inclusive_jets(cs::ClusterSequence; ptmin=5.0),
   by=JetReconstruction.energy, rev=true)
 ```
 
-## Jet Constituents
+## Jet Constituents and Jet Parents
 
 There are two ways to retrieve jet constituents. The first way is just to
 retrieve the *indexes* of the constituent jets. These indexes refer to the
@@ -106,6 +106,14 @@ Note that in both these cases the cluster sequence object from the
 reconstruction is required (to avoid circular dependencies and improve memory
 management reconstructed jets do not contain a link back to their cluster
 sequence).
+
+To retrieve a jet's parents:
+
+- [`parent_jets`](@ref)
+
+This will return a tuple of the target jet's parents, or `nothing` when one or
+both parents are missing (the only case when a jet has one parent is when it
+undergoes a *beam merge* step).
 
 ## References
 
