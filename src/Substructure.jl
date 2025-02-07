@@ -1,26 +1,4 @@
 """
-    has_parents(p, clusterseq) -> (boolean, Int64, Int64)
-
-Checks if the jet `p` is a child of two other jets, after clustering 
-
-# Arguments
-- `p::PseudoJet`: The jet to check.
-- `clusterseq::ClusterSequence`: The cluster sequence object.
-
-# Returns
-- `(boolean, Int64, Int64)`: true or false depending on if the jet has a parent or not. If the jet has a parent, returns the indices of the parent jets in the history element. Otherwise, returns -2 (NonexistentParent).
-"""
-function has_parents(p::PseudoJet, clusterseq::ClusterSequence)
-    history = clusterseq.history
-    N = p._cluster_hist_index
-    p1 = history[N].parent1
-    p2 = history[N].parent2
-
-    p1 == p2 == NonexistentParent ? result = false : result = true
-    return (result, p1, p2)
-end
-
-"""
     deltaR(jet1, jet2) -> Float64
 
 Function to calculate the distance in the y-ϕ plane between two jets `jet1` and `jet2`
@@ -147,14 +125,10 @@ function mass_drop(jet::PseudoJet, clusterseq::ClusterSequence, tag::MassDropTag
     hist = clusterseq.history
 
     while true
-        had_parents, p1, p2 = has_parents(jet, clusterseq)
+        parent1, parent2 = parent_jets(jet, clusterseq)
 
-        if had_parents
-            parent1 = all_jets[hist[p1].jetp_index]
-            parent2 = all_jets[hist[p2].jetp_index]
-
+        if !isnothing(parent1) && !(isnothing(parent2))
             if m2(parent1) < m2(parent2)
-                p1, p2 = p2, p1
                 parent1, parent2 = parent2, parent1
             end
 
@@ -198,21 +172,17 @@ function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence,
     hist = new_clusterseq.history
 
     while true
-        had_parents, p1, p2 = has_parents(new_jet, new_clusterseq)
+        parent1, parent2 = parent_jets(new_jet, new_clusterseq)
 
-        if had_parents
-            parent1 = all_jets[hist[p1].jetp_index]
-            parent2 = all_jets[hist[p2].jetp_index]
-
+        if !isnothing(parent1) && !(isnothing(parent2))
             if m2(parent1) < m2(parent2)
-                p1, p2 = p2, p1
                 parent1, parent2 = parent2, parent1
             end
 
-            pti = pt(parent1)
-            ptj = pt(parent2)
+            pt1 = pt(parent1)
+            pt2 = pt(parent2)
 
-            if min(pti, ptj) / (pti + ptj) >
+            if min(pt1, pt2) / (pt1 + pt2) >
                tag.zcut * (deltaR(parent1, parent2) / rad)^tag.b
                 return new_jet
             else

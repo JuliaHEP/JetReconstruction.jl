@@ -53,7 +53,8 @@ end
 """
     HistoryElement(jetp_index)
 
-Constructs a `HistoryElement` object with the given `jetp_index`, used for initialising the history with original particles.
+Constructs a `HistoryElement` object with the given `jetp_index`, used for
+initialising the history with original particles.
 
 # Arguments
 - `jetp_index`: The index of the jetp.
@@ -617,4 +618,32 @@ An vector of indices representing the original constituents of the given jet.
 """
 function constituent_indexes(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
     get_all_ancestors(cs.history[jet._cluster_hist_index].jetp_index, cs)
+end
+
+"""
+    parent_jets(jet::T, cs::ClusterSequence{T})::Tuple{Union{Nothing, T}, Union{Nothing, T}} where {T <: FourMomentum}
+
+Find the parent jets of a given jet in a cluster sequence.
+
+# Arguments
+- `jet::T`: The jet for which to find the parent jets.
+- `cs::ClusterSequence`: The cluster sequence object.
+
+# Returns
+A tuple of two elements, each of which is either the parent jet object or
+`nothing` (if the jet has no parent).
+"""
+function parent_jets(jet::T,
+                     cs::ClusterSequence{T})::Tuple{Union{Nothing, T},
+                                                    Union{Nothing, T}} where {T <:
+                                                                              FourMomentum}
+    hist_idx = jet._cluster_hist_index
+    jet_history = cs.history[hist_idx]
+
+    parent1_idx, parent2_idx = jet_history.parent1, jet_history.parent2
+
+    parent1_jet = parent1_idx > 0 ? cs.jets[cs.history[parent1_idx].jetp_index] : nothing
+    parent2_jet = parent2_idx > 0 ? cs.jets[cs.history[parent2_idx].jetp_index] : nothing
+
+    return parent1_jet, parent2_jet
 end
