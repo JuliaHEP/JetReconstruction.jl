@@ -53,17 +53,4 @@ end
         no_parents = JetReconstruction.parent_jets(cluster_seq.jets[1], cluster_seq)
         @test isnothing(no_parents[1]) && isnothing(no_parents[2])
     end
-
-    @testset "Parent indexes for jet number $(event_no)" begin
-        my_parent_indexes = JetReconstruction.has_parents(pj_jets[event_no], cluster_seq)
-        @test my_parent_indexes[1] == true
-        @test my_parent_indexes[2] == expected_parent_indexes[1]
-        @test my_parent_indexes[3] == expected_parent_indexes[2]
-    end
-    @testset "Parent indexes of input cluster" begin
-        no_parent_indexes = JetReconstruction.has_parents(cluster_seq.jets[1], cluster_seq)
-        @test no_parent_indexes[1] == false
-        @test (no_parent_indexes[2] == JetReconstruction.NonexistentParent) &&
-              (no_parent_indexes[3] == JetReconstruction.NonexistentParent)
-    end
 end
