@@ -612,32 +612,6 @@ function constituent_indexes(jet::T, cs::ClusterSequence{T}) where {T <: FourMom
 end
 
 """
-    has_parents(p::FourMomentum, clusterseq::ClusterSequence)::Tuple{boolean, Int64, Int64}
-
-Checks if the jet `p` is a child of two other jets, after clustering 
-
-# Arguments
-- `p`: The jet to check.
-- `clusterseq`: The cluster sequence object.
-
-# Returns
-`Tuple{Bool, Int64, Int64}`: First element is true or false depending if the jet
- has a parent or not. If the jet has parents, returns the *indices* of the
- parent jets in the *history element* as elements 2 and 3. Otherwise, returns
- JetReconstruction.NonexistentParent
-"""
-function has_parents(p::FourMomentum,
-                     clusterseq::ClusterSequence)::Tuple{Bool, Int64, Int64}
-    history = clusterseq.history
-    N = p._cluster_hist_index
-    p1 = history[N].parent1
-    p2 = history[N].parent2
-
-    result = !(p1 == p2 == NonexistentParent)
-    return (result, p1, p2)
-end
-
-"""
     parent_jets(jet::T, cs::ClusterSequence{T})::Tuple{Union{Nothing, T}, Union{Nothing, T}} where {T <: FourMomentum}
 
 Find the parent jets of a given jet in a cluster sequence.
