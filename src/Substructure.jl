@@ -125,14 +125,10 @@ function mass_drop(jet::PseudoJet, clusterseq::ClusterSequence, tag::MassDropTag
     hist = clusterseq.history
 
     while true
-        had_parents, p1, p2 = has_parents(jet, clusterseq)
+        parent1, parent2 = parent_jets(jet, clusterseq)
 
-        if had_parents
-            parent1 = all_jets[hist[p1].jetp_index]
-            parent2 = all_jets[hist[p2].jetp_index]
-
+        if !isnothing(parent1)
             if m2(parent1) < m2(parent2)
-                p1, p2 = p2, p1
                 parent1, parent2 = parent2, parent1
             end
 
@@ -176,21 +172,17 @@ function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence,
     hist = new_clusterseq.history
 
     while true
-        had_parents, p1, p2 = has_parents(new_jet, new_clusterseq)
+        parent1, parent2 = parent_jets(new_jet, new_clusterseq)
 
-        if had_parents
-            parent1 = all_jets[hist[p1].jetp_index]
-            parent2 = all_jets[hist[p2].jetp_index]
-
+        if !isnothing(parent1)
             if m2(parent1) < m2(parent2)
-                p1, p2 = p2, p1
                 parent1, parent2 = parent2, parent1
             end
 
-            pti = pt(parent1)
-            ptj = pt(parent2)
+            pt1 = pt(parent1)
+            pt2 = pt(parent2)
 
-            if min(pti, ptj) / (pti + ptj) >
+            if min(pt1, pt2) / (pt1 + pt2) >
                tag.zcut * (deltaR(parent1, parent2) / rad)^tag.b
                 return new_jet
             else
