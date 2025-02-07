@@ -633,7 +633,7 @@ function has_parents(p::FourMomentum,
     p1 = history[N].parent1
     p2 = history[N].parent2
 
-    p1 == p2 == NonexistentParent ? result = false : result = true
+    result = !(p1 == p2 == NonexistentParent)
     return (result, p1, p2)
 end
 
@@ -652,8 +652,8 @@ A tuple of two elements, each of which is either the parent jet object or
 """
 function parent_jets(jet::T,
                      cs::ClusterSequence{T})::Tuple{Union{Nothing, T},
-                                                 Union{Nothing, T}} where {T <:
-                                                                           FourMomentum}
+                                                    Union{Nothing, T}} where {T <:
+                                                                              FourMomentum}
     hist_idx = jet._cluster_hist_index
     jet_history = cs.history[hist_idx]
 
