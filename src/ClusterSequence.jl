@@ -53,7 +53,8 @@ end
 """
     HistoryElement(jetp_index)
 
-Constructs a `HistoryElement` object with the given `jetp_index`, used for initialising the history with original particles.
+Constructs a `HistoryElement` object with the given `jetp_index`, used for
+initialising the history with original particles.
 
 # Arguments
 - `jetp_index`: The index of the jetp.

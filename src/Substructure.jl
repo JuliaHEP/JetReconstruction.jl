@@ -127,7 +127,7 @@ function mass_drop(jet::PseudoJet, clusterseq::ClusterSequence, tag::MassDropTag
     while true
         parent1, parent2 = parent_jets(jet, clusterseq)
 
-        if !isnothing(parent1)
+        if !isnothing(parent1) && !(isnothing(parent2))
             if m2(parent1) < m2(parent2)
                 parent1, parent2 = parent2, parent1
             end
@@ -174,7 +174,7 @@ function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence,
     while true
         parent1, parent2 = parent_jets(new_jet, new_clusterseq)
 
-        if !isnothing(parent1)
+        if !isnothing(parent1) && !(isnothing(parent2))
             if m2(parent1) < m2(parent2)
                 parent1, parent2 = parent2, parent1
             end
