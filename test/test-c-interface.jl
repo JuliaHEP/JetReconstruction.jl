@@ -38,6 +38,16 @@ function compare_results(ptr::Ptr{C_JetReconstruction.C_JetsResult{T}},
     @test all(struct_approx_equal.(c_data, jets))
 end
 
+function test_pseudojet()
+    ptr = Ptr{PseudoJet}(Libc.malloc(sizeof(PseudoJet)))
+    @test ptr != C_NULL
+    ret = C_JetReconstruction.jetreconstruction_PseudoJet_init(ptr, 0.1, 0.2, 0.3, 1.0)
+    @test C_JetReconstruction.StatusCode.T(ret) == C_JetReconstruction.StatusCode.OK
+    c_jet = unsafe_load(ptr)
+    jet = PseudoJet(0.1, 0.2, 0.3, 1.0)
+    struct_approx_equal(jet, c_jet)
+end
+
 function test_jet_reconstruct(filename; algorithm, R, strategy, power = nothing,
                               T = PseudoJet)
     @testset "C-interface jet reconstruct" begin
@@ -127,6 +137,9 @@ end
 
 @testset "C-interface JetReconstruction pp" begin
     test_cone_size = 0.4
+
+    test_pseudojet()
+
     for alg in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt],
         stg in [RecoStrategy.Best, RecoStrategy.N2Plain, RecoStrategy.N2Tiled]
 
