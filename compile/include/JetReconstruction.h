@@ -15,6 +15,10 @@
 #ifndef JET_RECONSTRUCTION_JL_H_
 #define JET_RECONSTRUCTION_JL_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 #include <stddef.h>
 
 /*Special states in a history.*/
@@ -340,5 +344,9 @@ jetreconstruction_StatusCode jetreconstruction_exclusive_jets_njets(
 jetreconstruction_StatusCode jetreconstruction_inclusive_jets(
     const jetreconstruction_ClusterSequence *clustersequence, double ptmin,
     jetreconstruction_JetsResult *result);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif /* JET_RECONSTRUCTION_JL_H_ */
