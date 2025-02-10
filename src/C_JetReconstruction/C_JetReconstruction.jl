@@ -115,7 +115,7 @@ function make_c_array(v::Vector{T}) where {T}
     for i in 1:len
         @inbounds unsafe_store!(ptr, v[i], i)
     end
-    return ptr, len
+    return ptr, Csize_t(len)
 end
 
 """
