@@ -330,7 +330,6 @@ function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0,
         j::Int = nn[i]
 
         #@debug "Closest compact jets are $i ($(clusterseq_index[i])) and $j ($(clusterseq_index[j]))"
-
         if i != j # Merge jets i and j
             # swap if needed
             if j < i

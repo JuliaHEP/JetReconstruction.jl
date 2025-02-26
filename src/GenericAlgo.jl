@@ -56,24 +56,25 @@ function jet_reconstruct(particles; p::Union{Real, Nothing} = -1, R = 1.0,
                          algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                          recombine = +,
                          strategy = RecoStrategy.Best)
-
     # Either map to the fixed algorithm corresponding to the strategy
     # or to an optimal choice based on the density of initial particles
+    print("TEST");
     if (algorithm === nothing) && (p === nothing)
         throw(ArgumentError("Please specify either an algorithm or a power value (power only for pp-type reconstruction)"))
     end
 
     if (algorithm === nothing) || is_pp(algorithm)
+
         # We assume a pp reconstruction
         if strategy == RecoStrategy.Best
             # The breakpoint of ~80 is determined empirically on e+e- -> H and 0.5 TeV pp -> 5 GeV jets
-            alg = length(particles) > 80 ? tiled_jet_reconstruct : plain_jet_reconstruct
+            alg = length(particles) > 800 ? tiled_jet_reconstruct : plain_jet_reconstruct
         elseif strategy == RecoStrategy.N2Plain
             alg = plain_jet_reconstruct
         elseif strategy == RecoStrategy.N2Tiled
             alg = tiled_jet_reconstruct
         else
-            throw(ErrorException("Invalid strategy: $(strategy)"))
+            throw(ErrorException("Inv alid strategy: $(strategy)"))
         end
     elseif is_ee(algorithm)
         alg = ee_genkt_algorithm
@@ -81,4 +82,5 @@ function jet_reconstruct(particles; p::Union{Real, Nothing} = -1, R = 1.0,
 
     # Now call the chosen algorithm, passing through the other parameters
     alg(particles; p = p, algorithm = algorithm, R = R, recombine = recombine)
+
 end

@@ -11,6 +11,9 @@ using JSON
 
 using LorentzVectorHEP
 using JetReconstruction
+using Pkg
+Pkg.develop(path="/Users/emadimtrova/Desktop/uni/spring25/UTRA/JetReconstruction.jl")
+
 
 # Parsing for algorithm and strategy enums
 include(joinpath(@__DIR__, "parse-options.jl"))
@@ -33,6 +36,7 @@ function jet_process(events::Vector{Vector{T}};
                      strategy::RecoStrategy.Strategy,
                      dump::Union{String, Nothing} = nothing) where {T <:
                                                                     JetReconstruction.FourMomentum}
+    
 
     # Set consistent algorithm and power
     (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
@@ -51,8 +55,10 @@ function jet_process(events::Vector{Vector{T}};
     # Now run over each event
     for (ievt, event) in enumerate(events)
         # Run the jet reconstruction
+        
         cluster_seq = jet_reconstruct(event, R = distance, p = p, algorithm = algorithm,
                                       strategy = strategy)
+
         # Now select jets, with inclusive or exclusive parameters
         if !isnothing(njets)
             finaljets = exclusive_jets(cluster_seq; njets = njets)
@@ -136,6 +142,7 @@ function parse_command_line(args)
 end
 
 function main()
+
     args = parse_command_line(ARGS)
     logger = ConsoleLogger(stdout, Logging.Info)
     global_logger(logger)
