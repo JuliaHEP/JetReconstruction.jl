@@ -2,6 +2,7 @@ on:
   push:
     paths:
       - CITATION.cff
+  pull_request:
   workflow_dispatch:
 
 name: CITATION.cff
