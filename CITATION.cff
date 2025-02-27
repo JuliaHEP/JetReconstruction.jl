@@ -1,8 +1,11 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
 cff-version: 1.2.0
 title: JetReconstruction.jl
 message: >-
   If you use this software, please cite it using the
-  metadata from this file.
+  software DOI and the preferred citation.
 type: software
 authors:
   - given-names: Graeme Andrew
@@ -18,11 +21,37 @@ authors:
     family-names: Gras
     email: philippe.gras@cern.ch
     orcid: 'https://orcid.org/0000-0002-3932-5967'
-  - given-names: Benedikt
-    family-names: Hegner
-    email: benedikt.hegner@cern.ch
-    affiliation: CERN
-    orcid: 'https://orcid.org/0009-0009-2020-1620'
+  - given-names: Sattwamo
+    family-names: Ghosh
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.12671414
+    description: Zenodo
+preferred-citation:
+  type: article
+  title: Polyglot Jet Finding
+  authors:
+    - given-names: Graeme Andrew
+      family-names: Stewart
+      email: graeme.andrew.stewart@cern.ch
+      affiliation: CERN
+      orcid: 'https://orcid.org/0000-0003-0182-7088'
+    - given-names: Atell
+      family-names: Krasnopolski
+      email: delta_atell@protonmail.com
+      orcid: 'https://orcid.org/0009-0009-9336-0219'
+    - given-names: Philippe
+      family-names: Gras
+      email: philippe.gras@cern.ch
+      orcid: 'https://orcid.org/0000-0002-3932-5967'
+    - given-names: Benedikt
+      family-names: Hegner
+      email: benedikt.hegner@cern.ch
+      affiliation: CERN
+      orcid: 'https://orcid.org/0009-0009-2020-1620'
+  identifiers:
+    - type: doi
+      value: 10.1051/epjconf/202429505017
 repository-code: 'https://github.com/JuliaHEP/JetReconstruction.jl'
 abstract: Jet reconstruction (reclustering) with Julia
 license: MIT
