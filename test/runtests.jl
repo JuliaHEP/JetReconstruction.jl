@@ -3,33 +3,11 @@
 include("common.jl")
 
 function main()
-    # A few unit tests
-    @testset "Algorithm/power consistency" begin
-        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.AntiKt,
-                                                                  p = -1)
-        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.CA,
-                                                                  p = 0)
-        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.Kt,
-                                                                  p = 1)
+    # Algorithm/power consistency checks
+    include("test-algpower-consistency.jl")
 
-        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.AntiKt,
-                                                                  p = nothing)
-        @test JetReconstruction.check_algorithm_power_consistency(algorithm = nothing,
-                                                                  p = -1)
-
-        @test_throws ArgumentError JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.AntiKt,
-                                                                                       p = 0)
-        @test_throws ArgumentError JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.Kt,
-                                                                                       p = 1.5)
-
-        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.GenKt,
-                                                                  p = 1.5)
-        @test JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.GenKt,
-                                                                  p = -0.5)
-
-        @test_throws ArgumentError JetReconstruction.check_algorithm_power_consistency(algorithm = JetAlgorithm.GenKt,
-                                                                                       p = nothing)
-    end
+    # jet_reconstruct() interface check
+    include("test-jet-reco-if.jl")
 
     # New test structure, factorised tests for pp and e+e-
     include("test-pp-reconstruction.jl")
