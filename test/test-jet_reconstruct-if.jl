@@ -22,5 +22,8 @@ let inputs = JetReconstruction.read_final_state_particles(events_file_ee)
         @test_throws ArgumentError typeof(jet_reconstruct(inputs[1]; algorithm = JetAlgorithm.CA, p=1)) == ClusterSequence{PseudoJet}
         @test_throws ArgumentError typeof(jet_reconstruct(inputs[1]; algorithm = JetAlgorithm.Kt, p=-1)) == ClusterSequence{PseudoJet}
         @test_throws ArgumentError typeof(jet_reconstruct(inputs[1]; algorithm = JetAlgorithm.GenKt, R=0.4)) == ClusterSequence{PseudoJet}
+
+        # No algorithm or power will throw
+        @test_throws ArgumentError typeof(jet_reconstruct(inputs[1])) == ClusterSequence{PseudoJet}
     end
 end
