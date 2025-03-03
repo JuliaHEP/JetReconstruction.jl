@@ -81,7 +81,7 @@ Three strategies are available for the different algorithms:
 | Strategy Name | Notes | Interface |
 |---|---|---|
 | `RecoStrategy.Best` | Dynamically switch strategy based on input particle density | `jet_reconstruct` |
-| `RecoStrategy.N2Plain` | Global matching of particles at each interation (works well for low $N$) | `plain_jet_reconstruct` |
+| `RecoStrategy.N2Plain` | Global matching of particles at each interaction (works well for low $N$) | `plain_jet_reconstruct` |
 | `RecoStrategy.N2Tiled` | Use tiles of radius $R$ to limit search space (works well for higher $N$) | `tiled_jet_reconstruct` |
 
 Generally one can use the `jet_reconstruct` interface, shown above, as the *Best* strategy safely as the overhead is extremely low. That interface supports a `strategy` option to switch to a different option.
