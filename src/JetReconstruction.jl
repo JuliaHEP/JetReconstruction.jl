@@ -66,6 +66,14 @@ export tiled_jet_reconstruct
 include("EEAlgorithm.jl")
 export ee_genkt_algorithm
 
+## Rectangular grid
+include("RectangularGrid.jl")
+export RectangularGrid
+
+## SoftKiller
+include("SoftKiller.jl")
+export SoftKiller
+
 ## Generic algorithm, which can switch strategy dynamically
 include("GenericAlgo.jl")
 export jet_reconstruct
