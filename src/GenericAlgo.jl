@@ -52,7 +52,7 @@ jet_reconstruct(particles; algorithm = JetAlgorithm.Durham)
 jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, p = 0.5, R = 1.0)
 ```
 """
-function jet_reconstruct(particles; p::Union{Real, Nothing} = -1, R = 1.0,
+function jet_reconstruct(particles; p::Union{Real, Nothing} = nothing, R = 1.0,
                          algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                          recombine = +,
                          strategy = RecoStrategy.Best)

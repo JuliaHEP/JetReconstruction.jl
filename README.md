@@ -8,6 +8,7 @@
 [![](https://img.shields.io/badge/docs-stable-blue.svg)](https://juliahep.github.io/JetReconstruction.jl/stable)
 [![](https://img.shields.io/badge/docs-dev-blue.svg)](https://juliahep.github.io/JetReconstruction.jl/dev)
 [![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
+[![CITATION-cff](https://github.com/dieghernan/cff-validator/actions/workflows/cff-validator.yml/badge.svg)](https://github.com/dieghernan/cff-validator/actions/workflows/cff-validator.yml)
 
 ## This package implements sequential Jet Reconstruction (clustering)
 
