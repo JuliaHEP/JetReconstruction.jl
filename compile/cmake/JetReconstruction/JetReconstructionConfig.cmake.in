@@ -1,5 +1,8 @@
 # Config file for the JetReconstruction.jl package
 # Manualy adjusted from standard cmake generated config file 
+
+set(JETRECONSTRUCTION_COMPILER "@JETRECONSTRUCTION_COMPILER@")
+
 get_filename_component(PACKAGE_PREFIX_DIR "${CMAKE_CURRENT_LIST_DIR}/../../../" ABSOLUTE)
 
 macro(set_and_check _var _file)
@@ -26,8 +29,10 @@ endmacro()
 # the imported targets created later.
 set_and_check(JetReconstruction_INCLUDE_DIR "${PACKAGE_PREFIX_DIR}/include")
 
-# - Create path to installed read-only data files (e.g. yaml files)
-set_and_check(JetReconstruction_DATA_DIR "${PACKAGE_PREFIX_DIR}/share/julia")
+if (${JETRECONSTRUCTION_COMPILER} STREQUAL "JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER")
+  # - Create path to installed read-only data files (e.g. yaml files)
+  set_and_check(JetReconstruction_DATA_DIR "${PACKAGE_PREFIX_DIR}/share/julia")
+endif()
 
 # - Include the targets file to create the imported targets that a client can
 # link to (libraries) or execute (programs)
