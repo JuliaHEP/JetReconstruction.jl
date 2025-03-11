@@ -21,6 +21,9 @@ extern "C" {
 
 #include <stddef.h>
 
+/** Compiler used to compiler JetReconstruction.jl package */
+#define @JETRECONSTRUCTION_COMPILER@ 1
+
 /*Special states in a history.*/
 
 /**Special history state: Invalid child for this jet, meaning it did not
