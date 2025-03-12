@@ -1,5 +1,7 @@
 #include "JetReconstruction.h"
+#ifdef JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER
 #include "julia_init.h"
+#endif
 #include <assert.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -53,7 +55,9 @@ void printJetsResult(const jetreconstruction_JetsResult *results) {
 int main(int argc, char *argv[]) {
   clock_t start_time = clock();
   int sc = 0;
-  init_julia(argc, argv);
+#ifdef JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER
+  init_julia(0, NULL);
+#endif
   size_t len = 2;
   jetreconstruction_PseudoJet particles[2];
   sc = jetreconstruction_PseudoJet_init(&particles[0], 0.0, 1.0, 2.0, 3.0);
@@ -78,7 +82,9 @@ int main(int argc, char *argv[]) {
 
   jetreconstruction_JetsResult_free_members(&result);
   jetreconstruction_ClusterSequence_free_members(&cluster_seq);
+#ifdef JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER
   shutdown_julia(0);
+#endif
 
   clock_t end_time = clock();
   double time_spent = (double)(end_time - start_time) / CLOCKS_PER_SEC;
