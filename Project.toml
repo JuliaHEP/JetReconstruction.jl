@@ -6,11 +6,13 @@ version = "0.4.5"
 [deps]
 Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
 CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
+CodecZstd = "6b39b394-51ab-5f42-8807-6242bab2b4c2"
 EnumX = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
 LorentzVectorHEP = "f612022c-142a-473f-8cfd-a09cf3793c6c"
 LorentzVectors = "3f54b04b-17fc-5cd4-9758-90c048d965e3"
+Match = "7eb4fadd-790c-5f42-8a69-bfa0b872bfbf"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
@@ -25,7 +27,8 @@ JetVisualisation = "Makie"
 [compat]
 Accessors = "0.1.36"
 Aqua = "0.8"
-CodecZlib = "0.7.4"
+CodecZlib = "0.7"
+CodecZstd = "0.8"
 EDM4hep = "0.4.0"
 EnumX = "1.0.4"
 JSON = "0.21"
@@ -34,6 +37,7 @@ LoopVectorization = "0.12.170"
 LorentzVectorHEP = "0.1.6"
 LorentzVectors = "0.4.3"
 Makie = "0.20, 0.21, 0.22"
+Match = "2.4.0"
 MuladdMacro = "0.2.4"
 StructArrays = "0.6.18, 0.7"
 Test = "1.9"
@@ -41,8 +45,8 @@ julia = "1.9"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
-Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
 test = ["Aqua", "Test", "JSON"]
