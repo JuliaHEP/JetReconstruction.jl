@@ -10,18 +10,18 @@ Minimal C bindings for JetReconstruction.jl
 To build the library, run the following command from the package root directory:
 
 ```sh
-julia --project=compile compile/build.jl
+julia --project=compile compile/build.jl --output-dir JetReconstructionCompiled
 ```
 
 > [!NOTE]  
-> Since Julia 1.12 `--juliac` can be specified to use the juliac compiler instead of PackageCompiler.  
-> Before Julia 1.12, nightlies can be used instead:
+> Since Julia 1.12 `--juliac` can be specified to use the juliac compiler instead of PackageCompiler.
+> Before Julia 1.12, nightlies can be used instead (make sure to instantiate the main JetReconstruction and `compile` projects with the same version of Julia):
 >
 > ```sh
 > julia +nightly --project=compile compile/build.jl --juliac
 > ```
 >
-> Packes compiled with `PackageCompiler.jl` will have `JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER` defined. Packages compiled with `juliac` will have `JETRECONSTRUCTION_COMPILER_JULIAC` defined.
+> Packages compiled with `PackageCompiler.jl` will have `JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER` defined. Packages compiled with `juliac` will have `JETRECONSTRUCTION_COMPILER_JULIAC` defined.
 
 ## Usage example
 
@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 To build an example application run the following command:
 
 ```shell
-cc -o jetreconstruction_test compile/test/jetreconstruction_test.c -IJetReconstructionCompiled/include -LJetReconstructionCompiled/lib -ljetreconstruction -ljulia
+cc -o jetreconstruction_test compile/downstream/jetreconstruction_test.c -IJetReconstructionCompiled/include -LJetReconstructionCompiled/lib -ljetreconstruction
 ```
 
 In case the compiled library resides in non-standard location, add its location to `LD_LIBRARY_PATH` when running example application:
