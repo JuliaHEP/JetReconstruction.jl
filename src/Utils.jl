@@ -2,7 +2,6 @@
 
 using CodecZlib
 using CodecZstd
-using Match
 
 """
     open_with_stream(fname::AbstractString)
@@ -10,10 +9,15 @@ using Match
 Open a file with a stream decompressor if it is compressed with gzip or zstd,
 otherwise as a normal file.
 """
-open_with_stream(fname::AbstractString) = @match fname begin
-    r"\.gz$" => GzipDecompressorStream(open(fname))
-    r"\.zst$" => ZstdDecompressorStream(open(fname))
-    _ => open(fname)
+open_with_stream(fname::AbstractString) = begin
+    if endswith(fname, ".gz")
+        f = GzipDecompressorStream(open(fname))
+    elseif endswith(fname, ".zst")
+        f = ZstdDecompressorStream(open(fname))
+    else
+        f = open(fname)
+    end
+    f
 end
 
 """
