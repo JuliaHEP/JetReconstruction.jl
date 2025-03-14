@@ -197,9 +197,9 @@ Perform pp jet reconstruction using the plain algorithm.
    phi(), rapidity(), px(), py(), pz(), energy(), can be used. for each element.
 - `algorithm::Union{JetAlgorithm, Nothing} = nothing`: The explicit jet
   algorithm to use.
-- `p::Int=-1`: The integer value used for jet reconstruction.
-- `R::Float64=1.0`: The radius parameter used for jet reconstruction.
-- `recombine::Function=+`: The recombination function used for jet
+- `p::Union{Real, Nothing} = -1`: The integer value used for jet reconstruction.
+- `R::Float64 = 1.0`: The radius parameter used for jet reconstruction.
+- `recombine::Function = +`: The recombination function used for jet
   reconstruction.
 
 **Note** for the `particles` argument, the 4-vector methods need to exist in the
@@ -269,9 +269,9 @@ power parameter.
 
 # Arguments
 - `particles`: A vector of `PseudoJet` objects representing the input particles.
-- `p=-1`: The power to which the transverse momentum (`pt`) of each particle is
+- `p = -1`: The power to which the transverse momentum (`pt`) of each particle is
   raised.
-- `R=1.0`: The jet radius parameter.
+- `R = 1.0`: The jet radius parameter.
 - `algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt`: The jet reconstruction
    algorithm to use.
 - `recombine`: The recombination function used to merge two jets. Default is `+`

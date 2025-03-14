@@ -11,8 +11,8 @@ strategy
   AntiKt, 0 = Cambridge/Aachen, 1 = Kt).
 - `algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing`: The algorithm
   to use for jet reconstruction.
-- `R=1.0`: The jet radius parameter.
-- `recombine=+`: The recombination scheme used for combining particles.
+- `R = 1.0`: The jet radius parameter.
+- `recombine = +`: The recombination scheme used for combining particles.
 - `strategy::RecoStrategy.Strategy = RecoStrategy.Best`: The jet reconstruction
    strategy to use. `RecoStrategy.Best` makes a dynamic decision based on the
    number of starting particles.

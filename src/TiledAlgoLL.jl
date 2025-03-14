@@ -407,7 +407,7 @@ power parameter.
 ## Arguments
 - `particles::Vector{PseudoJet}`: A vector of `PseudoJet` particles used as input for jet
   reconstruction.
-- `p::Int = -1`: The power parameter for the jet reconstruction algorithm, thus
+- `p::Real = -1`: The power parameter for the jet reconstruction algorithm, thus
   switching between different algorithms.
 - `R::Float64 = 1.0`: The jet radius parameter for the jet reconstruction
   algorithm.
