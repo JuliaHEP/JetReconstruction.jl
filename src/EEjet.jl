@@ -1,5 +1,5 @@
 """
-    struct EEjet
+    mutable struct EEjet
 
 The `EEjet` struct is a 4-momentum object used for the e+e jet reconstruction routines.
 
