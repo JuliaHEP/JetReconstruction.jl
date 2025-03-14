@@ -187,7 +187,7 @@ Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidi
 end
 
 """
-    plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +) where T
+    plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, algorithm = nothing, recombine = +) where T
 
 Perform pp jet reconstruction using the plain algorithm.
 
@@ -252,7 +252,7 @@ function plain_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, No
 end
 
 """
-    _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0, recombine = +)
+    _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0, algorithm = JetAlgorithm.AntiKt, recombine = +)
 
 This is the internal implementation of jet reconstruction using the plain
 algorithm. It takes a vector of `particles` representing the input particles and
@@ -264,13 +264,16 @@ entry point to this jet reconstruction.
 
 The power value maps to specific pp jet reconstruction algorithms: -1 = AntiKt,
 0 = Cambridge/Aachen, 1 = Inclusive Kt. Floating point values are allowed for
-generalised k_t algorithm.
+generalised k_t algorithm. The algorithm parameter must be consistent with the
+power parameter.
 
 # Arguments
 - `particles`: A vector of `PseudoJet` objects representing the input particles.
 - `p=-1`: The power to which the transverse momentum (`pt`) of each particle is
   raised.
 - `R=1.0`: The jet radius parameter.
+- `algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt`: The jet reconstruction
+   algorithm to use.
 - `recombine`: The recombination function used to merge two jets. Default is `+`
   (additive recombination).
 

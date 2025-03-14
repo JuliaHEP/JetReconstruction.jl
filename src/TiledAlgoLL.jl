@@ -330,7 +330,7 @@ function find_tile_neighbours!(tile_union, jetA, jetB, oldB, tiling)
 end
 
 """
-    tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, recombine = +) where {T}
+    tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, algorithm = nothing, recombine = +) where {T}
 
 Main jet reconstruction algorithm entry point for reconstructing jets using the
 tiled strategy for generic jet type T.
@@ -350,7 +350,7 @@ If both are given they must be consistent or an exception is thrown.
   JetReconstruction namespace)
 - `p::Union{Real, Nothing} = -1`: The power parameter for the jet reconstruction
   algorithm, thus switching between different algorithms.
-- `algorithm::Union{JetAlgorithm, Nothing} = nothing`: The explicit jet
+- `algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing`: The explicit jet
   algorithm to use.
 - `R::Float64 = 1.0`: The jet radius parameter for the jet reconstruction
   algorithm.
@@ -398,10 +398,11 @@ Main jet reconstruction algorithm, using PseudoJet objects
 """
 
 """
-    _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, recombine = +) where {T}
+    _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, algorithm = JetAlgorithm.AntiKt, recombine = +) where {T}
 
 Main jet reconstruction algorithm entry point for reconstructing jets once preprocessing
-of data types are done.
+of data types are done. The algorithm parameter must be consistent with the
+power parameter.
 
 ## Arguments
 - `particles::Vector{PseudoJet}`: A vector of `PseudoJet` particles used as input for jet
@@ -410,6 +411,8 @@ of data types are done.
   switching between different algorithms.
 - `R::Float64 = 1.0`: The jet radius parameter for the jet reconstruction
   algorithm.
+- `algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt`: The jet reconstruction
+   algorithm to use.
 - `recombine::Function = +`: The recombination function used for combining
   pseudojets.
 
