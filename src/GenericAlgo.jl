@@ -13,9 +13,9 @@ strategy
   to use for jet reconstruction.
 - `R=1.0`: The jet radius parameter.
 - `recombine=+`: The recombination scheme used for combining particles.
-- `strategy=RecoStrategy.Best`: The jet reconstruction strategy to use.
-  `RecoStrategy.Best` makes a dynamic decision based on the number of starting
-  particles.
+- `strategy::RecoStrategy.Strategy = RecoStrategy.Best`: The jet reconstruction
+   strategy to use. `RecoStrategy.Best` makes a dynamic decision based on the
+   number of starting particles.
 
 # Returns
 A cluster sequence object containing the reconstructed jets and the merging
@@ -55,7 +55,7 @@ jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, p = 0.5, R = 1.0)
 function jet_reconstruct(particles; p::Union{Real, Nothing} = nothing, R = 1.0,
                          algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                          recombine = +,
-                         strategy = RecoStrategy.Best)
+                         strategy::RecoStrategy.Strategy = RecoStrategy.Best)
 
     # Either map to the fixed algorithm corresponding to the strategy
     # or to an optimal choice based on the density of initial particles
