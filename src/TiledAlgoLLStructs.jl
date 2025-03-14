@@ -4,7 +4,7 @@
 needed for dealing with tiles for the tiled strategy"""
 
 """
-    struct TiledJet
+   mutable struct TiledJet
 
 TiledJet represents a jet in a tiled algorithm for jet reconstruction, with
 additional information to track the jet's position in the tiled structures.
