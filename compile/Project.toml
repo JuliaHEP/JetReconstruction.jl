@@ -9,4 +9,3 @@ JetReconstruction = {path = ".."}
 [compat]
 JetReconstruction = "0.4"
 PackageCompiler = "2"
-julia = "1.11"

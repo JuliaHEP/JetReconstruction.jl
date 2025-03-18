@@ -18,7 +18,7 @@ julia --project=compile compile/build.jl --output-dir JetReconstructionCompiled
 > Before Julia 1.12, nightlies can be used instead (make sure to instantiate the main JetReconstruction and `compile` projects with the same version of Julia):
 >
 > ```sh
-> julia +nightly --project=compile compile/build.jl --juliac
+> julia +1.12-nightly --project=compile compile/build.jl --juliac
 > ```
 >
 > Packages compiled with `PackageCompiler.jl` will have `JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER` defined. Packages compiled with `juliac` will have `JETRECONSTRUCTION_COMPILER_JULIAC` defined.
@@ -99,7 +99,8 @@ target_link_libraries(myTarget PUBLIC JetReconstruction::JetReconstruction)
 
 Currently it's not possible to create libraries for different platforms - no cross-compilation!
 
-The library is relocatable given the whole installation tree is moved, including libraries in the `lib/julia/` directory.
+PackageCompiler specific:
 
-It's advised to install the library in a separate directory to avoid possible conflicts.  
-The library must not be installed in the same directory as another Julia package compiled with `PackageCompiler.jl` as they would overwrite the package specific files in `share/julia`.
+- The library is relocatable given the whole installation tree is moved, including libraries in the `lib/julia/` directory.
+- It's advised to install the library in a separate directory to avoid possible conflicts.  
+  The library must not be installed in the same directory as another Julia package compiled with `PackageCompiler.jl` as they would overwrite the package specific files in `share/julia`.
