@@ -221,9 +221,9 @@ If the algorithm is Durham, `p` is set to 1 and `R` is nominally set to 4.
 Note that unlike `pp` reconstruction the algorithm has to be specified
 explicitly.
 """
-function ee_genkt_algorithm(particles::AbstractArray{T, 1}; p = 1, R = 4.0,
+function ee_genkt_algorithm(particles::Vector{T}; p = 1,
                             algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                            recombine = +) where {T}
+                            R = 4.0, recombine = +) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)

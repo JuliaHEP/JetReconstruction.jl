@@ -330,7 +330,9 @@ function find_tile_neighbours!(tile_union, jetA, jetB, oldB, tiling)
 end
 
 """
-    tiled_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, algorithm = nothing, recombine = +) where {T}
+    tiled_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -1,
+                               algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
+                               R = 1.0, recombine = +) where {T}
 
 Main jet reconstruction algorithm entry point for reconstructing jets using the
 tiled strategy for generic jet type T.
@@ -365,10 +367,9 @@ If both are given they must be consistent or an exception is thrown.
 tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4, recombine = +)
 ```
 """
-function tiled_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, Nothing} = -1,
-                               R = 1.0,
+function tiled_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -1,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                               recombine = +) where {T}
+                               R = 1.0, recombine = +) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
@@ -398,7 +399,9 @@ Main jet reconstruction algorithm, using PseudoJet objects
 """
 
 """
-    _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = -1, R = 1.0, algorithm = JetAlgorithm.AntiKt, recombine = +) where {T}
+    _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1,
+                                algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
+                                R = 1.0, recombine = +)
 
 Main jet reconstruction algorithm entry point for reconstructing jets once preprocessing
 of data types are done. The algorithm parameter must be consistent with the
@@ -409,7 +412,7 @@ power parameter.
   reconstruction.
 - `p::Real = -1`: The power parameter for the jet reconstruction algorithm, thus
   switching between different algorithms.
-- `R::Float64 = 1.0`: The jet radius parameter for the jet reconstruction
+- `R = 1.0`: The jet radius parameter for the jet reconstruction
   algorithm.
 - `algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt`: The jet reconstruction
    algorithm to use.
@@ -424,9 +427,9 @@ power parameter.
 tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 1.0, recombine = +)
 ```
 """
-function _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1, R = 1.0,
+function _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                recombine = +)
+                                R = 1.0, recombine = +)
     # Bounds
     N::Int = length(particles)
 

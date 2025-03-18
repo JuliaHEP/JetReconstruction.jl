@@ -27,7 +27,7 @@ algorithm and generalised $`k_\text{T}`$ for $`e^+e^-`$.
 The simplest interface is to call:
 
 ```julia
-cs = jet_reconstruct(particles::AbstractArray{T, 1}; algorithm = JetAlgorithm.AntiKt, R = 1.0, [p = -1,] [recombine = +,] [strategy = RecoStrategy.Best])
+cs = jet_reconstruct(particles::Vector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, [p = -1,] [recombine = +,] [strategy = RecoStrategy.Best])
 ```
 
 - `particles` - a one dimensional array (vector) of input particles for the clustering

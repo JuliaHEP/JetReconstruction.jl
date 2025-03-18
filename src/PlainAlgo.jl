@@ -187,7 +187,9 @@ Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidi
 end
 
 """
-    plain_jet_reconstruct(particles::Vector{T}; p = -1, R = 1.0, algorithm = nothing, recombine = +) where T
+    plain_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -1,
+                               algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
+                               R = 1.0, recombine = +) where {T}
 
 Perform pp jet reconstruction using the plain algorithm.
 
@@ -195,9 +197,9 @@ Perform pp jet reconstruction using the plain algorithm.
 - `particles::Vector{T}`: A vector of particles used for jet reconstruction, any
    array of particles, which supports suitable 4-vector methods, viz. pt2(),
    phi(), rapidity(), px(), py(), pz(), energy(), can be used. for each element.
+- `p::Union{Real, Nothing} = -1`: The power value used for jet reconstruction.
 - `algorithm::Union{JetAlgorithm, Nothing} = nothing`: The explicit jet
   algorithm to use.
-- `p::Union{Real, Nothing} = -1`: The integer value used for jet reconstruction.
 - `R::Float64 = 1.0`: The radius parameter used for jet reconstruction.
 - `recombine::Function = +`: The recombination function used for jet
   reconstruction.
@@ -219,10 +221,9 @@ jets = plain_jet_reconstruct(particles; p = -1, R = 0.4)
 jets = plain_jet_reconstruct(particles; algorithm = JetAlgorithm.Kt, R = 1.0)
 ```
 """
-function plain_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, Nothing} = -1,
-                               R = 1.0,
+function plain_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -1,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                               recombine = +) where {T}
+                               R = 1.0, recombine = +) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
@@ -252,7 +253,9 @@ function plain_jet_reconstruct(particles::AbstractArray{T, 1}; p::Union{Real, No
 end
 
 """
-    _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0, algorithm = JetAlgorithm.AntiKt, recombine = +)
+    _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, 
+                                algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
+                                R = 1.0, recombine = +)
 
 This is the internal implementation of jet reconstruction using the plain
 algorithm. It takes a vector of `particles` representing the input particles and
@@ -281,9 +284,9 @@ power parameter.
 - `clusterseq`: The resulting `ClusterSequence` object representing the
   reconstructed jets.
 """
-function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, R = 1.0,
+function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                recombine = +)
+                                R = 1.0, recombine = +)
     # Bounds
     N::Int = length(particles)
     # Parameters
