@@ -6,9 +6,9 @@ let inputs = JetReconstruction.read_final_state_particles(events_file_ee)
     @testset "jet_reconstruct() interface" begin
         # EE Algorithms
         @test typeof(jet_reconstruct(inputs[1]; algorithm = JetAlgorithm.Durham)) ==
-              ClusterSequence{EEjet}
+              ClusterSequence{EEJet}
         @test typeof(jet_reconstruct(inputs[1]; algorithm = JetAlgorithm.EEKt, p = -1,
-                                     R = 1.0)) == ClusterSequence{EEjet}
+                                     R = 1.0)) == ClusterSequence{EEJet}
         @test_throws ArgumentError jet_reconstruct(inputs[1];
                                                    algorithm = JetAlgorithm.EEKt)
 
