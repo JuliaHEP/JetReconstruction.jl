@@ -36,9 +36,9 @@ py(p::LorentzVectorCyl) = LorentzVectorHEP.py(p)
 pz(p::LorentzVectorCyl) = LorentzVectorHEP.pz(p)
 energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 
-# Pseudojet and EEjet types
+# Pseudojet and EEJet types
 include("Pseudojet.jl")
-include("EEjet.jl")
+include("EEJet.jl")
 include("JetUtils.jl")
 export PseudoJet, EEjet, pt_fraction, kt_scale, lorentzvector, lorentzvector_cyl
 
