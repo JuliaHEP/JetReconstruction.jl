@@ -36,10 +36,10 @@ py(p::LorentzVectorCyl) = LorentzVectorHEP.py(p)
 pz(p::LorentzVectorCyl) = LorentzVectorHEP.pz(p)
 energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 
-# Pseudojet and EEjet types
+# Pseudojet and EEJet types
 include("Pseudojet.jl")
-include("EEjet.jl")
-export PseudoJet, EEjet
+include("EEJet.jl")
+export PseudoJet, EEJet
 
 # Jet reconstruction strategies and algorithms (enums!)
 include("AlgorithmStrategyEnums.jl")

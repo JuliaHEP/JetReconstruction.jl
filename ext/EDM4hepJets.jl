@@ -34,12 +34,12 @@ Return the energy component of a ReconstructedParticle's four vector.
 JetReconstruction.energy(recoparticle::ReconstructedParticle) = recoparticle.energy
 
 """
-    JetReconstruction.EEjet(recoparticle::ReconstructedParticle)
+    JetReconstruction.EEJet(recoparticle::ReconstructedParticle)
 
-Construct an EEjet from a ReconstructedParticle.
+Construct an EEJet from a ReconstructedParticle.
 """
-function JetReconstruction.EEjet(recoparticle::ReconstructedParticle)
-    EEjet(JetReconstruction.px(recoparticle), JetReconstruction.py(recoparticle),
+function JetReconstruction.EEJet(recoparticle::ReconstructedParticle)
+    EEJet(JetReconstruction.px(recoparticle), JetReconstruction.py(recoparticle),
           JetReconstruction.pz(recoparticle), JetReconstruction.energy(recoparticle))
 end
 
