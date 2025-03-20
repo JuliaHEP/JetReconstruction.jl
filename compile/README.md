@@ -23,6 +23,10 @@ julia --project=compile compile/build.jl --output-dir JetReconstructionCompiled
 >
 > Packages compiled with `PackageCompiler.jl` will have `JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER` defined. Packages compiled with `juliac` will have `JETRECONSTRUCTION_COMPILER_JULIAC` defined.
 
+
+> [!CAUTION]
+> Packages compiled with Julia 1.12 require GLIBCXX_3.4.30 (gcc 12.1.0) or later.
+
 ## Usage example
 
 ### Example source file
