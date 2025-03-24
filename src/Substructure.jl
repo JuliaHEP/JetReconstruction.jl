@@ -45,69 +45,6 @@ function recluster(jet::PseudoJet, clusterseq::ClusterSequence; R = 1.0,
 end
 
 """
-    struct MassDropTagger
-
-Used for tagging jets that undergo mass drop, a common technique in jet substructure.
-
-# Fields:
-- `mu::Float64`: Maximum allowed mass ratio for a jet to pass tagging.
-- `y::Float64`: Minimum kT distance threshold for parent separation.
-"""
-struct MassDropTagger
-    mu::Float64
-    y::Float64
-end
-
-"""
-    struct SoftDropTagger
-
-Applies a soft-drop condition on jets, trimming away soft, wide-angle radiation.
-
-# Fields:
-- `zcut::Float64`: Minimum allowed energy fraction for subjets.
-- `b::Float64`: Angular exponent controlling soft radiation suppression.
-- `cluster_rad::Float64`: The new radius that will be used to recluster the
-  components of the jet, by default set to 1.0.
-"""
-struct SoftDropTagger
-    zcut::Float64
-    b::Float64
-    cluster_rad::Float64
-end
-
-SoftDropTagger(z::Float64, b::Float64) = SoftDropTagger(z, b, 1.0)
-
-"""
-    struct JetFilter
-
-Filters jets based on radius and number of hardest subjets, reducing contamination.
-
-# Fields:
-- `filter_radius::Float64`: Radius parameter to recluster subjets.
-- `num_hardest_jets::Int64`: Number of hardest jets to retain in the filtered result.
-"""
-struct JetFilter
-    filter_radius::Float64
-    num_hardest_jets::Int64
-end
-
-"""
-    struct JetTrim
-
-Trims soft, large-angle components from jets based on fraction and radius.
-
-# Fields:
-- `trim_radius::Float64`: Radius used for reclustering in trimming.
-- `trim_fraction::Float64`: Minimum momentum fraction for retained subjets.
-- `recluster_method::JetAlgorithm.Algorithm`: Method identifier for reclustering.
-"""
-struct JetTrim
-    trim_radius::Float64
-    trim_fraction::Float64
-    recluster_method::JetAlgorithm.Algorithm
-end
-
-"""
     mass_drop(jet, clusterseq, tag) -> PseudoJet
 
 Identifies subjets in a jet that pass the mass drop tagging condition.
@@ -116,12 +53,13 @@ The method stops at the first jet satisfying the mass and distance thresholds.
 # Arguments:
 - `jet::PseudoJet`: PseudoJet instance representing the jet to tag.
 - `clusterseq::ClusterSequence`: ClusterSequence with jet clustering history.
-- `tag::MassDropTagger`: MassDropTagger instance providing mass drop parameters.
+- `mu::Float64`: Maximum allowed mass ratio for a jet to pass tagging.
+- `y::Float64`: Minimum kT distance threshold for parent separation.
 
 # Returns:
 - `PseudoJet`: The jet (or subjet) satisfying the mass drop conditions, if tagging is successful, otherwise a zero-momentum PseudoJet
 """
-function mass_drop(jet::PseudoJet, clusterseq::ClusterSequence, tag::MassDropTagger)
+function mass_drop(jet::PseudoJet, clusterseq::ClusterSequence; mu::Float64, y::Float64)
     all_jets = clusterseq.jets
     hist = clusterseq.history
 
@@ -136,8 +74,8 @@ function mass_drop(jet::PseudoJet, clusterseq::ClusterSequence, tag::MassDropTag
             pt1 = pt(parent1)
             pt2 = pt(parent2)
 
-            if m2(parent1) < m2(jet) * tag.mu^2 &&
-               (min(pt1, pt2) * deltaR(parent1, parent2))^2 > tag.y * m2(jet)
+            if m2(parent1) < m2(jet) * mu^2 &&
+               (min(pt1, pt2) * deltaR(parent1, parent2))^2 > y * m2(jet)
                 return jet
             else
                 jet = parent1
@@ -158,15 +96,17 @@ This function reclusters the jet and iteratively checks the soft-drop condition 
 # Arguments:
 - `jet::PseudoJet`: PseudoJet instance to groom.
 - `clusterseq::ClusterSequence`: ClusterSequence containing jet history.
-- `tag::SoftDropTagger`: SoftDropTagger instance with soft-drop parameters.
+- `zcut::Float64`: Minimum allowed energy fraction for subjets.
+- `beta::Float64`: Angular exponent controlling soft radiation suppression.
+- `radius::Float64`: The new radius that will be used to recluster the
+  components of the jet, by default set to 1.0.
 
 # Returns:
-- `PseudoJet`: Groomed jet or zero-momentum PseudoJet if grooming fails.
+- `PseudoJet`: Groomed jet or `nothing` if grooming fails.
 """
-function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence,
-                   tag::SoftDropTagger)
-    rad = tag.cluster_rad
-    new_clusterseq = recluster(jet, clusterseq; R = rad, algorithm = JetAlgorithm.CA)
+function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence; zcut::Float64,
+                   beta::Float64, radius = 1.0)
+    new_clusterseq = recluster(jet, clusterseq; R = radius, algorithm = JetAlgorithm.CA)
     new_jet = sort!(inclusive_jets(new_clusterseq; T = PseudoJet), by = pt2, rev = true)[1]
 
     all_jets = new_clusterseq.jets
@@ -184,7 +124,7 @@ function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence,
             pt2 = pt(parent2)
 
             if min(pt1, pt2) / (pt1 + pt2) >
-               tag.zcut * (deltaR(parent1, parent2) / rad)^tag.b
+               zcut * (deltaR(parent1, parent2) / radius)^beta
                 return new_jet
             else
                 new_jet = parent1
@@ -204,18 +144,18 @@ Filters a jet to retain only the hardest subjets based on a specified radius and
 # Arguments:
 - `jet::PseudoJet`: PseudoJet instance representing the jet to filter.
 - `clusterseq::ClusterSequence`: ClusterSequence containing jet history.
-- `filter::JetFilter`: Filter instance specifying radius and number of subjets.
+- `radius::Float64`: Radius parameter to recluster subjets.
+- `hardest_jets::Int64`: Number of hardest jets to retain in the filtered result.
 
 # Returns:
 - `PseudoJet`: Filtered jet composed of the hardest subjets.
 """
-function jet_filtering(jet::PseudoJet, clusterseq::ClusterSequence, filter::JetFilter)
-    rad = filter.filter_radius
-    new_clusterseq = recluster(jet, clusterseq; R = rad, algorithm = JetAlgorithm.CA)
+function jet_filtering(jet::PseudoJet, clusterseq::ClusterSequence; radius::Float64,
+                       hardest_jets::Int64)
+    new_clusterseq = recluster(jet, clusterseq; R = radius, algorithm = JetAlgorithm.CA)
     reclustered = sort!(inclusive_jets(new_clusterseq; T = PseudoJet), by = pt2, rev = true)
 
-    n = length(reclustered) <= filter.num_hardest_jets ? length(reclustered) :
-        filter.num_hardest_jets
+    n = length(reclustered) <= hardest_jets ? length(reclustered) : hardest_jets
     hard = reclustered[1:n]
 
     filtered = foldl(+, hard)
@@ -231,17 +171,18 @@ Trims a jet by removing subjets with transverse momentum below a specified fract
 # Arguments:
 - `jet::PseudoJet`: PseudoJet instance representing the jet to trim.
 - `clusterseq::ClusterSequence`: ClusterSequence containing jet history.
-- `trim::JetTrim`: Trim instance specifying trimming parameters.
+- `radius::Float64`: Radius used for reclustering in trimming.
+- `fraction::Float64`: Minimum momentum fraction for retained subjets.
+- `recluster_method::JetAlgorithm.Algorithm`: Method identifier for reclustering.
 
 # Returns:
 - `PseudoJet`: Trimmed jet composed of retained subjets.
 """
-function jet_trimming(jet::PseudoJet, clusterseq::ClusterSequence, trim::JetTrim)
-    rad = trim.trim_radius
-    alg = trim.recluster_method
-    frac2 = trim.trim_fraction^2
+function jet_trimming(jet::PseudoJet, clusterseq::ClusterSequence; radius::Float64,
+                      fraction::Float64, recluster_method::JetAlgorithm.Algorithm)
+    frac2 = fraction^2
 
-    new_clusterseq = recluster(jet, clusterseq; R = rad, algorithm = alg)
+    new_clusterseq = recluster(jet, clusterseq; R = radius, algorithm = recluster_method)
     reclustered = sort!(inclusive_jets(new_clusterseq; T = PseudoJet), by = pt2, rev = true)
 
     hard = Vector{PseudoJet}(undef, 0)

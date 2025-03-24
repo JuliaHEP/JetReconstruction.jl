@@ -72,8 +72,7 @@ export jet_reconstruct
 
 ## Substructure modules
 include("Substructure.jl")
-export MassDropTagger, SoftDropTagger, JetFilter, JetTrim, mass_drop, soft_drop,
-       jet_filtering, jet_trimming
+export mass_drop, soft_drop, jet_filtering, jet_trimming
 
 # Simple HepMC3 reader
 include("HepMC3.jl")
