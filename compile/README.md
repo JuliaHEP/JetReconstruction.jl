@@ -21,6 +21,12 @@ julia --project=compile compile/build.jl --output-dir JetReconstructionCompiled
 > julia +1.12-nightly --project=compile compile/build.jl --juliac
 > ```
 >
+> or
+>
+> ```sh
+> julia +nightly --project=compile compile/build.jl --juliac
+> ```
+>
 > Packages compiled with `PackageCompiler.jl` will have `JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER` defined. Packages compiled with `juliac` will have `JETRECONSTRUCTION_COMPILER_JULIAC` defined.
 
 
