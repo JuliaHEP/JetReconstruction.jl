@@ -3,35 +3,49 @@
 """
     deltaR(jet1::T, jet2::T) where T <: FourMomentum
 
-Function to calculate the distance in the y-ϕ plane between two jets `jet1` and `jet2`
+Function to calculate the distance in the y-ϕ plane between two jets `jet1` and
+`jet2` (that is using *rapidity* and *azimuthal angle*).
 
 # Arguments
 - `jet1::T`: The first jet.
 - `jet2::T`: The second jet.
 
 # Returns
-- `Float64`: The Euclidean distance in the y-ϕ plane for the two jets.
+- The Euclidean distance in the y-ϕ plane for the two jets.
 """
 function deltaR(jet1::T, jet2::T) where T <: FourMomentum
-    y1, phi1 = rapidity(jet1), phi(jet1)
-    y2, phi2 = rapidity(jet2), phi(jet2)
+    y1, ϕ1 = rapidity(jet1), phi(jet1)
+    y2, ϕ2 = rapidity(jet2), phi(jet2)
 
-    d_y = y1 - y2
-    d_phi = phi1 - phi2
-    d_phi = abs(d_phi) > π ? 2π - abs(d_phi) : d_phi
+    δy = y1 - y2
+    δϕ = ϕ1 - ϕ2
+    δϕ = abs(δϕ) > π ? 2π - abs(δϕ) : δϕ
 
-    return sqrt(d_y^2 + d_phi^2)
+    return sqrt(δy^2 + δϕ^2)
 end
 
+"""
+    deltar(jet1::T, jet2::T) where T <: FourMomentum
+
+Function to calculate the distance in the η-ϕ plane between two jets `jet1` and
+`jet2` (that is, using the *pseudorapidity* and *azimuthal angle*).
+
+# Arguments
+- `jet1::T`: The first jet.
+- `jet2::T`: The second jet.
+
+# Returns
+- The Euclidean distance in the η-ϕ plane for the two jets.
+"""
 function deltar(jet1::T, jet2::T) where T <: FourMomentum
-    y1, phi1 = eta(jet1), phi(jet1)
-    y2, phi2 = eta(jet2), phi(jet2)
+    η1, ϕ1 = eta(jet1), phi(jet1)
+    η2, ϕ2 = eta(jet2), phi(jet2)
+ϕ
+    δy = η1 - η2
+    δϕ = ϕ1 - ϕ2
+    δϕ = abs(δϕ) > π ? 2π - abs(δϕ) : δϕ
 
-    d_y = y1 - y2
-    d_phi = phi1 - phi2
-    d_phi = abs(d_phi) > π ? 2π - abs(d_phi) : d_phi
-
-    return sqrt(d_y^2 + d_phi^2)
+    return sqrt(δy^2 + δϕ^2)
 end
 
 """
