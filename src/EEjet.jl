@@ -49,8 +49,6 @@ phi(eej::EEjet) = begin
     phi = pt2(eej) == 0.0 ? 0.0 : atan(eej.py, eej.px)
     if phi < 0.0
         phi += 2π
-    elseif phi >= 2π
-        phi -= 2π  # can happen if phi=-|eps<1e-15|?
     end
     phi
 end

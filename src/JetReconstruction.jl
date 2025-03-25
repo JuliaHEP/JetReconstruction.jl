@@ -39,7 +39,10 @@ energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 # Pseudojet and EEjet types
 include("Pseudojet.jl")
 include("EEjet.jl")
+include("JetUtils.jl")
 export PseudoJet, EEjet
+
+
 
 # Jet reconstruction strategies and algorithms (enums!)
 include("AlgorithmStrategyEnums.jl")
