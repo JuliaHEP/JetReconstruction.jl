@@ -77,6 +77,8 @@ end
 Return a cylindrical LorentzVectorHEP from a jet.
 """
 function fromPtEtaPhiE(jet::T) where {T <: FourMomentum}
-    return LorentzVectorHEP.fromPtEtaPhiE(JetReconstruction.pt(jet), JetReconstruction.eta(jet),
-                            JetReconstruction.phi(jet), JetReconstruction.energy(jet))
+    return LorentzVectorHEP.fromPtEtaPhiE(JetReconstruction.pt(jet),
+                                          JetReconstruction.eta(jet),
+                                          JetReconstruction.phi(jet),
+                                          JetReconstruction.energy(jet))
 end
