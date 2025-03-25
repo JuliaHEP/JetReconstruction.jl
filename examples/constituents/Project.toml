@@ -2,3 +2,6 @@
 JetReconstruction = "44e8cb2c-dfab-4825-9c70-d4808a591196"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 LorentzVectorHEP = "f612022c-142a-473f-8cfd-a09cf3793c6c"
+
+[sources]
+JetReconstruction = {path = "../.."}
