@@ -167,8 +167,6 @@ _set_rap_phi!(p::PseudoJet) = begin
     p._phi = p._pt2 == 0.0 ? 0.0 : atan(p.py, p.px)
     if p._phi < 0.0
         p._phi += 2π
-    elseif p._phi >= 2π
-        p._phi -= 2π  # can happen if phi=-|eps<1e-15|?
     end
 
     if p.E == abs(p.pz) && iszero(p._pt2)
