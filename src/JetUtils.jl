@@ -45,7 +45,10 @@ end
 """
     momentum_fraction(jet1::T, jet2::T) where T <: FourMomentum
 
-Computes the momentum fraction of the softer of two jets
+Computes the momentum fraction of the softer of two jets.
+
+# Returns
+- The momentum fraction of the softer of the two jets.
 """
 function momentum_fraction(jet1::T, jet2::T) where {T <: FourMomentum}
     pt1 = JetReconstruction.pt(jet1)
@@ -54,10 +57,13 @@ function momentum_fraction(jet1::T, jet2::T) where {T <: FourMomentum}
 end
 
 """
-    kt_scale(pj1::T, pj2::T) where T <: FourMomentum
+    kt_scale(jet1::T, jet2::T) where {T <: FourMomentum}
 
 Computes the transverse momentum scale as the product of the minimum pt and 
-the angular separation computed via LorentzVectorHEP's deltar.
+the angular separation in the η-ϕ plane (using *pseudorapidity*).
+
+# Returns
+- The transverse momentum scale of the two jets.
 """
 function kt_scale(jet1::T, jet2::T) where {T <: FourMomentum}
     pt1 = JetReconstruction.pt(jet1)
