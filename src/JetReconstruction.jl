@@ -42,8 +42,6 @@ include("EEjet.jl")
 include("JetUtils.jl")
 export PseudoJet, EEjet
 
-
-
 # Jet reconstruction strategies and algorithms (enums!)
 include("AlgorithmStrategyEnums.jl")
 export RecoStrategy, JetAlgorithm
