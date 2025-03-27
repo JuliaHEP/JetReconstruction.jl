@@ -43,12 +43,12 @@ function deltar(jet1::T, jet2::T) where {T <: FourMomentum}
 end
 
 """
-    momentum_fraction(jet1::T, jet2::T) where T <: FourMomentum
+    pt_momentum_fraction(jet1::T, jet2::T) where T <: FourMomentum
 
-Computes the momentum fraction of the softer of two jets.
+Computes the transverse momentum fraction of the softer of two jets.
 
 # Returns
-- The momentum fraction of the softer of the two jets.
+- The transverse momentum fraction of the softer of the two jets.
 """
 function momentum_fraction(jet1::T, jet2::T) where {T <: FourMomentum}
     pt1 = JetReconstruction.pt(jet1)
@@ -72,13 +72,25 @@ function kt_scale(jet1::T, jet2::T) where {T <: FourMomentum}
 end
 
 """
-    fromPtEtaPhiE(jet::T) where T <: FourMomentum
+    lorentzvector_cyl(jet::T) where T <: FourMomentum -> LorentzVectorHEP.LorentzVectorCyl
 
-Return a cylindrical LorentzVectorHEP from a jet.
+Return a cylindrical `LorentzVectorCyl` from a jet.
 """
-function fromPtEtaPhiE(jet::T) where {T <: FourMomentum}
+function lorentzvector_cyl(jet::T) where {T <: FourMomentum}
     return LorentzVectorHEP.fromPtEtaPhiE(JetReconstruction.pt(jet),
                                           JetReconstruction.eta(jet),
                                           JetReconstruction.phi(jet),
                                           JetReconstruction.energy(jet))
+end
+
+"""
+    lorentzvector(jet::T) where {T <: FourMomentum} ->  -> LorentzVector
+
+Return a cartesian `LorentzVector` from a jet.
+"""
+function lorentzvector(jet::T) where {T <: FourMomentum}
+    return LorentzVector(JetReconstruction.energy(jet),
+                         JetReconstruction.px(jet),
+                         JetReconstruction.py(jet),
+                         JetReconstruction.pz(jet))
 end

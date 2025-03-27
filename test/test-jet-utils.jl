@@ -14,7 +14,20 @@ eej2 = EEjet(-1.0, 3.2, -1.2, 39.0)
 
     jr_kt_scale = JetReconstruction.kt_scale(pj1, pj2)
     lvhep_kt_scale = min(JetReconstruction.pt(pj1), JetReconstruction.pt(pj2)) *
-                     deltar(JetReconstruction.fromPtEtaPhiE(pj1),
-                            JetReconstruction.fromPtEtaPhiE(pj2))
+                     deltar(JetReconstruction.lorentzvector_cyl(pj1),
+                            JetReconstruction.lorentzvector_cyl(pj2))
     @test jr_kt_scale ≈ lvhep_kt_scale
+
+    # Test conversions
+    lv1 = JetReconstruction.lorentzvector(pj1)
+    @test LorentzVectorHEP.energy(lv1) ≈ JetReconstruction.energy(pj1)
+    @test LorentzVectorHEP.px(lv_cyl1) ≈ JetReconstruction.px(pj1)
+    @test LorentzVectorHEP.py(lv_cyl1) ≈ JetReconstruction.py(pj1)
+    @test LorentzVectorHEP.pz(lv_cyl1) ≈ JetReconstruction.pz(pj1)
+
+    lv_cyl1 = JetReconstruction.lorentzvector_cyl(pj1)
+    @test LorentzVectorHEP.pt(lv_cyl1) ≈ JetReconstruction.pt(pj1)
+    @test LorentzVectorHEP.eta(lv_cyl1) ≈ JetReconstruction.eta(pj1)
+    @test LorentzVectorHEP.phi(lv_cyl1) ≈ JetReconstruction.phi(pj1)
+    @test LorentzVectorHEP.mass(lv_cyl1) ≈ JetReconstruction.mass(pj1)
 end
