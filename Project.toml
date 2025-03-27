@@ -1,7 +1,7 @@
 name = "JetReconstruction"
 uuid = "44e8cb2c-dfab-4825-9c70-d4808a591196"
 authors = ["Atell Krasnopolski <delta_atell@protonmail.com>", "Graeme A Stewart <graeme.andrew.stewart@cern.ch", "Philippe Gras <philippe.gras@cern.ch>"]
-version = "0.4.5"
+version = "0.4.6"
 
 [deps]
 Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
