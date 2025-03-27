@@ -1,25 +1,4 @@
-"""
-    deltaR(jet1, jet2) -> Float64
-
-Function to calculate the distance in the y-ϕ plane between two jets `jet1` and `jet2`
-
-# Arguments
-- `jet1::PseudoJet`: The first jet.
-- `jet2::PseudoJet`: The second jet.
-
-# Returns
-- `Float64`: The Euclidean distance in the y-ϕ plane for the two jets.
-"""
-function deltaR(jet1::PseudoJet, jet2::PseudoJet)
-    y1, phi1 = rapidity(jet1), phi(jet1)
-    y2, phi2 = rapidity(jet2), phi(jet2)
-
-    d_y = y1 - y2
-    d_phi = phi1 - phi2
-    d_phi = abs(d_phi) > π ? 2π - abs(d_phi) : d_phi
-
-    return sqrt(d_y^2 + d_phi^2)
-end
+# Substructure specific functions for jet grooming and filtering
 
 """
     recluster(jet, clusterseq; R = 1.0, algorithm = JetAlgorithm.CA) -> ClusterSequence
