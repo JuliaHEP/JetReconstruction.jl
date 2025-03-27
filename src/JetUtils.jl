@@ -50,7 +50,7 @@ Computes the transverse momentum fraction of the softer of two jets.
 # Returns
 - The transverse momentum fraction of the softer of the two jets.
 """
-function momentum_fraction(jet1::T, jet2::T) where {T <: FourMomentum}
+function pt_momentum_fraction(jet1::T, jet2::T) where {T <: FourMomentum}
     pt1 = JetReconstruction.pt(jet1)
     pt2 = JetReconstruction.pt(jet2)
     return min(pt1, pt2) / (pt1 + pt2)
