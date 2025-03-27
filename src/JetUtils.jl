@@ -3,20 +3,20 @@
 """
     mag(jet::T) where {T <: FourMomentum}
 
-Return the magnitude of the momentum of a `PseudoJet`, `|p|`.
+Return the magnitude of the momentum of a jet, `|p|`.
 
 # Returns
-The magnitude of the `PseudoJet` object.
+The magnitude of the jet.
 """
 mag(jet::T) where {T <: FourMomentum} = sqrt(muladd(jet.px, jet.px, jet.py^2) + jet.pz^2)
 
 """
-    CosTheta(jet::PseudoJet) where {T <: FourMomentum}
+    CosTheta(jet::T) where {T <: FourMomentum}
 
 Compute the cosine of the angle between the momentum vector of `jet` and the z-axis.
 
 # Returns
-- The cosine of the angle between `jet` and the z-axis.
+- The cosine of the angle between the jet and the z-axis.
 """
 @inline function CosTheta(jet::T) where {T <: FourMomentum}
     fZ = jet.pz
@@ -30,7 +30,7 @@ end
 Compute the pseudorapidity (η) of a jet.
 
 # Returns
-- The pseudorapidity (η) of the PseudoJet.
+- The pseudorapidity (η) of the jet.
 """
 function eta(jet::T) where {T <: FourMomentum}
     cosTheta = CosTheta(jet)
@@ -55,10 +55,6 @@ const η = eta
 Function to calculate the distance in the y-ϕ plane between two jets `jet1` and
 `jet2` (that is using *rapidity* and *azimuthal angle*).
 
-# Arguments
-- `jet1::T`: The first jet.
-- `jet2::T`: The second jet.
-
 # Returns
 - The Euclidean distance in the y-ϕ plane for the two jets.
 """
@@ -75,10 +71,6 @@ end
 
 Function to calculate the distance in the η-ϕ plane between two jets `jet1` and
 `jet2` (that is, using the *pseudorapidity* and *azimuthal angle*).
-
-# Arguments
-- `jet1::T`: The first jet.
-- `jet2::T`: The second jet.
 
 # Returns
 - The Euclidean distance in the η-ϕ plane for the two jets.
