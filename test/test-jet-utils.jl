@@ -9,8 +9,8 @@ eej1 = EEjet(1.0, 1.2, -2.2, 22.0)
 eej2 = EEjet(-1.0, 3.2, -1.2, 39.0)
 
 @testset "Common jet utilities" begin
-    @test JetReconstruction.pt_momentum_fraction(pj1, pj2) ≈ 0.3889609897118418
-    @test JetReconstruction.pt_momentum_fraction(eej1, eej2) ≈ 0.3178347357639779
+    @test JetReconstruction.pt_fraction(pj1, pj2) ≈ 0.3889609897118418
+    @test JetReconstruction.pt_fraction(eej1, eej2) ≈ 0.3178347357639779
 
     jr_kt_scale = JetReconstruction.kt_scale(pj1, pj2)
     lvhep_kt_scale = min(JetReconstruction.pt(pj1), JetReconstruction.pt(pj2)) *

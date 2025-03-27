@@ -277,64 +277,6 @@ Calculate the invariant mass squared (m^2) of a PseudoJet.
 m2(p::PseudoJet) = (p.E + p.pz) * (p.E - p.pz) - p._pt2
 
 """
-    mag(p::PseudoJet)
-
-Return the magnitude of the momentum of a `PseudoJet`, `|p|`.
-
-# Arguments
-- `p::PseudoJet`: The `PseudoJet` object for which to compute the magnitude.
-
-# Returns
-The magnitude of the `PseudoJet` object.
-"""
-mag(p::PseudoJet) = sqrt(muladd(p.px, p.px, p.py^2) + p.pz^2)
-
-"""
-    CosTheta(p::PseudoJet)
-
-Compute the cosine of the angle between the momentum vector `p` and the z-axis.
-
-# Arguments
-- `p::PseudoJet`: The PseudoJet object representing the momentum vector.
-
-# Returns
-- The cosine of the angle between `p` and the z-axis.
-"""
-@inline function CosTheta(p::PseudoJet)
-    fZ = p.pz
-    ptot = mag(p)
-    return ifelse(ptot == 0.0, 1.0, fZ / ptot)
-end
-
-"""
-    eta(p::PseudoJet)
-
-Compute the pseudorapidity (η) of a PseudoJet.
-
-# Arguments
-- `p::PseudoJet`: The PseudoJet object for which to compute the pseudorapidity.
-
-# Returns
-- The pseudorapidity (η) of the PseudoJet.
-"""
-function eta(p::PseudoJet)
-    cosTheta = CosTheta(p)
-    (cosTheta^2 < 1.0) && return -0.5 * log((1.0 - cosTheta) / (1.0 + cosTheta))
-    fZ = p.pz
-    iszero(fZ) && return 0.0
-    # Warning("PseudoRapidity","transverse momentum = 0! return +/- 10e10");
-    fZ > 0.0 && return 10e10
-    return -10e10
-end
-
-"""
-    const η = eta
-
-Alias for the pseudorapidity function, `eta`.
-"""
-const η = eta
-
-"""
     m(p::PseudoJet)
 
 Compute the invariant mass of a `PseudoJet` object. By convention if m^2 < 0,
