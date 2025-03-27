@@ -3,9 +3,9 @@
 These functions are provided as a convenient way to work with the results of jet
 reconstruction.
 
-- [`momentum_fraction`](@ref)
+- [`pt_fraction`](@ref)
 
-Returns the momentum fraction in the softer of the two pseudojets.
+Returns the transverse momentum fraction in the softer of the two jets.
 
 - [`kt_scale`](@ref)
 
