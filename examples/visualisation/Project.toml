@@ -7,3 +7,6 @@ JetReconstruction = "44e8cb2c-dfab-4825-9c70-d4808a591196"
 LorentzVectorHEP = "f612022c-142a-473f-8cfd-a09cf3793c6c"
 Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
 PlutoUI = "7f904dfe-b85e-4ff6-b463-dae2292396a8"
+
+[sources]
+JetReconstruction = {path = "../.."}
