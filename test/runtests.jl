@@ -6,6 +6,9 @@ function main()
     # Algorithm/power consistency checks
     include("test-algpower-consistency.jl")
 
+    # Basic tests for the Jet types
+    include("test-jet-types.jl")
+
     # Jet utilities tests
     include("test-jet-utils.jl")
 
