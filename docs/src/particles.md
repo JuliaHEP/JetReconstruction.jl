@@ -11,7 +11,7 @@ to extract the 4-vector components, viz, the following are required:
 
 Currently built-in supported types are
 [`LorentzVectorHEP`](https://github.com/JuliaHEP/LorentzVectorHEP.jl), the
-`PseudoJet` and `EEjet`s from this package, and `ReconstructedParticles` from
+`PseudoJet` and `EEJet`s from this package, and `ReconstructedParticles` from
 [EDM4hep Inputs](@ref).
 
 If you require support for a different input collection type then ensure you

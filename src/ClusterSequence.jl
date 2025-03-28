@@ -236,7 +236,7 @@ each parent jet. If the transverse momentum is greater than or equal to `ptmin`,
 the jet is added to the array of inclusive jets.
 
 Valid return types are `LorentzVectorCyl` and the jet type of the input `clusterseq`
-(`U` - either `PseudoJet` or `EEjet` depending which algorithm was used)
+(`U` - either `PseudoJet` or `EEJet` depending which algorithm was used)
 (N.B. this will evolve in the future to be any subtype of `FourMomentumBase`;
 currently unrecognised types will return `LorentzVectorCyl`).
 
@@ -294,7 +294,7 @@ jets or a cut on the maximum distance parameter.
 - An array of `T` objects representing the exclusive jets.
 
 Valid return types are `LorentzVectorCyl` and the jet type of the input `clusterseq`
-(`U` - either `PseudoJet` or `EEjet` depending which algorithm was used)
+(`U` - either `PseudoJet` or `EEJet` depending which algorithm was used)
 (N.B. this will evolve in the future to be any subtype of `FourMomentumBase`;
 currently unrecognised types will return `LorentzVectorCyl`).
 
