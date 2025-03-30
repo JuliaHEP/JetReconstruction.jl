@@ -42,9 +42,11 @@ for m in keys(methods)
 
             @test length(groomed) === length(test_data[ievt]["jets"])
             for (ijet, jet) in enumerate(groomed)
-                @test JetReconstruction.rapidity(jet)≈test_data[ievt]["jets"][ijet]["rap"] atol=tol
-                @test JetReconstruction.phi(jet)≈test_data[ievt]["jets"][ijet]["phi"] atol=tol
-                @test JetReconstruction.pt(jet)≈test_data[ievt]["jets"][ijet]["pt"] atol=tol
+                test_jet = JetReconstruction.isvalid(jet) ? jet :
+                           JetReconstruction.invalid_pseudojet
+                @test JetReconstruction.rapidity(test_jet)≈test_data[ievt]["jets"][ijet]["rap"] atol=tol
+                @test JetReconstruction.phi(test_jet)≈test_data[ievt]["jets"][ijet]["phi"] atol=tol
+                @test JetReconstruction.pt(test_jet)≈test_data[ievt]["jets"][ijet]["pt"] atol=tol
             end
         end
     end

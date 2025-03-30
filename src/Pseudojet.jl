@@ -91,6 +91,25 @@ A PseudoJet object.
 PseudoJet(px::Real, py::Real,
 pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
 
+"""Used to mark a jet incase the corresponding substructure tagging fails."""
+const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
+
+"""
+    isvalid(j::PseudoJet)
+
+Function to check whether a given `PseudoJet` object is non-zero or not. Primarily to use for checking the validity of outputs of substructure tagging.
+
+# Arguments
+- `j::PseudoJet`: The `PseudoJet` object to check.
+
+# Returns
+- `Bool`: `true` if the `PseudoJet` object is non-zero, `false` otherwise. 
+"""
+function isvalid(j::PseudoJet)
+    return !(j.px == invalid_pseudojet.px && j.py == invalid_pseudojet.py &&
+             j.pz == invalid_pseudojet.pz && j.E == invalid_pseudojet.E)
+end
+
 import Base.show
 """
     show(io::IO, jet::PseudoJet)
