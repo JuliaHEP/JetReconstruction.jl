@@ -24,6 +24,7 @@ mutable struct SoftKiller <: TilingBase
         grid = new(rapmax, rapmin, drap, dphi, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0)
         _setup_grid(grid)
         print(description(grid))
+        grid 
     end
 
     function SoftKiller(rapmax::Float64, grid_size::Float64)
@@ -31,7 +32,6 @@ mutable struct SoftKiller <: TilingBase
         grid = new(rapmax, -rapmax, grid_size, grid_size, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0)
         _setup_grid(grid)
         print(description(grid))
-        #plot()
         grid 
     end
 
@@ -40,7 +40,6 @@ end
 tile_index(sk:: SoftKiller, p::PseudoJet)::Int64 = begin 
     y_minus_ymin = rapidity(p)- sk._ymin
     if y_minus_ymin < 0 
-        #print("this")
         return -1   
     end 
     iy = round(Int64,y_minus_ymin * sk._inverse_dy)
@@ -54,7 +53,6 @@ tile_index(sk:: SoftKiller, p::PseudoJet)::Int64 = begin
     end 
    
     res = round(Int64,  iy*sk._nphi + iphi) 
-    #print("  index  ",res,"  iphi  ",iphi, "  iy  ",iy, "  nphi  ", sk._nphi, "  inverse dphi   ", sk._inverse_dphi, " \n")
 
     res + 1
 end 
@@ -84,21 +82,6 @@ _setup_grid(sk:: SoftKiller) = begin
     sk._ntotal = sk._nphi * sk._ny
     sk._cell_area = sk._dy * sk._dphi
 
-    #try ploting 
-
-    y_vals = LinRange(sk._ymin, sk._ymax, sk._ny)
-    phi_vals = LinRange(0, 2 * π, sk._nphi)
-    Y, Phi = meshgrid(y_vals, phi_vals)
-    
-    # Y = vec(Y)
-    # Phi = vec(Phi)
-
-    # p = scatter(Y, Phi, xlabel="Rapidity (y)", ylabel="Azimuthal Angle (φ)",
-    #             title="Jet Distribution Plot", markersize=5)
-
-    # display(p)
-    # readline()
-    #Selector implementation desn't exist 
 end 
 
 description(sk::SoftKiller)::String = begin 
@@ -148,23 +131,6 @@ select_ABS_RAP_max(event, absrapmax) = begin
     end, event)
     return filtered_events
 end
-
-plot() = begin #this is for a very random plot 
-    num_jets = 50
-
-    # Generate random rapidity (y) and azimuthal angle (phi) for jets
-    y = (rand(num_jets) * 4) .- 2  # y values between -2 and 2
-    phi = rand(num_jets) * 2π   # phi values between 0 and 2π
-    
-    # Generate random transverse momentum (pT) for jets
-    pT = rand(num_jets) * 100   # pT values between 0 and 100 GeV
-
-    p = scatter(y, phi, zcolor=pT, markersize=5,
-        xlabel="Rapidity (y)", ylabel="Azimuthal Angle (φ)",
-        title="Jet Distribution Plot", colorbar=true)
-    #gui(p)
-    #readline()  
-end 
 
 apply(sk::SoftKiller, event::Vector{PseudoJet}, reduced_event::Vector{PseudoJet}, pt_threshold::Float64) = begin 
 
@@ -248,9 +214,9 @@ plot_set_up(Y::Vector{Float64}, Phi::Vector{Float64}, pt::Vector{Float64}, plot_
     y = phi_min:0.4:phi_max
 
     min_pt, max_pt = minimum(pt), maximum(pt)
-    marker_sizes = 2 .+ 13 .* ((pt.- min_pt) ./ (max_pt -min_pt))
+    marker_sizes = 2 .+ 13 .*((pt.- min_pt) ./(max_pt -min_pt))
 
-    function format(lines)
+    format(lines) = begin 
         return [isinteger(line) ? string(line) : "" for line in lines]
     end
 
