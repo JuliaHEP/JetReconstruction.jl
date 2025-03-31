@@ -6,9 +6,9 @@ using JSON
 
 using LorentzVectorHEP
 using JetReconstruction
+using Plots 
 using Pkg
 Pkg.develop(path="/Users/emadimtrova/Desktop/uni/spring25/UTRA/JetReconstruction.jl")
-
 
 function parse_command_line(args)
     s = ArgParseSettings(autofix_names = true)
@@ -45,25 +45,40 @@ function parse_command_line(args)
     return parse_args(args, s; as_symbols = true)
 end
 
-function set_up()
-#main 
-end 
+read_event(fname; maxevents = -1, skipevents = 0, T = PseudoJet ) = begin
+    hard_event = PseudoJet[]
+    full_event = PseudoJet[]    
+    events = read_final_state_particles(fname; maxevents, skipevents, T)
 
-#
-function select_ABS_RAP_max(event, absrapmax)
-    filter(event -> abs(event.rapidity) <= absrapmax, event)
+    #plot_graph(full_event, hard_event,events)
+    Y = Float64[]
+    Phi = Float64[]
+    pt = Float64[]
+    nsub = 0 
+
+    for ev in events
+        input_p = Vector{PseudoJet}()
+        push_data(ev, input_p, Y, Phi,pt);
+        append!(full_event, input_p) 
+        nsub += 1
+
+    end
+
+    if (nsub == 1) #in the case of only one event after the reading 
+        hard_event .= full_event 
+        nsub += 1
+    end
+    if (nsub == 0)
+        throw("Error: read empty event\n")
+    end 
+
+    plot_set_up(Y, Phi, pt, "Event before SoftKiller")
+
+    return hard_event, full_event
 end
 
 function main()
-    print("Zdravei")
-
-    hard_event = PseudoJet[]
-    full_event = PseudoJet[]    
-
-    rapmax = 5.0 
-    hard_event = select_ABS_RAP_max(hard_event,rapmax)
-    full_event = select_ABS_RAP_max(full_event,rapmax)
-
+    
     args = parse_command_line(ARGS)
     logger = ConsoleLogger(stdout, Logging.Info)
     global_logger(logger)
@@ -74,20 +89,32 @@ function main()
        jet_type = PseudoJet
     #end
 
-    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file],
+    hard_event = PseudoJet[]
+    full_event = PseudoJet[]   
+    reduced_event = PseudoJet[] 
+
+    #read event 
+
+    hard_event, full_event = read_event(args[:file],
                                         maxevents = args[:maxevents],
                                         skipevents = args[:skip],
                                         T = jet_type)
-    #if isnothing(args[:algorithm]) && isnothing(args[:power])
-    #    @warn "Neither algorithm nor power specified, defaulting to AntiKt"
-    #    args[:algorithm] = JetAlgorithm.AntiKt
-    #end    
+
+    rapmax = 5.0 
+
+    hard_event = select_ABS_RAP_max(hard_event,rapmax)  
+    full_event = select_ABS_RAP_max(full_event,rapmax)
+    
+    #clustering
 
     grid_size = 0.4
-    soft_killer_grid = SoftKiller(rapmax, grid_size)
+    soft_killer = SoftKiller(rapmax, grid_size)
 
-    #helper that does everthying from main in example.cc
-                                       
+    pt_threshold = 0.00
+    soft_killer_event = PseudoJet[]   
+
+    reduced_event, pt_threshold = apply(soft_killer, full_event, soft_killer_event, pt_threshold)
+    print("Pth value: ", pt_threshold, "\n")
 end
 
 main()
