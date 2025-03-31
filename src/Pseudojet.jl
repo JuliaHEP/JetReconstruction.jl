@@ -105,10 +105,7 @@ Function to check whether a given `PseudoJet` object is non-zero or not. Primari
 # Returns
 - `Bool`: `true` if the `PseudoJet` object is non-zero, `false` otherwise. 
 """
-function isvalid(j::PseudoJet)
-    return !(j.px == invalid_pseudojet.px && j.py == invalid_pseudojet.py &&
-             j.pz == invalid_pseudojet.pz && j.E == invalid_pseudojet.E)
-end
+isvalid(j::PseudoJet) = !(j === invalid_pseudojet)
 
 import Base.show
 """
