@@ -91,9 +91,10 @@ A PseudoJet object.
 PseudoJet(px::Real, py::Real,
 pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
 
-"""Used to mark a jet incase the corresponding substructure tagging fails."""
+"""Used to mark an invalid result in case the corresponding substructure tagging fails."""
 const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
 
+import Base.isvalid
 """
     isvalid(j::PseudoJet)
 
