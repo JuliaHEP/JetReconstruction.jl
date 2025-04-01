@@ -1,7 +1,8 @@
 # Substructure specific functions for jet grooming and filtering
 
 """
-    recluster(jet, clusterseq; R = 1.0, algorithm = JetAlgorithm.CA) -> ClusterSequence
+    recluster(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; R = 1.0,
+                   algorithm::JetAlgorithm.Algorithm = JetAlgorithm.CA) -> PseudoJet
 
 Reclusters the constituents of a given jet `jet` with a different clustering algorithm `algorithm` and different jet radius `R`.
 
@@ -24,7 +25,8 @@ function recluster(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; R = 1
 end
 
 """
-    mass_drop(jet, clusterseq; mu, y) -> PseudoJet
+    mass_drop(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; mu::Real,
+                   y::Real) -> PseudoJet
 
 Identifies subjets in a jet that pass the mass drop tagging condition.
 The method stops at the first jet satisfying the mass and distance thresholds.
@@ -68,7 +70,8 @@ function mass_drop(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; mu::R
 end
 
 """
-    soft_drop(jet, clusterseq; zcut, beta, radius = 1.0) -> PseudoJet
+    soft_drop(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; zcut::Real,
+                   beta::Real, radius::Real = 1.0) -> PseudoJet
 
 Applies soft-drop grooming to remove soft, wide-angle radiation from jets.
 This function reclusters the jet and iteratively checks the soft-drop condition on subjets.
@@ -117,7 +120,8 @@ function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; zcut:
 end
 
 """
-    jet_filtering(jet, clusterseq; radius, hardest_jets) -> PseudoJet
+    jet_filtering(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; radius::Real,
+                       hardest_jets::Integer) -> PseudoJet
 
 Filters a jet to retain only the hardest subjets based on a specified radius and number.
 
@@ -143,7 +147,8 @@ function jet_filtering(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; r
 end
 
 """
-    jet_trimming(jet, clusterseq; radius, fraction, recluster_method) -> PseudoJet
+    jet_trimming(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; radius::Real,
+                      fraction::Real, recluster_method::JetAlgorithm.Algorithm) -> PseudoJet
 
 Trims a jet by removing subjets with transverse momentum below a specified fraction.
 
