@@ -386,7 +386,7 @@ function tiled_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Noth
         for i in eachindex(particles)
             push!(recombination_particles,
                   PseudoJet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                            energy(particles[i])))
+                            energy(particles[i]), i))
         end
     end
 
