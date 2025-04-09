@@ -12,7 +12,7 @@ The `EEJet` struct is a 4-momentum object used for the e+e jet reconstruction ro
 - `_p2::Float64`: The squared momentum of the jet.
 - `_inv_p::Float64`: The inverse momentum of the jet.
 """
-mutable struct EEJet <: FourMomentum
+struct EEJet <: FourMomentum
     px::Float64
     py::Float64
     pz::Float64
@@ -22,15 +22,27 @@ mutable struct EEJet <: FourMomentum
     _cluster_hist_index::Int
 end
 
-function EEJet(px::Real, py::Real, pz::Real, E::Real, _cluster_hist_index::Int)
+function EEJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
     @muladd p2 = px * px + py * py + pz * pz
     inv_p = @fastmath 1.0 / sqrt(p2)
-    EEJet(px, py, pz, E, p2, inv_p, _cluster_hist_index)
+    EEJet(px, py, pz, E, p2, inv_p, cluster_hist_index)
 end
 
 EEJet(px::Real, py::Real, pz::Real, E::Real) = EEJet(px, py, pz, E, 0)
 
 EEJet(pj::PseudoJet) = EEJet(px(pj), py(pj), pz(pj), energy(pj), cluster_hist_index(pj))
+
+"""
+Simple jet structure without cluster history
+"""
+struct PlainJet <: FourMomentum
+    px::Float64
+    py::Float64
+    pz::Float64
+    E::Float64
+end
+
+EEJet(jet::PlainJet, cluster_hist_index) = EEJet(jet.px, jet.py, jet.pz, jet.E, cluster_hist_index)
 
 p2(eej::EEJet) = eej._p2
 pt2(eej::EEJet) = eej.px^2 + eej.py^2
@@ -76,7 +88,7 @@ end
 
 import Base.+;
 function +(jet1::EEJet, jet2::EEJet)
-    EEJet(jet1.px + jet2.px, jet1.py + jet2.py, jet1.pz + jet2.pz, jet1.E + jet2.E)
+    PlainJet(jet1.px + jet2.px, jet1.py + jet2.py, jet1.pz + jet2.pz, jet1.E + jet2.E)
 end
 
 import Base.show
