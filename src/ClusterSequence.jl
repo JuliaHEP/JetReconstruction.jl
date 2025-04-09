@@ -584,7 +584,7 @@ end
 """
     constituents(jet::T, cs::ClusterSequence{T}) where T <: FourMomentum
 
-Get the constituents of a given jet in a cluster sequence.
+Get a copy of the constituents of a given jet in a cluster sequence.
 
 # Arguments
 - `cs::ClusterSequence{T}`: The cluster sequence object.
@@ -592,14 +592,18 @@ Get the constituents of a given jet in a cluster sequence.
 
 # Returns
 An array of jet objects (which are of the same type as the input jet)
-representing the constituents of the given jet,  
-
+copied from the constituents of the given jet, with reset cluster history
+indexes.
 """
 function constituents(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
     constituent_idxs = constituent_indexes(jet, cs)
     constituents = Vector{T}()
+    sizehint!(constituents, length(constituent_idxs))
+    new_index = 1
     for idx in constituent_idxs
-        push!(constituents, cs.jets[idx])
+        push!(constituents, T(px(cs.jets[idx]), py(cs.jets[idx]), pz(cs.jets[idx]),
+                              energy(cs.jets[idx]), new_index))
+        new_index += 1
     end
     constituents
 end
