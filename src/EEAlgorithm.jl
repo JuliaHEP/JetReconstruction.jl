@@ -247,7 +247,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; p = 1,
         for i in eachindex(particles)
             push!(recombination_particles,
                   EEJet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                        energy(particles[i])))
+                        energy(particles[i]), i))
         end
     end
 

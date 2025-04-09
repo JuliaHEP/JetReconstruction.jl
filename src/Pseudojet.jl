@@ -75,6 +75,18 @@ pt2::Real) = PseudoJet(px,
                        pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
 
 """
+    PseudoJet(px::Real, py::Real, pz::Real, E::Real, 
+        cluster_hist_index::Int)
+
+Constructs a PseudoJet object with the given momentum components and energy,
+including a cluster history index.
+
+# Returns
+A PseudoJet object.
+"""
+PseudoJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int) = PseudoJet(px, py, pz, E, cluster_hist_index, px^2 + py^2)
+
+"""
     PseudoJet(px::Real, py::Real, pz::Real, E::Real)
 
 Constructs a PseudoJet object with the given momentum components and energy.

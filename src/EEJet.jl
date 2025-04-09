@@ -43,6 +43,8 @@ struct PlainJet <: FourMomentum
 end
 
 EEJet(jet::PlainJet, cluster_hist_index) = EEJet(jet.px, jet.py, jet.pz, jet.E, cluster_hist_index)
+EEJet(jet::LorentzVector, cluster_hist_index) = EEJet(px(jet), py(jet), pz(jet), energy(jet), cluster_hist_index)
+EEJet(jet::LorentzVectorCyl, cluster_hist_index) = EEJet(px(jet), py(jet), pz(jet), energy(jet), cluster_hist_index)
 
 p2(eej::EEJet) = eej._p2
 pt2(eej::EEJet) = eej.px^2 + eej.py^2
@@ -89,6 +91,7 @@ end
 import Base.+;
 function +(jet1::EEJet, jet2::EEJet)
     PlainJet(jet1.px + jet2.px, jet1.py + jet2.py, jet1.pz + jet2.pz, jet1.E + jet2.E)
+    # LorentzVector{Float64}(jet1.E + jet2.E, jet1.px + jet2.px, jet1.py + jet2.py, jet1.pz + jet2.pz)
 end
 
 import Base.show
