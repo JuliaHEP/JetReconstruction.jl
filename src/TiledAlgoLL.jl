@@ -5,7 +5,6 @@
 
 using Logging
 using Accessors
-using LoopVectorization
 
 # Include struct definitions and basic operations
 include("TiledAlgoLLStructs.jl")
