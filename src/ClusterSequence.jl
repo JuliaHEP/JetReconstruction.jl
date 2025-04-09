@@ -89,7 +89,8 @@ function initial_history(particles)
         history[i] = HistoryElement(i)
 
         # get cross-referencing right from the Jets
-        particles[i]._cluster_hist_index = i
+        # particles[i]._cluster_hist_index = i
+        @assert cluster_hist_index(particles[i]) == i
 
         # determine the total energy in the event
         Qtot += particles[i].E
@@ -210,7 +211,8 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
     # Get cross-referencing right from PseudoJets
     if jetp_index != Invalid
         @assert jetp_index >= 1
-        clusterseq.jets[jetp_index]._cluster_hist_index = local_step
+        @assert clusterseq.jets[jetp_index]._cluster_hist_index == local_step
+        # clusterseq.jets[jetp_index]._cluster_hist_index = local_step
     end
 end
 
