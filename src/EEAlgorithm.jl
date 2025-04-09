@@ -340,9 +340,10 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet}, p = 1, R = 4.0,
             hist_jetB = clusterseq.jets[jetB_idx]._cluster_hist_index
 
             # Recombine jetA and jetB into the next jet
-            merged_jet = recombine(clusterseq.jets[jetA_idx],
+            merged_plain_jet = recombine(clusterseq.jets[jetA_idx],
                                    clusterseq.jets[jetB_idx])
-            merged_jet._cluster_hist_index = length(clusterseq.history) + 1
+            merged_jet = EEJet(merged_plain_jet, length(clusterseq.history) + 1)
+            # merged_jet._cluster_hist_index = length(clusterseq.history) + 1
 
             # Now add the jet to the sequence, and update the history
             push!(clusterseq.jets, merged_jet)
