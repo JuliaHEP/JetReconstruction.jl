@@ -226,16 +226,15 @@ function also updates the indices and history information of the new jet and
 sorts out the history.
 """
 do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine = +) = begin
-    # Create the new jet by recombining the first two with
-    # the E-scheme
-    push!(clusterseq.jets, recombine(clusterseq.jets[jet_i], clusterseq.jets[jet_j]))
-
     # Get its index and the history index
-    newjet_k = length(clusterseq.jets)
+    newjet_k = length(clusterseq.jets) + 1
     newstep_k = length(clusterseq.history) + 1
 
-    # And provide jet with this info
-    clusterseq.jets[newjet_k]._cluster_hist_index = newstep_k
+    # Create the new jet by recombining the first two with
+    # the E-scheme, then push into the jet vector
+    newjet = recombine(clusterseq.jets[jet_i], clusterseq.jets[jet_j])
+    push!(clusterseq.jets, PseudoJet(newjet.px, newjet.py, newjet.pz,
+                            newjet.E, newstep_k))
 
     # Finally sort out the history
     hist_i = clusterseq.jets[jet_i]._cluster_hist_index

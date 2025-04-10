@@ -32,16 +32,6 @@ EEJet(px::Real, py::Real, pz::Real, E::Real) = EEJet(px, py, pz, E, 0)
 
 EEJet(pj::PseudoJet) = EEJet(px(pj), py(pj), pz(pj), energy(pj), cluster_hist_index(pj))
 
-"""
-Simple jet structure without cluster history
-"""
-struct PlainJet <: FourMomentum
-    px::Float64
-    py::Float64
-    pz::Float64
-    E::Float64
-end
-
 EEJet(jet::PlainJet, cluster_hist_index) = EEJet(jet.px, jet.py, jet.pz, jet.E, cluster_hist_index)
 EEJet(jet::LorentzVector, cluster_hist_index) = EEJet(px(jet), py(jet), pz(jet), energy(jet), cluster_hist_index)
 EEJet(jet::LorentzVectorCyl, cluster_hist_index) = EEJet(px(jet), py(jet), pz(jet), energy(jet), cluster_hist_index)

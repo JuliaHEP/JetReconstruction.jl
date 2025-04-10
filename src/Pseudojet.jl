@@ -3,10 +3,6 @@
 #
 # Some of the implementation is taken from LorentzVectorHEP.jl, by Jerry Ling
 
-"""Interface for composite types that includes fields px, py, py, and E
-that represents the components of a four-momentum vector."""
-abstract type FourMomentum end
-
 """Used to protect against parton-level events where pt can be zero
 for some partons, giving rapidity=infinity. KtJet fails in those cases."""
 const _MaxRap = 1e5
@@ -37,7 +33,7 @@ caching of the more expensive calculations for rapidity and azimuthal angle.
 - `_phi::Float64`: The azimuthal angle.
 
 """
-mutable struct PseudoJet <: FourMomentum
+struct PseudoJet <: FourMomentum
     px::Float64
     py::Float64
     pz::Float64
@@ -47,6 +43,32 @@ mutable struct PseudoJet <: FourMomentum
     _inv_pt2::Float64
     _rap::Float64
     _phi::Float64
+    PseudoJet(px, py, pz, E, cluster_hist_index) = begin
+        @muladd pt2 = px * px + py * py
+        inv_pt2 = @fastmath 1.0 / pt2
+        phi = pt2 == 0.0 ? 0.0 : atan(py, px)
+        phi = phi < 0.0 ? phi + 2π : phi
+        if E == abs(pz) && iszero(pt2)
+            # Point has infinite rapidity -- convert that into a very large
+            #    number, but in such a way that different 0-pt momenta will have
+            #    different rapidities (so as to lift the degeneracy between
+            #                         them) [this can be relevant at parton-level]
+            MaxRapHere = _MaxRap + abs(pz)
+            rap = pz >= 0.0 ? MaxRapHere : -MaxRapHere
+        else
+            # get the rapidity in a way that's modestly insensitive to roundoff
+            # error when things pz,E are large (actually the best we can do without
+            # explicit knowledge of mass)
+            effective_m2 = (E + pz) * (E - pz) - pt2
+            effective_m2 = max(0.0, effective_m2) # force non tachyonic mass
+            E_plus_pz = E + abs(pz) # the safer of p+, p-
+            rap = 0.5 * log((pt2 + effective_m2) / (E_plus_pz * E_plus_pz))
+            if pz > 0
+                rap = -rap
+            end
+        end
+        new(px, py, pz, E, cluster_hist_index, pt2, inv_pt2, rap, phi)
+    end
 end
 
 """
@@ -68,11 +90,11 @@ history index.
 # Returns
 A `PseudoJet` object.
 """
-PseudoJet(px::Real, py::Real, pz::Real, E::Real,
-_cluster_hist_index::Int,
-pt2::Real) = PseudoJet(px,
-                       py, pz, E, _cluster_hist_index,
-                       pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
+# PseudoJet(px::Real, py::Real, pz::Real, E::Real,
+# _cluster_hist_index::Int,
+# pt2::Real) = PseudoJet(px,
+#                        py, pz, E, _cluster_hist_index,
+#                        pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
 
 """
     PseudoJet(px::Real, py::Real, pz::Real, E::Real, 
@@ -84,7 +106,7 @@ including a cluster history index.
 # Returns
 A PseudoJet object.
 """
-PseudoJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int) = PseudoJet(px, py, pz, E, cluster_hist_index, px^2 + py^2)
+# PseudoJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int) = PseudoJet(px, py, pz, E, cluster_hist_index, px^2 + py^2)
 
 """
     PseudoJet(px::Real, py::Real, pz::Real, E::Real)
@@ -98,10 +120,17 @@ Constructs a PseudoJet object with the given momentum components and energy.
 - `E::Real`: The energy.
 
 # Returns
-A PseudoJet object.
+A PseudoJet object with **no** cluster index.
 """
 PseudoJet(px::Real, py::Real,
-pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
+pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0)
+
+"""
+    PseudoJet(jet::PlainJet, cluster_hist_index::Int)
+
+Constructs a PseudoJet object from a PlainJet object and a cluster history index.
+"""
+PseudoJet(jet::PlainJet, cluster_hist_index::Int) = PseudoJet(jet.px, jet.py, jet.pz, jet.E, cluster_hist_index)
 
 """Used to mark an invalid result in case the corresponding substructure tagging fails."""
 const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
@@ -209,7 +238,8 @@ _set_rap_phi!(p::PseudoJet) = begin
         # get the rapidity in a way that's modestly insensitive to roundoff
         # error when things pz,E are large (actually the best we can do without
         # explicit knowledge of mass)
-        effective_m2 = max(0.0, m2(p)) # force non tachyonic mass
+        effective_m2 = (E + pz) * (E - pz) - pt2
+        effective_m2 = max(0.0, effective_m2) # force non tachyonic mass
         E_plus_pz = p.E + abs(p.pz) # the safer of p+, p-
         p._rap = 0.5 * log((p._pt2 + effective_m2) / (E_plus_pz * E_plus_pz))
         if p.pz > 0
@@ -407,6 +437,6 @@ Addition operator for `PseudoJet` objects.
 A new `PseudoJet` object with the sum of the momenta and energy of `j1` and `j2`.
 """
 +(j1::PseudoJet, j2::PseudoJet) = begin
-    PseudoJet(j1.px + j2.px, j1.py + j2.py,
+    PlainJet(j1.px + j2.px, j1.py + j2.py,
               j1.pz + j2.pz, j1.E + j2.E)
 end
