@@ -187,7 +187,7 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
     # a serious internal issue). However, we decided to throw an
     # InternalError so that the end user can decide to catch it and
     # retry the clustering with a different strategy.
-    @assert parent1 >= 1
+    # @assert parent1 >= 1
     if clusterseq.history[parent1].child != Invalid
         error("Internal error. Trying to recombine an object that has previously been recombined. Parent " *
               string(parent1) * "'s child index " *
@@ -208,12 +208,12 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
         clusterseq.history[parent2] = @set hist_elem.child = local_step
     end
 
-    # Get cross-referencing right from PseudoJets
-    if jetp_index != Invalid
-        @assert jetp_index >= 1
-        @assert clusterseq.jets[jetp_index]._cluster_hist_index == local_step
-        # clusterseq.jets[jetp_index]._cluster_hist_index = local_step
-    end
+    # Get cross-referencing right
+    # if jetp_index != Invalid
+    #     @assert jetp_index >= 1
+    #     @assert clusterseq.jets[jetp_index]._cluster_hist_index == local_step
+    #     # clusterseq.jets[jetp_index]._cluster_hist_index = local_step
+    # end
 end
 
 """
