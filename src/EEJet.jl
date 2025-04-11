@@ -59,12 +59,6 @@ EEJet(jet::PseudoJet) = EEJet(px(jet), py(jet), pz(jet), energy(jet),
                               cluster_hist_index(jet))
 
 """
-    px(eej::EEJet)
-
-"""
-px(eej::EEJet)
-
-"""
     p2(eej::EEJet)
 
 Return the squared momentum of the `EEJet` object `eej`.
