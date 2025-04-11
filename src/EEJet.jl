@@ -49,20 +49,20 @@ Constructs an `EEJet` object from a `PlainJet` object using the given cluster hi
 EEJet(jet::PlainJet, cluster_hist_index) = EEJet(px(jet), py(jet), pz(jet), energy(jet),
                                                  cluster_hist_index)
 
-
 """
     EEJet(jet::PseudoJet)
 
 Constructs an `EEJet` object from a `PseudoJet` object using the same cluster
 history index from the `PseudoJet`.
 """
-EEJet(jet::PseudoJet) = EEJet(px(jet), py(jet), pz(jet), energy(jet), cluster_hist_index(jet))
+EEJet(jet::PseudoJet) = EEJet(px(jet), py(jet), pz(jet), energy(jet),
+                              cluster_hist_index(jet))
 
 """
     px(eej::EEJet)
 
 """
-    px(eej::EEJet)
+px(eej::EEJet)
 
 """
     p2(eej::EEJet)
