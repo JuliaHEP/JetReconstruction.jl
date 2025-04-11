@@ -24,7 +24,7 @@ abstract type Jet <: FourMomentum end
 """
     struct PlainJet <: FourMomentum
 
-Simple jet structure without cluster history, used as an intermediate
+Simple four momentum structure without cluster history, used as an intermediate
 type during jet merging.
 """
 struct PlainJet <: FourMomentum
@@ -73,6 +73,8 @@ Return the energy component of the four-momentum vector of `j`.
 """
 energy(j::FourMomentum) = j.E
 
+"""Alias for `energy` function"""
+const E = energy
 
 """
     p2(j::FourMomentum)
@@ -89,14 +91,14 @@ Return the squared transverse momentum of the four-momentum vector of `j`.
 """
 pt2(j::FourMomentum) = j.px^2 + j.py^2
 
+"""Alias for `pt2` function"""
+const kt2 = pt2
+
 """
     pt(j::FourMomentum)
 Return the momentum of the four-momentum vector of `j`.
 """
 pt(j::FourMomentum) = sqrt(pt2(j))
-
-const kt2 = pt2
-const E = energy
 
 """
     mass2(j::FourMomentum)
