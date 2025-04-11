@@ -142,7 +142,7 @@ Return the rapidity of the four momentum `j`.
 function rapidity(j::FourMomentum)
     if energy(j) == abs(pz(j)) && iszero(pt2(j))
         MaxRapHere = _MaxRap + abs(pz(j))
-        rap = (pz(j) >= 0.0) ? MaxRapHere : -MaxRapHere
+        rapidity = (pz(j) >= 0.0) ? MaxRapHere : -MaxRapHere
     else
         # get the rapidity in a way that's modestly insensitive to roundoff
         # error when things pz,E are large (actually the best we can do without
