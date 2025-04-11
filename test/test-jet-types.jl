@@ -2,8 +2,7 @@
 
 include("common.jl")
 
-pj = PseudoJet(1.0, 2.0, 3.0, 10.0)
-pj._cluster_hist_index = 7
+pj = PseudoJet(1.0, 2.0, 3.0, 10.0, 7)
 @testset "PseudoJet tests" begin
     @test JetReconstruction.px(pj) ≈ 1.0
     @test JetReconstruction.py(pj) ≈ 2.0
