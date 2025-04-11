@@ -98,7 +98,7 @@ Returns:
 """
 tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling, jets_index, R2, p) = begin
     @inbounds jet.eta = rapidity(clusterseq.jets[jets_index])
-    @inbounds jet.phi = phi_02pi(clusterseq.jets[jets_index])
+    @inbounds jet.phi = phi(clusterseq.jets[jets_index])
     @inbounds jet.kt2 = pt2(clusterseq.jets[jets_index]) > 1.e-300 ?
                         pt2(clusterseq.jets[jets_index])^p : 1.e300
     jet.jets_index = jets_index

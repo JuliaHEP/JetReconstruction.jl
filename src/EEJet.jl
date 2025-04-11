@@ -22,61 +22,60 @@ struct EEJet <: Jet
     _cluster_hist_index::Int
 end
 
+"""
+    EEJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
+
+Constructs an `EEJet` object from the given momentum components, energy, and cluster history index.
+"""
 function EEJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
     @muladd p2 = px * px + py * py + pz * pz
     inv_p = @fastmath 1.0 / sqrt(p2)
     EEJet(px, py, pz, E, p2, inv_p, cluster_hist_index)
 end
 
-
 """
     EEJet(px::Real, py::Real, pz::Real, E::Real)
 
 Constructs an `EEJet` object from the given momentum components and energy,
-but with no cluster history index.
+but with no cluster history index (which is set to 0).
 """
 EEJet(px::Real, py::Real, pz::Real, E::Real) = EEJet(px, py, pz, E, 0)
 
-EEJet(pj::PseudoJet) = EEJet(px(pj), py(pj), pz(pj), energy(pj), cluster_hist_index(pj))
+"""
+    EEJet(jet::PlainJet, cluster_hist_index::Int)
 
-EEJet(jet::PlainJet, cluster_hist_index) = EEJet(jet.px, jet.py, jet.pz, jet.E, cluster_hist_index)
-EEJet(jet::LorentzVector, cluster_hist_index) = EEJet(px(jet), py(jet), pz(jet), energy(jet), cluster_hist_index)
-EEJet(jet::LorentzVectorCyl, cluster_hist_index) = EEJet(px(jet), py(jet), pz(jet), energy(jet), cluster_hist_index)
+Constructs an `EEJet` object from a `PlainJet` object using the given cluster history index.
+"""
+EEJet(jet::PlainJet, cluster_hist_index) = EEJet(px(jet), py(jet), pz(jet), energy(jet), cluster_hist_index)
 
+
+"""
+    p2(eej::EEJet)
+
+Return the squared momentum of the `EEJet` object `eej`.
+"""
 p2(eej::EEJet) = eej._p2
-pt(eej::EEJet) = sqrt(pt2(eej))
+
+"""
+    nx(eej::EEJet)
+
+Return the x-component of the unit vector aligned with the momentum of `eej`
+"""
 nx(eej::EEJet) = eej.px * eej._inv_p
+
+"""
+    ny(eej::EEJet)
+
+Return the y-component of the unit vector aligned with the momentum of `eej`
+"""
 ny(eej::EEJet) = eej.py * eej._inv_p
+
+"""
+    nz(eej::EEJet)
+
+Return the z-component of the unit vector aligned with the momentum of `eej`
+"""
 nz(eej::EEJet) = eej.pz * eej._inv_p
-
-phi(eej::EEJet) = begin
-    phi = pt2(eej) == 0.0 ? 0.0 : atan(eej.py, eej.px)
-    if phi < 0.0
-        phi += 2π
-    end
-    phi
-end
-
-m2(eej::EEJet) = energy(eej)^2 - p2(eej)
-mass(eej::EEJet) = m2(eej) < 0.0 ? -sqrt(-m2(eej)) : sqrt(m2(eej))
-
-function rapidity(eej::EEJet)
-    if energy(eej) == abs(pz(eej)) && iszero(pt2(eej))
-        MaxRapHere = _MaxRap + abs(pz(eej))
-        rap = (pz(eej) >= 0.0) ? MaxRapHere : -MaxRapHere
-    else
-        # get the rapidity in a way that's modestly insensitive to roundoff
-        # error when things pz,E are large (actually the best we can do without
-        # explicit knowledge of mass)
-        effective_m2 = max(0.0, m2(eej)) # force non tachyonic mass
-        E_plus_pz = energy(eej) + abs(pz(eej)) # the safer of p+, p-
-        rapidity = 0.5 * log((pt2(eej) + effective_m2) / (E_plus_pz * E_plus_pz))
-        if pz(eej) > 0
-            rapidity = -rapidity
-        end
-    end
-    rapidity
-end
 
 import Base.show
 function show(io::IO, eej::EEJet)

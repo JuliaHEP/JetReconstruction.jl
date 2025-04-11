@@ -3,10 +3,6 @@
 #
 # Some of the implementation is taken from LorentzVectorHEP.jl, by Jerry Ling
 
-"""Used to protect against parton-level events where pt can be zero
-for some partons, giving rapidity=infinity. KtJet fails in those cases."""
-const _MaxRap = 1e5
-
 """
     mutable struct PseudoJet <: FourMomentum
 
@@ -135,24 +131,10 @@ end
 """
     phi(p::PseudoJet)
 
-Compute the ϕ angle of a `PseudoJet` object `p`.
-
-Note this function is a wrapper for `phi_02pi(p)`.
-
-# Returns
-- The azimuthal angle of `p` in the range [0, 2π).
+Return the azimuthal angle, ϕ, of a `PseudoJet` object `p` in the range [0, 2π).
 """
-phi(p::PseudoJet) = phi_02pi(p)
+phi(p::PseudoJet) = p._phi
 
-"""
-    phi_02pi(p::PseudoJet)
-
-Compute the azimuthal angle of a `PseudoJet` object `p` in the range [0, 2π).
-
-# Returns
-- The azimuthal angle of `p` in the range [0, 2π).
-"""
-phi_02pi(p::PseudoJet) = p._phi
 
 """
     rapidity(p::PseudoJet)
@@ -183,40 +165,3 @@ Compute the scalar transverse momentum (pt) of a PseudoJet.
 - The transverse momentum (pt) of the PseudoJet.
 """
 pt(p::PseudoJet) = sqrt(p._pt2)
-
-"""
-    m2(p::PseudoJet)
-
-Calculate the invariant mass squared (m^2) of a PseudoJet.
-
-# Returns
-- The invariant mass squared (m^2) of the PseudoJet.
-"""
-m2(p::PseudoJet) = (p.E + p.pz) * (p.E - p.pz) - p._pt2
-
-"""
-    m(p::PseudoJet)
-
-Compute the invariant mass of a `PseudoJet` object. By convention if m^2 < 0,
-then -sqrt{(-m^2)} is returned.
-
-# Returns
-The invariant mass of the `PseudoJet` object.
-"""
-m(p::PseudoJet) = begin
-    x = m2(p)
-    x < 0.0 ? -sqrt(-x) : sqrt(x)
-end
-
-"""
-    mass(p::PseudoJet)
-
-Compute the invariant mass (alias for `m(p)`).
-
-# Returns
-- The mass of the PseudoJet.
-"""
-mass(p::PseudoJet) = m(p)
-
-"""Alias for `m2` function"""
-const mass2 = m2
