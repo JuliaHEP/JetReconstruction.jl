@@ -12,7 +12,7 @@ The `EEJet` struct is a 4-momentum object used for the e+e jet reconstruction ro
 - `_p2::Float64`: The squared momentum of the jet.
 - `_inv_p::Float64`: The inverse momentum of the jet.
 """
-struct EEJet <: FourMomentum
+struct EEJet <: Jet
     px::Float64
     py::Float64
     pz::Float64
@@ -28,6 +28,13 @@ function EEJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
     EEJet(px, py, pz, E, p2, inv_p, cluster_hist_index)
 end
 
+
+"""
+    EEJet(px::Real, py::Real, pz::Real, E::Real)
+
+Constructs an `EEJet` object from the given momentum components and energy,
+but with no cluster history index.
+"""
 EEJet(px::Real, py::Real, pz::Real, E::Real) = EEJet(px, py, pz, E, 0)
 
 EEJet(pj::PseudoJet) = EEJet(px(pj), py(pj), pz(pj), energy(pj), cluster_hist_index(pj))
@@ -37,17 +44,10 @@ EEJet(jet::LorentzVector, cluster_hist_index) = EEJet(px(jet), py(jet), pz(jet),
 EEJet(jet::LorentzVectorCyl, cluster_hist_index) = EEJet(px(jet), py(jet), pz(jet), energy(jet), cluster_hist_index)
 
 p2(eej::EEJet) = eej._p2
-pt2(eej::EEJet) = eej.px^2 + eej.py^2
-const kt2 = pt2
 pt(eej::EEJet) = sqrt(pt2(eej))
-energy(eej::EEJet) = eej.E
-px(eej::EEJet) = eej.px
-py(eej::EEJet) = eej.py
-pz(eej::EEJet) = eej.pz
 nx(eej::EEJet) = eej.px * eej._inv_p
 ny(eej::EEJet) = eej.py * eej._inv_p
 nz(eej::EEJet) = eej.pz * eej._inv_p
-cluster_hist_index(eej::EEJet) = eej._cluster_hist_index
 
 phi(eej::EEJet) = begin
     phi = pt2(eej) == 0.0 ? 0.0 : atan(eej.py, eej.px)
@@ -76,12 +76,6 @@ function rapidity(eej::EEJet)
         end
     end
     rapidity
-end
-
-import Base.+;
-function +(jet1::EEJet, jet2::EEJet)
-    PlainJet(jet1.px + jet2.px, jet1.py + jet2.py, jet1.pz + jet2.pz, jet1.E + jet2.E)
-    # LorentzVector{Float64}(jet1.E + jet2.E, jet1.px + jet2.px, jet1.py + jet2.py, jet1.pz + jet2.pz)
 end
 
 import Base.show
