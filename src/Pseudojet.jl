@@ -33,7 +33,7 @@ struct PseudoJet <: Jet
     _inv_pt2::Float64
     _rap::Float64
     _phi::Float64
-    PseudoJet(px, py, pz, E, cluster_hist_index) = begin
+    function PseudoJet(px, py, pz, E, cluster_hist_index)
         @muladd pt2 = px * px + py * py
         inv_pt2 = @fastmath 1.0 / pt2
         phi = pt2 == 0.0 ? 0.0 : atan(py, px)
@@ -59,7 +59,6 @@ struct PseudoJet <: Jet
     end
 end
 
-
 """
     PseudoJet(px::Real, py::Real, pz::Real, E::Real)
 
@@ -75,7 +74,8 @@ PseudoJet(px::Real, py::Real, pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0)
 
 Constructs a PseudoJet object from a PlainJet object and a cluster history index.
 """
-PseudoJet(jet::PlainJet, cluster_hist_index::Int) = PseudoJet(jet.px, jet.py, jet.pz, jet.E, cluster_hist_index)
+PseudoJet(jet::PlainJet, cluster_hist_index::Int) = PseudoJet(jet.px, jet.py, jet.pz, jet.E,
+                                                              cluster_hist_index)
 
 """
     PseudoJet(jet::PlainJet)
@@ -83,7 +83,6 @@ PseudoJet(jet::PlainJet, cluster_hist_index::Int) = PseudoJet(jet.px, jet.py, je
 Constructs a PseudoJet object from a PlainJet object with no cluster history index.
 """
 PseudoJet(jet::PlainJet) = PseudoJet(jet, 0)
-
 
 """
     PseudoJet(jet::PseudoJet)
@@ -127,14 +126,12 @@ show(io::IO, jet::PseudoJet) = begin
           m(jet), ")")
 end
 
-
 """
     phi(p::PseudoJet)
 
 Return the azimuthal angle, ϕ, of a `PseudoJet` object `p` in the range [0, 2π).
 """
 phi(p::PseudoJet) = p._phi
-
 
 """
     rapidity(p::PseudoJet)

@@ -7,7 +7,6 @@ jets that are used in the package are subtypes of this type.
 """
 abstract type FourMomentum end
 
-
 """
     Jet <: FourMomentum
 
@@ -19,7 +18,6 @@ which are not necessarily available in the FourMomentum type.
 e.g. the cluster history index.
 """
 abstract type Jet <: FourMomentum end
-
 
 """
     struct PlainJet <: FourMomentum
@@ -65,7 +63,6 @@ Return the z-component of the four-momentum vector of `j`.
 """
 pz(j::FourMomentum) = j.pz
 
-
 """
     energy(j::FourMomentum)
 
@@ -82,7 +79,6 @@ const E = energy
 Return the squared momentum of the four-momentum vector of `j`.
 """
 p2(j::FourMomentum) = j.px^2 + j.py^2 + j.pz^2
-
 
 """
     pt2(j::FourMomentum)
@@ -127,7 +123,7 @@ const m = mass
 Return the azimuthal angle, ϕ, of the four momentum `j` in the range [0, 2π).
 """
 phi(j::FourMomentum) = begin
-    phi = pt2(eej) == 0.0 ? 0.0 : atan(eej.py, eej.px)
+    phi = pt2(j) == 0.0 ? 0.0 : atan(j.py, j.px)
     if phi < 0.0
         phi += 2π
     end
