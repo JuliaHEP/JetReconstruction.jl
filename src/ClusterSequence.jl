@@ -208,7 +208,9 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
         clusterseq.history[parent2] = @set hist_elem.child = local_step
     end
 
-    # Get cross-referencing right
+    # Cross referencing has to be correct by construction now, these asserts
+    # can be used to check that when debugging - they do cost a bit of time
+    # which is why they are commented out for production
     # if jetp_index != Invalid
     #     @assert jetp_index >= 1
     #     @assert clusterseq.jets[jetp_index]._cluster_hist_index == local_step
