@@ -247,7 +247,7 @@ function ee_genkt_algorithm(particles::Vector{T}; p = 1,
         for i in eachindex(particles)
             push!(recombination_particles,
                   EEJet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                        energy(particles[i])))
+                        energy(particles[i]), i))
         end
     end
 
@@ -332,22 +332,19 @@ function _ee_genkt_algorithm(; particles::Vector{EEJet}, p = 1, R = 4.0,
             end
 
             # Resolve the jet indexes to access the actual jets
-            jetA_idx = eereco[ijetA].index
-            jetB_idx = eereco[ijetB].index
-
-            # Source "history" for merge
-            hist_jetA = clusterseq.jets[jetA_idx]._cluster_hist_index
-            hist_jetB = clusterseq.jets[jetB_idx]._cluster_hist_index
+            jetA = clusterseq.jets[eereco[ijetA].index]
+            jetB = clusterseq.jets[eereco[ijetB].index]
 
             # Recombine jetA and jetB into the next jet
-            merged_jet = recombine(clusterseq.jets[jetA_idx],
-                                   clusterseq.jets[jetB_idx])
-            merged_jet._cluster_hist_index = length(clusterseq.history) + 1
+            merged_plain_jet = recombine(jetA, jetB)
+            merged_jet = EEJet(merged_plain_jet, length(clusterseq.history) + 1)
 
             # Now add the jet to the sequence, and update the history
             push!(clusterseq.jets, merged_jet)
             newjet_k = length(clusterseq.jets)
-            add_step_to_history!(clusterseq, minmax(hist_jetA, hist_jetB)...,
+            add_step_to_history!(clusterseq,
+                                 minmax(cluster_hist_index(jetA),
+                                        cluster_hist_index(jetB))...,
                                  newjet_k, dij_min)
 
             # Update the compact arrays, reusing the JetA slot

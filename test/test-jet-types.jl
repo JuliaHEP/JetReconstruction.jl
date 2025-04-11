@@ -2,8 +2,8 @@
 
 include("common.jl")
 
-pj = PseudoJet(1.0, 2.0, 3.0, 10.0)
-pj._cluster_hist_index = 7
+pj = PseudoJet(1.0, 2.0, 3.0, 10.0, 7)
+pj_beam = PseudoJet(0.0, 0.0, 5.0, 5.0)
 @testset "PseudoJet tests" begin
     @test JetReconstruction.px(pj) ≈ 1.0
     @test JetReconstruction.py(pj) ≈ 2.0
@@ -14,9 +14,13 @@ pj._cluster_hist_index = 7
     @test JetReconstruction.phi(pj) ≈ atan(2.0, 1.0)
     @test JetReconstruction.mass(pj) ≈ sqrt(10.0^2 - 1.0^2 - 2.0^2 - 3.0^2)
     @test JetReconstruction.cluster_hist_index(pj) == 7
+
+    @test JetReconstruction.rapidity(pj_beam) ≈
+          JetReconstruction._MaxRap + JetReconstruction.pz(pj_beam)
 end
 
 eej = EEJet(1.0, 2.0, 3.0, 10.0, 7)
+eej_beam = EEJet(0.0, 0.0, 5.0, 5.0)
 @testset "EEJet tests" begin
     @test JetReconstruction.px(eej) ≈ 1.0
     @test JetReconstruction.py(eej) ≈ 2.0
@@ -27,6 +31,9 @@ eej = EEJet(1.0, 2.0, 3.0, 10.0, 7)
     @test JetReconstruction.phi(eej) ≈ atan(2.0, 1.0)
     @test JetReconstruction.mass(eej) ≈ sqrt(10.0^2 - 1.0^2 - 2.0^2 - 3.0^2)
     @test JetReconstruction.cluster_hist_index(eej) == 7
+
+    @test JetReconstruction.rapidity(eej_beam) ≈
+          JetReconstruction._MaxRap + JetReconstruction.pz(eej_beam)
 end
 
 eej_pseudojet = EEJet(pj)

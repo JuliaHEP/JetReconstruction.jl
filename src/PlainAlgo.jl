@@ -242,7 +242,7 @@ function plain_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -
         for i in eachindex(particles)
             push!(recombination_particles,
                   PseudoJet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                            energy(particles[i])))
+                            energy(particles[i]), i))
         end
     end
 
@@ -348,13 +348,13 @@ function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1,
             hist_j = clusterseq.jets[clusterseq_index[j]]._cluster_hist_index
 
             # Recombine i and j into the next jet
-            push!(clusterseq.jets,
-                  recombine(clusterseq.jets[clusterseq_index[i]],
-                            clusterseq.jets[clusterseq_index[j]]))
+            newjet = recombine(clusterseq.jets[clusterseq_index[i]],
+                               clusterseq.jets[clusterseq_index[j]])
             # Get its index and the history index
-            newjet_k = length(clusterseq.jets)
+            newjet_k = length(clusterseq.jets) + 1
             newstep_k = length(clusterseq.history) + 1
-            clusterseq.jets[newjet_k]._cluster_hist_index = newstep_k
+            push!(clusterseq.jets, PseudoJet(newjet, newstep_k))
+
             # Update history
             add_step_to_history!(clusterseq, minmax(hist_i, hist_j)..., newjet_k, dij_min)
 

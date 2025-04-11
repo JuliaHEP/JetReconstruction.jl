@@ -3,20 +3,6 @@
 #
 # Some of the implementation is taken from LorentzVectorHEP.jl, by Jerry Ling
 
-"""Interface for composite types that includes fields px, py, py, and E
-that represents the components of a four-momentum vector."""
-abstract type FourMomentum end
-
-"""Used to protect against parton-level events where pt can be zero
-for some partons, giving rapidity=infinity. KtJet fails in those cases."""
-const _MaxRap = 1e5
-
-"""Used to signal that the phi value has not yet been computed."""
-const _invalid_phi = -100.0
-
-"""Used to signal that the rapidity value has not yet been computed."""
-const _invalid_rap = -1.e200
-
 """
     mutable struct PseudoJet <: FourMomentum
 
@@ -37,7 +23,7 @@ caching of the more expensive calculations for rapidity and azimuthal angle.
 - `_phi::Float64`: The azimuthal angle.
 
 """
-mutable struct PseudoJet <: FourMomentum
+struct PseudoJet <: Jet
     px::Float64
     py::Float64
     pz::Float64
@@ -47,64 +33,79 @@ mutable struct PseudoJet <: FourMomentum
     _inv_pt2::Float64
     _rap::Float64
     _phi::Float64
+    function PseudoJet(px, py, pz, E, cluster_hist_index)
+        @muladd pt2 = px * px + py * py
+        inv_pt2 = @fastmath 1.0 / pt2
+        phi = pt2 == 0.0 ? 0.0 : atan(py, px)
+        phi = phi < 0.0 ? phi + 2π : phi
+        if E == abs(pz) && iszero(pt2)
+            # Point has infinite rapidity - convert that into a very large
+            #    number, but in such a way that different 0-pt momenta will have
+            #    different rapidities (so as to lift the degeneracy between
+            #    them) [this can be relevant at parton-level]
+            MaxRapHere = _MaxRap + abs(pz)
+            rap = pz >= 0.0 ? MaxRapHere : -MaxRapHere
+        else
+            # get the rapidity in a way that's modestly insensitive to roundoff
+            # error when things pz,E are large (actually the best we can do without
+            # explicit knowledge of mass)
+            effective_m2 = (E + pz) * (E - pz) - pt2
+            effective_m2 = max(0.0, effective_m2) # force non tachyonic mass
+            E_plus_pz = E + abs(pz) # the safer of p+, p-
+            rap = 0.5 * log((pt2 + effective_m2) / (E_plus_pz * E_plus_pz))
+            rap = pz > 0.0 ? -rap : rap
+        end
+        new(px, py, pz, E, cluster_hist_index, pt2, inv_pt2, rap, phi)
+    end
 end
-
-"""
-    PseudoJet(px::Real, py::Real, pz::Real, E::Real,
-        _cluster_hist_index::Int,
-        pt2::Real)
-
-Constructs a PseudoJet object with the given momentum components and energy and
-history index.
-
-# Arguments
-- `px::Real`: The x-component of the momentum.
-- `py::Real`: The y-component of the momentum.
-- `pz::Real`: The z-component of the momentum.
-- `E::Real`: The energy.
-- `_cluster_hist_index::Int`: The cluster history index.
-- `pt2::Real`: The transverse momentum squared.
-
-# Returns
-A `PseudoJet` object.
-"""
-PseudoJet(px::Real, py::Real, pz::Real, E::Real,
-_cluster_hist_index::Int,
-pt2::Real) = PseudoJet(px,
-                       py, pz, E, _cluster_hist_index,
-                       pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
 
 """
     PseudoJet(px::Real, py::Real, pz::Real, E::Real)
 
 Constructs a PseudoJet object with the given momentum components and energy.
 
-# Arguments
-- `px::Real`: The x-component of the momentum.
-- `py::Real`: The y-component of the momentum.
-- `pz::Real`: The z-component of the momentum.
-- `E::Real`: The energy.
-
 # Returns
-A PseudoJet object.
+A PseudoJet object with **no** cluster index.
 """
-PseudoJet(px::Real, py::Real,
-pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
+PseudoJet(px::Real, py::Real, pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0)
 
-"""Used to mark an invalid result in case the corresponding substructure tagging fails."""
+"""
+    PseudoJet(jet::PlainJet, cluster_hist_index::Int)
+
+Constructs a PseudoJet object from a PlainJet object and a cluster history index.
+"""
+PseudoJet(jet::PlainJet, cluster_hist_index::Int) = PseudoJet(jet.px, jet.py, jet.pz, jet.E,
+                                                              cluster_hist_index)
+
+"""
+    PseudoJet(jet::PlainJet)
+
+Constructs a PseudoJet object from a PlainJet object with no cluster history index.
+"""
+PseudoJet(jet::PlainJet) = PseudoJet(jet, 0)
+
+"""
+    PseudoJet(jet::PseudoJet)
+
+Create a copy of a PseudoJet object.
+"""
+PseudoJet(jet::PseudoJet) = deepcopy(jet)
+
+"""
+    PseudoJet(jet::LorentzVector, cluster_hist_index::Int)
+
+Used to mark an invalid result in case the corresponding substructure tagging fails."""
 const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
 
 import Base.isvalid
 """
     isvalid(j::PseudoJet)
 
-Function to check whether a given `PseudoJet` object is non-zero or not. Primarily to use for checking the validity of outputs of substructure tagging.
-
-# Arguments
-- `j::PseudoJet`: The `PseudoJet` object to check.
+Function to check whether a given `PseudoJet` object is non-zero or not.
+Primarily to use for checking the validity of outputs of substructure tagging.
 
 # Returns
-- `Bool`: `true` if the `PseudoJet` object is non-zero, `false` otherwise. 
+- `Bool`: `true` if the `PseudoJet` object is non-zero (valid), `false` otherwise. 
 """
 isvalid(j::PseudoJet) = !(j === invalid_pseudojet)
 
@@ -126,141 +127,26 @@ show(io::IO, jet::PseudoJet) = begin
 end
 
 """
-    set_momentum!(j::PseudoJet, px, py, pz, E)
-
-Set the momentum components and energy of a `PseudoJet` object.
-
-# Arguments
-- `j::PseudoJet`: The `PseudoJet` object to set the momentum for.
-- `px`: The x-component of the momentum.
-- `py`: The y-component of the momentum.
-- `pz`: The z-component of the momentum.
-- `E`: The energy of the particle.
-"""
-set_momentum!(j::PseudoJet, px, py, pz, E) = begin
-    j.px = px
-    j.py = py
-    j.pz = pz
-    j.E = E
-    j._pt2 = px^2 + py^2
-    j._inv_pt2 = 1.0 / j._pt2
-    j._rap = _invalid_rap
-    j._phi = _invalid_phi
-end
-
-"""
-    _ensure_valid_rap_phi(p::PseudoJet)
-
-Ensure that the rapidity and azimuthal angle of the PseudoJet `p` are valid. If
-the azimuthal angle is invalid (used as a proxy for both variables), they are
-set to a valid value using `_set_rap_phi!`.
-
-# Arguments
-- `p::PseudoJet`: The PseudoJet object to ensure valid rapidity and azimuthal
-  angle for.
-"""
-_ensure_valid_rap_phi(p::PseudoJet) = p._phi == _invalid_phi && _set_rap_phi!(p)
-
-"""
-_set_rap_phi!(p::PseudoJet)
-
-Set the rapidity and azimuthal angle of the PseudoJet `p`.
-
-# Arguments
-- `p::PseudoJet`: The PseudoJet object for which to set the rapidity and
-  azimuthal angle.
-
-# Description
-This function calculates and sets the rapidity and azimuthal angle of the
-PseudoJet `p` based on its momentum components. The rapidity is calculated in a
-way that is insensitive to roundoff errors when the momentum components are
-large. If the PseudoJet represents a point with infinite rapidity, a large
-number is assigned to the rapidity in order to lift the degeneracy between
-different zero-pt momenta.
-
-Note - the ϕ angle is calculated in the range [0, 2π).
-"""
-_set_rap_phi!(p::PseudoJet) = begin
-    p._phi = p._pt2 == 0.0 ? 0.0 : atan(p.py, p.px)
-    if p._phi < 0.0
-        p._phi += 2π
-    end
-
-    if p.E == abs(p.pz) && iszero(p._pt2)
-        # Point has infinite rapidity -- convert that into a very large
-        #    number, but in such a way that different 0-pt momenta will have
-        #    different rapidities (so as to lift the degeneracy between
-        #                         them) [this can be relevant at parton-level]
-        MaxRapHere = _MaxRap + abs(p.pz)
-        p._rap = p.pz >= 0.0 ? MaxRapHere : -MaxRapHere
-    else
-        # get the rapidity in a way that's modestly insensitive to roundoff
-        # error when things pz,E are large (actually the best we can do without
-        # explicit knowledge of mass)
-        effective_m2 = max(0.0, m2(p)) # force non tachyonic mass
-        E_plus_pz = p.E + abs(p.pz) # the safer of p+, p-
-        p._rap = 0.5 * log((p._pt2 + effective_m2) / (E_plus_pz * E_plus_pz))
-        if p.pz > 0
-            p._rap = -p._rap
-        end
-    end
-    nothing
-end
-
-"""
     phi(p::PseudoJet)
 
-Compute the ϕ angle of a `PseudoJet` object `p`.
-
-Note this function is a wrapper for `phi_02pi(p)`.
-
-# Arguments
-- `p::PseudoJet`: The `PseudoJet` object for which to compute the azimuthal angle.
-
-# Returns
-- The azimuthal angle of `p` in the range [0, 2π).
+Return the azimuthal angle, ϕ, of a `PseudoJet` object `p` in the range [0, 2π).
 """
-phi(p::PseudoJet) = phi_02pi(p)
-
-"""
-    phi_02pi(p::PseudoJet)
-
-Compute the azimuthal angle of a `PseudoJet` object `p` in the range [0, 2π).
-
-# Arguments
-- `p::PseudoJet`: The `PseudoJet` object for which to compute the azimuthal angle.
-
-# Returns
-- The azimuthal angle of `p` in the range [0, 2π).
-"""
-phi_02pi(p::PseudoJet) = begin
-    _ensure_valid_rap_phi(p)
-    return p._phi
-end
+phi(p::PseudoJet) = p._phi
 
 """
     rapidity(p::PseudoJet)
 
 Compute the rapidity of a `PseudoJet` object.
 
-# Arguments
-- `p::PseudoJet`: The `PseudoJet` object for which to compute the rapidity.
-
 # Returns
 The rapidity of the `PseudoJet` object.
 """
-rapidity(p::PseudoJet) = begin
-    _ensure_valid_rap_phi(p)
-    return p._rap
-end
+rapidity(p::PseudoJet) = p._rap
 
 """
     pt2(p::PseudoJet)
 
 Get the squared transverse momentum of a PseudoJet.
-
-# Arguments
-- `p::PseudoJet`: The PseudoJet object.
 
 # Returns
 - The squared transverse momentum of the PseudoJet.
@@ -272,129 +158,7 @@ pt2(p::PseudoJet) = p._pt2
 
 Compute the scalar transverse momentum (pt) of a PseudoJet.
 
-# Arguments
-- `p::PseudoJet`: The PseudoJet object for which to compute the transverse momentum.
-
 # Returns
 - The transverse momentum (pt) of the PseudoJet.
 """
 pt(p::PseudoJet) = sqrt(p._pt2)
-
-"""
-    m2(p::PseudoJet)
-
-Calculate the invariant mass squared (m^2) of a PseudoJet.
-
-# Arguments
-- `p::PseudoJet`: The PseudoJet object for which to calculate the invariant mass squared.
-
-# Returns
-- The invariant mass squared (m^2) of the PseudoJet.
-"""
-m2(p::PseudoJet) = (p.E + p.pz) * (p.E - p.pz) - p._pt2
-
-"""
-    m(p::PseudoJet)
-
-Compute the invariant mass of a `PseudoJet` object. By convention if m^2 < 0,
-then -sqrt{(-m^2)} is returned.
-
-# Arguments
-- `p::PseudoJet`: The `PseudoJet` object for which to compute the invariant
-  mass.
-
-# Returns
-The invariant mass of the `PseudoJet` object.
-"""
-m(p::PseudoJet) = begin
-    x = m2(p)
-    x < 0.0 ? -sqrt(-x) : sqrt(x)
-end
-
-"""
-    mass(p::PseudoJet)
-
-Compute the invariant mass (alias for `m(p)`).
-
-# Arguments
-- `p::PseudoJet`: The PseudoJet object for which to compute the mass.
-
-# Returns
-- The mass of the PseudoJet.
-"""
-mass(p::PseudoJet) = m(p)
-
-"""Alias for `m2` function"""
-const mass2 = m2
-
-"""
-    px(p::PseudoJet)
-
-Return the x-component of the momentum of a `PseudoJet`.
-
-# Arguments
-- `p::PseudoJet`: The `PseudoJet` object.
-
-# Returns
-- The x-component of the momentum of the `PseudoJet`.
-"""
-px(p::PseudoJet) = p.px
-
-"""
-    py(p::PseudoJet)
-
-Return the y-component of the momentum of a `PseudoJet`.
-
-# Arguments
-- `p::PseudoJet`: The `PseudoJet` object.
-
-# Returns
-- The y-component of the momentum of the `PseudoJet`.
-"""
-py(p::PseudoJet) = p.py
-
-"""
-    pz(p::PseudoJet)
-
-Return the z-component of the momentum of a `PseudoJet`.
-
-# Arguments
-- `p::PseudoJet`: The `PseudoJet` object.
-
-# Returns
-- The z-component of the momentum of the `PseudoJet`.
-"""
-pz(p::PseudoJet) = p.pz
-
-"""
-    energy(p::PseudoJet)
-
-Return the energy of a `PseudoJet`.
-
-# Arguments
-- `p::PseudoJet`: The `PseudoJet` object.
-
-# Returns
-- The energy of the `PseudoJet`.
-"""
-energy(p::PseudoJet) = p.E
-
-cluster_hist_index(p::PseudoJet) = p._cluster_hist_index
-
-import Base.+;
-"""
-    +(j1::PseudoJet, j2::PseudoJet)
-
-Addition operator for `PseudoJet` objects.
-
-# Arguments
-- `j1::PseudoJet`: The first `PseudoJet` object.
-- `j2::PseudoJet`: The second `PseudoJet` object.
-
-# Returns
-A new `PseudoJet` object with the sum of the momenta and energy of `j1` and `j2`.
-"""
-+(j1::PseudoJet, j2::PseudoJet) = begin
-    PseudoJet(j1.px + j2.px, j1.py + j2.py,
-              j1.pz + j2.pz, j1.E + j2.E)
-end
