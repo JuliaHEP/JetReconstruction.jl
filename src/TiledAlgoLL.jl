@@ -232,13 +232,16 @@ do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recomb
 
     # Create the new jet by recombining the first two with
     # the E-scheme, then push into the jet vector
-    newjet = recombine(clusterseq.jets[jet_i], clusterseq.jets[jet_j])
-    push!(clusterseq.jets, PseudoJet(newjet.px, newjet.py, newjet.pz,
-                                     newjet.E, newstep_k))
+    jet1 = clusterseq.jets[jet_i]
+    jet2 = clusterseq.jets[jet_j]    
+    # newjet = recombine(clusterseq.jets[jet_i], clusterseq.jets[jet_j])
+    # push!(clusterseq.jets, PseudoJet(newjet, newstep_k))
+    push!(clusterseq.jets, PseudoJet(jet1.px + jet2.px, jet1.py + jet2.py,
+    jet1.pz + jet2.pz, jet1.E + jet2.E, newstep_k))
 
     # Finally sort out the history
-    hist_i = clusterseq.jets[jet_i]._cluster_hist_index
-    hist_j = clusterseq.jets[jet_j]._cluster_hist_index
+    hist_i = jet1._cluster_hist_index
+    hist_j = jet2._cluster_hist_index
 
     add_step_to_history!(clusterseq, minmax(hist_i, hist_j)...,
                          newjet_k, dij)
