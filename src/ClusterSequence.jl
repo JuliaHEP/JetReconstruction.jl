@@ -603,8 +603,9 @@ function constituents(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
     sizehint!(constituents, length(constituent_idxs))
     new_index = 1
     for idx in constituent_idxs
-        push!(constituents, T(px(cs.jets[idx]), py(cs.jets[idx]), pz(cs.jets[idx]),
-                              energy(cs.jets[idx]), new_index))
+        push!(constituents,
+              T(px(cs.jets[idx]), py(cs.jets[idx]), pz(cs.jets[idx]),
+                energy(cs.jets[idx]), new_index))
         new_index += 1
     end
     constituents

@@ -349,7 +349,7 @@ function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1,
 
             # Recombine i and j into the next jet
             newjet = recombine(clusterseq.jets[clusterseq_index[i]],
-                            clusterseq.jets[clusterseq_index[j]])
+                               clusterseq.jets[clusterseq_index[j]])
             # Get its index and the history index
             newjet_k = length(clusterseq.jets) + 1
             newstep_k = length(clusterseq.history) + 1
