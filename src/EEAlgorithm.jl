@@ -342,7 +342,9 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet}, p = 1, R = 4.0,
             # Now add the jet to the sequence, and update the history
             push!(clusterseq.jets, merged_jet)
             newjet_k = length(clusterseq.jets)
-            add_step_to_history!(clusterseq, minmax(cluster_hist_index(jetA), cluster_hist_index(jetB))...,
+            add_step_to_history!(clusterseq,
+                                 minmax(cluster_hist_index(jetA),
+                                        cluster_hist_index(jetB))...,
                                  newjet_k, dij_min)
 
             # Update the compact arrays, reusing the JetA slot
