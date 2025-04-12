@@ -142,7 +142,7 @@ function jet_filtering(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; r
     n = length(reclustered) <= hardest_jets ? length(reclustered) : hardest_jets
     hard = reclustered[1:n]
 
-    filtered = length(hard) != 0 ? PseudoJet(foldl(+, hard)) : invalid_pseudojet
+    filtered = length(hard) != 0 ? foldl(+, hard) : invalid_pseudojet
     return filtered
 end
 
@@ -176,6 +176,6 @@ function jet_trimming(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; ra
         end
     end
 
-    trimmed = length(hard) != 0 ? PseudoJet(foldl(+, hard)) : invalid_pseudojet
+    trimmed = length(hard) != 0 ? foldl(+, hard) : invalid_pseudojet
     return trimmed
 end

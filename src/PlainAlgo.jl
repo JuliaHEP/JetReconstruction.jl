@@ -327,17 +327,10 @@ function _plain_jet_reconstruct(; particles::AbstractVector{PseudoJet}, p = -1,
 
     iteration::Int = 1
     while N != 0
-        # Extremely odd - having these @debug statements present causes a performance
-        # degradation of ~140μs per event on my M2 mac (20%!), even when no debugging is used
-        # so they need to be completely commented out...
-        #@debug "Beginning iteration $iteration"
-
         # Findmin and add back renormalisation to distance
         dij_min, i = fast_findmin(nndij, N)
         @fastmath dij_min /= R2
         j::Int = nn[i]
-
-        #@debug "Closest compact jets are $i ($(clusterseq_index[i])) and $j ($(clusterseq_index[j]))"
 
         if i != j # Merge jets i and j
             # swap if needed
