@@ -193,7 +193,7 @@ end
 """
     ee_genkt_algorithm(particles::AbstractVector{T}; p = -1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                       recombine = +) where {T}
+                       recombine = addjets) where {T}
 
 Run an e+e- reconstruction algorithm on a set of initial particles.
 
@@ -223,7 +223,7 @@ explicitly.
 """
 function ee_genkt_algorithm(particles::AbstractVector{T}; p = 1,
                             algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                            R = 4.0, recombine = +) where {T}
+                            R = 4.0, recombine = addjets) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
@@ -260,13 +260,13 @@ end
 """
     _ee_genkt_algorithm(; particles::AbstractVector{EEJet}, p = 1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                       recombine = +)
+                       recombine = addjets)
 
 This function is the actual implementation of the e+e- jet clustering algorithm.
 """
 function _ee_genkt_algorithm(; particles::AbstractVector{EEJet}, p = 1, R = 4.0,
                              algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                             recombine = +)
+                             recombine = addjets)
     # Bounds
     N::Int = length(particles)
 
@@ -336,8 +336,7 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet}, p = 1, R = 4.0,
             jetB = clusterseq.jets[eereco[ijetB].index]
 
             # Recombine jetA and jetB into the next jet
-            merged_plain_jet = recombine(jetA, jetB)
-            merged_jet = EEJet(merged_plain_jet, length(clusterseq.history) + 1)
+            merged_jet = recombine(jetA, jetB, length(clusterseq.history) + 1)
 
             # Now add the jet to the sequence, and update the history
             push!(clusterseq.jets, merged_jet)
