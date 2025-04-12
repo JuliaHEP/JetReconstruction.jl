@@ -154,3 +154,52 @@ function rapidity(j::FourMomentum)
     end
     rapidity
 end
+
+"""
+    mag(jet::T) where {T <: FourMomentum}
+
+Return the magnitude of the momentum of a jet, `|p|`.
+
+# Returns
+The magnitude of the jet.
+"""
+mag(jet::T) where {T <: FourMomentum} = sqrt(muladd(jet.px, jet.px, jet.py^2) + jet.pz^2)
+
+"""
+    CosTheta(jet::T) where {T <: FourMomentum}
+
+Compute the cosine of the angle between the momentum vector of `jet` and the z-axis.
+
+# Returns
+- The cosine of the angle between the jet and the z-axis.
+"""
+@inline function CosTheta(jet::T) where {T <: FourMomentum}
+    fZ = jet.pz
+    ptot = mag(jet)
+    return ifelse(ptot == 0.0, 1.0, fZ / ptot)
+end
+
+"""
+    eta(jet::T) where {T <: FourMomentum}
+
+Compute the pseudorapidity (η) of a jet.
+
+# Returns
+- The pseudorapidity (η) of the jet.
+"""
+function eta(jet::T) where {T <: FourMomentum}
+    cosTheta = CosTheta(jet)
+    (cosTheta^2 < 1.0) && return -0.5 * log((1.0 - cosTheta) / (1.0 + cosTheta))
+    fZ = jet.pz
+    iszero(fZ) && return 0.0
+    # Warning("PseudoRapidity","transverse momentum = 0! return +/- 10e10");
+    fZ > 0.0 && return 10e10
+    return -10e10
+end
+
+"""
+    const η = eta
+
+Alias for the pseudorapidity function, `eta`.
+"""
+const η = eta
