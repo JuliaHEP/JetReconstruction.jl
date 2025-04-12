@@ -70,13 +70,6 @@ A PseudoJet object with **no** cluster index.
 PseudoJet(px::Real, py::Real, pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0)
 
 """
-    PseudoJet(jet::PseudoJet)
-
-Create a copy of a PseudoJet object.
-"""
-PseudoJet(jet::PseudoJet) = deepcopy(jet)
-
-"""
     const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
 
 Used to mark an invalid result in case the corresponding substructure tagging fails."""
