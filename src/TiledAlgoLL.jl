@@ -225,7 +225,7 @@ recombination function. The new jet is then added to the cluster sequence. The
 function also updates the indices and history information of the new jet and
 sorts out the history.
 """
-do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine = +) = begin
+do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine = addjets) = begin
     # Get its index and the history index
     newjet_k = length(clusterseq.jets) + 1
     newstep_k = length(clusterseq.history) + 1
@@ -368,7 +368,7 @@ tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4, reco
 """
 function tiled_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Nothing} = -1,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                               R = 1.0, recombine = +) where {T}
+                               R = 1.0, recombine = addjets) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
@@ -400,7 +400,7 @@ Main jet reconstruction algorithm, using PseudoJet objects
 """
     _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet}; p::Real = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                R = 1.0, recombine = +)
+                                R = 1.0, recombine = )
 
 Main jet reconstruction algorithm entry point for reconstructing jets once preprocessing
 of data types are done. The algorithm parameter must be consistent with the
@@ -428,7 +428,7 @@ tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 1.0, recombine = 
 """
 function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet}; p::Real = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                R = 1.0, recombine = +)
+                                R = 1.0, recombine = addjets)
     # Bounds
     N::Int = length(particles)
 

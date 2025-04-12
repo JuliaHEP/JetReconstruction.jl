@@ -189,7 +189,7 @@ end
 """
     plain_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Nothing} = -1,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                               R = 1.0, recombine = +) where {T}
+                               R = 1.0, recombine = addjets) where {T}
 
 Perform pp jet reconstruction using the plain algorithm.
 
@@ -225,7 +225,7 @@ jets = plain_jet_reconstruct(particles; algorithm = JetAlgorithm.Kt, R = 1.0)
 """
 function plain_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Nothing} = -1,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                               R = 1.0, recombine = +) where {T}
+                               R = 1.0, recombine = addjets) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
@@ -257,7 +257,7 @@ end
 """
     _plain_jet_reconstruct(; particles::AbstractVector{PseudoJet}, p = -1, 
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                R = 1.0, recombine = +)
+                                R = 1.0, recombine = addjets)
 
 This is the internal implementation of jet reconstruction using the plain
 algorithm. It takes a vector of `particles` representing the input particles and
@@ -288,7 +288,7 @@ power parameter.
 """
 function _plain_jet_reconstruct(; particles::AbstractVector{PseudoJet}, p = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                R = 1.0, recombine = +)
+                                R = 1.0, recombine = addjets)
     # Bounds
     N::Int = length(particles)
     # Parameters
@@ -350,12 +350,12 @@ function _plain_jet_reconstruct(; particles::AbstractVector{PseudoJet}, p = -1,
             hist_j = clusterseq.jets[clusterseq_index[j]]._cluster_hist_index
 
             # Recombine i and j into the next jet
-            newjet = recombine(clusterseq.jets[clusterseq_index[i]],
-                               clusterseq.jets[clusterseq_index[j]])
+            # newjet = recombine(clusterseq.jets[clusterseq_index[i]],
+            #                    clusterseq.jets[clusterseq_index[j]])
             # Get its index and the history index
             newjet_k = length(clusterseq.jets) + 1
             newstep_k = length(clusterseq.history) + 1
-            push!(clusterseq.jets, PseudoJet(newjet, newstep_k))
+            push!(clusterseq.jets, recombine(clusterseq.jets[clusterseq_index[i]], clusterseq.jets[clusterseq_index[j]], newstep_k))
 
             # Update history
             add_step_to_history!(clusterseq, minmax(hist_i, hist_j)..., newjet_k, dij_min)
