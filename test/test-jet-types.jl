@@ -14,9 +14,11 @@ pj_beam = PseudoJet(0.0, 0.0, 5.0, 5.0)
     @test JetReconstruction.phi(pj) ≈ atan(2.0, 1.0)
     @test JetReconstruction.mass(pj) ≈ sqrt(10.0^2 - 1.0^2 - 2.0^2 - 3.0^2)
     @test JetReconstruction.cluster_hist_index(pj) == 7
+    @test isvalid(pj) == true
 
     @test JetReconstruction.rapidity(pj_beam) ≈
           JetReconstruction._MaxRap + JetReconstruction.pz(pj_beam)
+    @test JetReconstruction.eta(pj_beam) ≈ JetReconstruction._MaxRap
 
     # This isn't really a test of the output, but rather that the object
     # can be printed without error

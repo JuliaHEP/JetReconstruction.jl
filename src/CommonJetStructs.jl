@@ -130,7 +130,7 @@ end
 
 """Used to protect against parton-level events where pt can be zero
 for some partons, giving rapidity=infinity. KtJet fails in those cases."""
-const _MaxRap = 1e5
+const _MaxRap = 1e10
 
 """
     rapidity(j::FourMomentum)
@@ -193,8 +193,7 @@ function eta(jet::T) where {T <: FourMomentum}
     fZ = jet.pz
     iszero(fZ) && return 0.0
     # Warning("PseudoRapidity","transverse momentum = 0! return +/- 10e10");
-    fZ > 0.0 && return 10e10
-    return -10e10
+    fZ > 0.0 ? _MaxRap : -_MaxRap
 end
 
 """
