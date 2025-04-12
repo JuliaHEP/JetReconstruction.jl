@@ -345,22 +345,21 @@ function _plain_jet_reconstruct(; particles::AbstractVector{PseudoJet}, p = -1,
                 i, j = j, i
             end
 
-            # Source "history" for merge
-            hist_i = clusterseq.jets[clusterseq_index[i]]._cluster_hist_index
-            hist_j = clusterseq.jets[clusterseq_index[j]]._cluster_hist_index
+            # Resolve real jets
+            jetI = clusterseq.jets[clusterseq_index[i]]
+            jetJ = clusterseq.jets[clusterseq_index[j]]
 
             # Recombine i and j into the next jet
-            # newjet = recombine(clusterseq.jets[clusterseq_index[i]],
-            #                    clusterseq.jets[clusterseq_index[j]])
-            # Get its index and the history index
             newjet_k = length(clusterseq.jets) + 1
             newstep_k = length(clusterseq.history) + 1
             push!(clusterseq.jets,
-                  recombine(clusterseq.jets[clusterseq_index[i]],
-                            clusterseq.jets[clusterseq_index[j]], newstep_k))
+                  recombine(jetI, jetJ, newstep_k))
 
             # Update history
-            add_step_to_history!(clusterseq, minmax(hist_i, hist_j)..., newjet_k, dij_min)
+            add_step_to_history!(clusterseq,
+                                 minmax(jetI._cluster_hist_index,
+                                        jetJ._cluster_hist_index)...,
+                                 newjet_k, dij_min)
 
             # Update the compact arrays, reusing the i-th slot
             kt2_array[i] = pt2(clusterseq.jets[newjet_k])^p
