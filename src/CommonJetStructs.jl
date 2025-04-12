@@ -130,7 +130,7 @@ end
 
 """Used to protect against parton-level events where pt can be zero
 for some partons, giving rapidity=infinity. KtJet fails in those cases."""
-const _MaxRap = 1e10
+const _MaxRap = 1e5
 
 """
     rapidity(j::FourMomentum)
