@@ -203,3 +203,15 @@ end
 Alias for the pseudorapidity function, `eta`.
 """
 const η = eta
+
+import Base.show
+"""
+    show(io::IO, jet::FourMomentum)
+
+Print core information about the four-momentum vector of `jet` to the given IO
+stream.
+"""
+function show(io::IO, jet::FourMomentum)
+    print(io, "$(typeof(jet))(px: ", px(jet), " py: ", py(jet), " pz: ", pz(jet), " E: ", E(jet),
+          " cluster_hist_index: ", cluster_hist_index(jet), ")")
+end
