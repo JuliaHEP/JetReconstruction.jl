@@ -31,7 +31,7 @@ Add jets' four momenta together, returning a new jet with the specified cluster
 history index.
 """
 function addjets(j1::T, j2::T, cluster_hist_index::Int) where {T <: FourMomentum}
-     T(j1.px+j2.px, j1.py+j2.py, j1.pz+j2.pz, j1.E+j2.E, cluster_hist_index)
+    T(j1.px + j2.px, j1.py + j2.py, j1.pz + j2.pz, j1.E + j2.E, cluster_hist_index)
 end
 
 """

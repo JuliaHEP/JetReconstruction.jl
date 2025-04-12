@@ -355,7 +355,9 @@ function _plain_jet_reconstruct(; particles::AbstractVector{PseudoJet}, p = -1,
             # Get its index and the history index
             newjet_k = length(clusterseq.jets) + 1
             newstep_k = length(clusterseq.history) + 1
-            push!(clusterseq.jets, recombine(clusterseq.jets[clusterseq_index[i]], clusterseq.jets[clusterseq_index[j]], newstep_k))
+            push!(clusterseq.jets,
+                  recombine(clusterseq.jets[clusterseq_index[i]],
+                            clusterseq.jets[clusterseq_index[j]], newstep_k))
 
             # Update history
             add_step_to_history!(clusterseq, minmax(hist_i, hist_j)..., newjet_k, dij_min)

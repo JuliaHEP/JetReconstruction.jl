@@ -21,7 +21,6 @@ history index from the `PseudoJet`.
 EEJet(jet::PseudoJet) = EEJet(px(jet), py(jet), pz(jet), energy(jet),
                               cluster_hist_index(jet))
 
-
 """
     mag(jet::T) where {T <: FourMomentum}
 
