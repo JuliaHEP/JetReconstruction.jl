@@ -7,44 +7,30 @@ jets that are used in the package are subtypes of this type.
 """
 abstract type FourMomentum end
 
-"""
-    Jet <: FourMomentum
-
-An abstract type representing a jet, rather than just a plain FourMomentum.
-
-# Details
-This allows for methods to extraction of certain properties of the jet,
-which are not necessarily available in the FourMomentum type.
-e.g. the cluster history index.
-"""
-abstract type Jet <: FourMomentum end
-
-"""
-    struct PlainJet <: FourMomentum
-
-Simple four momentum structure without cluster history, used as an intermediate
-type during jet merging.
-"""
-struct PlainJet <: FourMomentum
-    px::Float64
-    py::Float64
-    pz::Float64
-    E::Float64
-end
-
 # Define here all common functions that can be used for all jet types <: FourMomentum
 import Base.+;
 """
-    +(jet1::FourMomentum, jet2::FourMomentum)
+    +(jet1::T, jet2::T) where {T <: FourMomentum}
 
-Adds two four-momentum vectors together, returning a new `PlainJet` jet.
+Adds two four-momentum vectors together, returning a new jet.
+
+# Details
+
+This addition operation will return a jet with the cluster history index set to
+0. This means that this jet cannot be used, or be part of, any clustering
+history.
 """
-function +(jet1::FourMomentum, jet2::FourMomentum)
-    PlainJet(jet1.px + jet2.px, jet1.py + jet2.py, jet1.pz + jet2.pz, jet1.E + jet2.E)
+function +(jet1::T, jet2::T) where {T <: FourMomentum}
+    T(jet1.px + jet2.px, jet1.py + jet2.py, jet1.pz + jet2.pz, jet1.E + jet2.E)
 end
 
-"""Add jets with new cluster history index"""
-function addjets(j1::T, j2::T, cluster_hist_index::Int) where {T <: Jet}
+"""
+    addjets(j1::T, j2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+
+Add jets' four momenta together, returning a new jet with the specified cluster
+history index.
+"""
+function addjets(j1::T, j2::T, cluster_hist_index::Int) where {T <: FourMomentum}
      T(j1.px+j2.px, j1.py+j2.py, j1.pz+j2.pz, j1.E+j2.E, cluster_hist_index)
 end
 
@@ -77,6 +63,13 @@ energy(j::FourMomentum) = j.E
 
 """Alias for `energy` function"""
 const E = energy
+
+"""
+    cluster_hist_index(j::FourMomentum)
+
+Return the cluster history index of the jet `j`.
+"""
+cluster_hist_index(j::FourMomentum) = j._cluster_hist_index
 
 """
     p2(j::FourMomentum)
@@ -161,12 +154,3 @@ function rapidity(j::FourMomentum)
     end
     rapidity
 end
-
-###
-# Define here all common functions that can be used for all jet types <: Jet
-"""
-    cluster_hist_index(j::Jet)
-
-Return the cluster history index of the jet `j`.
-"""
-cluster_hist_index(j::Jet) = j._cluster_hist_index

@@ -1,5 +1,27 @@
 # Generic utility functions for jet structs
 
+# Functions that create each jet type from the other need to be defined here,
+# after the structs are defined.
+"""
+    PseudoJet(jet::EEJet)
+
+Constructs a `PseudoJet` object from an `EEJet` object, with the same four
+momentum and cluster history index.
+"""
+function PseudoJet(eej::EEJet)
+    PseudoJet(px(eej), py(eej), pz(eej), energy(eej), cluster_hist_index(eej))
+end
+
+"""
+    EEJet(jet::PseudoJet)
+
+Constructs an `EEJet` object from a `PseudoJet` object using the same cluster
+history index from the `PseudoJet`.
+"""
+EEJet(jet::PseudoJet) = EEJet(px(jet), py(jet), pz(jet), energy(jet),
+                              cluster_hist_index(jet))
+
+
 """
     mag(jet::T) where {T <: FourMomentum}
 
