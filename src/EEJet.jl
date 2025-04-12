@@ -1,5 +1,5 @@
 """
-    mutable struct EEJet
+    struct EEJet <: FourMomentum
 
 The `EEJet` struct is a 4-momentum object used for the e+e jet reconstruction routines.
 
@@ -12,7 +12,7 @@ The `EEJet` struct is a 4-momentum object used for the e+e jet reconstruction ro
 - `_p2::Float64`: The squared momentum of the jet.
 - `_inv_p::Float64`: The inverse momentum of the jet.
 """
-struct EEJet <: Jet
+struct EEJet <: FourMomentum
     px::Float64
     py::Float64
     pz::Float64
@@ -40,23 +40,6 @@ Constructs an `EEJet` object from the given momentum components and energy,
 but with no cluster history index (which is set to 0).
 """
 EEJet(px::Real, py::Real, pz::Real, E::Real) = EEJet(px, py, pz, E, 0)
-
-"""
-    EEJet(jet::PlainJet, cluster_hist_index::Int)
-
-Constructs an `EEJet` object from a `PlainJet` object using the given cluster history index.
-"""
-EEJet(jet::PlainJet, cluster_hist_index) = EEJet(px(jet), py(jet), pz(jet), energy(jet),
-                                                 cluster_hist_index)
-
-"""
-    EEJet(jet::PseudoJet)
-
-Constructs an `EEJet` object from a `PseudoJet` object using the same cluster
-history index from the `PseudoJet`.
-"""
-EEJet(jet::PseudoJet) = EEJet(px(jet), py(jet), pz(jet), energy(jet),
-                              cluster_hist_index(jet))
 
 """
     p2(eej::EEJet)
