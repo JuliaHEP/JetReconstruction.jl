@@ -44,7 +44,7 @@ function +(jet1::FourMomentum, jet2::FourMomentum)
 end
 
 """Add jets with new cluster history index"""
-@inline function addjets(j1::T, j2::T, cluster_hist_index::Int) where {T <: Jet}
+function addjets(j1::T, j2::T, cluster_hist_index::Int) where {T <: Jet}
      T(j1.px+j2.px, j1.py+j2.py, j1.pz+j2.pz, j1.E+j2.E, cluster_hist_index)
 end
 
