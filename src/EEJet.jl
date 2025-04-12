@@ -69,12 +69,6 @@ Return the z-component of the unit vector aligned with the momentum of `eej`
 """
 nz(eej::EEJet) = eej.pz * eej._inv_p
 
-import Base.show
-function show(io::IO, eej::EEJet)
-    print(io, "EEJet(px: ", eej.px, " py: ", eej.py, " pz: ", eej.pz, " E: ", eej.E,
-          " cluster_hist_index: ", eej._cluster_hist_index, ")")
-end
-
 # Optimised reconstruction struct for e+e jets
 
 mutable struct EERecoJet

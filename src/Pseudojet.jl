@@ -94,23 +94,6 @@ Primarily to use for checking the validity of outputs of substructure tagging.
 """
 isvalid(j::PseudoJet) = !(j === invalid_pseudojet)
 
-import Base.show
-"""
-    show(io::IO, jet::PseudoJet)
-
-Print a `PseudoJet` object to the specified IO stream.
-
-# Arguments
-- `io::IO`: The IO stream to which the information will be printed.
-- `jet::PseudoJet`: The `PseudoJet` object whose information will be printed.
-"""
-show(io::IO, jet::PseudoJet) = begin
-    print(io, "Pseudojet(px: ", jet.px, " py: ", jet.py, " pz: ", jet.pz, " E: ", jet.E,
-          "; ",
-          "pt: ", sqrt(jet._pt2), " rapidity: ", rapidity(jet), " phi: ", phi(jet), ", m: ",
-          m(jet), ")")
-end
-
 """
     phi(p::PseudoJet)
 

@@ -17,6 +17,10 @@ pj_beam = PseudoJet(0.0, 0.0, 5.0, 5.0)
 
     @test JetReconstruction.rapidity(pj_beam) ≈
           JetReconstruction._MaxRap + JetReconstruction.pz(pj_beam)
+
+    # This isn't really a test of the output, but rather that the object
+    # can be printed without error
+    @test string(pj) == "PseudoJet(px: 1.0 py: 2.0 pz: 3.0 E: 10.0 cluster_hist_index: 7)"
 end
 
 eej = EEJet(1.0, 2.0, 3.0, 10.0, 7)
@@ -34,12 +38,22 @@ eej_beam = EEJet(0.0, 0.0, 5.0, 5.0)
 
     @test JetReconstruction.rapidity(eej_beam) ≈
           JetReconstruction._MaxRap + JetReconstruction.pz(eej_beam)
+
+    # This isn't really a test of the output, but rather that the object
+    # can be printed without error
+    @test string(eej) == "EEJet(px: 1.0 py: 2.0 pz: 3.0 E: 10.0 cluster_hist_index: 7)"
 end
 
 eej_pseudojet = EEJet(pj)
+pseudojet_eej = PseudoJet(eej)
 @testset "Jet Interoperability" begin
     @test JetReconstruction.px(eej_pseudojet) ≈ JetReconstruction.px(pj)
     @test JetReconstruction.py(eej_pseudojet) ≈ JetReconstruction.py(pj)
     @test JetReconstruction.pz(eej_pseudojet) ≈ JetReconstruction.pz(pj)
     @test JetReconstruction.energy(eej_pseudojet) ≈ JetReconstruction.energy(pj)
+
+    @test JetReconstruction.px(pseudojet_eej) ≈ JetReconstruction.px(eej)
+    @test JetReconstruction.py(pseudojet_eej) ≈ JetReconstruction.py(eej)
+    @test JetReconstruction.pz(pseudojet_eej) ≈ JetReconstruction.pz(eej)
+    @test JetReconstruction.energy(pseudojet_eej) ≈ JetReconstruction.energy(eej)
 end
