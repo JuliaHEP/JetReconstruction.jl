@@ -4,7 +4,7 @@
 # Some of the implementation is taken from LorentzVectorHEP.jl, by Jerry Ling
 
 """
-    mutable struct PseudoJet <: FourMomentum
+    struct PseudoJet <: FourMomentum
 
 The `PseudoJet` struct represents a pseudojet, a four-momentum object used in
 jet reconstruction algorithms. Additional information for the link back into the
@@ -23,7 +23,7 @@ caching of the more expensive calculations for rapidity and azimuthal angle.
 - `_phi::Float64`: The azimuthal angle.
 
 """
-struct PseudoJet <: Jet
+struct PseudoJet <: FourMomentum
     px::Float64
     py::Float64
     pz::Float64
@@ -70,21 +70,6 @@ A PseudoJet object with **no** cluster index.
 PseudoJet(px::Real, py::Real, pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0)
 
 """
-    PseudoJet(jet::PlainJet, cluster_hist_index::Int)
-
-Constructs a PseudoJet object from a PlainJet object and a cluster history index.
-"""
-PseudoJet(jet::PlainJet, cluster_hist_index::Int) = PseudoJet(jet.px, jet.py, jet.pz, jet.E,
-                                                              cluster_hist_index)
-
-"""
-    PseudoJet(jet::PlainJet)
-
-Constructs a PseudoJet object from a PlainJet object with no cluster history index.
-"""
-PseudoJet(jet::PlainJet) = PseudoJet(jet, 0)
-
-"""
     PseudoJet(jet::PseudoJet)
 
 Create a copy of a PseudoJet object.
@@ -92,7 +77,7 @@ Create a copy of a PseudoJet object.
 PseudoJet(jet::PseudoJet) = deepcopy(jet)
 
 """
-    PseudoJet(jet::LorentzVector, cluster_hist_index::Int)
+    const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
 
 Used to mark an invalid result in case the corresponding substructure tagging fails."""
 const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
