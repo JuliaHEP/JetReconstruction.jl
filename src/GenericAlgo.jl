@@ -58,7 +58,6 @@ function jet_reconstruct(particles; p::Union{Real, Nothing} = nothing, R = 1.0,
                          strategy = RecoStrategy.Best)
     # Either map to the fixed algorithm corresponding to the strategy
     # or to an optimal choice based on the density of initial particles
-    print("TEST");
     if (algorithm === nothing) && (p === nothing)
         throw(ArgumentError("Please specify either an algorithm or a power value (power only for pp-type reconstruction)"))
     end
