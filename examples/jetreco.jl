@@ -142,7 +142,6 @@ function parse_command_line(args)
 end
 
 function main()
-
     args = parse_command_line(ARGS)
     logger = ConsoleLogger(stdout, Logging.Info)
     global_logger(logger)

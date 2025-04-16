@@ -10,6 +10,8 @@ using Plots
 using Pkg
 Pkg.develop(path="/Users/emadimtrova/Desktop/uni/spring25/UTRA/JetReconstruction.jl")
 
+include(joinpath(@__DIR__, "parse-options.jl"))
+
 function parse_command_line(args)
     s = ArgParseSettings(autofix_names = true)
     @add_arg_table! s begin
@@ -28,6 +30,19 @@ function parse_command_line(args)
         arg_type = Float64
         default = 5.0
 
+        "--exclusive-dcut"
+        help = "Return all exclusive jets where further merging would have d>d_cut"
+        arg_type = Float64
+
+        "--exclusive-njets"
+        help = "Return all exclusive jets once clusterisation has produced n jets"
+        arg_type = Int
+
+        "--distance", "-R"
+        help = "Distance parameter for jet merging"
+        arg_type = Float64
+        default = 0.4
+
         "--algorithm", "-A"
         help = """Algorithm to use for jet reconstruction: $(join(JetReconstruction.AllJetRecoAlgorithms, ", "))"""
         arg_type = JetAlgorithm.Algorithm
@@ -35,86 +50,151 @@ function parse_command_line(args)
         "--power", "-p"
         help = """Power value for jet reconstruction"""
         arg_type = Float64
-        
-        #add arguments if needed
 
-        "file"
+        "--strategy", "-S"
+        help = """Strategy for the algorithm, valid values: $(join(JetReconstruction.AllJetRecoStrategies, ", "))"""
+        arg_type = RecoStrategy.Strategy
+        default = RecoStrategy.Best
+
+        "--dump"
+        help = "Write list of reconstructed jets to a JSON formatted file"
+
+        "--grid-size"
+        help = "Size of Rectangular grid"
+        arg_type = Float64
+        default = 0.4
+
+        "--hard-file"
+        help = "HepMC3 event file in HepMC3 to read."
+        required = true
+
+        "--pileup-file"
         help = "HepMC3 event file in HepMC3 to read."
         required = true
     end
     return parse_args(args, s; as_symbols = true)
 end
 
-read_event(fname; maxevents = -1, skipevents = 0, T = PseudoJet ) = begin
-    hard_event = PseudoJet[]
-    full_event = PseudoJet[]    
-    events = read_final_state_particles(fname; maxevents, skipevents, T)
 
-    #plot_graph(full_event, hard_event,events)
-    Y = Float64[]
-    Phi = Float64[]
-    pt = Float64[]
-    nsub = 0 
+function process_event(event::Vector{PseudoJet}, args::Dict{Symbol, Any}, all_jets::Vector{PseudoJet},
+    rapmax::Float64, Ys::Vector{Float64}, Phis::Vector{Float64},
+    pts::Vector{Float64}, colors::Vector{String}, 
+    color::String, jet_origin::Vector{String})
 
-    for ev in events
-        input_p = Vector{PseudoJet}()
-        push_data(ev, input_p, Y, Phi,pt);
-        append!(full_event, input_p) 
-        nsub += 1
+    event = select_ABS_RAP_max(event, rapmax)
 
-    end
+    distance = args[:distance] 
+    algorithm = args[:algorithm]
+    p = args[:power]
+    strategy = args[:strategy]
 
-    if (nsub == 1) #in the case of only one event after the reading 
-        hard_event .= full_event 
-        nsub += 1
-    end
-    if (nsub == 0)
-        throw("Error: read empty event\n")
-    end 
-
-    plot_set_up(Y, Phi, pt, "Event before SoftKiller")
-
-    return hard_event, full_event
-end
-
-function main()
+    cluster_seq_pu = jet_reconstruct(event, 
+                                     R = distance, p = p, algorithm = algorithm,
+                                    strategy = strategy)
     
+    #clustering 
+    finaljets_pu_lorv = inclusive_jets(cluster_seq_pu)
+    for jet in finaljets_pu_lorv
+        pj = PseudoJet(px(jet), py(jet), pz(jet), energy(jet))
+        push!(all_jets, pj)
+        push!(jet_origin, color == "purple" ? "hard" : "pileup") 
+        push!(Ys, JetReconstruction.rapidity(pj))
+        push!(Phis, JetReconstruction.phi(pj))
+        push!(pts, JetReconstruction.pt2(pj))
+        push!(colors, color)
+    end
+
+end 
+
+
+main() = begin 
     args = parse_command_line(ARGS)
     logger = ConsoleLogger(stdout, Logging.Info)
     global_logger(logger)
 
-    #if JetReconstruction.is_ee(args[:algorithm])
-    #    jet_type = EEjet
-    #else
+    if JetReconstruction.is_ee(args[:algorithm])
+        jet_type = EEjet
+    else
        jet_type = PseudoJet
-    #end
+    end
 
     hard_event = PseudoJet[]
-    full_event = PseudoJet[]   
-    reduced_event = PseudoJet[] 
+    events = Vector{PseudoJet}[] 
 
-    #read event 
-
-    hard_event, full_event = read_event(args[:file],
+    events = read_final_state_particles(args[:pileup_file],
                                         maxevents = args[:maxevents],
                                         skipevents = args[:skip],
                                         T = jet_type)
 
+
+    h_events = read_final_state_particles(args[:hard_file],
+                                        maxevents = args[:maxevents],
+                                        skipevents = args[:skip],
+                                        T = jet_type)
+
+                                      
     rapmax = 5.0 
-
-    hard_event = select_ABS_RAP_max(hard_event,rapmax)  
-    full_event = select_ABS_RAP_max(full_event,rapmax)
-    
-    #clustering
-
-    grid_size = 0.4
+    grid_size = args[:grid_size]
     soft_killer = SoftKiller(rapmax, grid_size)
 
-    pt_threshold = 0.00
-    soft_killer_event = PseudoJet[]   
+    algorithm = args[:algorithm]
+    p = args[:power]
 
-    reduced_event, pt_threshold = apply(soft_killer, full_event, soft_killer_event, pt_threshold)
-    print("Pth value: ", pt_threshold, "\n")
+    (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
+    algorithm = algorithm)
+    @info "Jet reconstruction will use $(algorithm) with power $(p)"
+
+    all_events = PseudoJet[]
+    jet_origin = String[]
+
+    hard_event = h_events[1]
+    hard_event = select_ABS_RAP_max(hard_event,rapmax)
+
+    Ys, Phis, pts = Float64[], Float64[], Float64[]
+    colors = String[]
+
+    #all events post clutering 
+    process_event(h_events[1], args, all_events, rapmax, Ys, Phis, pts, colors, "purple", jet_origin)
+
+    n_events = length(events)
+    println("EVENT: $n_events")
+    for (ievn, event) in enumerate(events)
+        process_event(event, args, all_events, rapmax, Ys, Phis, pts, colors, "black", jet_origin)        
+    end 
+    
+    num_events = length(all_events)
+    println("EVENT BEFORE: $num_events")
+
+    pt_threshold = 0.00
+    soft_killer_event = PseudoJet[]
+
+    plot_set_up(Ys, Phis, pts, colors, "All Jets Before SoftKiller")
+
+    reduced_event, pt_threshold = apply(soft_killer, all_events, soft_killer_event, pt_threshold)
+    
+    Ys_reduced, Phis_reduced, pts_reduced = Float64[], Float64[], Float64[]
+    colors_reduced = String[]
+
+    for jet in reduced_event
+        push!(Ys_reduced, JetReconstruction.rapidity(jet))
+        push!(Phis_reduced, JetReconstruction.phi(jet))
+        push!(pts_reduced, JetReconstruction.pt2(jet))
+    
+        idx = findfirst(x -> x === jet, all_events)
+        if idx === nothing
+            push!(colors_reduced, "pink")
+        else
+            push!(colors_reduced, jet_origin[idx] == "hard" ? "purple" : "black")
+        end
+    end
+
+    num_events_after = length(reduced_event)
+    println("EVENT AFTER: $num_events_after")
+    #process_event(reduced_event, args, all_events, rapmax, Ys_reduced, Phis_reduced, pts_reduced, colors_reduced, "green", jet_origin)
+    
+    plot_set_up(Ys_reduced, Phis_reduced, pts_reduced, colors_reduced, "All Jets After SoftKiller and Clustering")
+
 end
+
 
 main()

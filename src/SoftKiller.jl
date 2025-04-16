@@ -42,6 +42,7 @@ tile_index(sk:: SoftKiller, p::PseudoJet)::Int64 = begin
     if y_minus_ymin < 0 
         return -1   
     end 
+    
     iy = round(Int64,y_minus_ymin * sk._inverse_dy)
     if iy >= sk._ny
         return -1 
@@ -57,11 +58,6 @@ tile_index(sk:: SoftKiller, p::PseudoJet)::Int64 = begin
     res + 1
 end 
 
-function meshgrid(x, y)
-    X = [xi for xi in x, _ in y]
-    Y = [yi for _ in x, yi in y]
-    return X, Y
-end
 
 _setup_grid(sk:: SoftKiller) = begin 
     @assert sk._ymax > sk._ymin
@@ -169,8 +165,8 @@ apply(sk::SoftKiller, event::Vector{PseudoJet}, reduced_event::Vector{PseudoJet}
     pt2cut = (1+1e-12)*max_pt2[int_median_pos]
 
     indices = Int64[]
-    for (i, ev) in enumerate(event)
-        if  ev === nothing || pt2(ev) >= pt2cut
+    for (i, ps_jet) in enumerate(event)
+        if  ps_jet === nothing || pt2(ps_jet) >= pt2cut
             push!(indices, i)
         end
     end
@@ -182,39 +178,21 @@ apply(sk::SoftKiller, event::Vector{PseudoJet}, reduced_event::Vector{PseudoJet}
 
     pt_threshold = sqrt(pt2cut);
 
-    Y = Float64[]
-    Phi = Float64[]
-    empty = PseudoJet[]
-    pt = Float64[]
-
-    push_data(reduced_event, empty, Y, Phi, pt)
-    plot_set_up(Y, Phi, pt, "Event after SoftKiller")
-
     return reduced_event, pt_threshold
 
 end 
 
-push_data(event::Vector{PseudoJet},input_p::Vector{PseudoJet}, Y::Vector{Float64}, Phi::Vector{Float64}, pt::Vector{Float64}) = begin 
-    for p in event
-        particle = PseudoJet(p.px, p.py, p.pz, p.E)
-        push!(input_p, particle)
-        push!(Y,rapidity(particle))
-        push!(Phi,phi(particle))
-        push!(pt,pt2(particle))
 
-    end
-
-end 
-
-plot_set_up(Y::Vector{Float64}, Phi::Vector{Float64}, pt::Vector{Float64}, plot_title::String) = begin 
-    y_min, y_max = round(minimum(Y)), maximum(Y)
+plot_set_up(Y::Vector{Float64}, Phi::Vector{Float64}, pt::Vector{Float64}, color::Vector{String},  plot_title::String) = begin
+    y_min, y_max = -5.0, 5.0
+    
     phi_min, phi_max = round(minimum(Phi)), maximum(Phi)
 
     x = y_min:0.4:y_max
     y = phi_min:0.4:phi_max
 
     min_pt, max_pt = minimum(pt), maximum(pt)
-    marker_sizes = 2 .+ 13 .*((pt.- min_pt) ./(max_pt -min_pt))
+    marker_sizes = 3 .+ 16 .*((pt .- min_pt)./(max_pt - min_pt))
 
     format(lines) = begin 
         return [isinteger(line) ? string(line) : "" for line in lines]
@@ -229,13 +207,15 @@ plot_set_up(Y::Vector{Float64}, Phi::Vector{Float64}, pt::Vector{Float64}, plot_
         title=plot_title,
         markersize=marker_sizes, 
         xticks=(x, x_labels),  
-        yticks=(y, y_labels), 
+        yticks=(y, y_labels),  
+        xlims=(y_min, y_max), 
+        ylims=(phi_min, phi_max),  
         grid=true,  
         framestyle=:box,
+        color=color;
         alpha=0.6,
         legend=false  
     )
 
-    display(p)
     savefig(p, plot_title * ".png")
-end 
+end
