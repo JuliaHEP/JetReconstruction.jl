@@ -17,21 +17,26 @@ Adds two four-momentum vectors together, returning a new jet.
 # Details
 
 This addition operation will return a jet with the cluster history index set to
-0. This means that this jet cannot be used, or be part of, any clustering
-history.
+0. *This means that this jet cannot be used, or be part of, any clustering
+history.*
 """
 function +(jet1::T, jet2::T) where {T <: FourMomentum}
     T(jet1.px + jet2.px, jet1.py + jet2.py, jet1.pz + jet2.pz, jet1.E + jet2.E)
 end
 
 """
-    addjets(j1::T, j2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+    addjets(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
 
-Add jets' four momenta together, returning a new jet with the specified cluster
-history index.
+Add jets' four momenta together, returning a new jet of type `T` with the
+specified cluster history index.
+
+# Details
+
+This method is also known as the `E_scheme` in Fastjet.
 """
-function addjets(j1::T, j2::T, cluster_hist_index::Int) where {T <: FourMomentum}
-    T(j1.px + j2.px, j1.py + j2.py, j1.pz + j2.pz, j1.E + j2.E, cluster_hist_index)
+function addjets(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+    T(px(jet1) + px(jet2), py(jet1) + py(jet2), pz(jet1) + pz(jet2),
+      energy(jet1) + energy(jet2), cluster_hist_index)
 end
 
 """
