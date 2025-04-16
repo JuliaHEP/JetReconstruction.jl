@@ -38,4 +38,4 @@ benchmark/*
 /debug/*
 
 # Input files for testing
-test/data/sk_example*.hepmc3
+test/data/sk_example*.hepmc
