@@ -193,7 +193,7 @@ end
 """
     ee_genkt_algorithm(particles::Vector{T}; p = -1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                       recombine = +) where {T}
+                       recombine = addjets) where {T}
 
 Run an e+e- reconstruction algorithm on a set of initial particles.
 
@@ -223,7 +223,7 @@ explicitly.
 """
 function ee_genkt_algorithm(particles::Vector{T}; p = 1,
                             algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                            R = 4.0, recombine = +) where {T}
+                            R = 4.0, recombine = addjets) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
@@ -247,7 +247,7 @@ function ee_genkt_algorithm(particles::Vector{T}; p = 1,
         for i in eachindex(particles)
             push!(recombination_particles,
                   EEJet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                        energy(particles[i])))
+                        energy(particles[i]), i))
         end
     end
 
@@ -260,13 +260,13 @@ end
 """
     _ee_genkt_algorithm(; particles::Vector{EEJet}, p = 1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                       recombine = +)
+                       recombine = addjets)
 
 This function is the actual implementation of the e+e- jet clustering algorithm.
 """
 function _ee_genkt_algorithm(; particles::Vector{EEJet}, p = 1, R = 4.0,
                              algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                             recombine = +)
+                             recombine = addjets)
     # Bounds
     N::Int = length(particles)
 
@@ -332,22 +332,18 @@ function _ee_genkt_algorithm(; particles::Vector{EEJet}, p = 1, R = 4.0,
             end
 
             # Resolve the jet indexes to access the actual jets
-            jetA_idx = eereco[ijetA].index
-            jetB_idx = eereco[ijetB].index
-
-            # Source "history" for merge
-            hist_jetA = clusterseq.jets[jetA_idx]._cluster_hist_index
-            hist_jetB = clusterseq.jets[jetB_idx]._cluster_hist_index
+            jetA = clusterseq.jets[eereco[ijetA].index]
+            jetB = clusterseq.jets[eereco[ijetB].index]
 
             # Recombine jetA and jetB into the next jet
-            merged_jet = recombine(clusterseq.jets[jetA_idx],
-                                   clusterseq.jets[jetB_idx])
-            merged_jet._cluster_hist_index = length(clusterseq.history) + 1
+            merged_jet = recombine(jetA, jetB, length(clusterseq.history) + 1)
 
             # Now add the jet to the sequence, and update the history
             push!(clusterseq.jets, merged_jet)
             newjet_k = length(clusterseq.jets)
-            add_step_to_history!(clusterseq, minmax(hist_jetA, hist_jetB)...,
+            add_step_to_history!(clusterseq,
+                                 minmax(cluster_hist_index(jetA),
+                                        cluster_hist_index(jetB))...,
                                  newjet_k, dij_min)
 
             # Update the compact arrays, reusing the JetA slot

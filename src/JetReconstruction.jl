@@ -37,10 +37,11 @@ pz(p::LorentzVectorCyl) = LorentzVectorHEP.pz(p)
 energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 
 # Pseudojet and EEJet types
-include("Pseudojet.jl")
+include("CommonJetStructs.jl")
+include("PseudoJet.jl")
 include("EEJet.jl")
 include("JetUtils.jl")
-export PseudoJet, EEJet, pt_fraction, kt_scale, lorentzvector, lorentzvector_cyl
+export PseudoJet, EEJet, pt_fraction, kt_scale, lorentzvector, lorentzvector_cyl, addjets
 
 # Jet reconstruction strategies and algorithms (enums!)
 include("AlgorithmStrategyEnums.jl")

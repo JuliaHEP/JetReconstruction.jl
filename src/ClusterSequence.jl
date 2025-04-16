@@ -89,7 +89,8 @@ function initial_history(particles)
         history[i] = HistoryElement(i)
 
         # get cross-referencing right from the Jets
-        particles[i]._cluster_hist_index = i
+        # particles[i]._cluster_hist_index = i
+        @assert cluster_hist_index(particles[i]) == i
 
         # determine the total energy in the event
         Qtot += particles[i].E
@@ -186,7 +187,7 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
     # a serious internal issue). However, we decided to throw an
     # InternalError so that the end user can decide to catch it and
     # retry the clustering with a different strategy.
-    @assert parent1 >= 1
+    # @assert parent1 >= 1
     if clusterseq.history[parent1].child != Invalid
         error("Internal error. Trying to recombine an object that has previously been recombined. Parent " *
               string(parent1) * "'s child index " *
@@ -207,11 +208,14 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
         clusterseq.history[parent2] = @set hist_elem.child = local_step
     end
 
-    # Get cross-referencing right from PseudoJets
-    if jetp_index != Invalid
-        @assert jetp_index >= 1
-        clusterseq.jets[jetp_index]._cluster_hist_index = local_step
-    end
+    # Cross referencing has to be correct by construction now, these asserts
+    # can be used to check that when debugging - they do cost a bit of time
+    # which is why they are commented out for production
+    # if jetp_index != Invalid
+    #     @assert jetp_index >= 1
+    #     @assert clusterseq.jets[jetp_index]._cluster_hist_index == local_step
+    #     # clusterseq.jets[jetp_index]._cluster_hist_index = local_step
+    # end
 end
 
 """
@@ -582,7 +586,7 @@ end
 """
     constituents(jet::T, cs::ClusterSequence{T}) where T <: FourMomentum
 
-Get the constituents of a given jet in a cluster sequence.
+Get a copy of the constituents of a given jet in a cluster sequence.
 
 # Arguments
 - `cs::ClusterSequence{T}`: The cluster sequence object.
@@ -590,14 +594,19 @@ Get the constituents of a given jet in a cluster sequence.
 
 # Returns
 An array of jet objects (which are of the same type as the input jet)
-representing the constituents of the given jet,  
-
+copied from the constituents of the given jet, with reset cluster history
+indexes.
 """
 function constituents(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
     constituent_idxs = constituent_indexes(jet, cs)
     constituents = Vector{T}()
+    sizehint!(constituents, length(constituent_idxs))
+    new_index = 1
     for idx in constituent_idxs
-        push!(constituents, cs.jets[idx])
+        push!(constituents,
+              T(px(cs.jets[idx]), py(cs.jets[idx]), pz(cs.jets[idx]),
+                energy(cs.jets[idx]), new_index))
+        new_index += 1
     end
     constituents
 end

@@ -98,7 +98,7 @@ Returns:
 """
 tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling, jets_index, R2, p) = begin
     @inbounds jet.eta = rapidity(clusterseq.jets[jets_index])
-    @inbounds jet.phi = phi_02pi(clusterseq.jets[jets_index])
+    @inbounds jet.phi = phi(clusterseq.jets[jets_index])
     @inbounds jet.kt2 = pt2(clusterseq.jets[jets_index]) > 1.e-300 ?
                         pt2(clusterseq.jets[jets_index])^p : 1.e300
     jet.jets_index = jets_index
@@ -225,21 +225,20 @@ recombination function. The new jet is then added to the cluster sequence. The
 function also updates the indices and history information of the new jet and
 sorts out the history.
 """
-do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine = +) = begin
-    # Create the new jet by recombining the first two with
-    # the E-scheme
-    push!(clusterseq.jets, recombine(clusterseq.jets[jet_i], clusterseq.jets[jet_j]))
-
+do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine = addjets) = begin
     # Get its index and the history index
-    newjet_k = length(clusterseq.jets)
+    newjet_k = length(clusterseq.jets) + 1
     newstep_k = length(clusterseq.history) + 1
 
-    # And provide jet with this info
-    clusterseq.jets[newjet_k]._cluster_hist_index = newstep_k
+    # Create the new jet by recombining the first two with
+    # the E-scheme, then push into the jet vector
+    jet1 = clusterseq.jets[jet_i]
+    jet2 = clusterseq.jets[jet_j]
+    push!(clusterseq.jets, addjets(jet1, jet2, newstep_k))
 
     # Finally sort out the history
-    hist_i = clusterseq.jets[jet_i]._cluster_hist_index
-    hist_j = clusterseq.jets[jet_j]._cluster_hist_index
+    hist_i = jet1._cluster_hist_index
+    hist_j = jet2._cluster_hist_index
 
     add_step_to_history!(clusterseq, minmax(hist_i, hist_j)...,
                          newjet_k, dij)
@@ -369,7 +368,7 @@ tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4, reco
 """
 function tiled_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -1,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                               R = 1.0, recombine = +) where {T}
+                               R = 1.0, recombine = addjets) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
@@ -386,7 +385,7 @@ function tiled_jet_reconstruct(particles::Vector{T}; p::Union{Real, Nothing} = -
         for i in eachindex(particles)
             push!(recombination_particles,
                   PseudoJet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                            energy(particles[i])))
+                            energy(particles[i]), i))
         end
     end
 
@@ -401,7 +400,7 @@ Main jet reconstruction algorithm, using PseudoJet objects
 """
     _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                R = 1.0, recombine = +)
+                                R = 1.0, recombine = )
 
 Main jet reconstruction algorithm entry point for reconstructing jets once preprocessing
 of data types are done. The algorithm parameter must be consistent with the
@@ -429,7 +428,7 @@ tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 1.0, recombine = 
 """
 function _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                R = 1.0, recombine = +)
+                                R = 1.0, recombine = addjets)
     # Bounds
     N::Int = length(particles)
 
