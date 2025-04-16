@@ -58,7 +58,7 @@ The dictionary is created by iterating over the `power2algorithm` dictionary and
 const algorithm2power = Dict((i.second, i.first) for i in power2algorithm)
 
 """
-    get_algorithm_power_consistency(; p::Union{Real, Nothing}, algorithm::Union{JetAlgorithm, Nothing})
+    get_algorithm_power_consistency(; p::Union{Real, Nothing}, algorithm::Union{JetAlgorithm.Algorithm, Nothing})
 
 Get the algorithm and power consistency correct
 
@@ -70,7 +70,7 @@ the power parameter is specified, it throws an `ArgumentError`.
 
 # Arguments
 - `p::Union{Real, Nothing}`: The power value.
-- `algorithm::Union{JetAlgorithm, Nothing}`: The algorithm.
+- `algorithm::Union{JetAlgorithm.Algorithm, Nothing}`: The algorithm.
 
 # Returns
 A named tuple of the consistent power and algorithm values.

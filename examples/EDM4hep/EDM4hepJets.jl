@@ -56,7 +56,7 @@ function main()
         if args[:printjets]
             @info begin
                 jets = "Event $(ievt)\n"
-                for jet in exclusive_jets(cs; njets = args[:njets], T = EEjet)
+                for jet in exclusive_jets(cs; njets = args[:njets], T = EEJet)
                     jets *= " $jet\n"
                 end
                 jets

@@ -1,21 +1,26 @@
 """
-    jet_reconstruct(particles; p = -1, algorithm = nothing, R = 1.0, recombine = +, strategy = RecoStrategy.Best)
+    jet_reconstruct(particles; p::Union{Real, Nothing} = nothing,
+                         algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
+                         R = 1.0, recombine = +,
+                         strategy::RecoStrategy.Strategy = RecoStrategy.Best)
 
 Reconstructs jets from a collection of particles using a specified algorithm and
-strategy
+strategy.
 
 # Arguments
 - `particles`: A collection of particles used for jet reconstruction. 
-- `p::Union{Real, Nothing} = -1`: The power value used for the distance measure
+- `p::Union{Real, Nothing} = nothing`: The power value used for the distance measure
   for generalised k_T, which maps to a particular reconstruction algorithm (-1 =
   AntiKt, 0 = Cambridge/Aachen, 1 = Kt).
 - `algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing`: The algorithm
   to use for jet reconstruction.
-- `R=1.0`: The jet radius parameter.
-- `recombine=+`: The recombination scheme used for combining particles.
-- `strategy=RecoStrategy.Best`: The jet reconstruction strategy to use.
-  `RecoStrategy.Best` makes a dynamic decision based on the number of starting
-  particles.
+- `R = 1.0`: The jet radius parameter.
+- `recombine = +`: The recombination scheme used for combining particles.
+- `strategy::RecoStrategy.Strategy = RecoStrategy.Best`: The jet reconstruction
+   strategy to use. `RecoStrategy.Best` makes a dynamic decision based on the
+   number of starting particles.
+
+Note that one of `p` or `algorithm` must be specified, with `algorithm` preferred.
 
 # Returns
 A cluster sequence object containing the reconstructed jets and the merging
@@ -52,10 +57,11 @@ jet_reconstruct(particles; algorithm = JetAlgorithm.Durham)
 jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, p = 0.5, R = 1.0)
 ```
 """
-function jet_reconstruct(particles; p::Union{Real, Nothing} = nothing, R = 1.0,
+function jet_reconstruct(particles; p::Union{Real, Nothing} = nothing,
                          algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                         recombine = +,
-                         strategy = RecoStrategy.Best)
+                         R = 1.0, recombine = +,
+                         strategy::RecoStrategy.Strategy = RecoStrategy.Best)
+
     # Either map to the fixed algorithm corresponding to the strategy
     # or to an optimal choice based on the density of initial particles
     if (algorithm === nothing) && (p === nothing)

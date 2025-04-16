@@ -91,6 +91,23 @@ A PseudoJet object.
 PseudoJet(px::Real, py::Real,
 pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
 
+"""Used to mark an invalid result in case the corresponding substructure tagging fails."""
+const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
+
+import Base.isvalid
+"""
+    isvalid(j::PseudoJet)
+
+Function to check whether a given `PseudoJet` object is non-zero or not. Primarily to use for checking the validity of outputs of substructure tagging.
+
+# Arguments
+- `j::PseudoJet`: The `PseudoJet` object to check.
+
+# Returns
+- `Bool`: `true` if the `PseudoJet` object is non-zero, `false` otherwise. 
+"""
+isvalid(j::PseudoJet) = !(j === invalid_pseudojet)
+
 import Base.show
 """
     show(io::IO, jet::PseudoJet)
@@ -167,8 +184,6 @@ _set_rap_phi!(p::PseudoJet) = begin
     p._phi = p._pt2 == 0.0 ? 0.0 : atan(p.py, p.px)
     if p._phi < 0.0
         p._phi += 2π
-    elseif p._phi >= 2π
-        p._phi -= 2π  # can happen if phi=-|eps<1e-15|?
     end
 
     if p.E == abs(p.pz) && iszero(p._pt2)
@@ -277,64 +292,6 @@ Calculate the invariant mass squared (m^2) of a PseudoJet.
 - The invariant mass squared (m^2) of the PseudoJet.
 """
 m2(p::PseudoJet) = (p.E + p.pz) * (p.E - p.pz) - p._pt2
-
-"""
-    mag(p::PseudoJet)
-
-Return the magnitude of the momentum of a `PseudoJet`, `|p|`.
-
-# Arguments
-- `p::PseudoJet`: The `PseudoJet` object for which to compute the magnitude.
-
-# Returns
-The magnitude of the `PseudoJet` object.
-"""
-mag(p::PseudoJet) = sqrt(muladd(p.px, p.px, p.py^2) + p.pz^2)
-
-"""
-    CosTheta(p::PseudoJet)
-
-Compute the cosine of the angle between the momentum vector `p` and the z-axis.
-
-# Arguments
-- `p::PseudoJet`: The PseudoJet object representing the momentum vector.
-
-# Returns
-- The cosine of the angle between `p` and the z-axis.
-"""
-@inline function CosTheta(p::PseudoJet)
-    fZ = p.pz
-    ptot = mag(p)
-    return ifelse(ptot == 0.0, 1.0, fZ / ptot)
-end
-
-"""
-    eta(p::PseudoJet)
-
-Compute the pseudorapidity (η) of a PseudoJet.
-
-# Arguments
-- `p::PseudoJet`: The PseudoJet object for which to compute the pseudorapidity.
-
-# Returns
-- The pseudorapidity (η) of the PseudoJet.
-"""
-function eta(p::PseudoJet)
-    cosTheta = CosTheta(p)
-    (cosTheta^2 < 1.0) && return -0.5 * log((1.0 - cosTheta) / (1.0 + cosTheta))
-    fZ = p.pz
-    iszero(fZ) && return 0.0
-    # Warning("PseudoRapidity","transverse momentum = 0! return +/- 10e10");
-    fZ > 0.0 && return 10e10
-    return -10e10
-end
-
-"""
-    const η = eta
-
-Alias for the pseudorapidity function, `eta`.
-"""
-const η = eta
 
 """
     m(p::PseudoJet)

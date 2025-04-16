@@ -221,9 +221,9 @@ If the algorithm is Durham, `p` is set to 1 and `R` is nominally set to 4.
 Note that unlike `pp` reconstruction the algorithm has to be specified
 explicitly.
 """
-function ee_genkt_algorithm(particles::AbstractArray{T, 1}; p = 1, R = 4.0,
+function ee_genkt_algorithm(particles::Vector{T}; p = 1,
                             algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                            recombine = +) where {T}
+                            R = 4.0, recombine = +) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
@@ -236,17 +236,17 @@ function ee_genkt_algorithm(particles::AbstractArray{T, 1}; p = 1, R = 4.0,
         R = 4.0
     end
 
-    if T == EEjet
+    if T == EEJet
         # recombination_particles will become part of the cluster sequence, so size it for
         # the starting particles and all N recombinations
         recombination_particles = copy(particles)
         sizehint!(recombination_particles, length(particles) * 2)
     else
-        recombination_particles = EEjet[]
+        recombination_particles = EEJet[]
         sizehint!(recombination_particles, length(particles) * 2)
         for i in eachindex(particles)
             push!(recombination_particles,
-                  EEjet(px(particles[i]), py(particles[i]), pz(particles[i]),
+                  EEJet(px(particles[i]), py(particles[i]), pz(particles[i]),
                         energy(particles[i])))
         end
     end
@@ -258,13 +258,13 @@ function ee_genkt_algorithm(particles::AbstractArray{T, 1}; p = 1, R = 4.0,
 end
 
 """
-    _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
+    _ee_genkt_algorithm(; particles::Vector{EEJet}, p = 1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
                        recombine = +)
 
 This function is the actual implementation of the e+e- jet clustering algorithm.
 """
-function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
+function _ee_genkt_algorithm(; particles::Vector{EEJet}, p = 1, R = 4.0,
                              algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
                              recombine = +)
     # Bounds

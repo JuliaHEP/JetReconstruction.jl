@@ -39,10 +39,11 @@ py(p::LorentzVectorCyl) = LorentzVectorHEP.py(p)
 pz(p::LorentzVectorCyl) = LorentzVectorHEP.pz(p)
 energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 
-# Pseudojet and EEjet types
+# Pseudojet and EEJet types
 include("Pseudojet.jl")
-include("EEjet.jl")
-export PseudoJet, EEjet, _set_rap_phi, pt2, phi, rapidity 
+include("EEJet.jl")
+include("JetUtils.jl")
+export PseudoJet, EEJet, pt_fraction, kt_scale, lorentzvector, lorentzvector_cyl, _set_rap_phi, pt2, phi, rapidity 
 
 # Jet reconstruction strategies and algorithms (enums!)
 include("AlgorithmStrategyEnums.jl")
@@ -87,8 +88,7 @@ export jet_reconstruct
 
 ## Substructure modules
 include("Substructure.jl")
-export MassDropTagger, SoftDropTagger, JetFilter, JetTrim, mass_drop, soft_drop,
-       jet_filtering, jet_trimming
+export mass_drop, soft_drop, jet_filtering, jet_trimming
 
 # Simple HepMC3 reader
 include("HepMC3.jl")

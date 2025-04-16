@@ -6,6 +6,12 @@ function main()
     # Algorithm/power consistency checks
     include("test-algpower-consistency.jl")
 
+    # Basic tests for the Jet types
+    include("test-jet-types.jl")
+
+    # Jet utilities tests
+    include("test-jet-utils.jl")
+
     # jet_reconstruct() interface check
     include("test-jet_reconstruct-interface.jl")
 
@@ -29,6 +35,11 @@ function main()
     #
     # Now run a few tests with our examples
     # include("tests_examples.jl")
+
+    # Utility support tests
+    include("test-utils.jl")
+
+    # Substructure tests
     include("test-substructure.jl")
 
     # Test with Aqua (https://juliatesting.github.io/Aqua.jl/stable/)

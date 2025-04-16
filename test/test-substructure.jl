@@ -16,20 +16,20 @@ for m in keys(methods)
     tol = 1e-7
 
     if m === "jet-filter"
-        groomer = JetFilter(0.3, 3)
-        testname = "FastJet comparison: Jet Filtering, R=$(groomer.filter_radius), n=$(groomer.num_hardest_jets)"
+        groomer = (radius = 0.3, hardest_jets = 3)
+        testname = "FastJet comparison: Jet Filtering, R=$(groomer.radius), n=$(groomer.hardest_jets)"
 
     elseif m === "jet-trim"
-        groomer = JetTrim(0.3, 0.3, JetAlgorithm.CA)
-        testname = "FastJet comparison: Jet Trimming, R=$(groomer.trim_radius), fraction=$(groomer.trim_fraction), alg=$(groomer.recluster_method)"
+        groomer = (radius = 0.3, fraction = 0.3, recluster_method = JetAlgorithm.CA)
+        testname = "FastJet comparison: Jet Trimming, R=$(groomer.radius), fraction=$(groomer.fraction), alg=$(groomer.recluster_method)"
 
     elseif m === "mass-drop"
-        groomer = MassDropTagger(0.67, 0.09)
+        groomer = (mu = 0.67, y = 0.09)
         testname = "FastJet comparison: Mass Drop Tagging, μ=$(groomer.mu), y=$(groomer.y)"
 
     else
-        groomer = SoftDropTagger(0.1, 2.0)
-        testname = "FastJet comparison: Soft Drop Tagging, zcut=$(groomer.zcut), β=$(groomer.b)"
+        groomer = (zcut = 0.1, beta = 2.0)
+        testname = "FastJet comparison: Soft Drop Tagging, zcut=$(groomer.zcut), β=$(groomer.beta)"
         tol = 1e-4
     end
 
@@ -37,7 +37,7 @@ for m in keys(methods)
         for (ievt, evt) in enumerate(events)
             cluster_seq = jet_reconstruct(evt, p = 0, R = 1.0)
             jets = inclusive_jets(cluster_seq; ptmin = 5.0, T = PseudoJet)
-            groomed = sort!([methods[m](jet, cluster_seq, groomer)
+            groomed = sort!([methods[m](jet, cluster_seq; groomer...)
                              for jet in jets], by = JetReconstruction.pt2, rev = true)
 
             @test length(groomed) === length(test_data[ievt]["jets"])

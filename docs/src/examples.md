@@ -64,7 +64,7 @@ jet reconstruction in the browser. This is a 3D plot where all the initial
 energy deposits are visualised, with colours that indicate in which final
 cluster the deposit ended up in.
 
-The first example is a Jupyter notbook, the second runs in Pluto.
+The first example is a Jupyter notebook, the second runs in Pluto.
 
 ### `animate-reconstruction.jl`
 

@@ -1,6 +1,24 @@
 # Utility functions, which can be used by different top level scripts
 
 using CodecZlib
+using CodecZstd
+
+"""
+    open_with_stream(fname::AbstractString)
+
+Open a file with a stream decompressor if it is compressed with gzip or zstd,
+otherwise as a normal file.
+"""
+open_with_stream(fname::AbstractString) = begin
+    if endswith(fname, ".gz")
+        f = GzipDecompressorStream(open(fname))
+    elseif endswith(fname, ".zst")
+        f = ZstdDecompressorStream(open(fname))
+    else
+        f = open(fname)
+    end
+    f
+end
 
 """
     read_final_state_particles(fname; maxevents = -1, skipevents = 0, T=PseudoJet)
@@ -22,12 +40,7 @@ a `LorentzVector` type. Note, if T is not `PseudoJet`, the order of the
 arguments in the constructor must be `(t, x, y, z)`.
 """
 function read_final_state_particles(fname; maxevents = -1, skipevents = 0, T = PseudoJet)
-    f = open(fname)
-    if endswith(fname, ".gz")
-        @debug "Reading gzipped file $fname"
-        f = GzipDecompressorStream(f)
-    end
-
+    f = open_with_stream(fname)
     events = Vector{T}[]
 
     ipart = 1

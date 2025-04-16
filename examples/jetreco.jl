@@ -147,7 +147,7 @@ function main()
     global_logger(logger)
     # Try to read events into the correct type!
     if JetReconstruction.is_ee(args[:algorithm])
-        jet_type = EEjet
+        jet_type = EEJet
     else
         jet_type = PseudoJet
     end

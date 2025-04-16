@@ -10,7 +10,6 @@ using Logging
 using LorentzVectorHEP
 using JSON
 using Test
-using CodecZlib
 
 logger = ConsoleLogger(stdout, Logging.Warn)
 global_logger(logger)
@@ -19,7 +18,7 @@ const events_file_pp = joinpath(@__DIR__, "data", "events.pp13TeV.hepmc3.gz")
 const events_file_ee = joinpath(@__DIR__, "data", "events.eeH.hepmc3.gz")
 
 const pp_algorithms = Dict(-1 => "Anti-kt",
-                           0 => "Cambridge/Achen",
+                           0 => "Cambridge/Aachen",
                            1 => "Inclusive-kt",
                            1.5 => "Generalised-kt")
 
@@ -66,11 +65,7 @@ end
 
 """Read JSON file with fastjet jets in it"""
 function read_fastjet_outputs(fname)
-    f = open(fname)
-    if endswith(fname, ".gz")
-        @debug "Reading gzipped file $fname"
-        f = GzipDecompressorStream(f)
-    end
+    f = JetReconstruction.open_with_stream(fname)
     JSON.parse(f)
 end
 
