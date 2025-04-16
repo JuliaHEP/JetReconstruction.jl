@@ -36,3 +36,6 @@ benchmark/*
 /profile/*
 /statprof/*
 /debug/*
+
+# Input files for testing
+test/data/sk_example*.hepmc3
