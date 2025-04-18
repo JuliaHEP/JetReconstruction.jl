@@ -234,7 +234,7 @@ do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recomb
     # the E-scheme, then push into the jet vector
     jet1 = clusterseq.jets[jet_i]
     jet2 = clusterseq.jets[jet_j]
-    push!(clusterseq.jets, addjets(jet1, jet2, newstep_k))
+    push!(clusterseq.jets, recombine(jet1, jet2, newstep_k))
 
     # Finally sort out the history
     hist_i = jet1._cluster_hist_index
@@ -400,7 +400,7 @@ Main jet reconstruction algorithm, using PseudoJet objects
 """
     _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet}; p::Real = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                R = 1.0, recombine = )
+                                R = 1.0, recombine = addjets)
 
 Main jet reconstruction algorithm entry point for reconstructing jets once preprocessing
 of data types are done. The algorithm parameter must be consistent with the
