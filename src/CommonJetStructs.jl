@@ -40,6 +40,27 @@ function addjets(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMome
 end
 
 """
+    addjets_ptscheme(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+
+Use the massless pt scheme for adding two jets together
+"""
+function addjets_ptscheme(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+    scale1 = pt(jet1)
+    scale2 = pt(jet2)
+    new_pt = pt(jet1) + pt(jet2)
+    new_rap = (scale1 * rap(jet1) + scale2 * rap(jet2)) / (scale1 + scale2)
+    phi_wrap = 0.0
+    if phi(jet1) - phi(jet2) > π
+        phi_wrap = 2π
+    elseif phi(jet1) - phi(jet2) < π
+        phi_wrap = -2π
+    end
+    new_phi = (scale1 * phi(jet1) + scale2 * (phi(jet2) + phi_wrap)) / (scale1 + scale2)
+    # Now create new jet from pt, y and phi... implicitly assume that mass=0!
+    T(pt=new_pt, rap=new_rap, phi=new_phi, m=0.0, cluster_hist_index=cluster_hist_index)
+end
+
+"""
     px(j::FourMomentum)
 
 Return the x-component of the four-momentum vector of `j`.
