@@ -93,7 +93,7 @@ Construct a PseudoJet from `(pt, y, ϕ, m)` with the cluster index
 function PseudoJet(;pt::Real, rap::Real, phi::Real, m::Real = 0, cluster_hist_index::Int = 0)
     @assert(phi < 2π && phi > -2π)
 
-    ptm = (m_in == 0) ? pt : sqrt(pt^2 + m^2)
+    ptm = (m == 0) ? pt : sqrt(pt^2 + m^2)
     exprap = exp(rap)
     pminus = ptm/exprap
     pplus  = ptm*exprap
