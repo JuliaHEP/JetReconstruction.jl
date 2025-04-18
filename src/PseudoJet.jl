@@ -33,30 +33,38 @@ struct PseudoJet <: FourMomentum
     _inv_pt2::Float64
     _rap::Float64
     _phi::Float64
-    function PseudoJet(px, py, pz, E, cluster_hist_index)
-        @muladd pt2 = px * px + py * py
-        inv_pt2 = @fastmath 1.0 / pt2
-        phi = pt2 == 0.0 ? 0.0 : atan(py, px)
-        phi = phi < 0.0 ? phi + 2π : phi
-        if E == abs(pz) && iszero(pt2)
-            # Point has infinite rapidity - convert that into a very large
-            #    number, but in such a way that different 0-pt momenta will have
-            #    different rapidities (so as to lift the degeneracy between
-            #    them) [this can be relevant at parton-level]
-            MaxRapHere = _MaxRap + abs(pz)
-            rap = pz >= 0.0 ? MaxRapHere : -MaxRapHere
-        else
-            # get the rapidity in a way that's modestly insensitive to roundoff
-            # error when things pz,E are large (actually the best we can do without
-            # explicit knowledge of mass)
-            effective_m2 = (E + pz) * (E - pz) - pt2
-            effective_m2 = max(0.0, effective_m2) # force non tachyonic mass
-            E_plus_pz = E + abs(pz) # the safer of p+, p-
-            rap = 0.5 * log((pt2 + effective_m2) / (E_plus_pz * E_plus_pz))
-            rap = pz > 0.0 ? -rap : rap
-        end
-        new(px, py, pz, E, cluster_hist_index, pt2, inv_pt2, rap, phi)
+end
+
+
+"""
+    PseudoJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
+
+Construct a PseudoJet from a four momentum `(px, py, pz, E)`` with cluster index
+`cluster_hist_index`.
+"""
+function PseudoJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
+    @muladd pt2 = px * px + py * py
+    inv_pt2 = @fastmath 1.0 / pt2
+    phi = pt2 == 0.0 ? 0.0 : atan(py, px)
+    phi = phi < 0.0 ? phi + 2π : phi
+    if E == abs(pz) && iszero(pt2)
+        # Point has infinite rapidity - convert that into a very large
+        #    number, but in such a way that different 0-pt momenta will have
+        #    different rapidities (so as to lift the degeneracy between
+        #    them) [this can be relevant at parton-level]
+        MaxRapHere = _MaxRap + abs(pz)
+        rap = pz >= 0.0 ? MaxRapHere : -MaxRapHere
+    else
+        # get the rapidity in a way that's modestly insensitive to roundoff
+        # error when things pz,E are large (actually the best we can do without
+        # explicit knowledge of mass)
+        effective_m2 = (E + pz) * (E - pz) - pt2
+        effective_m2 = max(0.0, effective_m2) # force non tachyonic mass
+        E_plus_pz = E + abs(pz) # the safer of p+, p-
+        rap = 0.5 * log((pt2 + effective_m2) / (E_plus_pz * E_plus_pz))
+        rap = pz > 0.0 ? -rap : rap
     end
+    PseudoJet(px, py, pz, E, cluster_hist_index, pt2, inv_pt2, rap, phi)
 end
 
 """
@@ -74,6 +82,28 @@ PseudoJet(px::Real, py::Real, pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0)
 
 Used to mark an invalid result in case the corresponding substructure tagging fails."""
 const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
+
+
+"""
+    PseudoJet(;pt::Real, rap::Real, phi::Real, m::Real = 0, cluster_hist_index::Int = 0)
+
+Construct a PseudoJet from `(pt, y, ϕ, m)` with the cluster index
+`cluster_hist_index`.
+"""
+function PseudoJet(;pt::Real, rap::Real, phi::Real, m::Real = 0, cluster_hist_index::Int = 0)
+    @assert(phi < 2π && phi > -2π)
+
+    ptm = (m_in == 0) ? pt : sqrt(pt^2 + m^2)
+    exprap = exp(rap)
+    pminus = ptm/exprap
+    pplus  = ptm*exprap
+    px = pt * cos(phi)
+    py = pt * sin(phi)
+    pz = @fastmath (pplus - pminus) / 2
+    E = @fastmath (pplus + pminus) /2
+
+    PseudoJet(px, py, pz, E, cluster_hist_index, pt*pt, 1/(pt*pt), rap, phi)
+end
 
 import Base.isvalid
 """
