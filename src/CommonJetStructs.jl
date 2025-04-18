@@ -48,7 +48,7 @@ function addjets_ptscheme(jet1::T, jet2::T, cluster_hist_index::Int) where {T <:
     scale1 = pt(jet1)
     scale2 = pt(jet2)
     new_pt = pt(jet1) + pt(jet2)
-    new_rap = (scale1 * rap(jet1) + scale2 * rap(jet2)) / (scale1 + scale2)
+    new_rap = (scale1 * rapidity(jet1) + scale2 * rapidity(jet2)) / (scale1 + scale2)
     phi_wrap = 0.0
     if phi(jet1) - phi(jet2) > π
         phi_wrap = 2π
