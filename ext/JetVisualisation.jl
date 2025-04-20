@@ -144,21 +144,22 @@ function JetReconstruction.jetsplot(cs::ClusterSequence,
     end
 
     set_theme!(jetreco_theme)
-    fig, ax, plt_obj = Module.meshscatter(jet_plot_points;
-                                          markersize = jet_plot_marker_size,
-                                          marker = jet_plot_marker,
-                                          colormap = colormap,
-                                          color = jet_plot_colours,
-                                          colorrange = (1, 256),
-                                          figure = (size = (700, 600),),
-                                          axis = (type = Axis3, perspectiveness = 0.5,
-                                                  azimuth = 2.7,
-                                                  elevation = 0.5,
-                                                  xlabel = L"\phi", ylabel = L"y",
-                                                  zlabel = L"p_T",
-                                                  limits = (0, 2π, min_rap - 0.5,
-                                                            max_rap + 0.5, 0, max_pt + 10)),
-                                          shading = NoShading)
+    fig, ax,
+    plt_obj = Module.meshscatter(jet_plot_points;
+                                 markersize = jet_plot_marker_size,
+                                 marker = jet_plot_marker,
+                                 colormap = colormap,
+                                 color = jet_plot_colours,
+                                 colorrange = (1, 256),
+                                 figure = (size = (700, 600),),
+                                 axis = (type = Axis3, perspectiveness = 0.5,
+                                         azimuth = 2.7,
+                                         elevation = 0.5,
+                                         xlabel = L"\phi", ylabel = L"y",
+                                         zlabel = L"p_T",
+                                         limits = (0, 2π, min_rap - 0.5,
+                                                   max_rap + 0.5, 0, max_pt + 10)),
+                                 shading = NoShading)
     fig, ax, plt_obj
 end
 

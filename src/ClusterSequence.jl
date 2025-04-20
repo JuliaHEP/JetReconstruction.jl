@@ -63,8 +63,10 @@ initialising the history with original particles.
 A `HistoryElement` object.
 
 """
-HistoryElement(jetp_index) = HistoryElement(NonexistentParent, NonexistentParent, Invalid,
-                                            jetp_index, 0.0, 0.0)
+function HistoryElement(jetp_index)
+    HistoryElement(NonexistentParent, NonexistentParent, Invalid,
+                   jetp_index, 0.0, 0.0)
+end
 
 """
     initial_history(particles)
@@ -144,7 +146,9 @@ Construct a `ClusterSequence` object.
   sequence.
 - `Qtot::Any`: The total energy of the event.
 """
-ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64, strategy::RecoStrategy.Strategy, jets::Vector{T}, history, Qtot) where {T <: FourMomentum} = begin
+function ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64,
+                         strategy::RecoStrategy.Strategy, jets::Vector{T}, history,
+                         Qtot) where {T <: FourMomentum}
     ClusterSequence{T}(algorithm, Float64(p), R, strategy, jets, length(jets), history,
                        Qtot)
 end
@@ -170,7 +174,8 @@ If the `parent1` or `parent2` have already been recombined, an `InternalError`
 is thrown. The `jetp_index` is used to update the `_cluster_hist_index` of the
 corresponding `PseudoJet` object.
 """
-add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, dij) = begin
+function add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index,
+                              dij)
     max_dij_so_far = max(dij, clusterseq.history[end].max_dij_so_far)
     push!(clusterseq.history,
           HistoryElement(parent1, parent2, Invalid,

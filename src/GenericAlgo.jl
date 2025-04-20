@@ -87,5 +87,4 @@ function jet_reconstruct(particles; p::Union{Real, Nothing} = nothing,
 
     # Now call the chosen algorithm, passing through the other parameters
     alg(particles; p = p, algorithm = algorithm, R = R, recombine = recombine)
-
 end

@@ -8,7 +8,7 @@ mutable struct RectangularGrid <: TilingBase
     _ymin::Float64
     _requested_drap::Float64
     _requested_dphi::Float64
-    
+
     _ntotal::Int64
     _ngood::Int64
     _dy::Float64
@@ -20,7 +20,8 @@ mutable struct RectangularGrid <: TilingBase
     _nphi::Int64
 
     function RectangularGrid(rapmax::Float64, grid_size::Float64)
-        grid = new(rapmax, -rapmax, grid_size, grid_size, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0)
+        grid = new(rapmax, -rapmax, grid_size, grid_size, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0,
+                   0)
         _setup_grid(grid)
         print(description(grid))
 
@@ -31,7 +32,6 @@ mutable struct RectangularGrid <: TilingBase
         grid = new(rapmax, rapmin, drap, dphi, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0)
         _setup_grid(grid)
         print(description(grid))
-
 
         return grid
     end
@@ -45,4 +45,3 @@ mutable struct RectangularGrid <: TilingBase
     #end
 
 end
-

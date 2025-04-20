@@ -15,11 +15,10 @@ examples in this package for more information.
 """
 module JetReconstruction
 
-
 using LorentzVectorHEP
 using MuladdMacro
 using StructArrays
-using Plots 
+using Plots
 
 # Import from LorentzVectorHEP methods for those 4-vector types
 pt2(p::LorentzVector) = LorentzVectorHEP.pt2(p)
@@ -42,7 +41,8 @@ energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 include("Pseudojet.jl")
 include("EEJet.jl")
 include("JetUtils.jl")
-export PseudoJet, EEJet, pt_fraction, kt_scale, lorentzvector, lorentzvector_cyl, _set_rap_phi, pt2, phi, rapidity, delta_phi 
+export PseudoJet, EEJet, pt_fraction, kt_scale, lorentzvector, lorentzvector_cyl,
+       _set_rap_phi, pt2, phi, rapidity, delta_phi
 
 # Jet reconstruction strategies and algorithms (enums!)
 include("AlgorithmStrategyEnums.jl")
