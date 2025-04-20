@@ -1,8 +1,5 @@
 using JetReconstruction
 
-#do I need to account for different versions of fastjet? I assumed no 
-#two types can't inherit one another if I need to instantate??? 
-
 mutable struct SoftKiller <: TilingBase
     _ymax::Float64
     _ymin::Float64
@@ -216,6 +213,9 @@ plot_set_up(Y::Vector{Float64}, Phi::Vector{Float64}, pt::Vector{Float64}, color
         alpha=0.6,
         legend=false  
     )
-
-    savefig(p, plot_title * ".png")
+    
+    save_dir = "examples"
+    mkpath(save_dir)
+    file_path = joinpath(save_dir, plot_title * ".png")
+    savefig(p, file_path)
 end

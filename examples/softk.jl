@@ -1,4 +1,14 @@
+"""
+run it with
+julia --project=examples examples/softk.jl  --maxevents=100 --grid-size=0.4  --algorithm=Kt/
+    --pileup-file=test/data/sk_example_PU.hepmc --hard-file=test/data/sk_example_HS.hepmc 
+----------------------------------------------------------------------
+"""
 
+"""
+A simple example of SoftKiller that read from two HepMC3 files 
+and displays plots of clustering without SoftKiller and with SoftKiller 
+"""
 using ArgParse
 using Profile
 using Logging
@@ -7,8 +17,6 @@ using JSON
 using LorentzVectorHEP
 using JetReconstruction
 using Plots 
-using Pkg
-Pkg.develop(path="/Users/emadimtrova/Desktop/uni/spring25/UTRA/JetReconstruction.jl")
 
 include(joinpath(@__DIR__, "parse-options.jl"))
 
@@ -88,12 +96,14 @@ function process_event(event::Vector{PseudoJet}, args::Dict{Symbol, Any}, all_je
     p = args[:power]
     strategy = args[:strategy]
 
+    #Clustering of the given vector of PseudoJets 
     cluster_seq_pu = jet_reconstruct(event, 
                                      R = distance, p = p, algorithm = algorithm,
                                     strategy = strategy)
     
-    #clustering 
     finaljets_pu_lorv = inclusive_jets(cluster_seq_pu)
+
+    #Updating information for plots
     for jet in finaljets_pu_lorv
         pj = PseudoJet(px(jet), py(jet), pz(jet), energy(jet))
         push!(all_jets, pj)
@@ -108,6 +118,11 @@ end
 
 
 main() = begin 
+    `read in input particles
+    //
+    // since we use here simulated data we can split the hard event
+    // from the full (i.e. with pileup added) one
+    //`
     args = parse_command_line(ARGS)
     logger = ConsoleLogger(stdout, Logging.Info)
     global_logger(logger)
@@ -120,7 +135,8 @@ main() = begin
 
     hard_event = PseudoJet[]
     events = Vector{PseudoJet}[] 
-
+    
+    #Reading from input files 
     events = read_final_state_particles(args[:pileup_file],
                                         maxevents = args[:maxevents],
                                         skipevents = args[:skip],
@@ -132,7 +148,7 @@ main() = begin
                                         skipevents = args[:skip],
                                         T = jet_type)
 
-                                      
+    #Setting dimetions for Softkiller                                   
     rapmax = 5.0 
     grid_size = args[:grid_size]
     soft_killer = SoftKiller(rapmax, grid_size)
@@ -144,54 +160,65 @@ main() = begin
     algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
 
-    all_events = PseudoJet[]
+    #This is a vector of PseudoJets that contatins hard event and pileup 
+    #this vector will get clustered without SoftKiller applied 
+    all_jets = PseudoJet[]
+    #This is a vector of PseudoJets that contatins hard event and pileup 
+    #but it will get clustered after SoftKiller was applied 
+    all_jets_sk = PseudoJet[]
+    #This is a vecotor of type string to track if a particle came from hard_events 
+    #or from events - this is to mainain accurate coloring for the "Before" graph 
     jet_origin = String[]
 
     hard_event = h_events[1]
+    
+    #keep the particles up to 5 units in rapidity
     hard_event = select_ABS_RAP_max(hard_event,rapmax)
 
     Ys, Phis, pts = Float64[], Float64[], Float64[]
     colors = String[]
 
-    #all events post clutering 
-    process_event(h_events[1], args, all_events, rapmax, Ys, Phis, pts, colors, "purple", jet_origin)
+    #Clustering and updating data for the gaphs 
+    process_event(h_events[1], args, all_jets, rapmax, Ys, Phis, pts, colors, "purple", jet_origin)
+    
+    #Filling all_jets_sk for hard event
+    for pseudo_jet in h_events[1]
+        push!(all_jets_sk, pseudo_jet)
+    end
 
     n_events = length(events)
     println("EVENT: $n_events")
+
+    #Clustering and updating data for the gaphs plus filling all_jets_sk for the pile up 
     for (ievn, event) in enumerate(events)
-        process_event(event, args, all_events, rapmax, Ys, Phis, pts, colors, "black", jet_origin)        
+        for pseudo_jet in event
+            push!(all_jets_sk, pseudo_jet)
+        end
+        process_event(event, args, all_jets, rapmax, Ys, Phis, pts, colors, "black", jet_origin)        
     end 
     
-    num_events = length(all_events)
+    num_events = length(all_jets)
     println("EVENT BEFORE: $num_events")
+    #Plotting of clustering without SoftKiller applied 
+    plot_set_up(Ys, Phis, pts, colors, "All Jets Before SoftKiller")
+
 
     pt_threshold = 0.00
     soft_killer_event = PseudoJet[]
 
-    plot_set_up(Ys, Phis, pts, colors, "All Jets Before SoftKiller")
-
-    reduced_event, pt_threshold = apply(soft_killer, all_events, soft_killer_event, pt_threshold)
+    #Applying SoftKiller to a non-clistered vector of PseudoJets 
+    reduced_event, pt_threshold = apply(soft_killer, all_jets_sk, soft_killer_event, pt_threshold)
     
     Ys_reduced, Phis_reduced, pts_reduced = Float64[], Float64[], Float64[]
     colors_reduced = String[]
 
-    for jet in reduced_event
-        push!(Ys_reduced, JetReconstruction.rapidity(jet))
-        push!(Phis_reduced, JetReconstruction.phi(jet))
-        push!(pts_reduced, JetReconstruction.pt2(jet))
-    
-        idx = findfirst(x -> x === jet, all_events)
-        if idx === nothing
-            push!(colors_reduced, "pink")
-        else
-            push!(colors_reduced, jet_origin[idx] == "hard" ? "purple" : "black")
-        end
-    end
-
     num_events_after = length(reduced_event)
     println("EVENT AFTER: $num_events_after")
-    #process_event(reduced_event, args, all_events, rapmax, Ys_reduced, Phis_reduced, pts_reduced, colors_reduced, "green", jet_origin)
+
+    #Clustering after Softkiller using reduced_event
+    process_event(reduced_event, args, all_jets_sk, rapmax, Ys_reduced, Phis_reduced, pts_reduced, colors_reduced, "royalblue3", jet_origin)
     
+    #Plotting reduced_event
     plot_set_up(Ys_reduced, Phis_reduced, pts_reduced, colors_reduced, "All Jets After SoftKiller and Clustering")
 
 end
