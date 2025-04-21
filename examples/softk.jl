@@ -172,17 +172,24 @@ function main()
             process_event(event, args, all_jets, rapmax, Ys, Phis, pts, colors, color, jet_origin)
         end
     end
-    Yi, Phii, pti = Float64[], Float64[], Float64[]
+    Yi, Phii, pti, colorsr = Float64[], Float64[], Float64[], String[]
 
     for p in all_jets_sk
         particle = PseudoJet(p.px, p.py, p.pz, p.E)
         push!(Yi,JetReconstruction.rapidity(particle))
         push!(Phii,JetReconstruction.phi(particle))
         push!(pti,JetReconstruction.pt2(particle))   
+        push!(colorsr, "royalblue3")
     end
 
+    dummy = PseudoJet[]
     plot_set_up(Yi, Phii, pti, colors,
                 "Plot of all PseudoJets before clustering")
+
+    Yi2, Phii2, pti2 = Float64[], Float64[], Float64[]
+    process_event(all_jets_sk, args, dummy, rapmax, Yi2, Phii2, pti2, colorsr, "royalblue3", jet_origin)
+    plot_set_up(Yi2, Phii2, pti2, colorsr,
+    "Plot of all PseudoJets after clustering")
 
 
     num_events = length(all_jets)
@@ -207,15 +214,23 @@ function main()
     process_event(reduced_event, args, all_jets_sk, rapmax, Ys_reduced, Phis_reduced,
                   pts_reduced, colors_reduced, "royalblue3", jet_origin)
 
-    Y, Phi, pt = Float64[], Float64[], Float64[]
+    Y, Phi, pt, color = Float64[], Float64[], Float64[], String[]
 
     for p in reduced_event
         particle = PseudoJet(p.px, p.py, p.pz, p.E)
         push!(Y,JetReconstruction.rapidity(particle))
         push!(Phi,JetReconstruction.phi(particle))
         push!(pt,JetReconstruction.pt2(particle))
+        push!(color, "royalblue3")
             
     end
+    dummy2 = PseudoJet[]
+
+    Yi3, Phii3, pti3 = Float64[], Float64[], Float64[]
+    process_event(all_jets_sk, args, dummy, rapmax, Yi3, Phii3, pti3, color, "royalblue3", jet_origin)
+    plot_set_up(Yi3, Phii3, pti3, color,
+    "Plot of all PseudoJets after SoftKiller with clustering")
+
 
     plot_set_up(Y, Phi, pt, colors_reduced,
                 "Plot of all PseudoJets after SoftKiller but no clustering")
