@@ -35,7 +35,6 @@ struct PseudoJet <: FourMomentum
     _phi::Float64
 end
 
-
 """
     PseudoJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
 
@@ -83,26 +82,27 @@ PseudoJet(px::Real, py::Real, pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0)
 Used to mark an invalid result in case the corresponding substructure tagging fails."""
 const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
 
-
 """
     PseudoJet(;pt::Real, rap::Real, phi::Real, m::Real = 0, cluster_hist_index::Int = 0)
 
 Construct a PseudoJet from `(pt, y, ϕ, m)` with the cluster index
 `cluster_hist_index`.
 """
-function PseudoJet(;pt::Real, rap::Real, phi::Real, m::Real = 0, cluster_hist_index::Int = 0)
-    @assert(phi < 2π && phi > -2π)
+function PseudoJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
+                   cluster_hist_index::Int = 0)
+    @assert(phi < 2π&&phi > -2π)
 
+    phi = phi < 0.0 ? phi + 2π : phi
     ptm = (m == 0) ? pt : sqrt(pt^2 + m^2)
     exprap = exp(rap)
-    pminus = ptm/exprap
-    pplus  = ptm*exprap
+    pminus = ptm / exprap
+    pplus = ptm * exprap
     px = pt * cos(phi)
     py = pt * sin(phi)
     pz = @fastmath (pplus - pminus) / 2
-    E = @fastmath (pplus + pminus) /2
+    E = @fastmath (pplus + pminus) / 2
 
-    PseudoJet(px, py, pz, E, cluster_hist_index, pt*pt, 1/(pt*pt), rap, phi)
+    PseudoJet(px, py, pz, E, cluster_hist_index, pt * pt, 1 / (pt * pt), rap, phi)
 end
 
 import Base.isvalid
