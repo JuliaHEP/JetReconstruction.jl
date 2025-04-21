@@ -40,13 +40,46 @@ function addjets(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMome
 end
 
 """
+    const addjets_escheme = addjets
+
+Alias for the `addjets` function, which is the default jet recombination scheme.
+"""
+const addjets_escheme = addjets
+
+"""
     addjets_ptscheme(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
 
-Use the massless pt scheme for adding two jets together
+Use the massless ``p_T`` scheme for combining two jets, setting the appropriate
+cluster history index for the new jet.
 """
-function addjets_ptscheme(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+function addjets_ptscheme(jet1::T, jet2::T,
+                          cluster_hist_index::Int) where {T <: FourMomentum}
     scale1 = pt(jet1)
     scale2 = pt(jet2)
+    _addjets_with_scale(scale1, scale2, jet1, jet2, cluster_hist_index)
+end
+
+"""
+    addjets_pt2scheme(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+
+Use the massless ``p_T^2`` scheme for combining two jets, setting the
+appropriate cluster history index for the new jet.
+"""
+function addjets_pt2scheme(jet1::T, jet2::T,
+                           cluster_hist_index::Int) where {T <: FourMomentum}
+    scale1 = pt2(jet1)
+    scale2 = pt2(jet2)
+    _addjets_with_scale(scale1, scale2, jet1, jet2, cluster_hist_index)
+end
+
+"""
+    _addjets_with_scale(scale1::Real, scale2::Real, jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+
+Combine two jets as massless objects using the given scale factors for each jet,
+and return the new jet with the cluster history index set.
+"""
+function _addjets_with_scale(scale1::Real, scale2::Real, jet1::T, jet2::T,
+                             cluster_hist_index::Int) where {T <: FourMomentum}
     new_pt = pt(jet1) + pt(jet2)
     new_rap = (scale1 * rapidity(jet1) + scale2 * rapidity(jet2)) / (scale1 + scale2)
     phi_wrap = 0.0
@@ -56,8 +89,9 @@ function addjets_ptscheme(jet1::T, jet2::T, cluster_hist_index::Int) where {T <:
         phi_wrap = -2π
     end
     new_phi = (scale1 * phi(jet1) + scale2 * (phi(jet2) + phi_wrap)) / (scale1 + scale2)
+
     # Now create new jet from pt, y and phi... implicitly assume that mass=0!
-    T(pt=new_pt, rap=new_rap, phi=new_phi, m=0.0, cluster_hist_index=cluster_hist_index)
+    T(pt = new_pt, rap = new_rap, phi = new_phi, cluster_hist_index = cluster_hist_index)
 end
 
 """
