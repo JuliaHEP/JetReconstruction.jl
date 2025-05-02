@@ -255,7 +255,7 @@ function plain_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Noth
 end
 
 """
-    _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1, 
+    _plain_jet_reconstruct(; particles::AbstractVector{PseudoJet}, p = -1, 
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
                                 R = 1.0, recombine = +)
 
@@ -286,7 +286,7 @@ power parameter.
 - `clusterseq`: The resulting `ClusterSequence` object representing the
   reconstructed jets.
 """
-function _plain_jet_reconstruct(; particles::Vector{PseudoJet}, p = -1,
+function _plain_jet_reconstruct(; particles::AbstractVector{PseudoJet}, p = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
                                 R = 1.0, recombine = +)
     # Bounds
