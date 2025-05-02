@@ -36,12 +36,17 @@ struct PseudoJet <: FourMomentum
 end
 
 """
-    PseudoJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
+    PseudoJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::Int = 0)
 
 Construct a PseudoJet from a four momentum `(px, py, pz, E)`` with cluster index
 `cluster_hist_index`.
+
+# Details
+
+If the (default) value of `cluster_hist_index=0` is used, the PseudoJet cannot be
+used in a reconstruction sequence.
 """
-function PseudoJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
+function PseudoJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::Int = 0)
     @muladd pt2 = px * px + py * py
     inv_pt2 = @fastmath 1.0 / pt2
     phi = pt2 == 0.0 ? 0.0 : atan(py, px)
@@ -67,16 +72,6 @@ function PseudoJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::In
 end
 
 """
-    PseudoJet(px::Real, py::Real, pz::Real, E::Real)
-
-Constructs a PseudoJet object with the given momentum components and energy.
-
-# Returns
-A PseudoJet object with **no** cluster index.
-"""
-PseudoJet(px::Real, py::Real, pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0)
-
-"""
     const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
 
 Used to mark an invalid result in case the corresponding substructure tagging fails."""
@@ -87,12 +82,16 @@ const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
 
 Construct a PseudoJet from `(pt, y, ϕ, m)` with the cluster index
 `cluster_hist_index`.
+
+# Details
+
+If the (default) value of `cluster_hist_index=0` is used, the PseudoJet cannot be
+used in a reconstruction sequence.
 """
 function PseudoJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
                    cluster_hist_index::Int = 0)
-    @assert(phi < 2π&&phi > -2π)
-
-    phi = phi < 0.0 ? phi + 2π : phi
+    phi = phi < 0 ? phi + 2π : phi
+    phi = phi > 2π ? phi - 2π : phi
     ptm = (m == 0) ? pt : sqrt(pt^2 + m^2)
     exprap = exp(rap)
     pminus = ptm / exprap
@@ -103,6 +102,45 @@ function PseudoJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
     E = @fastmath (pplus + pminus) / 2
 
     PseudoJet(px, py, pz, E, cluster_hist_index, pt * pt, 1 / (pt * pt), rap, phi)
+end
+
+"""
+    PseudoJet(jet::LorentzVector; cluster_hist_index::Int = 0)
+
+Construct a PseudoJet from a `LorentzVector` object with the cluster index.
+"""
+function PseudoJet(jet::LorentzVector; cluster_hist_index::Int = 0)
+    PseudoJet(jet.x, jet.y, jet.z, jet.t; cluster_hist_index = cluster_hist_index)
+end
+
+"""
+    PseudoJet(jet::LorentzVectorCyl; cluster_hist_index::Int = 0)
+
+Construct a PseudoJet from a `LorentzVectorCyl` object with the given cluster index.
+"""
+function PseudoJet(jet::LorentzVectorCyl; cluster_hist_index::Int = 0)
+    PseudoJet(; pt = pt(jet), rap = rapidity(jet), phi = phi(jet), m = mass(jet),
+              cluster_hist_index = cluster_hist_index)
+end
+
+"""
+    PseudoJet(jet::Any; cluster_hist_index::Int = 0)
+
+Construct a PseudoJet from a generic object `jet` with the given cluster index.
+
+# Details
+
+This function is used to convert a generic object `jet` into a `PseudoJet`, for
+this to work the object must have the methods `px`, `py`, `pz`, and `energy` defined,
+which are used to extract the four-momentum components of the object.
+
+The `cluster_hist_index` is optional, but needed if the `jet` is part of a
+reconstruction sequence. If not provided, it defaults to `0` as an "invalid"
+value.
+"""
+function PseudoJet(jet::Any; cluster_hist_index::Int = 0)
+    PseudoJet(px(jet), py(jet), pz(jet), energy(jet);
+              cluster_hist_index = cluster_hist_index)
 end
 
 import Base.isvalid

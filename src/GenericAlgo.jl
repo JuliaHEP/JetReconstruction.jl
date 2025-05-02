@@ -61,7 +61,7 @@ jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, p = 0.5, R = 1.0)
 """
 function jet_reconstruct(particles::AbstractVector; p::Union{Real, Nothing} = nothing,
                          algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                         R = 1.0, recombine = addjets,
+                         R = 1.0, recombine = addjets, preprocess = nothing,
                          strategy::RecoStrategy.Strategy = RecoStrategy.Best)
 
     # Either map to the fixed algorithm corresponding to the strategy
@@ -87,5 +87,6 @@ function jet_reconstruct(particles::AbstractVector; p::Union{Real, Nothing} = no
     end
 
     # Now call the chosen algorithm, passing through the other parameters
-    alg(particles; p = p, algorithm = algorithm, R = R, recombine = recombine)
+    alg(particles; p = p, algorithm = algorithm, R = R, recombine = recombine,
+        preprocess = preprocess)
 end

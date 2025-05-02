@@ -605,7 +605,7 @@ function constituents(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
     for idx in constituent_idxs
         push!(constituents,
               T(px(cs.jets[idx]), py(cs.jets[idx]), pz(cs.jets[idx]),
-                energy(cs.jets[idx]), new_index))
+                energy(cs.jets[idx]); cluster_hist_index = new_index))
         new_index += 1
     end
     constituents

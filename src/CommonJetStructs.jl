@@ -8,92 +8,6 @@ jets that are used in the package are subtypes of this type.
 abstract type FourMomentum end
 
 # Define here all common functions that can be used for all jet types <: FourMomentum
-import Base.+;
-"""
-    +(jet1::T, jet2::T) where {T <: FourMomentum}
-
-Adds two four-momentum vectors together, returning a new jet.
-
-# Details
-
-This addition operation will return a jet with the cluster history index set to
-0. *This means that this jet cannot be used, or be part of, any clustering
-history.*
-"""
-function +(jet1::T, jet2::T) where {T <: FourMomentum}
-    T(jet1.px + jet2.px, jet1.py + jet2.py, jet1.pz + jet2.pz, jet1.E + jet2.E)
-end
-
-"""
-    addjets(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
-
-Add jets' four momenta together, returning a new jet of type `T` with the
-specified cluster history index.
-
-# Details
-
-This method is also known as the `E_scheme` in Fastjet.
-"""
-function addjets(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
-    T(px(jet1) + px(jet2), py(jet1) + py(jet2), pz(jet1) + pz(jet2),
-      energy(jet1) + energy(jet2), cluster_hist_index)
-end
-
-"""
-    const addjets_escheme = addjets
-
-Alias for the `addjets` function, which is the default jet recombination scheme.
-"""
-const addjets_escheme = addjets
-
-"""
-    addjets_ptscheme(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
-
-Use the massless ``p_T`` scheme for combining two jets, setting the appropriate
-cluster history index for the new jet.
-"""
-function addjets_ptscheme(jet1::T, jet2::T,
-                          cluster_hist_index::Int) where {T <: FourMomentum}
-    scale1 = pt(jet1)
-    scale2 = pt(jet2)
-    _addjets_with_scale(scale1, scale2, jet1, jet2, cluster_hist_index)
-end
-
-"""
-    addjets_pt2scheme(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
-
-Use the massless ``p_T^2`` scheme for combining two jets, setting the
-appropriate cluster history index for the new jet.
-"""
-function addjets_pt2scheme(jet1::T, jet2::T,
-                           cluster_hist_index::Int) where {T <: FourMomentum}
-    scale1 = pt2(jet1)
-    scale2 = pt2(jet2)
-    _addjets_with_scale(scale1, scale2, jet1, jet2, cluster_hist_index)
-end
-
-"""
-    _addjets_with_scale(scale1::Real, scale2::Real, jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
-
-Combine two jets as massless objects using the given scale factors for each jet,
-and return the new jet with the cluster history index set.
-"""
-function _addjets_with_scale(scale1::Real, scale2::Real, jet1::T, jet2::T,
-                             cluster_hist_index::Int) where {T <: FourMomentum}
-    new_pt = pt(jet1) + pt(jet2)
-    new_rap = (scale1 * rapidity(jet1) + scale2 * rapidity(jet2)) / (scale1 + scale2)
-    phi_wrap = 0.0
-    if phi(jet1) - phi(jet2) > π
-        phi_wrap = 2π
-    elseif phi(jet1) - phi(jet2) < π
-        phi_wrap = -2π
-    end
-    new_phi = (scale1 * phi(jet1) + scale2 * (phi(jet2) + phi_wrap)) / (scale1 + scale2)
-
-    # Now create new jet from pt, y and phi... implicitly assume that mass=0!
-    T(pt = new_pt, rap = new_rap, phi = new_phi, cluster_hist_index = cluster_hist_index)
-end
-
 """
     px(j::FourMomentum)
 
@@ -137,6 +51,13 @@ cluster_hist_index(j::FourMomentum) = j._cluster_hist_index
 Return the squared momentum of the four-momentum vector of `j`.
 """
 p2(j::FourMomentum) = j.px^2 + j.py^2 + j.pz^2
+
+"""
+    p(j::FourMomentum)
+
+Return the momentum of the four-momentum vector of `j`.
+"""
+p(j::FourMomentum) = sqrt(p2(j))
 
 """
     pt2(j::FourMomentum)
@@ -262,6 +183,134 @@ end
 Alias for the pseudorapidity function, `eta`.
 """
 const η = eta
+
+import Base.+;
+"""
+    +(jet1::T, jet2::T) where {T <: FourMomentum}
+
+Adds two four-momentum vectors together, returning a new jet.
+
+# Details
+
+This addition operation will return a jet with the cluster history index set to
+0. *This means that this jet cannot be used, or be part of, any clustering
+history.*
+"""
+function +(jet1::T, jet2::T) where {T <: FourMomentum}
+    T(jet1.px + jet2.px, jet1.py + jet2.py, jet1.pz + jet2.pz, jet1.E + jet2.E)
+end
+
+"""
+    addjets(jet1::T, jet2::T; cluster_hist_index::Int) where {T <: FourMomentum}
+
+Add jets' four momenta together, returning a new jet of type `T` with the
+specified cluster history index.
+
+# Details
+
+This method is also known as the `E_scheme` in Fastjet.
+"""
+function addjets(jet1::T, jet2::T; cluster_hist_index::Int = 0) where {T <: FourMomentum}
+    T(px(jet1) + px(jet2), py(jet1) + py(jet2), pz(jet1) + pz(jet2),
+      energy(jet1) + energy(jet2), cluster_hist_index = cluster_hist_index)
+end
+
+"""
+    const addjets_escheme = addjets
+
+Alias for the `addjets` function, which is the default jet recombination scheme.
+"""
+const addjets_escheme = addjets
+
+"""
+    addjets_ptscheme(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+
+Use the massless ``p_T`` scheme for combining two jets, setting the appropriate
+cluster history index for the new jet.
+"""
+function addjets_ptscheme(jet1::T, jet2::T;
+                          cluster_hist_index::Int = 0) where {T <: FourMomentum}
+    scale1 = pt(jet1)
+    scale2 = pt(jet2)
+    _addjets_with_scale(scale1, scale2, jet1, jet2, cluster_hist_index)::T
+end
+
+"""
+    preprocess_massless_pt(jet::T) where {T <: FourMomentum}
+
+Jet preprocessor for the massless ``p_T`` schemes, resetting the energy of the
+jet to be equal to the 3-momentum of the input jet.
+"""
+function preprocess_ptscheme(jet::T;
+                             cluster_hist_index::Int = 0,
+                             jet_type = T) where {T <: FourMomentum}
+    T(px(jet), py(jet), pz(jet), p(jet); cluster_hist_index = cluster_hist_index)
+end
+
+"""
+    preprocess_ptscheme(particle::Union{LorentzVector, LorentzVectorCyl};
+                             cluster_hist_index::Int = 0,
+                             jet_type = PseudoJet)
+
+Jet preprocessor for the massless ``p_T`` schemes, resetting the energy of the
+jet to be equal to the 3-momentum of the input jet (generic particle type).
+
+# Details
+
+This function is used to convert a particle of type `LorentzVector` or
+`LorentzVectorCyl` into a `jet_type` object, which is a subtype of
+`FourMomentum`. (This is a work around until `LorentzVectorBase` can be used,
+which will make the accessors uniform.)
+"""
+function preprocess_ptscheme(particle::Union{LorentzVector, LorentzVectorCyl};
+                             cluster_hist_index::Int = 0,
+                             jet_type = PseudoJet)
+    T(px(particle), py(particle), pz(particle), mag(particle);
+      cluster_hist_index = cluster_hist_index)
+end
+
+"""
+    addjets_pt2scheme(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+
+Use the massless ``p_T^2`` scheme for combining two jets, setting the
+appropriate cluster history index for the new jet.
+"""
+function addjets_pt2scheme(jet1::T, jet2::T;
+                           cluster_hist_index::Int) where {T <: FourMomentum}
+    scale1 = pt2(jet1)
+    scale2 = pt2(jet2)
+    _addjets_with_scale(scale1, scale2, jet1, jet2, cluster_hist_index)::T
+end
+
+"""
+    const preprocess_pt2scheme = preprocess_ptscheme
+
+Preprocessing for `p_T` and `p_T^2` schemes are identical.
+"""
+const preprocess_pt2scheme = preprocess_ptscheme
+
+"""
+    _addjets_with_scale(scale1::Real, scale2::Real, jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+
+Combine two jets as massless objects using the given scale factors for each jet,
+and return the new jet with the cluster history index set.
+"""
+function _addjets_with_scale(scale1::Real, scale2::Real, jet1::T, jet2::T,
+                             cluster_hist_index::Int) where {T <: FourMomentum}
+    new_pt = pt(jet1) + pt(jet2)
+    new_rap = (scale1 * rapidity(jet1) + scale2 * rapidity(jet2)) / (scale1 + scale2)
+    phi_wrap = 0.0
+    if phi(jet1) - phi(jet2) > π
+        phi_wrap = 2π
+    elseif phi(jet1) - phi(jet2) < -π
+        phi_wrap = -2π
+    end
+    @assert -π < phi(jet1) - (phi(jet2) + phi_wrap) < π
+    new_phi = (scale1 * phi(jet1) + scale2 * (phi(jet2) + phi_wrap)) / (scale1 + scale2)
+
+    # Now create new jet from pt, y and phi... implicitly assume that mass=0!
+    T(pt = new_pt, rap = new_rap, phi = new_phi; cluster_hist_index = cluster_hist_index)
+end
 
 import Base.show
 """

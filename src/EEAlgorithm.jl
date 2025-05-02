@@ -223,7 +223,7 @@ explicitly.
 """
 function ee_genkt_algorithm(particles::AbstractVector{T}; p = 1,
                             algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                            R = 4.0, recombine = addjets) where {T}
+                            R = 4.0, recombine = addjets, preprocess = nothing) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
@@ -236,18 +236,29 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; p = 1,
         R = 4.0
     end
 
-    if T == EEJet
-        # recombination_particles will become part of the cluster sequence, so size it for
-        # the starting particles and all N recombinations
-        recombination_particles = copy(particles)
-        sizehint!(recombination_particles, length(particles) * 2)
+    if isnothing(preprocess)
+        if T == EEJet
+            # If we don't have a preprocessor, we just need to copy to our own
+            # EEJet objects
+            recombination_particles = copy(particles)
+            sizehint!(recombination_particles, length(particles) * 2)
+        else
+            # We assume a constructor for EEJet that can ingest the appropriate
+            # type of particle
+            recombination_particles = EEJet[]
+            sizehint!(recombination_particles, length(particles) * 2)
+            for (i, particle) in enumerate(particles)
+                push!(recombination_particles, EEJet(particle; cluster_hist_index = i))
+            end
+        end
     else
+        # We have a preprocessor function that we need to call to modify the
+        # input particles
         recombination_particles = EEJet[]
         sizehint!(recombination_particles, length(particles) * 2)
-        for i in eachindex(particles)
+        for (i, particle) in enumerate(particles)
             push!(recombination_particles,
-                  EEJet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                        energy(particles[i]), i))
+                  preprocess(particle; cluster_hist_index = i, jet_type = EEJet))
         end
     end
 
@@ -336,7 +347,8 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet}, p = 1, R = 4.0,
             jetB = clusterseq.jets[eereco[ijetB].index]
 
             # Recombine jetA and jetB into the next jet
-            merged_jet = recombine(jetA, jetB, length(clusterseq.history) + 1)
+            merged_jet = recombine(jetA, jetB;
+                                   cluster_hist_index = length(clusterseq.history) + 1)
 
             # Now add the jet to the sequence, and update the history
             push!(clusterseq.jets, merged_jet)
