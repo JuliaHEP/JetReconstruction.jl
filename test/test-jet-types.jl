@@ -2,7 +2,7 @@
 
 include("common.jl")
 
-pj = PseudoJet(1.0, 2.0, 3.0, 10.0, 7)
+pj = PseudoJet(1.0, 2.0, 3.0, 10.0; cluster_hist_index = 7)
 pj_beam = PseudoJet(0.0, 0.0, 5.0, 5.0)
 @testset "PseudoJet tests" begin
     @test JetReconstruction.px(pj) ≈ 1.0
@@ -25,7 +25,7 @@ pj_beam = PseudoJet(0.0, 0.0, 5.0, 5.0)
     @test string(pj) == "PseudoJet(px: 1.0 py: 2.0 pz: 3.0 E: 10.0 cluster_hist_index: 7)"
 end
 
-eej = EEJet(1.0, 2.0, 3.0, 10.0, 7)
+eej = EEJet(1.0, 2.0, 3.0, 10.0; cluster_hist_index = 7)
 eej_beam = EEJet(0.0, 0.0, 5.0, 5.0)
 @testset "EEJet tests" begin
     @test JetReconstruction.px(eej) ≈ 1.0
