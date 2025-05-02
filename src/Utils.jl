@@ -52,8 +52,8 @@ function read_final_state_particles(fname; maxevents = -1, skipevents = 0, T = P
                 # Annoyingly PseudoJet and LorentzVector constructors
                 # disagree on the order of arguments...
                 if T <: FourMomentum
-                    particle = T(p.momentum.x, p.momentum.y, p.momentum.z, p.momentum.t,
-                                 particle_index)
+                    particle = T(p.momentum.x, p.momentum.y, p.momentum.z, p.momentum.t;
+                                 cluster_hist_index = particle_index)
                 else
                     particle = T(p.momentum.t, p.momentum.x, p.momentum.y, p.momentum.z)
                 end

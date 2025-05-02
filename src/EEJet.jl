@@ -25,21 +25,50 @@ end
 """
     EEJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
 
-Constructs an `EEJet` object from the given momentum components, energy, and cluster history index.
+Constructs an `EEJet` object from the given momentum components, energy, and
+cluster history index.
+
+# Details
+
+If the default value of `cluster_hist_index=0` is used, the `EEJet` cannot be
+used in a reconstruction sequence.
 """
-function EEJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
+function EEJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::Int = 0)
     @muladd p2 = px * px + py * py + pz * pz
     inv_p = @fastmath 1.0 / sqrt(p2)
     EEJet(px, py, pz, E, p2, inv_p, cluster_hist_index)
 end
 
-"""
-    EEJet(px::Real, py::Real, pz::Real, E::Real)
 
-Constructs an `EEJet` object from the given momentum components and energy,
-but with no cluster history index (which is set to 0).
 """
-EEJet(px::Real, py::Real, pz::Real, E::Real) = EEJet(px, py, pz, E, 0)
+    EEJet(jet::LorentzVector; cluster_hist_index::Int = 0)
+
+Construct a EEJet from a `LorentzVector` object with optional cluster index.
+"""
+function EEJet(jet::LorentzVector; cluster_hist_index::Int = 0)
+    EEJet(jet.x, jet.y, jet.z, jet.t; cluster_hist_index = cluster_hist_index)
+end
+
+"""
+    EEJet(jet::Any; cluster_hist_index::Int = 0)
+
+Construct a PseudoJet from a generic object `jet` with the given cluster index.
+This functions also for `LorentzVectorCyl` objects.
+
+# Details
+
+This function is used to convert a generic object `jet` into an `EEJet`, for
+this to work the object must have the methods `px`, `py`, `pz`, and `energy`
+defined, which are used to extract the four-momentum components of the object.
+
+The `cluster_hist_index` is optional, but needed if the `jet` is part of a
+reconstruction sequence. If not provided, it defaults to `0` as an "invalid"
+value.
+"""
+function EEJet(jet::Any; cluster_hist_index::Int = 0)
+    EEJet(px(jet), py(jet), pz(jet), energy(jet);
+              cluster_hist_index = cluster_hist_index)
+end
 
 """
     p2(eej::EEJet)
