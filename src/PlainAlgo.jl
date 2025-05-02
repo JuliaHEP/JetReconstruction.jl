@@ -189,7 +189,7 @@ end
 """
     plain_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Nothing} = -1,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                               R = 1.0, recombine = addjets) where {T}
+                               R = 1.0, recombine = addjets, preprocess = nothing) where {T}
 
 Perform pp jet reconstruction using the plain algorithm.
 
@@ -202,8 +202,9 @@ Perform pp jet reconstruction using the plain algorithm.
 - `algorithm::Union{JetAlgorithm, Nothing} = nothing`: The explicit jet
   algorithm to use.
 - `R::Float64 = 1.0`: The radius parameter used for jet reconstruction.
-- `recombine::Function = +`: The recombination function used for jet
-  reconstruction.
+- `recombine::Function = addjets`: The recombination function used to combine
+  particles into a new jet.
+- `preprocess::Function = nothing`: A function to preprocess the input particles.
 
 **Note** for the `particles` argument, the 4-vector methods need to exist in the
 JetReconstruction package namespace.

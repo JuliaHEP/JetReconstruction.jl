@@ -2,8 +2,14 @@
 
 When two jets are merged different strategies can be adopted to produce the merged jet.
 
-The function to do this can be set by the user and passed as a parameter to the
-reconstruction algorithms.
+There are two functions to support this, which can be set by the user and passed
+as a parameters to the reconstruction algorithms. One function gives the
+necessary *preprocessing* for input particles, e.g., setting particles to be
+massless. The other controls the actual *recombination* of two particles into a
+merged jet.
+
+These functions are passed as the `preprocess` and `recombine` parameters to the
+reconstruction interfaces.
 
 ## Default - Four Vector Addition
 
@@ -14,7 +20,10 @@ The default for jet merging is simply four momentum addition, that is:
 ``
 
 This is defined as the [`addjets`](@ref) function in the package, which also
-serves as an example of how these functions are written.
+serves as an example of how the recombination functions are written.
+
+In this case no preprocessing of particles is required and the default value of
+`preprocess = nothing` signals this.
 
 ### Different Recombination Schemes
 
@@ -24,10 +33,34 @@ the mass is set to the 3-momentum. The transverse momentum is the sum of the two
 parent jets and the rapidity (``y``) and phi (``\phi``) values are weighted
 averages, by ``p_T`` or ``p_T^2``, of the parent jets.
 
-- [`addjets_ptscheme`](@ref)
-- [`addjets_pt2scheme`](@ref)
+- `recombine =` [`addjets_ptscheme`](@ref)
+- `recombine =` [`addjets_pt2scheme`](@ref)
+
+In this case the input particles must be rescaled to be massless, setting the
+energy equal to the (three) momentum sum.
+
+- `preprocess =` [`preprocess_ptscheme`](@ref)
+- `preprocess =` [`preprocess_pt2scheme`](@ref)
+
+(In fact `preprocess_pt2scheme` is just an alias for `preprocess_ptscheme` as
+the rescaling is identical.)
 
 ## User Defined Recombination
+
+### Preprocessing
+
+The user must supply, if needed, a preprocessing function, which accepts an
+input particle and returns the rescaled particle. This function must accept a
+named argument `cluster_hist_index` to pass to the constructor of the resulting
+particle.
+
+```julia
+user_preprocess(jet::T; cluster_hist_index) -> T
+```
+
+An example of a preprocessing function is [`preprocess_ptscheme`](@ref).
+
+### Recombination
 
 If a different merging scheme is desired then a method must be defined
 that implements the following interface:
@@ -43,7 +76,7 @@ sequence.
 It is recommended to use the constructor signature for the output jet of:
 
 ```julia
-T(px, py, pz, E, cluster_hist_index)
+T(px, py, pz, E; cluster_hist_index = cluster_hist_index)
 ```
 
 Where `px`, `py`, `pz` and `E` have been calculated from the inputs `jet1` and
@@ -62,9 +95,10 @@ recombination.)
 The user function should not modify the `cluster_hist_index`, but must pass in
 to the new jet's constructor to ensure that the resulting reconstruction
 [`ClusterSequence`](@ref) is valid. The recombination functions defined in the
-package serve as examples.
+package serve as examples: [`addjets_ptscheme`](@ref).
 
 ### Using an Custom Recombination Method
 
-To use a non-default recombination method, simply pass the method to the
-[`jet_reconstruct`](@ref) entry point as the `recombine` parameter.
+To use a non-default recombination method, simply pass the recombination method
+to the [`jet_reconstruct`](@ref) entry point as the `recombine` parameter and
+the preprocessing method as `preprocess`.
