@@ -9,17 +9,26 @@ Constructs a `PseudoJet` object from an `EEJet` object, with the same four
 momentum and cluster history index.
 """
 function PseudoJet(eej::EEJet)
-    PseudoJet(px(eej), py(eej), pz(eej), energy(eej), cluster_hist_index(eej))
+    PseudoJet(px(eej), py(eej), pz(eej), energy(eej);
+              cluster_hist_index = cluster_hist_index(eej))
 end
 
 """
-    EEJet(jet::PseudoJet)
+    EEJet(jet::PseudoJet; cluster_hist_index::Int=0)
 
-Constructs an `EEJet` object from a `PseudoJet` object using the same cluster
-history index from the `PseudoJet`.
+Constructs an `EEJet` from a `PseudoJet`.
+
+# Details
+
+The `cluster_hist_index` is set to the value of the `cluster_hist_index` of the
+PseudoJet if `0` is passed. Otherwise it is set to the value, `>0`, passed in.
 """
-EEJet(jet::PseudoJet) = EEJet(px(jet), py(jet), pz(jet), energy(jet),
-                              cluster_hist_index(jet))
+function EEJet(jet::PseudoJet; cluster_hist_index::Int = 0)
+    new_cluster_hist_index = cluster_hist_index == 0 ? jet._cluster_hist_index :
+                             cluster_hist_index
+    EEJet(px(jet), py(jet), pz(jet), energy(jet);
+          cluster_hist_index = new_cluster_hist_index)
+end
 
 # Functions to convert jets to types from other packages
 """

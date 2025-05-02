@@ -234,7 +234,7 @@ do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recomb
     # the E-scheme, then push into the jet vector
     jet1 = clusterseq.jets[jet_i]
     jet2 = clusterseq.jets[jet_j]
-    push!(clusterseq.jets, recombine(jet1, jet2, newstep_k))
+    push!(clusterseq.jets, recombine(jet1, jet2; cluster_hist_index = newstep_k))
 
     # Finally sort out the history
     hist_i = jet1._cluster_hist_index
@@ -368,24 +368,34 @@ tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4, reco
 """
 function tiled_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Nothing} = -1,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                               R = 1.0, recombine = addjets) where {T}
+                               R = 1.0, recombine = addjets, preprocess = nothing) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
 
-    # If we have PseudoJets, we can just call the main algorithm...
-    if T == PseudoJet
-        # recombination_particles will become part of the cluster sequence, so size it for
-        # the starting particles and all N recombinations
-        recombination_particles = copy(particles)
-        sizehint!(recombination_particles, length(particles) * 2)
+    if isnothing(preprocess)
+        if T == PseudoJet
+            # If we don't have a preprocessor, we just need to copy to our own
+            # PseudoJet objects
+            recombination_particles = copy(particles)
+            sizehint!(recombination_particles, length(particles) * 2)
+        else
+            # We assume a constructor for PseudoJet that can ingest the appropriate
+            # type of particle
+            recombination_particles = PseudoJet[]
+            sizehint!(recombination_particles, length(particles) * 2)
+            for (i, particle) in enumerate(particles)
+                push!(recombination_particles, PseudoJet(particle; cluster_hist_index = i))
+            end
+        end
     else
+        # We have a preprocessor function that we need to call to modify the
+        # input particles
         recombination_particles = PseudoJet[]
         sizehint!(recombination_particles, length(particles) * 2)
-        for i in eachindex(particles)
+        for (i, particle) in enumerate(particles)
             push!(recombination_particles,
-                  PseudoJet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                            energy(particles[i]), i))
+                  preprocess(particle; cluster_hist_index = i, jet_type = PseudoJet))
         end
     end
 
