@@ -49,3 +49,30 @@ for (alg, dij_max) in zip([JetAlgorithm.CA, JetAlgorithm.Kt], ["0.99", "20.0"])
                           "exclusive dcut")
     run_reco_test(test)
 end
+
+# Test for different recombination schemes
+# pt-scheme
+let
+    fastjet_file = joinpath(@__DIR__, "data",
+                            "jet-collections-fastjet-inclusive-AntiKt-ptscheme.json.zst")
+    test = ComparisonTest(events_file_pp, fastjet_file,
+                          JetAlgorithm.AntiKt, RecoStrategy.N2Tiled,
+                          JetReconstruction.algorithm2power[JetAlgorithm.AntiKt],
+                          test_cone_size,
+                          (cs) -> inclusive_jets(cs; ptmin = 5.0), "AntiKt pt-scheme",
+                          addjets_ptscheme, preprocess_ptscheme)
+    run_reco_test(test)
+end
+
+# pt2-scheme
+let
+    fastjet_file = joinpath(@__DIR__, "data",
+                            "jet-collections-fastjet-inclusive-AntiKt-pt2scheme.json.zst")
+    test = ComparisonTest(events_file_pp, fastjet_file,
+                          JetAlgorithm.AntiKt, RecoStrategy.N2Tiled,
+                          JetReconstruction.algorithm2power[JetAlgorithm.AntiKt],
+                          test_cone_size,
+                          (cs) -> inclusive_jets(cs; ptmin = 5.0), "AntiKt pt2-scheme",
+                          addjets_pt2scheme, preprocess_pt2scheme)
+    run_reco_test(test)
+end
