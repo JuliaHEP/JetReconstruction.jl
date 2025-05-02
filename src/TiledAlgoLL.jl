@@ -331,13 +331,10 @@ end
 """
     tiled_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Nothing} = -1,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                               R = 1.0, recombine = +) where {T}
+                               R = 1.0, recombine = addjets, preprocess = nothing) where {T}
 
 Main jet reconstruction algorithm entry point for reconstructing jets using the
 tiled strategy for generic jet type T.
-
-**Note** - if a non-standard recombination is used, it must be defined for
-JetReconstruction.PseudoJet, as this struct is used internally.
 
 This code will use the `k_t` algorithm types, operating in `(rapidity, φ)`
 space.
@@ -355,8 +352,9 @@ If both are given they must be consistent or an exception is thrown.
   jet algorithm to use.
 - `R::Float64 = 1.0`: The jet radius parameter for the jet reconstruction
   algorithm.
-- `recombine::Function = +`: The recombination function used for combining
-  pseudojets.
+- `recombine::Function = addjets`: The recombination function used to combine
+  particles into a new jet.
+- `preprocess::Function = nothing`: A function to preprocess the input particles.
 
 ## Returns
 - `Vector{PseudoJet}`: A vector of reconstructed jets.

@@ -1,7 +1,7 @@
 """
     jet_reconstruct(particles::AbstractVector; p::Union{Real, Nothing} = nothing,
                          algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                         R = 1.0, recombine = +,
+                         R = 1.0, recombine = addjets, preprocess = nothing,
                          strategy::RecoStrategy.Strategy = RecoStrategy.Best)
 
 Reconstructs jets from a collection of particles using a specified algorithm and
@@ -16,7 +16,10 @@ strategy.
 - `algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing`: The algorithm
   to use for jet reconstruction.
 - `R = 1.0`: The jet radius parameter.
-- `recombine = +`: The recombination scheme used for combining particles.
+- `recombine = addjets`: The recombination scheme used for combining particles.
+- `preprocess = nothing`: The function to preprocess the particles before
+  reconstruction (e.g., for massless schemes). `nothing` means the particles are
+  not preprocessed.
 - `strategy::RecoStrategy.Strategy = RecoStrategy.Best`: The jet reconstruction
    strategy to use. `RecoStrategy.Best` makes a dynamic decision based on the
    number of starting particles.
@@ -38,7 +41,13 @@ these methods are already predefined in the `JetReconstruction` namespace.
 
 ## `recombine` argument
 The `recombine` argument is the function used to merge pairs of particles. The
-default is simply `+(jet1,jet2)`, i.e. 4-momenta addition or the *E*-scheme.
+default is `addjets`, which uses 4-momenta addition (a.k.a. the E-scheme).
+
+## `preprocess` argument
+The `preprocess` argument is a function that will be called for all original
+input particles and which returns a new particle, usually matching a
+non-standard recombination scheme, e.g., massless particles for ``p_T`` or
+``p_T^2`` recombination. `nothing` means no preprocessing is done.
 
 ## Consistency of `p`, `algorithm` and `R` arguments
 If an algorithm is explicitly specified the `p` value should be consistent with
@@ -57,6 +66,8 @@ jet_reconstruct(particles; p = -1, R = 0.4)
 jet_reconstruct(particles; algorithm = JetAlgorithm.Kt, R = 1.0)
 jet_reconstruct(particles; algorithm = JetAlgorithm.Durham)
 jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, p = 0.5, R = 1.0)
+jet_reconstruct(particles; algorithm = JetAlgorithm.AntiKt, R = 1.0, preprocess = preprocess_ptscheme, 
+                recombine = addjets_ptscheme)
 ```
 """
 function jet_reconstruct(particles::AbstractVector; p::Union{Real, Nothing} = nothing,

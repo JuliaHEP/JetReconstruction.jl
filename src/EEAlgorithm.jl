@@ -205,7 +205,8 @@ Run an e+e- reconstruction algorithm on a set of initial particles.
   algorithm.
 - `algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham`: The specific jet
   algorithm to use.
-- `recombine`: The recombination scheme to use. Defaults to `+`.
+- `recombine`: The recombination scheme to use.
+- `preprocess`: Preprocessing function for input particles.
 
 # Returns
 - The result of the jet clustering as a `ClusterSequence` object.
