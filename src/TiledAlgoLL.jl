@@ -399,7 +399,7 @@ Main jet reconstruction algorithm, using PseudoJet objects
 """
 
 """
-    _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1,
+    _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet}; p::Real = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
                                 R = 1.0, recombine = +)
 
@@ -408,7 +408,7 @@ of data types are done. The algorithm parameter must be consistent with the
 power parameter.
 
 ## Arguments
-- `particles::Vector{PseudoJet}`: A vector of `PseudoJet` particles used as input for jet
+- `particles::AbstractVector{PseudoJet}`: A vector of `PseudoJet` particles used as input for jet
   reconstruction.
 - `p::Real = -1`: The power parameter for the jet reconstruction algorithm, thus
   switching between different algorithms.
@@ -427,7 +427,7 @@ power parameter.
 tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 1.0, recombine = +)
 ```
 """
-function _tiled_jet_reconstruct(particles::Vector{PseudoJet}; p::Real = -1,
+function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet}; p::Real = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
                                 R = 1.0, recombine = +)
     # Bounds

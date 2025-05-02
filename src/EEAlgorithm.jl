@@ -258,13 +258,13 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; p = 1,
 end
 
 """
-    _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
+    _ee_genkt_algorithm(; particles::AbstractVector{EEjet}, p = 1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
                        recombine = +)
 
 This function is the actual implementation of the e+e- jet clustering algorithm.
 """
-function _ee_genkt_algorithm(; particles::Vector{EEjet}, p = 1, R = 4.0,
+function _ee_genkt_algorithm(; particles::AbstractVector{EEjet}, p = 1, R = 4.0,
                              algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
                              recombine = +)
     # Bounds
