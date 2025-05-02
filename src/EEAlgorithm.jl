@@ -191,9 +191,9 @@ Copy the contents of slot `i` in the `eereco` array to slot `j`.
 end
 
 """
-    ee_genkt_algorithm(particles::Vector{T}; p = -1, R = 4.0,
-                       algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                       recombine = addjets) where {T}
+    ee_genkt_algorithm(particles::Vector{T}; p = 1,
+                            algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
+                            R = 4.0, recombine = addjets, preprocess = nothing) where {T}
 
 Run an e+e- reconstruction algorithm on a set of initial particles.
 
@@ -205,7 +205,8 @@ Run an e+e- reconstruction algorithm on a set of initial particles.
   algorithm.
 - `algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham`: The specific jet
   algorithm to use.
-- `recombine`: The recombination scheme to use. Defaults to `+`.
+- `recombine`: The recombination scheme to use.
+- `preprocess`: Preprocessing function for input particles.
 
 # Returns
 - The result of the jet clustering as a `ClusterSequence` object.
