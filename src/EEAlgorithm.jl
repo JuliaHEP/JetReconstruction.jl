@@ -191,14 +191,14 @@ Copy the contents of slot `i` in the `eereco` array to slot `j`.
 end
 
 """
-    ee_genkt_algorithm(particles::Vector{T}; p = -1, R = 4.0,
+    ee_genkt_algorithm(particles::AbstractVector{T}; p = -1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
                        recombine = +) where {T}
 
 Run an e+e- reconstruction algorithm on a set of initial particles.
 
 # Arguments
-- `particles::Vector{T}`: A vector of particles to be clustered.
+- `particles::AbstractVector{T}`: A vector of particles to be clustered.
 - `p = 1`: The power parameter for the algorithm. Not required / ignored for
   the Durham algorithm when it is set to 1.
 - `R = 4.0`: The jet radius parameter. Not required / ignored for the Durham
@@ -221,7 +221,7 @@ If the algorithm is Durham, `p` is set to 1 and `R` is nominally set to 4.
 Note that unlike `pp` reconstruction the algorithm has to be specified
 explicitly.
 """
-function ee_genkt_algorithm(particles::Vector{T}; p = 1,
+function ee_genkt_algorithm(particles::AbstractVector{T}; p = 1,
                             algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
                             R = 4.0, recombine = +) where {T}
 
@@ -258,13 +258,13 @@ function ee_genkt_algorithm(particles::Vector{T}; p = 1,
 end
 
 """
-    _ee_genkt_algorithm(; particles::Vector{EEJet}, p = 1, R = 4.0,
+    _ee_genkt_algorithm(; particles::AbstractVector{EEJet}, p = 1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
                        recombine = +)
 
 This function is the actual implementation of the e+e- jet clustering algorithm.
 """
-function _ee_genkt_algorithm(; particles::Vector{EEJet}, p = 1, R = 4.0,
+function _ee_genkt_algorithm(; particles::AbstractVector{EEJet}, p = 1, R = 4.0,
                              algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
                              recombine = +)
     # Bounds
