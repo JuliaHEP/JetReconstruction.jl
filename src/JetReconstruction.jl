@@ -46,7 +46,7 @@ export PseudoJet, EEJet, pt_fraction, kt_scale, lorentzvector, lorentzvector_cyl
 
 # Jet reconstruction strategies and algorithms (enums!)
 include("AlgorithmStrategyEnums.jl")
-export RecoStrategy, JetAlgorithm
+export RecoStrategy, JetAlgorithm, RecombinationScheme, RecombinationMethods
 
 # ClusterSequence type
 include("ClusterSequence.jl")

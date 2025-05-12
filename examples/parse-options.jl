@@ -24,3 +24,11 @@ function ArgParse.parse_item(E::Type{RecoStrategy.Strategy}, x::AbstractString)
     end
     p
 end
+
+function ArgParse.parse_item(E::Type{RecombinationScheme.Recombine}, x::AbstractString)
+    p = do_enum_parse(E, x)
+    if p === nothing
+        throw(ErrorException("Invalid value for recombination scheme: $(x)"))
+    end
+    p
+end

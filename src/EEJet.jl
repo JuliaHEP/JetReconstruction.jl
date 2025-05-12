@@ -39,7 +39,6 @@ function EEJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::Int = 
     EEJet(px, py, pz, E, p2, inv_p, cluster_hist_index)
 end
 
-
 """
     EEJet(jet::LorentzVector; cluster_hist_index::Int = 0)
 
@@ -67,7 +66,7 @@ value.
 """
 function EEJet(jet::Any; cluster_hist_index::Int = 0)
     EEJet(px(jet), py(jet), pz(jet), energy(jet);
-              cluster_hist_index = cluster_hist_index)
+          cluster_hist_index = cluster_hist_index)
 end
 
 """
