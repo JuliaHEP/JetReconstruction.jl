@@ -150,3 +150,23 @@ Check if the algorithm is a e+e- reconstruction algorithm.
 function is_ee(algorithm::JetAlgorithm.Algorithm)
     return algorithm in [JetAlgorithm.EEKt, JetAlgorithm.Durham]
 end
+
+"""
+    enum RecombinationScheme
+
+An EnumX scoped enumeration representing different recombination schemes that
+are supported directly in the package.
+
+These schemes map to both a `recombine` and a `preprocess` function, which are
+used in the main reconstruction algorithm.
+"""
+@enumx T=Recombine RecombinationScheme EScheme PtScheme Pt2Scheme
+const AllRecombinationSchemes = [String(Symbol(x))
+                                 for x in instances(RecombinationScheme.Recombine)]
+
+const RecombinationMethods = Dict(RecombinationScheme.EScheme => (recombine = addjets_escheme,
+                                                                  preprocess = nothing),
+                                  RecombinationScheme.PtScheme => (recombine = addjets_ptscheme,
+                                                                   preprocess = preprocess_ptscheme),
+                                  RecombinationScheme.Pt2Scheme => (recombine = addjets_pt2scheme,
+                                                                    preprocess = preprocess_pt2scheme))
