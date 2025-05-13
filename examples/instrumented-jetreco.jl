@@ -33,13 +33,14 @@ flamegraph which is saved to the `profile/profile_subdir` directory.
 """
 function profile_code(events::Vector{Vector{T}}, profile, nsamples; R = 0.4, p = -1,
                       algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                      strategy = RecoStrategy.N2Tiled) where {T <:
-                                                              JetReconstruction.FourMomentum}
+                      strategy = RecoStrategy.N2Tiled,
+                      recombine = RecombinationMethods[RecombinationScheme.EScheme]) where {T <:
+                                                                                            JetReconstruction.FourMomentum}
     Profile.init(n = 5 * 10^6, delay = 0.00001)
     function profile_events(events)
         for evt in events
-            jet_reconstruct(evt, R = R, p = p, algorithm = algorithm,
-                            strategy = strategy)
+            jet_reconstruct(evt; R = R, p = p, algorithm = algorithm,
+                            strategy = strategy, recombine...)
         end
     end
     # Do a warm up run first to avoid JIT compilation costs
@@ -88,12 +89,14 @@ function allocation_stats(events::Vector{Vector{T}}; distance::Real = 0.4,
                           p::Union{Real, Nothing} = nothing,
                           algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                           strategy::RecoStrategy.Strategy,
+                          recombine = RecombinationMethods[RecombinationScheme.EScheme],
                           ptmin::Real = 5.0) where {T <: JetReconstruction.FourMomentum}
     println("Memory allocation statistics:")
     @timev for event in events
-        _ = inclusive_jets(jet_reconstruct(event, R = distance, p = p,
+        _ = inclusive_jets(jet_reconstruct(event; R = distance, p = p,
                                            algorithm = algorithm,
-                                           strategy = strategy), ptmin = ptmin)
+                                           strategy = strategy, recombine...),
+                           ptmin = ptmin)
     end
     nothing
 end
@@ -125,10 +128,11 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
                             distance::Real = 0.4,
                             algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                             p::Union{Real, Nothing} = nothing,
+                            strategy::RecoStrategy.Strategy,
+                            recombine = RecombinationMethods[RecombinationScheme.EScheme],
                             ptmin::Real = 5.0,
                             dcut = nothing,
                             njets = nothing,
-                            strategy::RecoStrategy.Strategy,
                             nsamples::Integer = 1,
                             gcoff::Bool = false,
                             dump::Union{String, Nothing} = nothing,
@@ -155,8 +159,8 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
         gcoff && GC.enable(false)
         t_start = time_ns()
         for (ievt, event) in enumerate(events)
-            cs = jet_reconstruct(event, R = distance, p = p, algorithm = algorithm,
-                                 strategy = strategy)
+            cs = jet_reconstruct(event; R = distance, p = p, algorithm = algorithm,
+                                 strategy = strategy, recombine...)
             if !isnothing(njets)
                 finaljets = exclusive_jets(cs; njets = njets)
             elseif !isnothing(dcut)
@@ -273,6 +277,11 @@ function parse_command_line(args)
         arg_type = RecoStrategy.Strategy
         default = RecoStrategy.Best
 
+        "--recombine"
+        help = """Recombination scheme to use for jet reconstruction: $(join(JetReconstruction.AllRecombinationSchemes, ", "))"""
+        arg_type = RecombinationScheme.Recombine
+        default = RecombinationScheme.EScheme
+
         "--nsamples", "-m"
         help = "Number of measurement points to acquire."
         arg_type = Int
@@ -344,15 +353,19 @@ function main()
     if args[:alloc]
         allocation_stats(events; distance = args[:distance],
                          p = args[:power], algorithm = args[:algorithm],
-                         strategy = args[:strategy], ptmin = args[:ptmin])
+                         strategy = args[:strategy],
+                         recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
+                         ptmin = args[:ptmin])
     elseif !isnothing(args[:profile])
         profile_code(events, args[:profile], args[:nsamples];
                      R = args[:distance], p = args[:power],
-                     algorithm = args[:algorithm], strategy = args[:strategy])
+                     algorithm = args[:algorithm], strategy = args[:strategy],
+                     recombine = JetReconstruction.RecombinationMethods[args[:recombine]])
     else
         benchmark_jet_reco(events, distance = args[:distance], algorithm = args[:algorithm],
                            p = args[:power],
                            strategy = args[:strategy],
+                           recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
                            ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
                            njets = args[:exclusive_njets],
                            nsamples = args[:nsamples], gcoff = args[:gcoff],
