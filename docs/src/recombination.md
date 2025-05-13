@@ -22,16 +22,16 @@ The default for jet merging is simply four momentum addition, that is:
 This is defined as the [`addjets`](@ref) function in the package, which also
 serves as an example of how the recombination functions are written.
 
-In this case no preprocessing of particles is required and the default value of
+In this case, no preprocessing of particles is required and the default value of
 `preprocess = nothing` signals this.
 
 ### Different Recombination Schemes
 
-Two additional recombination schemes are supported, the ``p_T`` and ``p_T^2``
-schemes. In these schemes the recombined jet is created to be *massless*, i.e.,
-the mass is set to the 3-momentum. The transverse momentum is the sum of the two
-parent jets and the rapidity (``y``) and phi (``\phi``) values are weighted
-averages, by ``p_T`` or ``p_T^2``, of the parent jets.
+Two additional recombination schemes are directly supported, the ``p_T`` and
+``p_T^2`` schemes. In these schemes the recombined jet is created to be
+*massless*, i.e., the mass is set to the 3-momentum. The transverse momentum is
+the sum of the two parent jets and the rapidity (``y``) and phi (``\phi``)
+values are weighted averages, by ``p_T`` or ``p_T^2``, of the parent jets.
 
 - `recombine =` [`addjets_ptscheme`](@ref)
 - `recombine =` [`addjets_pt2scheme`](@ref)
@@ -44,6 +44,33 @@ energy equal to the (three) momentum sum.
 
 (In fact `preprocess_pt2scheme` is just an alias for `preprocess_ptscheme` as
 the rescaling is identical.)
+
+### Named Recombination Schemes
+
+To simplify the usage of different recombination schemes supported directly,
+there is a defined enum (scoped, using `EnumX`) for each one:
+`RecombinationScheme.SCHEME`.
+
+This enum is then used with the `RecombinationMethods` dictionary to
+obtain a named tuple in which `recombine` and `preprocess` are set, which can
+then be splatted into the [`jet_reconstruct`](@ref) interface:
+
+```julia
+myscheme = RecombinationMethods[RecombinationScheme.PtScheme]
+jet_reconstruct(event; R = distance, p = p, algorithm = algorithm,
+                                 strategy = strategy, myscheme...)
+```
+
+The supported values in the enum are:
+
+| Scheme | Implements |
+|---|---|
+| `EScheme` | Default 4-momentum addition |
+| `PtScheme` | Massless weighted average of momentum |
+| `Pt2Scheme` | Massless weighted average of momentum squared |
+
+(Should other schemes prove to be particularly desired they can be implemented
+on request.)
 
 ## User Defined Recombination
 
