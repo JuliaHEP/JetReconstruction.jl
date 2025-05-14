@@ -147,7 +147,7 @@ array. The use of `@turbo` macro gives a significant performance boost.
 - `best`: The index of the minimum value in the `dij` array.
 """
 fast_findmin(dij, n) = begin
-    x = @fastmath foldl(min, dij)
+    x = @fastmath foldl(min, @view(dij[begin:n]))
     i = findfirst(==(x), dij)::Int
     x, i
 end
