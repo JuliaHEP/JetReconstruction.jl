@@ -149,46 +149,59 @@ array. The use of `@turbo` macro gives a significant performance boost.
 function fast_findmin end
 
 if Sys.ARCH == :aarch64
-    function fast_findmin(dij, n)
-        x = @fastmath foldl(min, @view(dij[begin:n]))
-        i = findfirst(==(x), dij)::Int
-        x, i
-    end
+    fast_findmin(dij, n) = _naive_fast_findmin(@view(dij[begin:n]))
 else
-    function fast_findmin(dij::DenseVector{T}, n) where {T}
-        laneIndices = SIMD.Vec{8, Int}((1, 2, 3, 4, 5, 6, 7, 8))
-        minvals = SIMD.Vec{8, T}(Inf)
-        min_indices = SIMD.Vec{8, Int}(0)
-
-        n_batches, remainder = divrem(n, 8)
-        lane = VecRange{8}(0)
-        i = 1
-        @inbounds @fastmath for _ in 1:n_batches
-            dijs = dij[lane + i]
-            predicate = dijs < minvals
-            minvals = vifelse(predicate, dijs, minvals)
-            min_indices = vifelse(predicate, laneIndices, min_indices)
-
-            i += 8
-            laneIndices += 8
+    function fast_findmin(dij, n)
+        if n <= 8
+            return _naive_fast_findmin(@view(dij[begin:n]))
+        else
+            return _simd_fast_findmin(dij, n)
         end
-
-        min_value = SIMD.minimum(minvals)
-        min_index = @inbounds min_value == minvals[1] ? min_indices[1] :
-                              min_value == minvals[2] ? min_indices[2] :
-                              min_value == minvals[3] ? min_indices[3] :
-                              min_value == minvals[4] ? min_indices[4] :
-                              min_value == minvals[5] ? min_indices[5] :
-                              min_value == minvals[6] ? min_indices[6] :
-                              min_value == minvals[7] ? min_indices[7] : min_indices[8]
-
-        @inbounds @fastmath for _ in 1:remainder
-            xi = dij[i]
-            pred = dij[i] < min_value
-            min_value = ifelse(pred, xi, min_value)
-            min_index = ifelse(pred, i, min_index)
-            i += 1
-        end
-        return min_value, min_index
     end
+end
+
+function _naive_fast_findmin(dij)
+    x = @fastmath foldl(min, dij)
+    i = findfirst(==(x), dij)::Int
+    x, i
+end
+
+function _simd_fast_findmin(dij::DenseVector{T}, n) where {T}
+    laneIndices = SIMD.Vec{8, Int}((1, 2, 3, 4, 5, 6, 7, 8))
+    minvals = SIMD.Vec{8, T}(Inf)
+    min_indices = SIMD.Vec{8, Int}(0)
+
+    n_batches, remainder = divrem(n, 8)
+    lane = VecRange{8}(0)
+    i = 1
+    @inbounds @fastmath for _ in 1:n_batches
+        dijs = dij[lane + i]
+        predicate = dijs < minvals
+        minvals = vifelse(predicate, dijs, minvals)
+        min_indices = vifelse(predicate, laneIndices, min_indices)
+
+        i += 8
+        laneIndices += 8
+    end
+
+    # last batch
+    back_track = 8-remainder+1
+    i -= back_track
+    laneIndices -= back_track
+
+    dijs = dij[lane + i]
+    predicate = dijs < minvals
+    minvals = vifelse(predicate, dijs, minvals)
+    min_indices = vifelse(predicate, laneIndices, min_indices)
+
+    min_value = SIMD.minimum(minvals)
+    min_index = @inbounds min_value == minvals[1] ? min_indices[1] :
+                          min_value == minvals[2] ? min_indices[2] :
+                          min_value == minvals[3] ? min_indices[3] :
+                          min_value == minvals[4] ? min_indices[4] :
+                          min_value == minvals[5] ? min_indices[5] :
+                          min_value == minvals[6] ? min_indices[6] :
+                          min_value == minvals[7] ? min_indices[7] : min_indices[8]
+
+    return min_value, min_index
 end
