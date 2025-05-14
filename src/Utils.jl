@@ -147,13 +147,7 @@ array. The use of `@turbo` macro gives a significant performance boost.
 - `best`: The index of the minimum value in the `dij` array.
 """
 fast_findmin(dij, n) = begin
-    # findmin(@inbounds @view dij[1:n])
-    best = 1
-    @inbounds dij_min = dij[1]
-    @turbo for here in 2:n
-        newmin = dij[here] < dij_min
-        best = newmin ? here : best
-        dij_min = newmin ? dij[here] : dij_min
-    end
-    dij_min, best
+    x = @fastmath foldl(min, dij)
+    i = findfirst(==(x), dij)::Int
+    x, i
 end
