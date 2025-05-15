@@ -144,10 +144,8 @@ Create a copy of a `TiledJet` object.
 # Returns
 A new `TiledJet` object with the same attributes as the input object.
 """
-function copy(j::TiledJet)
-    TiledJet(j.id, j.eta, j.phi, j.kt2, j.NN_dist, j.jets_index,
-             j.tile_index, j.dij_posn, j.NN, j.previous, j.next)
-end
+copy(j::TiledJet) = TiledJet(j.id, j.eta, j.phi, j.kt2, j.NN_dist, j.jets_index,
+                             j.tile_index, j.dij_posn, j.NN, j.previous, j.next)
 
 # Iterator over a TiledJet walks along the chain of linked jets
 # until we reach a "noTiledJet" (which is !isvalid)
@@ -203,7 +201,7 @@ Constructs a initial `Tiling` object based on the provided `setup` parameters.
 # Returns
 A `Tiling` object.
 """
-function Tiling(setup::TilingDef)
+Tiling(setup::TilingDef) = begin
     t = Tiling(setup,
                fill(noTiledJet, (setup._n_tiles_eta, setup._n_tiles_phi)),
                fill(0, (setup._n_tiles_eta, setup._n_tiles_phi)),
@@ -264,7 +262,7 @@ Compute the surrounding indices of a given center index in a tiling.
 # Returns
 - `Surrounding`: An object containing the surrounding indices.
 """
-function surrounding(center::Int, tiling::Tiling)
+surrounding(center::Int, tiling::Tiling) = begin
     #                        4|6|9
     #                        3|1|8
     #                        2|5|7
@@ -303,7 +301,7 @@ distances as the left-hand tiles have been done from that tile already.
 # Returns
 - `Surrounding`: An object containing the indices of the right neighbors.
 """
-function rightneighbours(center::Int, tiling::Tiling)
+rightneighbours(center::Int, tiling::Tiling) = begin
     #                         |1|4
     #                         | |3
     #                         | |2

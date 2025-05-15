@@ -144,8 +144,7 @@ function JetReconstruction.jetsplot(cs::ClusterSequence,
     end
 
     set_theme!(jetreco_theme)
-    fig, ax,
-    plt_obj = Module.meshscatter(jet_plot_points;
+    fig, ax, plt_obj = Module.meshscatter(jet_plot_points;
                                  markersize = jet_plot_marker_size,
                                  marker = jet_plot_marker,
                                  colormap = colormap,

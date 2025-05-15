@@ -18,7 +18,6 @@ module JetReconstruction
 using LorentzVectorHEP
 using MuladdMacro
 using StructArrays
-using Plots
 
 # Import from LorentzVectorHEP methods for those 4-vector types
 pt2(p::LorentzVector) = LorentzVectorHEP.pt2(p)
@@ -72,10 +71,6 @@ export ee_genkt_algorithm
 ## Tiling Base
 include("TilingBase.jl")
 export TilingBase
-
-## Rectangular grid
-include("RectangularGrid.jl")
-export RectangularGrid
 
 ## SoftKiller
 include("SoftKiller.jl")

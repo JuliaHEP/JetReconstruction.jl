@@ -64,7 +64,7 @@ Compute the tile index for a given (eta, phi) coordinate.
 # Returns
 The tile index corresponding to the (eta, phi) coordinate.
 """
-function tile_index(tiling_setup, eta::Float64, phi::Float64)
+tile_index(tiling_setup, eta::Float64, phi::Float64) = begin
     # Use clamp() to restrict to the correct ranges
     # - eta can be out of range by construction (open ended bins)
     # - phi is protection against bad rounding
@@ -96,8 +96,7 @@ This function sets the eta, phi, kt2, jets_index, NN_dist, NN, tile_index, previ
 Returns:
 - `nothing`
 """
-function tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling,
-                               jets_index, R2, p)
+tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling, jets_index, R2, p) = begin
     @inbounds jet.eta = rapidity(clusterseq.jets[jets_index])
     @inbounds jet.phi = phi_02pi(clusterseq.jets[jets_index])
     @inbounds jet.kt2 = pt2(clusterseq.jets[jets_index]) > 1.e-300 ?
@@ -226,8 +225,7 @@ recombination function. The new jet is then added to the cluster sequence. The
 function also updates the indices and history information of the new jet and
 sorts out the history.
 """
-function do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij,
-                                   recombine = +)
+do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine = +) = begin
     # Create the new jet by recombining the first two with
     # the E-scheme
     push!(clusterseq.jets, recombine(clusterseq.jets[jet_i], clusterseq.jets[jet_j]))
@@ -260,7 +258,7 @@ adding a step to the history of the cluster sequence.
 - `jet_i`: The index of the jet.
 - `diB`: The diB value.
 """
-function do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB)
+do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB) = begin
     # Recombine the jet with the beam
     add_step_to_history!(clusterseq, clusterseq.jets[jet_i]._cluster_hist_index, BeamJet,
                          Invalid, diB)
