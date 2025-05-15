@@ -95,7 +95,7 @@ end
 
 n_good_tiles(sk::SoftKiller)::Int64 = begin
     #since the selector file is not implemented this for now will return sk._ntotal
-    #to pass the aaertion in apply, when implemented it should return this  
+    #to pass the assertion in apply, when implemented it should return this  
     #sk._ngood
     sk._ntotal
 end
@@ -129,8 +129,7 @@ function apply(sk::SoftKiller, event::Vector{PseudoJet}, reduced_event::Vector{P
         throw("SoftKiller not properly initialised.")
     end
 
-    #@assert event!=reduced_event #-> compares addresses - need to check how it is done with Julia 
-    @assert all_tiles_equal_area() #-> can't get accessed with sk. all_tiles_equal_area() 
+    @assert all_tiles_equal_area() 
 
     #fills the lector of length n_tiles with 0's
     max_pt2 = fill(0.0, n_tiles(sk))
@@ -146,10 +145,6 @@ function apply(sk::SoftKiller, event::Vector{PseudoJet}, reduced_event::Vector{P
         end
         max_pt2[index] = max(max_pt2[index], pt2(ev))
     end
-
-    #no here is this for loop that handles the case when 
-    #good tiles and tiles are not equal but I assume a selector wi used then 
-    #since that's how good tiles are determined 
 
     sort!(max_pt2)
 
