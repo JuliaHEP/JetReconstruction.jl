@@ -69,7 +69,6 @@ function jet_reconstruct(particles; p::Union{Real, Nothing} = nothing,
     end
 
     if (algorithm === nothing) || is_pp(algorithm)
-
         # We assume a pp reconstruction
         if strategy == RecoStrategy.Best
             # The breakpoint of ~80 is determined empirically on e+e- -> H and 0.5 TeV pp -> 5 GeV jets

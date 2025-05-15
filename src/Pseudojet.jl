@@ -77,7 +77,7 @@ pt2::Real) = PseudoJet(px,
 """
     PseudoJet(px::Real, py::Real, pz::Real, E::Real)
 
-Constructs a PseudoJet object with these given momentum components and energy.
+Constructs a PseudoJet object with the given momentum components and energy.
 
 # Arguments
 - `px::Real`: The x-component of the momentum.
