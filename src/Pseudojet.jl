@@ -68,13 +68,11 @@ history index.
 # Returns
 A `PseudoJet` object.
 """
-function PseudoJet(px::Real, py::Real, pz::Real, E::Real,
-                   _cluster_hist_index::Int,
-                   pt2::Real)
-    PseudoJet(px,
-              py, pz, E, _cluster_hist_index,
-              pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
-end
+PseudoJet(px::Real, py::Real, pz::Real, E::Real,
+_cluster_hist_index::Int,
+pt2::Real) = PseudoJet(px,
+                       py, pz, E, _cluster_hist_index,
+                       pt2, 1.0 / pt2, _invalid_rap, _invalid_phi)
 
 """
     PseudoJet(px::Real, py::Real, pz::Real, E::Real)
@@ -91,7 +89,7 @@ Constructs a PseudoJet object with the given momentum components and energy.
 A PseudoJet object.
 """
 PseudoJet(px::Real, py::Real,
-          pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
+pz::Real, E::Real) = PseudoJet(px, py, pz, E, 0, px^2 + py^2)
 
 """Used to mark an invalid result in case the corresponding substructure tagging fails."""
 const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
@@ -120,7 +118,7 @@ Print a `PseudoJet` object to the specified IO stream.
 - `io::IO`: The IO stream to which the information will be printed.
 - `jet::PseudoJet`: The `PseudoJet` object whose information will be printed.
 """
-function show(io::IO, jet::PseudoJet)
+show(io::IO, jet::PseudoJet) = begin
     print(io, "Pseudojet(px: ", jet.px, " py: ", jet.py, " pz: ", jet.pz, " E: ", jet.E,
           "; ",
           "pt: ", sqrt(jet._pt2), " rapidity: ", rapidity(jet), " phi: ", phi(jet), ", m: ",
@@ -182,7 +180,7 @@ different zero-pt momenta.
 
 Note - the ϕ angle is calculated in the range [0, 2π).
 """
-function _set_rap_phi!(p::PseudoJet)
+_set_rap_phi!(p::PseudoJet) = begin
     p._phi = p._pt2 == 0.0 ? 0.0 : atan(p.py, p.px)
     if p._phi < 0.0
         p._phi += 2π
@@ -396,7 +394,7 @@ Addition operator for `PseudoJet` objects.
 # Returns
 A new `PseudoJet` object with the sum of the momenta and energy of `j1` and `j2`.
 """
-function +(j1::PseudoJet, j2::PseudoJet)
++(j1::PseudoJet, j2::PseudoJet) = begin
     PseudoJet(j1.px + j2.px, j1.py + j2.py,
               j1.pz + j2.pz, j1.E + j2.E)
 end

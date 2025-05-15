@@ -96,7 +96,7 @@ function process_event(event::Vector{PseudoJet}, args::Dict{Symbol, Any},
     cluster_seq_pu = jet_reconstruct(event,
                                      R = distance, p = p, algorithm = algorithm,
                                      strategy = strategy)
-
+                                     
     ize = length(event)
     println("Cluster size $(ize) \n")
     finaljets_pu_lorv = inclusive_jets(cluster_seq_pu, ptmin = 25.0)
@@ -137,11 +137,10 @@ function main()
     algorithm = args[:algorithm]
     p = args[:power]
 
-    (p,
-     algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-                                                                    algorithm = algorithm)
+    (p,algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
+                                                                      algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
-
+    
     #This is a vector of PseudoJets that contatins hard event and pileup 
     #but it will get clustered after SoftKiller was applied 
     all_jets_sk = PseudoJet[]
@@ -155,13 +154,14 @@ function main()
         push!(all_jets_sk, pseudo_jet)
     end
 
+
     pt_threshold = 0.00
     soft_killer_event = PseudoJet[]
     #Applying SoftKiller to a non-clistered vector of PseudoJets 
-    reduced_event,
-    pt_threshold = apply(soft_killer, all_jets_sk, soft_killer_event, pt_threshold)
-
+    reduced_event, pt_threshold = apply(soft_killer, all_jets_sk, soft_killer_event, pt_threshold)
+    
     println("pt pt_threshold: ", pt_threshold)
+    
 end
 
 main()
