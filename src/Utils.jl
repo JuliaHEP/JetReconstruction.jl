@@ -185,7 +185,7 @@ function _simd_fast_findmin(dij::DenseVector{T}, n) where {T}
     end
 
     # last batch
-    back_track = 8-remainder
+    back_track = 8 - remainder
     i -= back_track
     laneIndices -= back_track
 
