@@ -10,4 +10,4 @@ ProfileSVG = "132c30aa-f267-4189-9183-c8a63c7e05e6"
 StatProfilerHTML = "a8a75453-ed82-57c9-9e16-4cd1196ecbf5"
 
 [sources]
-JetReconstruction = {path = "/Users/emadimtrova/Desktop/uni/spring25/UTRA/JetReconstruction.jl"}
+JetReconstruction = {path = ".."}

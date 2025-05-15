@@ -36,7 +36,7 @@ function jet_process(events::Vector{Vector{T}};
 
     # Set consistent algorithm and power
     (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-                                                                algorithm = algorithm)
+                                                                       algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
 
     # A friendly label for the algorithm and final jet selection
