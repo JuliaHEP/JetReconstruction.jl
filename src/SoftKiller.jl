@@ -129,7 +129,7 @@ function apply(sk::SoftKiller, event::Vector{PseudoJet}, reduced_event::Vector{P
         throw("SoftKiller not properly initialised.")
     end
 
-    @assert all_tiles_equal_area() 
+    @assert all_tiles_equal_area()
 
     #fills the lector of length n_tiles with 0's
     max_pt2 = fill(0.0, n_tiles(sk))
