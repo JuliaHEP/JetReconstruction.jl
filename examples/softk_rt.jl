@@ -105,71 +105,6 @@ function process_event(event::Vector{PseudoJet}, args::Dict{Symbol, Any},
     return finaljets_pu_lorv
 end
 
-function push_data(event::AbstractVector, Ys::Vector{Float64}, Phis::Vector{Float64},
-    pts::Vector{Float64}, colors::Vector{String},
-    color::String, origin::Dict{PseudoJet, String})
-
-    for (jet_i, jet) in enumerate(event)
-        pj = isa(jet, PseudoJet) ? jet : PseudoJet(px(jet), py(jet), pz(jet), energy(jet))
-        push!(Ys, JetReconstruction.rapidity(pj))
-        push!(Phis, JetReconstruction.phi(pj))
-        push!(pts, JetReconstruction.pt2(pj))
-        if haskey(origin, jet)
-            push!(colors, origin[jet] == "hard" ? "purple" : "white")
-        else
-            push!(colors, color)  # fallback if not found
-        end
-    end
-end
-
-
-function plot_set_up(Y::Vector{Float64}, Phi::Vector{Float64}, pt::Vector{Float64},
-                     color::Vector{String}, plot_title::String)
-    y_min, y_max = -5.0, 5.0
-
-    phi_min, phi_max = 0.0, 6.5
-
-    x = y_min:0.4:y_max
-    y = phi_min:0.4:phi_max
-
-    max_pt = maximum(pt)
-
-    marker_sizes = 3 .+ pt/50
-
-    format(lines) = begin
-        return [isinteger(line) ? string(line) : "" for line in lines]
-    end
-
-    x_labels = format(x)
-    y_labels = format(y)
-
-    p = scatter(Y, Phi,
-                xlabel = "Rapidity (y)",
-                ylabel = "Azimuthal Angle (φ)",
-                title = plot_title,
-                markersize = marker_sizes,
-                xticks = (x, x_labels),
-                yticks = (y, y_labels),
-                xlims = (y_min, y_max),
-                ylims = (phi_min, phi_max),
-                grid = true,
-                framestyle = :box,
-                color = color;
-                alpha = 0.6,
-                legend = false)
-
-    scatter!(p, [NaN], [NaN], color = "white", markerstrokecolor = :black, label = "Pileup")
-    scatter!(p, [NaN], [NaN], color = "purple", label = "Hard Event")
-    scatter!(p, [NaN], [NaN], color = "royalblue3", label = "Jet")
-
-
-    save_dir = "examples"
-    mkpath(save_dir)
-    file_path = joinpath(save_dir, plot_title * ".png")
-    savefig(p, file_path)
-end
-
-
 function main()
     args = parse_command_line(ARGS)
     logger = ConsoleLogger(stdout, Logging.Info)
@@ -202,17 +137,13 @@ function main()
     algorithm = args[:algorithm]
     p = args[:power]
 
-    (p,
-     algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-                                                                    algorithm = algorithm)
+    (p,algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
+                                                                      algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
     
     #This is a vector of PseudoJets that contatins hard event and pileup 
     #but it will get clustered after SoftKiller was applied 
     all_jets_sk = PseudoJet[]
-
-
-
     for (ievn, event) in enumerate(events)
         for pseudo_jet in event
             push!(all_jets_sk, pseudo_jet)

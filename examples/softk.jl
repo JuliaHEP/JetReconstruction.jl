@@ -126,13 +126,9 @@ end
 function plot_set_up(Y::Vector{Float64}, Phi::Vector{Float64}, pt::Vector{Float64},
                      color::Vector{String}, plot_title::String)
     y_min, y_max = -5.0, 5.0
-
     phi_min, phi_max = 0.0, 6.5
-
     x = y_min:0.4:y_max
     y = phi_min:0.4:phi_max
-
-    max_pt = maximum(pt)
 
     marker_sizes = 3 .+ pt/50
 
@@ -161,7 +157,6 @@ function plot_set_up(Y::Vector{Float64}, Phi::Vector{Float64}, pt::Vector{Float6
     scatter!(p, [NaN], [NaN], color = "white", markerstrokecolor = :black, label = "Pileup")
     scatter!(p, [NaN], [NaN], color = "purple", label = "Hard Event")
     scatter!(p, [NaN], [NaN], color = "royalblue3", label = "Jet")
-
 
     save_dir = "examples"
     mkpath(save_dir)
@@ -202,9 +197,8 @@ function main()
     algorithm = args[:algorithm]
     p = args[:power]
 
-    (p,
-     algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-                                                                    algorithm = algorithm)
+    (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
+                                                                       algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
 
     #This is a vector of PseudoJets that contatins hard event and pileup 
@@ -215,11 +209,10 @@ function main()
     all_jets_sk = PseudoJet[]
 
     hard_only = PseudoJet[]
-
     origin= Dict{PseudoJet, String}()
 
     Yi, Phii, pti, colorsr = Float64[], Float64[], Float64[], String[]
-#Clustering and updating data for the gaphs plus filling all_jets_sk for the pile up 
+    #Clustering and updating data for the gaphs plus filling all_jets_sk for the pile up 
     for (ievn, event) in enumerate(events)
         for pseudo_jet in event
             push!(all_jets_sk, pseudo_jet)
@@ -270,8 +263,7 @@ function main()
     plot_set_up(Y_sk, Phi_sk, pt_sk, colors_sk,
                 "All PseudoJets before clustering, with SoftKiller")
     
-            
-                #Clustering after Softkiller using reduced_event
+    #Clustering after Softkiller using reduced_event
     # process_event(reduced_event, args, all_jets_sk, rapmax, Ys_reduced, Phis_reduced,
     #               pts_reduced, colors_reduced, "royalblue3", origin)
 
