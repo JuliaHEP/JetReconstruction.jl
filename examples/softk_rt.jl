@@ -17,6 +17,8 @@ using JSON
 using LorentzVectorHEP
 using JetReconstruction
 using Plots
+using Profile
+
 
 include(joinpath(@__DIR__, "parse-options.jl"))
 
@@ -129,7 +131,7 @@ function main()
                                           skipevents = args[:skip],
                                           T = jet_type)
 
-    #Setting dimetions for Softkiller                                   
+    #Setting dimensions for Softkiller                                   
     rapmax = 5.0
     grid_size = args[:grid_size]
     soft_killer = SoftKiller(rapmax, grid_size)
@@ -141,7 +143,7 @@ function main()
                                                                       algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
     
-    #This is a vector of PseudoJets that contatins hard event and pileup 
+    #This is a vector of PseudoJets that contains hard event and pileup 
     #but it will get clustered after SoftKiller was applied 
     all_jets_sk = PseudoJet[]
     for (ievn, event) in enumerate(events)
@@ -154,14 +156,15 @@ function main()
         push!(all_jets_sk, pseudo_jet)
     end
 
-
     pt_threshold = 0.00
     soft_killer_event = PseudoJet[]
-    #Applying SoftKiller to a non-clistered vector of PseudoJets 
-    reduced_event, pt_threshold = apply(soft_killer, all_jets_sk, soft_killer_event, pt_threshold)
+    #Applying SoftKiller to a non-clustered vector of PseudoJets 
+    reduced_event, pt_threshold = softkiller_apply(soft_killer, all_jets_sk, soft_killer_event, pt_threshold)
     
-    println("pt pt_threshold: ", pt_threshold)
+    println("pt_threshold: ", pt_threshold)
     
 end
 
-main()
+@time main()
+
+

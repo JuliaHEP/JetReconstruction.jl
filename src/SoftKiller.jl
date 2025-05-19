@@ -1,6 +1,6 @@
 using JetReconstruction
 
-mutable struct SoftKiller <: TilingBase
+mutable struct SoftKiller 
     _ymax::Float64
     _ymin::Float64
     _requested_drap::Float64
@@ -17,7 +17,6 @@ mutable struct SoftKiller <: TilingBase
     _nphi::Int64
 
     function SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)
-        print("4 variables \n")
         grid = new(rapmax, rapmin, drap, dphi, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0)
         _setup_grid(grid)
         print(description(grid))
@@ -25,7 +24,6 @@ mutable struct SoftKiller <: TilingBase
     end
 
     function SoftKiller(rapmax::Float64, grid_size::Float64)
-        print("2 variables\n")
         grid = new(rapmax, -rapmax, grid_size, grid_size, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0,
                    0)
         _setup_grid(grid)
@@ -35,7 +33,7 @@ mutable struct SoftKiller <: TilingBase
 end
 
 tile_index(sk::SoftKiller,
-           p::PseudoJet)::Int64 = begin
+           p::PseudoJet) = begin
     y_minus_ymin = rapidity(p) - sk._ymin
     if y_minus_ymin < 0
         return -1
@@ -77,15 +75,15 @@ function _setup_grid(sk::SoftKiller)
 end
 
 description(sk::SoftKiller)::String = begin
-    #from definiton of is_initialised  in RectangularGrid.hh
+    #from definitonof is_initialized in RectangularGrid.hh
     if sk._ntotal <= 0
-        return "Uninitialised rectangular grid"
+        return "Uninitialized rectangular grid"
     end
 
     descr = "rectangular grid with rapidity extent $(sk._ymin) < rap < $(sk._ymax) \n total tiles  $(sk._ntotal) \n "
     descr *= "tile size drap x dphi = $(sk._dy) x $(sk._dphi)"
 
-    #Selector implementation desn't exist 
+    #Selector implementation doesn't exist 
     descr
 end
 
@@ -123,13 +121,11 @@ function select_ABS_RAP_max(event, absrapmax)
     return filtered_events
 end
 
-function apply(sk::SoftKiller, event::Vector{PseudoJet}, reduced_event::Vector{PseudoJet},
+function softkiller_apply(sk::SoftKiller, event::Vector{PseudoJet}, reduced_event::Vector{PseudoJet},
                pt_threshold::Float64)
     if (n_tiles(sk) < 2)
-        throw("SoftKiller not properly initialised.")
+        throw("SoftKiller not properly initialized.")
     end
-
-    @assert all_tiles_equal_area() 
 
     #fills the lector of length n_tiles with 0's
     max_pt2 = fill(0.0, n_tiles(sk))

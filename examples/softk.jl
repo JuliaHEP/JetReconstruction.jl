@@ -189,7 +189,7 @@ function main()
                                           skipevents = args[:skip],
                                           T = jet_type)
 
-    #Setting dimetions for Softkiller                                   
+    #Setting dimensions for Softkiller                                   
     rapmax = 5.0
     grid_size = args[:grid_size]
     soft_killer = SoftKiller(rapmax, grid_size)
@@ -201,10 +201,10 @@ function main()
                                                                        algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
 
-    #This is a vector of PseudoJets that contatins hard event and pileup 
+    #This is a vector of PseudoJets that contains hard event and pileup 
     #this vector will get clustered without SoftKiller applied 
     all_jets = PseudoJet[]
-    #This is a vector of PseudoJets that contatins hard event and pileup 
+    #This is a vector of PseudoJets that contains hard event and pileup 
     #but it will get clustered after SoftKiller was applied 
     all_jets_sk = PseudoJet[]
 
@@ -212,7 +212,7 @@ function main()
     origin= Dict{PseudoJet, String}()
 
     Yi, Phii, pti, colorsr = Float64[], Float64[], Float64[], String[]
-    #Clustering and updating data for the gaphs plus filling all_jets_sk for the pile up 
+    #Clustering and updating data for the graphs plus filling all_jets_sk for the pile up 
     for (ievn, event) in enumerate(events)
         for pseudo_jet in event
             push!(all_jets_sk, pseudo_jet)
@@ -255,8 +255,8 @@ function main()
 
     pt_threshold = 0.00
     soft_killer_event = PseudoJet[]
-    #Applying SoftKiller to a non-clistered vector of PseudoJets 
-    reduced_event, pt_threshold = apply(soft_killer, all_jets_sk, soft_killer_event, pt_threshold)
+    #Applying SoftKiller to a non-clustered vector of PseudoJets 
+    reduced_event, pt_threshold = softkiller_apply(soft_killer, all_jets_sk, soft_killer_event, pt_threshold)
 
     Y_sk, Phi_sk, pt_sk, colors_sk = Float64[], Float64[], Float64[], String[]
     push_data(reduced_event,  Y_sk, Phi_sk, pt_sk, colors_sk, "royalblue3",origin)
