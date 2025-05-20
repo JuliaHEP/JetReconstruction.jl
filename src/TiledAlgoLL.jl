@@ -486,8 +486,8 @@ function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet}; p::Real = 
             oldB = copy(jetB)  # take a copy because we will need it...
 
             tiledjet_remove_from_tiles!(tiling, jetB)
-            tiledjet_set_jetinfo!(jetB, clusterseq, tiling, newjet_k, R2, p) # cause jetB to become _jets[newjet_k]
-        #                                  (in addition, registers the jet in the tiling)
+            # Move jetB to be jets[newjet_k] and register the new jet in the tiling
+            tiledjet_set_jetinfo!(jetB, clusterseq, tiling, newjet_k, R2, p)
         else
             # Jet-beam recombination
             do_iB_recombination_step!(clusterseq, jetA.jets_index, dij_min)
