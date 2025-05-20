@@ -1,6 +1,6 @@
 # JetReconstruction.jl
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Build Status](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml?query=branch%3Amain)
@@ -179,6 +179,9 @@ Thanks goes to these contributors to this code ([emoji key](https://allcontribut
       <td align="center" valign="top" width="14.28%"><a href="http://blog.jling.dev"><img src="https://avatars.githubusercontent.com/u/5306213?v=4?s=100" width="100px;" alt="Jerry Ling"/><br /><sub><b>Jerry Ling</b></sub></a><br /><a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=Moelf" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/hegner"><img src="https://avatars.githubusercontent.com/u/1609504?v=4?s=100" width="100px;" alt="hegner"/><br /><sub><b>hegner</b></sub></a><br /><a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=hegner" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://m-fila.github.io"><img src="https://avatars.githubusercontent.com/u/37295697?v=4?s=100" width="100px;" alt="Mateusz Jakub Fila"/><br /><sub><b>Mateusz Jakub Fila</b></sub></a><br /><a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=m-fila" title="Documentation">📖</a> <a href="#infra-m-fila" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=m-fila" title="Tests">⚠️</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ExpandingMan"><img src="https://avatars.githubusercontent.com/u/11379353?v=4?s=100" width="100px;" alt="ExpandingMan"/><br /><sub><b>ExpandingMan</b></sub></a><br /><a href="#infra-ExpandingMan" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     </tr>
   </tbody>
 </table>
