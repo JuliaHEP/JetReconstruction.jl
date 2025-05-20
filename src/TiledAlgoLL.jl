@@ -64,7 +64,7 @@ Compute the tile index for a given (eta, phi) coordinate.
 # Returns
 The tile index corresponding to the (eta, phi) coordinate.
 """
-tile_index(tiling_setup, eta::Float64, phi::Float64) = begin
+function tile_index(tiling_setup, eta::Float64, phi::Float64)
     # Use clamp() to restrict to the correct ranges
     # - eta can be out of range by construction (open ended bins)
     # - phi is protection against bad rounding
@@ -96,7 +96,8 @@ This function sets the eta, phi, kt2, jets_index, NN_dist, NN, tile_index, previ
 Returns:
 - `nothing`
 """
-tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling, jets_index, R2, p) = begin
+function tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling,
+                               jets_index, R2, p)
     @inbounds jet.eta = rapidity(clusterseq.jets[jets_index])
     @inbounds jet.phi = phi(clusterseq.jets[jets_index])
     @inbounds jet.kt2 = pt2(clusterseq.jets[jets_index]) > 1.e-300 ?
@@ -213,7 +214,7 @@ adding a step to the history of the cluster sequence.
 - `jet_i`: The index of the jet.
 - `diB`: The diB value.
 """
-do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB) = begin
+function do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB)
     # Recombine the jet with the beam
     add_step_to_history!(clusterseq, clusterseq.jets[jet_i]._cluster_hist_index, BeamJet,
                          Invalid, diB)
@@ -472,13 +473,14 @@ function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet}; p::Real = 
             # Recombine jetA and jetB into the new jet
             real_jetA = clusterseq.jets[jetA.jets_index]
             real_jetB = clusterseq.jets[jetB.jets_index]
-            newjet = recombine(real_jetA, real_jetB; cluster_hist_index = length(clusterseq.history) + 1)
+            newjet = recombine(real_jetA, real_jetB;
+                               cluster_hist_index = length(clusterseq.history) + 1)
             push!(clusterseq.jets, newjet)
             newjet_k = length(clusterseq.jets)
-            add_step_to_history!(clusterseq, minmax(real_jetA._cluster_hist_index, real_jetB._cluster_hist_index)...,
-                         newjet_k, dij_min)
-            # nn = do_ij_recombination_step!(clusterseq, jetA.jets_index, jetB.jets_index,
-            #                                dij_min, recombined_jet)
+            add_step_to_history!(clusterseq,
+                                 minmax(real_jetA._cluster_hist_index,
+                                        real_jetB._cluster_hist_index)...,
+                                 newjet_k, dij_min)
 
             tiledjet_remove_from_tiles!(tiling, jetA)
             oldB = copy(jetB)  # take a copy because we will need it...
