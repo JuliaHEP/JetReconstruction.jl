@@ -361,7 +361,7 @@ If both are given they must be consistent or an exception is thrown.
 
 ## Example
 ```julia
-tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4, recombine = +)
+tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4)
 ```
 """
 function tiled_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Nothing} = -1,
@@ -402,10 +402,6 @@ function tiled_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Noth
 end
 
 """
-Main jet reconstruction algorithm, using PseudoJet objects
-"""
-
-"""
     _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet}; p::Real = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
                                 R = 1.0, recombine = addjets)
@@ -423,7 +419,7 @@ power parameter.
   algorithm.
 - `algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt`: The jet reconstruction
    algorithm to use.
-- `recombine::Function = +`: The recombination function used for combining
+- `recombine::Function = addjets`: The recombination function used for combining
   pseudojets.
 
 ## Returns
@@ -431,7 +427,7 @@ power parameter.
 
 ## Example
 ```julia
-tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 1.0, recombine = +)
+tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 0.4)
 ```
 """
 function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet}; p::Real = -1,
