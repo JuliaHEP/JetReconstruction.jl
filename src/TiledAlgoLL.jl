@@ -203,50 +203,6 @@ function set_nearest_neighbours!(clusterseq::ClusterSequence, tiling::Tiling,
 end
 
 """
-    do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine=+)
-
-Perform the bookkeeping associated with the step of recombining jet_i and jet_j
-(assuming a distance dij).
-
-# Arguments
-- `clusterseq::ClusterSequence`: The cluster sequence object.
-- `jet_i`: The index of the first jet to be recombined.
-- `jet_j`: The index of the second jet to be recombined.
-- `dij`: The distance between the two jets.
-- `recombine=+`: The recombination function to be used. Default is addition.
-
-# Returns
-- `newjet_k`: The index of the newly created jet.
-
-# Description
-This function performs the i-j recombination step in the cluster sequence. It
-creates a new jet by recombining the first two jets using the specified
-recombination function. The new jet is then added to the cluster sequence. The
-function also updates the indices and history information of the new jet and
-sorts out the history.
-"""
-do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine = addjets) = begin
-    # Get its index and the history index
-    newjet_k = length(clusterseq.jets) + 1
-    newstep_k = length(clusterseq.history) + 1
-
-    # Create the new jet by recombining the first two with
-    # the E-scheme, then push into the jet vector
-    jet1 = clusterseq.jets[jet_i]
-    jet2 = clusterseq.jets[jet_j]
-    push!(clusterseq.jets, recombine(jet1, jet2; cluster_hist_index = newstep_k))
-
-    # Finally sort out the history
-    hist_i = jet1._cluster_hist_index
-    hist_j = jet2._cluster_hist_index
-
-    add_step_to_history!(clusterseq, minmax(hist_i, hist_j)...,
-                         newjet_k, dij)
-
-    newjet_k
-end
-
-"""
     do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB)
 
 Bookkeeping for recombining a jet with the beam (i.e., finalising the jet) by
@@ -513,14 +469,22 @@ function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet}; p::Real = 
                 jetA, jetB = jetB, jetA
             end
 
-            # Recombine jetA and jetB and retrieves the new index, nn
-            nn = do_ij_recombination_step!(clusterseq, jetA.jets_index, jetB.jets_index,
-                                           dij_min, recombine)
+            # Recombine jetA and jetB into the new jet
+            real_jetA = clusterseq.jets[jetA.jets_index]
+            real_jetB = clusterseq.jets[jetB.jets_index]
+            newjet = recombine(real_jetA, real_jetB; cluster_hist_index = length(clusterseq.history) + 1)
+            push!(clusterseq.jets, newjet)
+            newjet_k = length(clusterseq.jets)
+            add_step_to_history!(clusterseq, minmax(real_jetA._cluster_hist_index, real_jetB._cluster_hist_index)...,
+                         newjet_k, dij_min)
+            # nn = do_ij_recombination_step!(clusterseq, jetA.jets_index, jetB.jets_index,
+            #                                dij_min, recombined_jet)
+
             tiledjet_remove_from_tiles!(tiling, jetA)
             oldB = copy(jetB)  # take a copy because we will need it...
 
             tiledjet_remove_from_tiles!(tiling, jetB)
-            tiledjet_set_jetinfo!(jetB, clusterseq, tiling, nn, R2, p) # cause jetB to become _jets[nn]
+            tiledjet_set_jetinfo!(jetB, clusterseq, tiling, newjet_k, R2, p) # cause jetB to become _jets[newjet_k]
         #                                  (in addition, registers the jet in the tiling)
         else
             # Jet-beam recombination
