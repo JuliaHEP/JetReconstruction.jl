@@ -75,3 +75,10 @@ let
                           addjets_pt2scheme, preprocess_pt2scheme)
     run_reco_test(test)
 end
+
+# Check that all recombination scheme Enums are defined in RecombinationMethods
+@testset "RecombinationScheme Enum Check" begin
+    for scheme in instances(RecombinationScheme.Recombine)
+        @test haskey(RecombinationMethods, scheme)
+    end
+end
