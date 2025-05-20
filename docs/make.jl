@@ -19,6 +19,7 @@ makedocs(sitename = "JetReconstruction.jl",
              "Jet Helpers" => "helpers.md",
              "EDM4hep" => "EDM4hep.md",
              "Visualisation" => "visualisation.md",
+             "Contributing" => "contributing.md",
              "Reference Docs" => Any["Public API" => "lib/public.md",
                                      "Internal API" => "lib/internal.md"],
              "Extras" => Any["Serialisation" => "extras/serialisation.md"]
