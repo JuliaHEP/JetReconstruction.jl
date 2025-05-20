@@ -193,7 +193,7 @@ end
 """
     ee_genkt_algorithm(particles::AbstractVector{T}; p = -1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                       recombine = addjets) where {T}
+                       recombine = addjets, preprocess = nothing) where {T}
 
 Run an e+e- reconstruction algorithm on a set of initial particles.
 

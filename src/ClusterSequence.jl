@@ -192,7 +192,7 @@ function add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jet
     # a serious internal issue). However, we decided to throw an
     # InternalError so that the end user can decide to catch it and
     # retry the clustering with a different strategy.
-    # @assert parent1 >= 1
+    @assert parent1 >= 1
     if clusterseq.history[parent1].child != Invalid
         error("Internal error. Trying to recombine an object that has previously been recombined. Parent " *
               string(parent1) * "'s child index " *

@@ -93,10 +93,10 @@ If a different merging scheme is desired then a method must be defined
 that implements the following interface:
 
 ```julia
-user_recombine(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum} -> T
+user_recombine(jet1::T, jet2::T; cluster_hist_index::Int) where {T <: FourMomentum} -> T
 ```
 
-i.e., three arguments are needed, the two parent jets and the
+i.e., three arguments are needed, the two parent jets and the named argument
 `cluster_hist_index`, which is needed to identify the jet in the reconstruction
 sequence.
 
@@ -129,3 +129,6 @@ package serve as examples: [`addjets_ptscheme`](@ref).
 To use a non-default recombination method, simply pass the recombination method
 to the [`jet_reconstruct`](@ref) entry point as the `recombine` parameter and
 the preprocessing method as `preprocess`.
+
+A very convenient way to do this is to bind these functions into a named tuple
+and splat the tuple into the arguments for the reconstruction.
