@@ -199,7 +199,8 @@ Compute the geometric distance between two points in the rap-phi plane.
 # Returns
 - `distance::Float64`: The geometric distance between the two points.
 """
-geometric_distance(eta1::AbstractFloat, phi1::AbstractFloat, eta2::AbstractFloat, phi2::AbstractFloat) = begin
+function geometric_distance(eta1::AbstractFloat, phi1::AbstractFloat, eta2::AbstractFloat,
+                            phi2::AbstractFloat)
     δeta = eta2 - eta1
     δphi = π - abs(π - abs(phi1 - phi2))
     return δeta * δeta + δphi * δphi
@@ -245,7 +246,7 @@ the tile indices for the given `eta` and `phi` values.
 - `ieta`: The tile index along the eta direction.
 - `iphi`: The tile index along the phi direction.
 """
-get_tile(tiling_setup::TilingDef, eta::AbstractFloat, phi::AbstractFloat) = begin
+function get_tile(tiling_setup::TilingDef, eta::AbstractFloat, phi::AbstractFloat)
     # The eta clamp is necessary as the extreme bins catch overflows for high abs(eta)
     ieta = clamp(floor(Int,
                        (eta - tiling_setup._tiles_eta_min) / tiling_setup._tile_size_eta),
@@ -272,7 +273,7 @@ but there you go...)
 # Returns
 - The linear index of the tile.
 """
-get_tile_cartesian_indices(tiling_setup::TilingDef, index::Int) = begin
+function get_tile_cartesian_indices(tiling_setup::TilingDef, index::Int)
     return (rem(index - 1, tiling_setup._n_tiles_eta) + 1,
             div(index - 1, tiling_setup._n_tiles_eta) + 1)
 end

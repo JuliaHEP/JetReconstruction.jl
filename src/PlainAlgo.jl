@@ -189,7 +189,7 @@ end
 """
     plain_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Nothing} = -1,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                               R = 1.0, recombine = +) where {T}
+                               R = 1.0, recombine = addjets, preprocess = nothing) where {T}
 
 Perform pp jet reconstruction using the plain algorithm.
 
@@ -202,8 +202,9 @@ Perform pp jet reconstruction using the plain algorithm.
 - `algorithm::Union{JetAlgorithm, Nothing} = nothing`: The explicit jet
   algorithm to use.
 - `R::Float64 = 1.0`: The radius parameter used for jet reconstruction.
-- `recombine::Function = +`: The recombination function used for jet
-  reconstruction.
+- `recombine::Function = addjets`: The recombination function used to combine
+  particles into a new jet.
+- `preprocess::Function = nothing`: A function to preprocess the input particles.
 
 **Note** for the `particles` argument, the 4-vector methods need to exist in the
 JetReconstruction package namespace.
@@ -225,7 +226,7 @@ jets = plain_jet_reconstruct(particles; algorithm = JetAlgorithm.Kt, R = 1.0)
 """
 function plain_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Nothing} = -1,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                               R = 1.0, recombine = +) where {T}
+                               R = 1.0, recombine = addjets, preprocess = nothing) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
@@ -233,18 +234,29 @@ function plain_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Noth
     # Integer p if possible
     p = (round(p) == p) ? Int(p) : p
 
-    if T == PseudoJet
-        # recombination_particles will become part of the cluster sequence, so size it for
-        # the starting particles and all N recombinations
-        recombination_particles = copy(particles)
-        sizehint!(recombination_particles, length(particles) * 2)
+    if isnothing(preprocess)
+        if T == PseudoJet
+            # If we don't have a preprocessor, we just need to copy to our own
+            # PseudoJet objects
+            recombination_particles = copy(particles)
+            sizehint!(recombination_particles, length(particles) * 2)
+        else
+            # We assume a constructor for PseudoJet that can ingest the appropriate
+            # type of particle
+            recombination_particles = PseudoJet[]
+            sizehint!(recombination_particles, length(particles) * 2)
+            for (i, particle) in enumerate(particles)
+                push!(recombination_particles, PseudoJet(particle; cluster_hist_index = i))
+            end
+        end
     else
+        # We have a preprocessor function that we need to call to modify the
+        # input particles
         recombination_particles = PseudoJet[]
         sizehint!(recombination_particles, length(particles) * 2)
-        for i in eachindex(particles)
+        for (i, particle) in enumerate(particles)
             push!(recombination_particles,
-                  PseudoJet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                            energy(particles[i])))
+                  preprocess(particle; cluster_hist_index = i, jet_type = PseudoJet))
         end
     end
 
@@ -257,7 +269,7 @@ end
 """
     _plain_jet_reconstruct(; particles::AbstractVector{PseudoJet}, p = -1, 
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                R = 1.0, recombine = +)
+                                R = 1.0, recombine = addjets)
 
 This is the internal implementation of jet reconstruction using the plain
 algorithm. It takes a vector of `particles` representing the input particles and
@@ -288,7 +300,7 @@ power parameter.
 """
 function _plain_jet_reconstruct(; particles::AbstractVector{PseudoJet}, p = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                R = 1.0, recombine = +)
+                                R = 1.0, recombine = addjets)
     # Bounds
     N::Int = length(particles)
     # Parameters
@@ -327,17 +339,10 @@ function _plain_jet_reconstruct(; particles::AbstractVector{PseudoJet}, p = -1,
 
     iteration::Int = 1
     while N != 0
-        # Extremely odd - having these @debug statements present causes a performance
-        # degradation of ~140μs per event on my M2 mac (20%!), even when no debugging is used
-        # so they need to be completely commented out...
-        #@debug "Beginning iteration $iteration"
-
         # Findmin and add back renormalisation to distance
         dij_min, i = fast_findmin(nndij, N)
         @fastmath dij_min /= R2
         j::Int = nn[i]
-
-        #@debug "Closest compact jets are $i ($(clusterseq_index[i])) and $j ($(clusterseq_index[j]))"
 
         if i != j # Merge jets i and j
             # swap if needed
@@ -345,20 +350,21 @@ function _plain_jet_reconstruct(; particles::AbstractVector{PseudoJet}, p = -1,
                 i, j = j, i
             end
 
-            # Source "history" for merge
-            hist_i = clusterseq.jets[clusterseq_index[i]]._cluster_hist_index
-            hist_j = clusterseq.jets[clusterseq_index[j]]._cluster_hist_index
+            # Resolve real jets
+            jetI = clusterseq.jets[clusterseq_index[i]]
+            jetJ = clusterseq.jets[clusterseq_index[j]]
 
             # Recombine i and j into the next jet
-            push!(clusterseq.jets,
-                  recombine(clusterseq.jets[clusterseq_index[i]],
-                            clusterseq.jets[clusterseq_index[j]]))
-            # Get its index and the history index
-            newjet_k = length(clusterseq.jets)
+            newjet_k = length(clusterseq.jets) + 1
             newstep_k = length(clusterseq.history) + 1
-            clusterseq.jets[newjet_k]._cluster_hist_index = newstep_k
+            push!(clusterseq.jets,
+                  recombine(jetI, jetJ; cluster_hist_index = newstep_k))
+
             # Update history
-            add_step_to_history!(clusterseq, minmax(hist_i, hist_j)..., newjet_k, dij_min)
+            add_step_to_history!(clusterseq,
+                                 minmax(jetI._cluster_hist_index,
+                                        jetJ._cluster_hist_index)...,
+                                 newjet_k, dij_min)
 
             # Update the compact arrays, reusing the i-th slot
             kt2_array[i] = pt2(clusterseq.jets[newjet_k])^p

@@ -27,7 +27,7 @@ or with some of the optional arguments,
 
 ```julia
 jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, R = 0.4, 
-                p = 0.5, recombine = +, strategy = RecoStrategy.Best)
+                p = 0.5, recombine = addjets, strategy = RecoStrategy.Best)
 ```
 
 Where `particles` is a collection of 4-vector objects (see [Input Particle
@@ -39,6 +39,8 @@ algorithm (`GenKt`, `EEKt`) and `p` are needed.
 
 The `R` value determines the cone size; in the case of the Durham algorithm the
 `R` value is ignored.
+
+For a discussion of the `recombine` function, see [Jet Recombination](@ref).
 
 The object returned is a [`ClusterSequence`](@ref), which internally tracks all
 merge steps and is used for [Inclusive and Exclusive Selections](@ref).
