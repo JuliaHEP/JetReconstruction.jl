@@ -106,7 +106,13 @@ Before submitting a PR, please ensure:
 
 ## Some Development Tips
 
-Here are a few common issues we have seen that you should avoid:
+As far as possible we follow standard best practice for Julia code. In
+particular you should be familiar with the following guidelines:
+
+- [The Julia Style Guide](https://docs.julialang.org/en/v1/manual/style-guide/)
+- [Julia Performance Tips](https://docs.julialang.org/en/v1/manual/performance-tips/)
+
+In addition, here are a few common issues we have seen that you should avoid:
 
 ### Don't use an abstract struct if you are the only sub-type
 
