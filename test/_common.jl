@@ -53,6 +53,8 @@ struct ComparisonTest
     R::Real
     selector::Any
     selector_name::AbstractString
+    recombine::Any
+    preprocess::Any
 end
 
 """Constructor where there is no selector_name given"""
@@ -60,7 +62,14 @@ function ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power
                         selector)
     selector_name = ""
     ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R, selector,
-                   selector_name)
+                   selector_name, addjets, nothing)
+end
+
+"""Constructor with no recombine or preprocess specified"""
+function ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R,
+                        selector, selector_name)
+    ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R, selector,
+                   selector_name, addjets, nothing)
 end
 
 """Read JSON file with fastjet jets in it"""
@@ -99,7 +108,9 @@ function run_reco_test(test::ComparisonTest; testname = nothing)
     for (ievent, event) in enumerate(events)
         cluster_seq = JetReconstruction.jet_reconstruct(event; R = test.R, p = test.power,
                                                         algorithm = test.algorithm,
-                                                        strategy = test.strategy)
+                                                        strategy = test.strategy,
+                                                        recombine = test.recombine,
+                                                        preprocess = test.preprocess)
         finaljets = final_jets(test.selector(cluster_seq))
         sort_jets!(finaljets)
         push!(jet_collection, FinalJets(ievent, finaljets))

@@ -63,7 +63,7 @@ Compute the tile index for a given (eta, phi) coordinate.
 # Returns
 The tile index corresponding to the (eta, phi) coordinate.
 """
-tile_index(tiling_setup, eta::Float64, phi::Float64) = begin
+function tile_index(tiling_setup, eta::Float64, phi::Float64)
     # Use clamp() to restrict to the correct ranges
     # - eta can be out of range by construction (open ended bins)
     # - phi is protection against bad rounding
@@ -95,9 +95,10 @@ This function sets the eta, phi, kt2, jets_index, NN_dist, NN, tile_index, previ
 Returns:
 - `nothing`
 """
-tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling, jets_index, R2, p) = begin
+function tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling,
+                               jets_index, R2, p)
     @inbounds jet.eta = rapidity(clusterseq.jets[jets_index])
-    @inbounds jet.phi = phi_02pi(clusterseq.jets[jets_index])
+    @inbounds jet.phi = phi(clusterseq.jets[jets_index])
     @inbounds jet.kt2 = pt2(clusterseq.jets[jets_index]) > 1.e-300 ?
                         pt2(clusterseq.jets[jets_index])^p : 1.e300
     jet.jets_index = jets_index
@@ -202,51 +203,6 @@ function set_nearest_neighbours!(clusterseq::ClusterSequence, tiling::Tiling,
 end
 
 """
-    do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine=+)
-
-Perform the bookkeeping associated with the step of recombining jet_i and jet_j
-(assuming a distance dij).
-
-# Arguments
-- `clusterseq::ClusterSequence`: The cluster sequence object.
-- `jet_i`: The index of the first jet to be recombined.
-- `jet_j`: The index of the second jet to be recombined.
-- `dij`: The distance between the two jets.
-- `recombine=+`: The recombination function to be used. Default is addition.
-
-# Returns
-- `newjet_k`: The index of the newly created jet.
-
-# Description
-This function performs the i-j recombination step in the cluster sequence. It
-creates a new jet by recombining the first two jets using the specified
-recombination function. The new jet is then added to the cluster sequence. The
-function also updates the indices and history information of the new jet and
-sorts out the history.
-"""
-do_ij_recombination_step!(clusterseq::ClusterSequence, jet_i, jet_j, dij, recombine = +) = begin
-    # Create the new jet by recombining the first two with
-    # the E-scheme
-    push!(clusterseq.jets, recombine(clusterseq.jets[jet_i], clusterseq.jets[jet_j]))
-
-    # Get its index and the history index
-    newjet_k = length(clusterseq.jets)
-    newstep_k = length(clusterseq.history) + 1
-
-    # And provide jet with this info
-    clusterseq.jets[newjet_k]._cluster_hist_index = newstep_k
-
-    # Finally sort out the history
-    hist_i = clusterseq.jets[jet_i]._cluster_hist_index
-    hist_j = clusterseq.jets[jet_j]._cluster_hist_index
-
-    add_step_to_history!(clusterseq, minmax(hist_i, hist_j)...,
-                         newjet_k, dij)
-
-    newjet_k
-end
-
-"""
     do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB)
 
 Bookkeeping for recombining a jet with the beam (i.e., finalising the jet) by
@@ -257,7 +213,7 @@ adding a step to the history of the cluster sequence.
 - `jet_i`: The index of the jet.
 - `diB`: The diB value.
 """
-do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB) = begin
+function do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB)
     # Recombine the jet with the beam
     add_step_to_history!(clusterseq, clusterseq.jets[jet_i]._cluster_hist_index, BeamJet,
                          Invalid, diB)
@@ -331,13 +287,10 @@ end
 """
     tiled_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Nothing} = -1,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                               R = 1.0, recombine = +) where {T}
+                               R = 1.0, recombine = addjets, preprocess = nothing) where {T}
 
 Main jet reconstruction algorithm entry point for reconstructing jets using the
 tiled strategy for generic jet type T.
-
-**Note** - if a non-standard recombination is used, it must be defined for
-JetReconstruction.PseudoJet, as this struct is used internally.
 
 This code will use the `k_t` algorithm types, operating in `(rapidity, φ)`
 space.
@@ -355,37 +308,48 @@ If both are given they must be consistent or an exception is thrown.
   jet algorithm to use.
 - `R::Float64 = 1.0`: The jet radius parameter for the jet reconstruction
   algorithm.
-- `recombine::Function = +`: The recombination function used for combining
-  pseudojets.
+- `recombine::Function = addjets`: The recombination function used to combine
+  particles into a new jet.
+- `preprocess::Function = nothing`: A function to preprocess the input particles.
 
 ## Returns
 - `Vector{PseudoJet}`: A vector of reconstructed jets.
 
 ## Example
 ```julia
-tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4, recombine = +)
+tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4)
 ```
 """
 function tiled_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Nothing} = -1,
                                algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
-                               R = 1.0, recombine = +) where {T}
+                               R = 1.0, recombine = addjets, preprocess = nothing) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
 
-    # If we have PseudoJets, we can just call the main algorithm...
-    if T == PseudoJet
-        # recombination_particles will become part of the cluster sequence, so size it for
-        # the starting particles and all N recombinations
-        recombination_particles = copy(particles)
-        sizehint!(recombination_particles, length(particles) * 2)
+    if isnothing(preprocess)
+        if T == PseudoJet
+            # If we don't have a preprocessor, we just need to copy to our own
+            # PseudoJet objects
+            recombination_particles = copy(particles)
+            sizehint!(recombination_particles, length(particles) * 2)
+        else
+            # We assume a constructor for PseudoJet that can ingest the appropriate
+            # type of particle
+            recombination_particles = PseudoJet[]
+            sizehint!(recombination_particles, length(particles) * 2)
+            for (i, particle) in enumerate(particles)
+                push!(recombination_particles, PseudoJet(particle; cluster_hist_index = i))
+            end
+        end
     else
+        # We have a preprocessor function that we need to call to modify the
+        # input particles
         recombination_particles = PseudoJet[]
         sizehint!(recombination_particles, length(particles) * 2)
-        for i in eachindex(particles)
+        for (i, particle) in enumerate(particles)
             push!(recombination_particles,
-                  PseudoJet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                            energy(particles[i])))
+                  preprocess(particle; cluster_hist_index = i, jet_type = PseudoJet))
         end
     end
 
@@ -394,13 +358,9 @@ function tiled_jet_reconstruct(particles::AbstractVector{T}; p::Union{Real, Noth
 end
 
 """
-Main jet reconstruction algorithm, using PseudoJet objects
-"""
-
-"""
     _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet}; p::Real = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                R = 1.0, recombine = +)
+                                R = 1.0, recombine = addjets)
 
 Main jet reconstruction algorithm entry point for reconstructing jets once preprocessing
 of data types are done. The algorithm parameter must be consistent with the
@@ -415,7 +375,7 @@ power parameter.
   algorithm.
 - `algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt`: The jet reconstruction
    algorithm to use.
-- `recombine::Function = +`: The recombination function used for combining
+- `recombine::Function = addjets`: The recombination function used for combining
   pseudojets.
 
 ## Returns
@@ -423,12 +383,12 @@ power parameter.
 
 ## Example
 ```julia
-tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 1.0, recombine = +)
+tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 0.4)
 ```
 """
 function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet}; p::Real = -1,
                                 algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                                R = 1.0, recombine = +)
+                                R = 1.0, recombine = addjets)
     # Bounds
     N::Int = length(particles)
 
@@ -509,15 +469,24 @@ function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet}; p::Real = 
                 jetA, jetB = jetB, jetA
             end
 
-            # Recombine jetA and jetB and retrieves the new index, nn
-            nn = do_ij_recombination_step!(clusterseq, jetA.jets_index, jetB.jets_index,
-                                           dij_min, recombine)
+            # Recombine jetA and jetB into the new jet
+            real_jetA = clusterseq.jets[jetA.jets_index]
+            real_jetB = clusterseq.jets[jetB.jets_index]
+            newjet = recombine(real_jetA, real_jetB;
+                               cluster_hist_index = length(clusterseq.history) + 1)
+            push!(clusterseq.jets, newjet)
+            newjet_k = length(clusterseq.jets)
+            add_step_to_history!(clusterseq,
+                                 minmax(real_jetA._cluster_hist_index,
+                                        real_jetB._cluster_hist_index)...,
+                                 newjet_k, dij_min)
+
             tiledjet_remove_from_tiles!(tiling, jetA)
             oldB = copy(jetB)  # take a copy because we will need it...
 
             tiledjet_remove_from_tiles!(tiling, jetB)
-            tiledjet_set_jetinfo!(jetB, clusterseq, tiling, nn, R2, p) # cause jetB to become _jets[nn]
-        #                                  (in addition, registers the jet in the tiling)
+            # Move jetB to be jets[newjet_k] and register the new jet in the tiling
+            tiledjet_set_jetinfo!(jetB, clusterseq, tiling, newjet_k, R2, p)
         else
             # Jet-beam recombination
             do_iB_recombination_step!(clusterseq, jetA.jets_index, dij_min)

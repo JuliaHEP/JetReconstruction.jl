@@ -63,8 +63,10 @@ initialising the history with original particles.
 A `HistoryElement` object.
 
 """
-HistoryElement(jetp_index) = HistoryElement(NonexistentParent, NonexistentParent, Invalid,
-                                            jetp_index, 0.0, 0.0)
+function HistoryElement(jetp_index)
+    HistoryElement(NonexistentParent, NonexistentParent, Invalid,
+                   jetp_index, 0.0, 0.0)
+end
 
 """
     initial_history(particles)
@@ -89,7 +91,8 @@ function initial_history(particles)
         history[i] = HistoryElement(i)
 
         # get cross-referencing right from the Jets
-        particles[i]._cluster_hist_index = i
+        # particles[i]._cluster_hist_index = i
+        @assert cluster_hist_index(particles[i]) == i
 
         # determine the total energy in the event
         Qtot += particles[i].E
@@ -144,7 +147,9 @@ Construct a `ClusterSequence` object.
   sequence.
 - `Qtot::Any`: The total energy of the event.
 """
-ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64, strategy::RecoStrategy.Strategy, jets::Vector{T}, history, Qtot) where {T <: FourMomentum} = begin
+function ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64,
+                         strategy::RecoStrategy.Strategy, jets::Vector{T}, history,
+                         Qtot) where {T <: FourMomentum}
     ClusterSequence{T}(algorithm, Float64(p), R, strategy, jets, length(jets), history,
                        Qtot)
 end
@@ -170,7 +175,8 @@ If the `parent1` or `parent2` have already been recombined, an `InternalError`
 is thrown. The `jetp_index` is used to update the `_cluster_hist_index` of the
 corresponding `PseudoJet` object.
 """
-add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, dij) = begin
+function add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index,
+                              dij)
     max_dij_so_far = max(dij, clusterseq.history[end].max_dij_so_far)
     push!(clusterseq.history,
           HistoryElement(parent1, parent2, Invalid,
@@ -205,12 +211,6 @@ add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index, 
                   string(clusterseq.history[parent2].jetp_index) * ".")
         hist_elem = clusterseq.history[parent2]
         clusterseq.history[parent2] = @set hist_elem.child = local_step
-    end
-
-    # Get cross-referencing right from PseudoJets
-    if jetp_index != Invalid
-        @assert jetp_index >= 1
-        clusterseq.jets[jetp_index]._cluster_hist_index = local_step
     end
 end
 
@@ -582,7 +582,7 @@ end
 """
     constituents(jet::T, cs::ClusterSequence{T}) where T <: FourMomentum
 
-Get the constituents of a given jet in a cluster sequence.
+Get a copy of the constituents of a given jet in a cluster sequence.
 
 # Arguments
 - `cs::ClusterSequence{T}`: The cluster sequence object.
@@ -590,14 +590,19 @@ Get the constituents of a given jet in a cluster sequence.
 
 # Returns
 An array of jet objects (which are of the same type as the input jet)
-representing the constituents of the given jet,  
-
+copied from the constituents of the given jet, with reset cluster history
+indexes.
 """
 function constituents(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
     constituent_idxs = constituent_indexes(jet, cs)
     constituents = Vector{T}()
+    sizehint!(constituents, length(constituent_idxs))
+    new_index = 1
     for idx in constituent_idxs
-        push!(constituents, cs.jets[idx])
+        push!(constituents,
+              T(px(cs.jets[idx]), py(cs.jets[idx]), pz(cs.jets[idx]),
+                energy(cs.jets[idx]); cluster_hist_index = new_index))
+        new_index += 1
     end
     constituents
 end

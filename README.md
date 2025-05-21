@@ -27,7 +27,7 @@ algorithm and generalised $`k_\text{T}`$ for $`e^+e^-`$.
 The simplest interface is to call:
 
 ```julia
-cs = jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, [p = -1,] [recombine = +,] [strategy = RecoStrategy.Best])
+cs = jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, [p = -1,] [strategy = RecoStrategy.Best])
 ```
 
 - `particles` - a one dimensional array (vector) of input particles for the clustering
@@ -42,7 +42,6 @@ cs = jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.Anti
   - `JetAlgorithm.Durham` the $e^+e-$ $k_\text{T}$ algorithm, also known as the Durham algorithm
   - `JetAlgorithm.EEKt` the $e^+e-$ generalised $k_\text{T}$ algorithm
 - `R` - the cone size parameter; no particles more geometrically distance than `R` will be merged (default 1.0; note this parameter is ignored for the Durham algorithm)
-- `recombine` - the function used to merge two pseudojets (default is a simple 4-vector addition of $`(E, \mathbf{p})`$)
 - `strategy` - the algorithm strategy to adopt, as described below (default `RecoStrategy.Best`)
 
 The object returned is a `ClusterSequence`, which internally tracks all merge steps.
@@ -90,7 +89,7 @@ Another option, if one wishes to use a specific strategy, is to call that strate
 
 ```julia
 # For N2Plain strategy called directly
-plain_jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, recombine = +)
+plain_jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0)
 ```
 
 Note that there is no `strategy` option in these interfaces.
