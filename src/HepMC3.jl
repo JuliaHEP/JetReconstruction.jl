@@ -43,7 +43,7 @@ provides a `Particle` struct to represent particles in the event, and a
 """
 module HepMC3
 
-using LorentzVectors
+using LorentzVectorHEP
 
 """
     struct Particle{T}
