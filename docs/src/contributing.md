@@ -17,7 +17,7 @@ Raise bug reports and general issues using the
 reports make sure that you:
 
 - are using the latest released version
-- explain how are are running the code
+- explain how you are running the code
 - state what the problem is clearly
 - say what you would expect the behaviour to be
 
