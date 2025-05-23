@@ -21,7 +21,7 @@ mutable struct SoftKiller
 
     function SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)
         grid = new(rapmax, rapmin, drap, dphi, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0)
-        _setup_grid(grid)
+        _setup_grid!(grid)
         println(grid)        
         grid
     end
@@ -29,7 +29,7 @@ mutable struct SoftKiller
     function SoftKiller(rapmax::Float64, grid_size::Float64)
         grid = new(rapmax, -rapmax, grid_size, grid_size, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0,
                    0)
-        _setup_grid(grid)
+        _setup_grid!(grid)
         println(grid)  
         grid
     end
@@ -57,7 +57,7 @@ tile_index(sk::SoftKiller,
     res + 1
 end
 
-function _setup_grid(sk::SoftKiller)
+function _setup_grid!(sk::SoftKiller)
     @assert sk._ymax > sk._ymin
     @assert sk._requested_drap > 0
     @assert sk._requested_dphi > 0
