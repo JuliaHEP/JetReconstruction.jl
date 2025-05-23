@@ -8,7 +8,6 @@ mutable struct SoftKiller
     _ymin::Float64
     _requested_drap::Float64
     _requested_dphi::Float64
-    #selector 
     _ntotal::Int64
     _ngood::Int64
     _dy::Float64
@@ -22,7 +21,6 @@ mutable struct SoftKiller
     function SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)
         grid = new(rapmax, rapmin, drap, dphi, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0)
         _setup_grid!(grid)
-        println(grid)        
         grid
     end
 
@@ -30,13 +28,11 @@ mutable struct SoftKiller
         grid = new(rapmax, -rapmax, grid_size, grid_size, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0,
                    0)
         _setup_grid!(grid)
-        println(grid)  
         grid
     end
 end
 
-tile_index(sk::SoftKiller,
-           p::PseudoJet) = begin
+function tile_index(sk::SoftKiller, p::PseudoJet)
     y_minus_ymin = rapidity(p) - sk._ymin
     if y_minus_ymin < 0
         return -1
@@ -105,8 +101,6 @@ function softkiller_apply(sk::SoftKiller, event::Vector{PseudoJet},
         throw("SoftKiller not properly initialized.")
     end
 
-    reduced_event = PseudoJet[]
-
     # fills the lector of length n_tiles with 0's
     max_pt2 = fill(0.0, sk._ntotal)
 
@@ -133,10 +127,7 @@ function softkiller_apply(sk::SoftKiller, event::Vector{PseudoJet},
         end
     end
 
-    resize!(reduced_event, length(indices))
-    for (i, idx) in enumerate(indices)
-        reduced_event[i] = event[idx]
-    end
+    reduced_event = event[indices]
 
     pt_threshold = sqrt(pt2cut);
 
