@@ -1,3 +1,6 @@
+# Inspired by the SoftKiller implementation in the FastJet contrib package
+# Original C++ code: https://fastjet.hepforge.org/contrib/
+
 using JetReconstruction
 
 mutable struct SoftKiller 
@@ -19,7 +22,7 @@ mutable struct SoftKiller
     function SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)
         grid = new(rapmax, rapmin, drap, dphi, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0)
         _setup_grid(grid)
-        print(description(grid))
+        println(grid)        
         grid
     end
 
@@ -27,7 +30,7 @@ mutable struct SoftKiller
         grid = new(rapmax, -rapmax, grid_size, grid_size, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0,
                    0)
         _setup_grid(grid)
-        print(description(grid))
+        println(grid)  
         grid
     end
 end
@@ -74,45 +77,20 @@ function _setup_grid(sk::SoftKiller)
     sk._cell_area = sk._dy * sk._dphi
 end
 
-description(sk::SoftKiller)::String = begin
-    #from definitonof is_initialized in RectangularGrid.hh
+import Base: show
+
+function show(io::IO, sk::SoftKiller)
     if sk._ntotal <= 0
-        return "Uninitialized rectangular grid"
+        print(io, "Uninitialized rectangular grid")
+    else
+        print(io,
+              "rectangular grid with rapidity extent ",
+              sk._ymin, " < rap < ", sk._ymax, "; ",
+              "total tiles = ", sk._ntotal, "; ",
+              "tile size Δy × Δφ = ", sk._dy, " × ", sk._dphi, ")")
     end
-
-    descr = "rectangular grid with rapidity extent $(sk._ymin) < rap < $(sk._ymax) \n total tiles  $(sk._ntotal) \n "
-    descr *= "tile size drap x dphi = $(sk._dy) x $(sk._dphi)"
-
-    #Selector implementation doesn't exist 
-    descr
 end
 
-n_tiles(sk::SoftKiller)::Int64 = begin
-    sk._ntotal
-end
-
-n_good_tiles(sk::SoftKiller)::Int64 = begin
-    #since the selector file is not implemented this for now will return sk._ntotal
-    #to pass the assertion in apply, when implemented it should return this  
-    #sk._ngood
-    sk._ntotal
-end
-
-tile_is_good(sk::SoftKiller, itile::Int64)::Bool = begin #requires selector
-    true
-end
-
-tile_area(sk::SoftKiller, itile::Int64)::Float64 = begin
-    sk.mean_tile_area()
-end
-
-mean_tile_area(sk::SoftKiller)::Float64 = begin
-    sk._dphi*sk._dy
-end
-
-is_initialized(sk::SoftKiller)::Bool = begin
-    sk._ntotal > 0
-end
 
 function select_ABS_RAP_max(event, absrapmax)
     filtered_events = filter(e -> begin
@@ -121,16 +99,17 @@ function select_ABS_RAP_max(event, absrapmax)
     return filtered_events
 end
 
-function softkiller_apply(sk::SoftKiller, event::Vector{PseudoJet}, reduced_event::Vector{PseudoJet},
+function softkiller_apply(sk::SoftKiller, event::Vector{PseudoJet},
                pt_threshold::Float64)
-    if (n_tiles(sk) < 2)
+    if (sk._ntotal < 2)
         throw("SoftKiller not properly initialized.")
     end
 
-    #fills the lector of length n_tiles with 0's
-    max_pt2 = fill(0.0, n_tiles(sk))
+    reduced_event = PseudoJet[]
 
-    #starts from 1 not 0! 
+    # fills the lector of length n_tiles with 0's
+    max_pt2 = fill(0.0, sk._ntotal)
+
     for ev in event
         if (ev == isnothing)
             continue

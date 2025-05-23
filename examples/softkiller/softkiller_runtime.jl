@@ -16,11 +16,10 @@ using JSON
 
 using LorentzVectorHEP
 using JetReconstruction
-using Plots
 using Profile
 
 
-include(joinpath(@__DIR__, "parse-options.jl"))
+include(joinpath(@__DIR__, "..", "parse-options.jl"))
 
 function parse_command_line(args)
     s = ArgParseSettings(autofix_names = true)
@@ -157,9 +156,8 @@ function main()
     end
 
     pt_threshold = 0.00
-    soft_killer_event = PseudoJet[]
     #Applying SoftKiller to a non-clustered vector of PseudoJets 
-    reduced_event, pt_threshold = softkiller_apply(soft_killer, all_jets_sk, soft_killer_event, pt_threshold)
+    reduced_event, pt_threshold = softkiller_apply(soft_killer, all_jets_sk, pt_threshold)
     
     println("pt_threshold: ", pt_threshold)
     
