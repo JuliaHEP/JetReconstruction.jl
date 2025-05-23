@@ -1,6 +1,6 @@
 # JetReconstruction.jl
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-7-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Build Status](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml?query=branch%3Amain)
@@ -27,7 +27,7 @@ algorithm and generalised $`k_\text{T}`$ for $`e^+e^-`$.
 The simplest interface is to call:
 
 ```julia
-cs = jet_reconstruct(particles::Vector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, [p = -1,] [recombine = +,] [strategy = RecoStrategy.Best])
+cs = jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, [p = -1,] [strategy = RecoStrategy.Best])
 ```
 
 - `particles` - a one dimensional array (vector) of input particles for the clustering
@@ -42,7 +42,6 @@ cs = jet_reconstruct(particles::Vector{T}; algorithm = JetAlgorithm.AntiKt, R = 
   - `JetAlgorithm.Durham` the $e^+e-$ $k_\text{T}$ algorithm, also known as the Durham algorithm
   - `JetAlgorithm.EEKt` the $e^+e-$ generalised $k_\text{T}$ algorithm
 - `R` - the cone size parameter; no particles more geometrically distance than `R` will be merged (default 1.0; note this parameter is ignored for the Durham algorithm)
-- `recombine` - the function used to merge two pseudojets (default is a simple 4-vector addition of $`(E, \mathbf{p})`$)
 - `strategy` - the algorithm strategy to adopt, as described below (default `RecoStrategy.Best`)
 
 The object returned is a `ClusterSequence`, which internally tracks all merge steps.
@@ -90,7 +89,7 @@ Another option, if one wishes to use a specific strategy, is to call that strate
 
 ```julia
 # For N2Plain strategy called directly
-plain_jet_reconstruct(particles::Vector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, recombine = +)
+plain_jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0)
 ```
 
 Note that there is no `strategy` option in these interfaces.
@@ -179,6 +178,9 @@ Thanks goes to these contributors to this code ([emoji key](https://allcontribut
       <td align="center" valign="top" width="14.28%"><a href="http://blog.jling.dev"><img src="https://avatars.githubusercontent.com/u/5306213?v=4?s=100" width="100px;" alt="Jerry Ling"/><br /><sub><b>Jerry Ling</b></sub></a><br /><a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=Moelf" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/hegner"><img src="https://avatars.githubusercontent.com/u/1609504?v=4?s=100" width="100px;" alt="hegner"/><br /><sub><b>hegner</b></sub></a><br /><a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=hegner" title="Documentation">📖</a></td>
       <td align="center" valign="top" width="14.28%"><a href="http://m-fila.github.io"><img src="https://avatars.githubusercontent.com/u/37295697?v=4?s=100" width="100px;" alt="Mateusz Jakub Fila"/><br /><sub><b>Mateusz Jakub Fila</b></sub></a><br /><a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=m-fila" title="Documentation">📖</a> <a href="#infra-m-fila" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=m-fila" title="Tests">⚠️</a></td>
+    </tr>
+    <tr>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/ExpandingMan"><img src="https://avatars.githubusercontent.com/u/11379353?v=4?s=100" width="100px;" alt="ExpandingMan"/><br /><sub><b>ExpandingMan</b></sub></a><br /><a href="#infra-ExpandingMan" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
     </tr>
   </tbody>
 </table>

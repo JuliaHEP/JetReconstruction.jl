@@ -191,21 +191,22 @@ Copy the contents of slot `i` in the `eereco` array to slot `j`.
 end
 
 """
-    ee_genkt_algorithm(particles::Vector{T}; p = -1, R = 4.0,
+    ee_genkt_algorithm(particles::AbstractVector{T}; p = -1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                       recombine = +) where {T}
+                       recombine = addjets, preprocess = nothing) where {T}
 
 Run an e+e- reconstruction algorithm on a set of initial particles.
 
 # Arguments
-- `particles::Vector{T}`: A vector of particles to be clustered.
+- `particles::AbstractVector{T}`: A vector of particles to be clustered.
 - `p = 1`: The power parameter for the algorithm. Not required / ignored for
   the Durham algorithm when it is set to 1.
 - `R = 4.0`: The jet radius parameter. Not required / ignored for the Durham
   algorithm.
 - `algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham`: The specific jet
   algorithm to use.
-- `recombine`: The recombination scheme to use. Defaults to `+`.
+- `recombine`: The recombination scheme to use.
+- `preprocess`: Preprocessing function for input particles.
 
 # Returns
 - The result of the jet clustering as a `ClusterSequence` object.
@@ -221,9 +222,9 @@ If the algorithm is Durham, `p` is set to 1 and `R` is nominally set to 4.
 Note that unlike `pp` reconstruction the algorithm has to be specified
 explicitly.
 """
-function ee_genkt_algorithm(particles::Vector{T}; p = 1,
+function ee_genkt_algorithm(particles::AbstractVector{T}; p = 1,
                             algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                            R = 4.0, recombine = +) where {T}
+                            R = 4.0, recombine = addjets, preprocess = nothing) where {T}
 
     # Check for consistency between algorithm and power
     (p, algorithm) = get_algorithm_power_consistency(p = p, algorithm = algorithm)
@@ -236,18 +237,29 @@ function ee_genkt_algorithm(particles::Vector{T}; p = 1,
         R = 4.0
     end
 
-    if T == EEJet
-        # recombination_particles will become part of the cluster sequence, so size it for
-        # the starting particles and all N recombinations
-        recombination_particles = copy(particles)
-        sizehint!(recombination_particles, length(particles) * 2)
+    if isnothing(preprocess)
+        if T == EEJet
+            # If we don't have a preprocessor, we just need to copy to our own
+            # EEJet objects
+            recombination_particles = copy(particles)
+            sizehint!(recombination_particles, length(particles) * 2)
+        else
+            # We assume a constructor for EEJet that can ingest the appropriate
+            # type of particle
+            recombination_particles = EEJet[]
+            sizehint!(recombination_particles, length(particles) * 2)
+            for (i, particle) in enumerate(particles)
+                push!(recombination_particles, EEJet(particle; cluster_hist_index = i))
+            end
+        end
     else
+        # We have a preprocessor function that we need to call to modify the
+        # input particles
         recombination_particles = EEJet[]
         sizehint!(recombination_particles, length(particles) * 2)
-        for i in eachindex(particles)
+        for (i, particle) in enumerate(particles)
             push!(recombination_particles,
-                  EEJet(px(particles[i]), py(particles[i]), pz(particles[i]),
-                        energy(particles[i])))
+                  preprocess(particle; cluster_hist_index = i, jet_type = EEJet))
         end
     end
 
@@ -258,15 +270,15 @@ function ee_genkt_algorithm(particles::Vector{T}; p = 1,
 end
 
 """
-    _ee_genkt_algorithm(; particles::Vector{EEJet}, p = 1, R = 4.0,
+    _ee_genkt_algorithm(; particles::AbstractVector{EEJet}, p = 1, R = 4.0,
                        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                       recombine = +)
+                       recombine = addjets)
 
 This function is the actual implementation of the e+e- jet clustering algorithm.
 """
-function _ee_genkt_algorithm(; particles::Vector{EEJet}, p = 1, R = 4.0,
+function _ee_genkt_algorithm(; particles::AbstractVector{EEJet}, p = 1, R = 4.0,
                              algorithm::JetAlgorithm.Algorithm = JetAlgorithm.Durham,
-                             recombine = +)
+                             recombine = addjets)
     # Bounds
     N::Int = length(particles)
 
@@ -332,22 +344,19 @@ function _ee_genkt_algorithm(; particles::Vector{EEJet}, p = 1, R = 4.0,
             end
 
             # Resolve the jet indexes to access the actual jets
-            jetA_idx = eereco[ijetA].index
-            jetB_idx = eereco[ijetB].index
-
-            # Source "history" for merge
-            hist_jetA = clusterseq.jets[jetA_idx]._cluster_hist_index
-            hist_jetB = clusterseq.jets[jetB_idx]._cluster_hist_index
+            jetA = clusterseq.jets[eereco[ijetA].index]
+            jetB = clusterseq.jets[eereco[ijetB].index]
 
             # Recombine jetA and jetB into the next jet
-            merged_jet = recombine(clusterseq.jets[jetA_idx],
-                                   clusterseq.jets[jetB_idx])
-            merged_jet._cluster_hist_index = length(clusterseq.history) + 1
+            merged_jet = recombine(jetA, jetB;
+                                   cluster_hist_index = length(clusterseq.history) + 1)
 
             # Now add the jet to the sequence, and update the history
             push!(clusterseq.jets, merged_jet)
             newjet_k = length(clusterseq.jets)
-            add_step_to_history!(clusterseq, minmax(hist_jetA, hist_jetB)...,
+            add_step_to_history!(clusterseq,
+                                 minmax(cluster_hist_index(jetA),
+                                        cluster_hist_index(jetB))...,
                                  newjet_k, dij_min)
 
             # Update the compact arrays, reusing the JetA slot
