@@ -26,7 +26,7 @@ md"Event to pick"
 event_no = 1
 
 # ╔═╡ 2a899d67-71f3-4fe0-8104-7633a44a06a8
-cluster_seq = jet_reconstruct(events[event_no], p = 1, R = 1.0)
+cluster_seq = jet_reconstruct(events[event_no]; algorithm = JetAlgorithm.Kt, R = 1.0)
 
 # ╔═╡ 043cc484-e537-409c-8aa2-e4904b5dc283
 md"Retrieve the exclusive pj_jets, but as `PseudoJet` types"

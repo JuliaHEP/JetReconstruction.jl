@@ -39,49 +39,37 @@ A constant array that contains the jet algorithms for which power is variable.
 const varpower_algorithms = [JetAlgorithm.GenKt, JetAlgorithm.EEKt]
 
 """
-    power2algorithm
-
-A dictionary that maps power values to corresponding jet algorithm used for pp
-jet reconstruction, where these are fixed.
-"""
-const power2algorithm = Dict(-1 => JetAlgorithm.AntiKt,
-                             0 => JetAlgorithm.CA,
-                             1 => JetAlgorithm.Kt)
-
-"""
     algorithm2power
 
-A dictionary that maps pp algorithm names to their corresponding power values.
-
-The dictionary is created by iterating over the `power2algorithm` dictionary and swapping the keys and values.
+A dictionary that maps algorithm names to their corresponding power values.
 """
-const algorithm2power = Dict((i.second, i.first) for i in power2algorithm)
+const algorithm2power = Dict(JetAlgorithm.AntiKt => -1,
+                             JetAlgorithm.CA => 0,
+                             JetAlgorithm.Kt => 1,
+                             JetAlgorithm.Durham => 1)
 
 """
-    get_algorithm_power_consistency(; p::Union{Real, Nothing}, algorithm::Union{JetAlgorithm.Algorithm, Nothing})
+    get_algorithm_power(; algorithm::JetAlgorithm.Algorithm, p::Union{Real, Nothing}) -> Real
 
-Get the algorithm and power consistency correct
+Get the algorithm power
 
-This function checks the consistency between the algorithm and power parameters.
-If the algorithm is specified, it checks if the power parameter is consistent
-with the algorithm's known power. If the power parameter is not specified, it
-sets the power parameter based on the algorithm. If neither the algorithm nor
-the power parameter is specified, it throws an `ArgumentError`.
+This function returns appropriate power value for the specified jet algorithm if the algorithm
+is a fixed power algorithm (like `AntiKt`, `CA`, `Kt`, or `Durham`).
+If the algorithm is generalized (like `GenKt` or `EEKt`), it requires a power value
+to be specified and the function returns the same value.
 
 # Arguments
 - `p::Union{Real, Nothing}`: The power value.
-- `algorithm::Union{JetAlgorithm.Algorithm, Nothing}`: The algorithm.
+- `algorithm::JetAlgorithm.Algorithm`: The algorithm.
 
 # Returns
-A named tuple of the consistent power and algorithm values.
+Resolved algorithm power value.
 
 # Throws
-- `ArgumentError`: If the algorithm and power are inconsistent or if neither the
-  algorithm nor the power is specified.
+- `ArgumentError`: If no power is specified for a generalized algorithm
 
 """
-function get_algorithm_power_consistency(; p::Union{Real, Nothing},
-                                         algorithm::Union{JetAlgorithm.Algorithm, Nothing})
+function get_algorithm_power(; algorithm::JetAlgorithm.Algorithm, p::Union{Real, Nothing})
     # For the case where an algorithm has a variable power value
     # we need to check that the power value and algorithm are both specified
     if algorithm in varpower_algorithms
@@ -89,37 +77,10 @@ function get_algorithm_power_consistency(; p::Union{Real, Nothing},
             throw(ArgumentError("Power must be specified for algorithm $algorithm"))
         end
         # And then we just return what these are...
-        return (p = p, algorithm = algorithm)
+        return p
     end
-
-    # Some algorithms have fixed power values
-    if algorithm == JetAlgorithm.Durham
-        return (p = 1, algorithm = algorithm)
-    end
-
-    # Otherwise we check the consistency between the algorithm and power
-    if !isnothing(algorithm)
-        power_from_alg = algorithm2power[algorithm]
-        if !isnothing(p) && p != power_from_alg
-            throw(ArgumentError("Algorithm and power are inconsistent"))
-        end
-        return (p = power_from_alg, algorithm = algorithm)
-    else
-        if isnothing(p)
-            throw(ArgumentError("Either algorithm or power must be specified"))
-        end
-        # Set the algorithm from the power
-        algorithm_from_power = power2algorithm[p]
-        return (p = p, algorithm = algorithm_from_power)
-    end
-end
-
-"""Allow a check for algorithm and power consistency"""
-function check_algorithm_power_consistency(; p::Union{Real, Nothing},
-                                           algorithm::Union{JetAlgorithm.Algorithm,
-                                                            Nothing})
-    get_algorithm_power_consistency(p = p, algorithm = algorithm)
-    return true
+    # Otherwise the algorithm has a fixed power value
+    return algorithm2power[algorithm]
 end
 
 """

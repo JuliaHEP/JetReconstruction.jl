@@ -65,11 +65,8 @@ function main()
     events::Vector{Vector{PseudoJet}} = read_final_state_particles(args[:file],
                                                                    maxevents = args[:event],
                                                                    skipevents = args[:event])
-
-    (p,
-    algorithm) = JetReconstruction.get_algorithm_power_consistency(p = args[:power],
-                                                                   algorithm = args[:algorithm])
-    cs = jet_reconstruct(events[1], R = args[:distance], p = p, algorithm = algorithm,
+    cs = jet_reconstruct(events[1], R = args[:distance], p = args[:power],
+                         algorithm = args[:algorithm],
                          strategy = args[:strategy])
 
     plt = jetsplot(events[1], cs; Module = CairoMakie)

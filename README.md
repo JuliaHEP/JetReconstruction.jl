@@ -27,7 +27,7 @@ algorithm and generalised $`k_\text{T}`$ for $`e^+e^-`$.
 The simplest interface is to call:
 
 ```julia
-cs = jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, [p = -1,] [strategy = RecoStrategy.Best])
+cs = jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, [p = nothing,] [strategy = RecoStrategy.Best])
 ```
 
 - `particles` - a one dimensional array (vector) of input particles for the clustering
@@ -42,20 +42,10 @@ cs = jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.Anti
   - `JetAlgorithm.Durham` the $e^+e-$ $k_\text{T}$ algorithm, also known as the Durham algorithm
   - `JetAlgorithm.EEKt` the $e^+e-$ generalised $k_\text{T}$ algorithm
 - `R` - the cone size parameter; no particles more geometrically distance than `R` will be merged (default 1.0; note this parameter is ignored for the Durham algorithm)
+- `p` - algorithm power which must be provided for generalised algorithms, for other algorithms this parameter is ignored
 - `strategy` - the algorithm strategy to adopt, as described below (default `RecoStrategy.Best`)
 
 The object returned is a `ClusterSequence`, which internally tracks all merge steps.
-
-Alternatively, *for pp reconstruction*, one can swap the `algorithm=...`
-parameter for the value of `p`, the transverse momentum power used in the
-$d_{ij}$ metric for deciding on closest jets, as $k^{2p}_\text{T}$. Different
-values of $p$ then correspond to different reconstruction algorithms:
-
-- `-1` gives anti-$`{k}_\text{T}`$ clustering (default)
-- `0` gives Cambridge/Aachen
-- `1` gives inclusive $k_\text{T}$
-
-Note, for the `GenKt` and `EEKt` algorithms the `p` value *must* also be given to specify the algorithm fully.
 
 To obtain the final inclusive jets, use the `inclusive_jets` method:
 
