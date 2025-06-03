@@ -17,10 +17,12 @@ StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 [weakdeps]
 EDM4hep = "eb32b910-dde9-4347-8fce-cd6be3498f0c"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+ONNXRunTime = "e034b28e-924e-41b2-b98f-d2bbeb830c6a"
 
 [extensions]
 EDM4hepJets = "EDM4hep"
 JetVisualisation = "Makie"
+JetFlavourTagging = ["EDM4hep", "ONNXRunTime"]
 
 [compat]
 Accessors = "0.1.36"
