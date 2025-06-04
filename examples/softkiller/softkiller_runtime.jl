@@ -98,11 +98,7 @@ function process_event(event::Vector{PseudoJet}, args::Dict{Symbol, Any},
                                      R = distance, p = p, algorithm = algorithm,
                                      strategy = strategy)
                                      
-    ize = length(event)
-    println("Cluster size $(ize) \n")
     finaljets_pu_lorv = inclusive_jets(cluster_seq_pu, ptmin = 25.0)
-    size = length(finaljets_pu_lorv)
-    println("final size $(size) \n")
     return finaljets_pu_lorv
 end
 
