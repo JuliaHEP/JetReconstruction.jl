@@ -93,12 +93,15 @@ function jetsplot() end
 function animatereco() end
 export jetsplot, animatereco
 
-# Jet flavour tagging as an extension
+# Jet flavour tagging as an extension: Constituents
 function build_constituents() end
 function build_constituents_cluster() end
 function get_jet_constituents() end
 function get_constituents() end
-export build_constituents, build_constituents_cluster, get_jet_constituents, get_constituents
+export build_constituents, build_constituents_cluster, 
+       get_jet_constituents, get_constituents
+
+# Jet flavour tagging as an extension: ONNX RunTime
 function extract_features() end
 function setup_weaver() end # TODO: Change this to setup_onnx_runtime
 function prepare_input_tensor() end
