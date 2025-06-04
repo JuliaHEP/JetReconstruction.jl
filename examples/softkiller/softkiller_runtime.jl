@@ -116,10 +116,11 @@ function main()
     else
         jet_type = PseudoJet
     end
+    @assert jet_type == PseudoJet "SoftKiller only supports PseudoJet"
 
     events = Vector{PseudoJet}[]
 
-    #Reading from input files 
+    # Reading from input files 
     events = read_final_state_particles(args[:pileup_file],
                                         maxevents = args[:maxevents],
                                         skipevents = args[:skip],
@@ -130,7 +131,7 @@ function main()
                                           skipevents = args[:skip],
                                           T = jet_type)
 
-    #Setting dimensions for Softkiller                                   
+    # Setting dimensions for Softkiller                                   
     rapmax = 5.0
     grid_size = args[:grid_size]
     soft_killer = SoftKiller(rapmax, grid_size)
@@ -142,10 +143,10 @@ function main()
                                                                       algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
     
-    #This is a vector of PseudoJets that contains hard event and pileup 
-    #but it will get clustered after SoftKiller was applied 
+    # This is a vector of PseudoJets that contains hard event and pileup 
+    # but it will get clustered after SoftKiller was applied 
     all_jets_sk = PseudoJet[]
-    for (ievn, event) in enumerate(events)
+    for event in events
         for pseudo_jet in event
             push!(all_jets_sk, pseudo_jet)
         end
@@ -156,10 +157,8 @@ function main()
     end
 
     pt_threshold = 0.00
-    #Applying SoftKiller to a non-clustered vector of PseudoJets 
-    reduced_event, pt_threshold = softkiller_apply(soft_killer, all_jets_sk, pt_threshold)
-    
-    println("pt_threshold: ", pt_threshold)
+    # Applying SoftKiller to a non-clustered vector of PseudoJets 
+    reduced_event, pt_threshold = softkiller!(soft_killer, all_jets_sk)
     
 end
 
