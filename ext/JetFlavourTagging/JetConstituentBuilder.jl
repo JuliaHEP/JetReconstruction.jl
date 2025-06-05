@@ -38,25 +38,14 @@ Build the collection of constituents using cluster indices.
 # Returns
 A vector of JetConstituents, each containing the constituents for a specific cluster.
 """
-function build_constituents_cluster(rps::JetConstituents, 
-                                    indices::Vector{Vector{Int}})
+function build_constituents_cluster(rps::JetConstituents, indices::Vector{Vector{Int}})
     jcs = Vector{JetConstituents}()
     for jet_indices in indices
-        # Adjust 0-based indices if needed
-        julia_indices = [idx >= 0 ? idx+1 : idx for idx in jet_indices]
-        # Filter out invalid indices
-        valid_indices = filter(idx -> idx > 0 && idx <= length(rps), julia_indices)
-        if !isempty(valid_indices)
-            constituents = rps[valid_indices]
-            push!(jcs, constituents)
-        else
-            empty_constituents = StructVector{EDM4hep.ReconstructedParticle}(similar.(fieldarrays(rps), 0))
-            push!(jcs, empty_constituents)
-        end
+        jc = rps[jet_indices]
+        push!(jcs, jc)
     end
     return jcs
 end
-
 """
     get_jet_constituents(csts::Vector{JetConstituents}, jet::Int) -> JetConstituents
 

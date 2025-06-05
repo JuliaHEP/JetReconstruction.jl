@@ -266,7 +266,7 @@ end
 """
     get_phi0(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
             tracks::StructVector{EDM4hep.TrackState}, 
-            V::LorentzVector, Bz::Float64) -> Vector{JetConstituentsData}
+            V::LorentzVector, Bz::Float32) -> Vector{JetConstituentsData}
 
 Calculate the phi angle at the point of closest approach for each particle relative to vertex V.
 This is a Julia implementation of the C++ function XPtoPar_phi.
@@ -282,7 +282,7 @@ Vector of vectors of phi values (one vector per jet)
 """
 function get_phi0(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
                 tracks::StructVector{EDM4hep.TrackState}, 
-                V::LorentzVector, Bz::Float64)
+                V::LorentzVector, Bz::Float32)
 
     cSpeed = 2.99792458e8 * 1.0e-9 
     
@@ -345,7 +345,7 @@ end
 """
     get_dxy(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
             tracks::StructVector{EDM4hep.TrackState}, 
-            V::LorentzVector, Bz::Float64) -> Vector{JetConstituentsData}
+            V::LorentzVector, Bz::Float32) -> Vector{JetConstituentsData}
 
 Calculate the transverse impact parameter dxy for each particle in each jet relative to vertex V.
 Reference: FCCAnalyses c++ function XPtoPar_dxy, adapted for jet constituents.
@@ -361,7 +361,7 @@ Vector of vectors of dxy values (one vector per jet)
 """
 function get_dxy(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
                 tracks::StructVector{EDM4hep.TrackState}, 
-                V::LorentzVector, Bz::Float64)
+                V::LorentzVector, Bz::Float32)
 
     cSpeed = 2.99792458e8 * 1.0e-9  # Speed of light in m/ns
     
@@ -421,7 +421,7 @@ end
 """
     get_dz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
             tracks::StructVector{EDM4hep.TrackState}, 
-            V::LorentzVector, Bz::Float64) -> Vector{JetConstituentsData}
+            V::LorentzVector, Bz::Float32) -> Vector{JetConstituentsData}
 
 Calculate the longitudinal impact parameter dz for each particle in each jet relative to vertex V.
 Reference: FCCAnalyses c++ function XPtoPar_dz, adapted for jet constituents.
@@ -437,7 +437,7 @@ Vector of vectors of dz values (one vector per jet)
 """
 function get_dz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
                 tracks::StructVector{EDM4hep.TrackState}, 
-                V::LorentzVector, Bz::Float64)
+                V::LorentzVector, Bz::Float32)
 
     cSpeed = 2.99792458e8 * 1.0e-9  # Speed of light in m/ns
     
@@ -1349,7 +1349,7 @@ end
 
 """
     get_mtof(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
-            track_L::JetConstituentsData,
+            track_L::AbstractArray{T} where T <: AbstractFloat,
             trackdata::StructVector{EDM4hep.Track},
             trackerhits::StructVector{EDM4hep.TrackerHit},
             gammadata::StructVector{EDM4hep.Cluster},
@@ -1374,7 +1374,7 @@ This is a Julia implementation of the C++ function get_mtof.
 Vector of vectors of mtof values (one vector per jet)
 """
 function get_mtof(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
-                track_L::JetConstituentsData,
+                track_L::AbstractArray{T} where T <: AbstractFloat,
                 trackdata::StructVector{EDM4hep.Track},
                 trackerhits::StructVector{EDM4hep.TrackerHit},
                 gammadata::StructVector{EDM4hep.Cluster},
@@ -1600,7 +1600,7 @@ end
     get_Sip2dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
                         D0::Vector{JetConstituentsData},
                         phi0::Vector{JetConstituentsData},
-                        Bz::Float64) -> Vector{JetConstituentsData}
+                        Bz::Float32) -> Vector{JetConstituentsData}
 
 Calculate the 2D signed impact parameter value for each particle relative to the jet axis.
 This is a Julia implementation of the C++ function get_Sip2dVal_clusterV.
@@ -1617,7 +1617,7 @@ Vector of vectors of 2D signed impact parameter values (one vector per jet)
 function get_Sip2dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
                             D0::Vector{JetConstituentsData},
                             phi0::Vector{JetConstituentsData},
-                            Bz::Float64)
+                            Bz::Float32)
 
     result = Vector{JetConstituentsData}()
     
@@ -1653,14 +1653,14 @@ end
     get_btagSip2dVal(jets::Vector{JetReconstruction.EEJet},
                     pfcand_dxy::Vector{JetConstituentsData},
                     pfcand_phi0::Vector{JetConstituentsData},
-                    Bz::Float64) -> Vector{JetConstituentsData}
+                    Bz::Float32) -> Vector{JetConstituentsData}
 
 Call the implementation function get_Sip2dVal_clusterV
 """
 function get_btagSip2dVal(jets::Vector{JetReconstruction.EEJet},
     pfcand_dxy::Vector{JetConstituentsData},
     pfcand_phi0::Vector{JetConstituentsData},
-    Bz::Float64)
+    Bz::Float32)
     # Simply call the implementation function
     return get_Sip2dVal_clusterV(jets, pfcand_dxy, pfcand_phi0, Bz)
 end
@@ -1722,7 +1722,7 @@ end
                         D0::Vector{JetConstituentsData},
                         Z0::Vector{JetConstituentsData},
                         phi0::Vector{JetConstituentsData},
-                        Bz::Float64) -> Vector{JetConstituentsData}
+                        Bz::Float32) -> Vector{JetConstituentsData}
 
 Calculate the 3D signed impact parameter value for each particle relative to the jet axis.
 """
@@ -1730,7 +1730,7 @@ function get_Sip3dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
                             D0::Vector{JetConstituentsData},
                             Z0::Vector{JetConstituentsData},
                             phi0::Vector{JetConstituentsData},
-                            Bz::Float64)
+                            Bz::Float32)
     result = Vector{JetConstituentsData}()
     for i in eachindex(jets)
         p = Vector3(jets[i].px, jets[i].py, jets[i].pz)
@@ -1765,7 +1765,7 @@ function get_btagSip3dVal(jets::Vector{JetReconstruction.EEJet},
     pfcand_dxy::Vector{JetConstituentsData},
     pfcand_dz::Vector{JetConstituentsData},
     pfcand_phi0::Vector{JetConstituentsData},
-    Bz::Float64)
+    Bz::Float32)
 # Simply call the implementation function
 return get_Sip3dVal_clusterV(jets, pfcand_dxy, pfcand_dz, pfcand_phi0, Bz)
 end
@@ -1822,7 +1822,7 @@ function get_JetDistVal_clusterV(jets::Vector{JetReconstruction.EEJet},
                                 D0::Vector{JetConstituentsData},
                                 Z0::Vector{JetConstituentsData},
                                 phi0::Vector{JetConstituentsData},
-                                Bz::Float64)
+                                Bz::Float32)
     result = Vector{JetConstituentsData}()
     
     for i in eachindex(jets)
@@ -1871,7 +1871,7 @@ function get_btagJetDistVal(jets::Vector{JetReconstruction.EEJet},
                             D0::Vector{JetConstituentsData},
                             Z0::Vector{JetConstituentsData},
                             phi0::Vector{JetConstituentsData},
-                            Bz::Float64)
+                            Bz::Float32)
     # Simply call the implementation functio
     return get_JetDistVal_clusterV(jets, jcs, D0, Z0, phi0, Bz)
 end
