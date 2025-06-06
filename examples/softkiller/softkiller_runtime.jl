@@ -93,7 +93,7 @@ function process_event(event::Vector{PseudoJet}, args::Dict{Symbol, Any},
     p = args[:power]
     strategy = args[:strategy]
 
-    #Clustering of the given vector of PseudoJets 
+    # Clustering of the given vector of PseudoJets 
     cluster_seq_pu = jet_reconstruct(event,
                                      R = distance, p = p, algorithm = algorithm,
                                      strategy = strategy)
