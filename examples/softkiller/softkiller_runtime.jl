@@ -154,10 +154,11 @@ function main()
 
     pt_threshold = 0.00
     # Applying SoftKiller to a non-clustered vector of PseudoJets 
-    reduced_event, pt_threshold = softkiller!(soft_killer, all_jets_sk)
+    
+    @time softkiller!(soft_killer, all_jets_sk)
     
 end
 
-@time main()
+main()
 
 
