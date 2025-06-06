@@ -1,12 +1,16 @@
-# Inspired by the SoftKiller implementation in the FastJet contrib package
-# Original C++ code: https://fastjet.hepforge.org/contrib/
-
 using JetReconstruction
 
 """
 SoftKiller
 
 Implements the SoftKiller pileup mitigation algorithm, inspired by the FastJet contrib package.
+
+The original algorithm is described in:
+https://arxiv.org/abs/1407.0408
+by Matteo Cacciari, Gavin P. Salam, Gregory Soyez
+
+This version inspired by the SoftKiller implementation in the FastJet contrib package
+Original C++ code: https://fastjet.hepforge.org/contrib/
 
 The SoftKiller algorithm divides the rapidity-phi plane into a grid of tiles and determines a dynamic
 pt threshold by finding the median of the maximum pt in each tile. Particles with pt below this threshold
