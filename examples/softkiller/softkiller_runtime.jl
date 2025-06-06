@@ -18,7 +18,6 @@ using LorentzVectorHEP
 using JetReconstruction
 using Profile
 
-
 include(joinpath(@__DIR__, "..", "parse-options.jl"))
 
 function parse_command_line(args)
@@ -97,7 +96,7 @@ function process_event(event::Vector{PseudoJet}, args::Dict{Symbol, Any},
     cluster_seq_pu = jet_reconstruct(event,
                                      R = distance, p = p, algorithm = algorithm,
                                      strategy = strategy)
-                                     
+
     finaljets_pu_lorv = inclusive_jets(cluster_seq_pu, ptmin = 25.0)
     return finaljets_pu_lorv
 end
@@ -112,7 +111,7 @@ function main()
     else
         jet_type = PseudoJet
     end
-    @assert jet_type == PseudoJet "SoftKiller only supports PseudoJet"
+    @assert jet_type==PseudoJet "SoftKiller only supports PseudoJet"
 
     events = Vector{PseudoJet}[]
 
@@ -135,10 +134,10 @@ function main()
     algorithm = args[:algorithm]
     p = args[:power]
 
-    (p,algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-                                                                      algorithm = algorithm)
+    (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
+                                                                       algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
-    
+
     # This is a vector of PseudoJets that contains hard event and pileup 
     # but it will get clustered after SoftKiller was applied 
     all_jets_sk = PseudoJet[]
@@ -155,9 +154,6 @@ function main()
     pt_threshold = 0.00
     # Applying SoftKiller to a non-clustered vector of PseudoJets 
     reduced_event, pt_threshold = softkiller!(soft_killer, all_jets_sk)
-    
 end
 
 @time main()
-
-

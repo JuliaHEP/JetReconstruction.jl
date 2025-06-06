@@ -3,7 +3,7 @@
 
 using JetReconstruction
 
-mutable struct SoftKiller 
+mutable struct SoftKiller
     _ymax::Float64
     _ymin::Float64
     _requested_drap::Float64
@@ -43,12 +43,12 @@ function tile_index(sk::SoftKiller, p::PseudoJet)
         return -1
     end
 
-    iphi = round(Int64, phi(p)*sk._inverse_dphi)
+    iphi = round(Int64, phi(p) * sk._inverse_dphi)
     if iphi == sk._nphi
         iphi = 0
     end
 
-    res = round(Int64, iy*sk._nphi + iphi)
+    res = round(Int64, iy * sk._nphi + iphi)
 
     res + 1
 end
@@ -58,16 +58,16 @@ function _setup_grid!(sk::SoftKiller)
     @assert sk._requested_drap > 0
     @assert sk._requested_dphi > 0
 
-    ny_double = (sk._ymax-sk._ymin) / sk._requested_drap
-    sk._ny = max(round(Int64, ny_double+0.5), 1)
-    sk._dy = (sk._ymax-sk._ymin) / sk._ny
-    sk._inverse_dy = sk._ny/(sk._ymax-sk._ymin)
+    ny_double = (sk._ymax - sk._ymin) / sk._requested_drap
+    sk._ny = max(round(Int64, ny_double + 0.5), 1)
+    sk._dy = (sk._ymax - sk._ymin) / sk._ny
+    sk._inverse_dy = sk._ny / (sk._ymax - sk._ymin)
 
     sk._nphi = round(Int64, (2 * π) / sk._requested_dphi + 0.5)
     sk._dphi = (2 * π) / sk._nphi
-    sk._inverse_dphi = sk._nphi/(2*π)
+    sk._inverse_dphi = sk._nphi / (2 * π)
 
-    @assert sk._ny >= 1 and sk._nphi >= 1
+    @assert sk._ny>=1 and sk._nphi>=1
 
     sk._ntotal = sk._nphi * sk._ny
     sk._cell_area = sk._dy * sk._dphi
@@ -86,7 +86,6 @@ function show(io::IO, sk::SoftKiller)
               "tile size Δy × Δφ = ", sk._dy, " × ", sk._dphi, ")")
     end
 end
-
 
 function select_ABS_RAP_max(event, absrapmax)
     filtered_events = filter(e -> begin
@@ -117,7 +116,7 @@ function softkiller!(sk::SoftKiller, event::Vector{PseudoJet})
     sort!(max_pt2)
 
     int_median_pos = length(max_pt2) ÷ 2
-    pt2cut = (1+1e-12)*max_pt2[int_median_pos]
+    pt2cut = (1 + 1e-12) * max_pt2[int_median_pos]
 
     indices = Int64[]
     for (i, ps_jet) in enumerate(event)
