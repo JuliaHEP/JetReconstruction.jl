@@ -3,7 +3,7 @@
 include("common.jl")
 
 using Random
-import JetReconstruction: SoftKiller, tile_index, softkiller_apply, select_ABS_RAP_max, PseudoJet
+import JetReconstruction: SoftKiller, tile_index, select_ABS_RAP_max, PseudoJet
 
 @testset "SoftKiller grid setup" begin
     # Test default constructor
@@ -26,12 +26,12 @@ end
     sk = SoftKiller(-2.5, 2.5, 0.4, 0.4)
 
     # Test tile_index with a pseudojet within bounds
-    pj1 = PseudoJet(pt=1.0, rap=0.0, phi=0.0, m=0.0)
+    pj1 = PseudoJet(pt = 1.0, rap = 0.0, phi = 0.0, m = 0.0)
     idx = tile_index(sk, pj1)
     @test (1 <= idx) && (idx <= sk._ntotal)
-    
+
     # Test tile_index with a pseudojet beyond bounds
-    pj2 = PseudoJet(pt=1.0, rap=10.0, phi=0.0, m=0.0)
+    pj2 = PseudoJet(pt = 1.0, rap = 10.0, phi = 0.0, m = 0.0)
     idx2 = tile_index(sk, pj2)
     @test idx2 == -1
 
@@ -61,11 +61,11 @@ end
 
     # Helper function to create a PseudoJet from pt, eta, and phi
     function make_pj(pt, rap, phi)
-        return PseudoJet(pt=pt, rap=rap, phi=phi, m=0.0)
+        return PseudoJet(pt = pt, rap = rap, phi = phi, m = 0.0)
     end
     event = [make_pj(pts[i], raps[i], phis[i]) for i in 1:N]
 
-    reduced, threshold = softkiller_apply(sk, event, 0.0)
+    reduced, threshold = softkiller!(sk, event)
 
     @test threshold > 0
     @test threshold < maximum(pts)
@@ -80,4 +80,3 @@ end
         end
     end
 end
-
