@@ -2,11 +2,26 @@ using EDM4hep
 using JetReconstruction
 using StructArrays: StructVector
 
-# Define type aliases for clarity # TODO: Move to JetFlavourTagging file. But requires more checks.
+### TODO's:
+# 1) Fixing the covariance matrix extraction to avoid out-of-bounds errors. (DONE, Jun 9, 2025)
+# 2) Move class type alias in line 11-12 to JetFlavourTagging file. But requires more checks.
+# 3) For Vector structs and operations, maybe those file can go to another vector helper module, or I can use julia buildin Vector type.
+# 4) Optimize the kinematic variable sections (Currently working on, expect Jun 11, 2025)
+# 5) Fix the vertex extraction from MCParticles 
+#   a) prepare the vertex in the main file and pass it to here (currently working on, expect Jun 13, 2025)
+#   b) MTOF, dNdx (expected Jun 20, 2025)
+#   c) kinematic variables (currently working on, expect Jun 16, 2025)
+# 6) Optimize the b-tagging section. (expected Jun 17, 2025)
+# 7) Unit tests! (Extract one event!)
+
+# Define type aliases for clarity 
 const JetConstituents = StructVector{ReconstructedParticle}
 const JetConstituentsData = Vector{Float32}
 
-## TODO: maybe those file can go to another vector helper module, or I can use julia buildin Vector type.
+#############################################################################
+# Vector structs and operations
+#############################################################################
+
 """
     Vector2(x::Float64, y::Float64) -> Vector2
 
@@ -84,6 +99,9 @@ function v3_unit(v::Vector3)
     return Vector3(v.X/n, v.Y/n, v.Z/n)
 end
 
+#################################################################################
+# Kinematic variables
+#################################################################################
 """
     get_Bz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
             tracks::StructVector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
@@ -1013,6 +1031,10 @@ function get_detadeta(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
     return result
 end
 
+#################################################################################
+# Clustered jet specific variables
+#################################################################################
+
 
 """
     get_erel_log_cluster(jets::Vector{EEJet}, 
@@ -1164,6 +1186,11 @@ function get_phirel_cluster(jets::Vector{EEJet},
     
     return result
 end
+
+#################################################################################
+# Particle ID variables
+#################################################################################
+
 """
     get_isMu(jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
 
@@ -1288,6 +1315,10 @@ function get_isNeutralHad(jcs::Vector{JetConstituents})
     
     return result
 end
+
+#################################################################################
+# Time-of-flight mass calculation
+#################################################################################
 
 """
     get_mtof(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
@@ -1464,6 +1495,10 @@ function get_mtof(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
     return result
 end
 
+##################################################################################
+# dE/dx and dN/dx calculation
+##################################################################################
+
 """
     get_dndx(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
             dNdx::StructVector{EDM4hep.Quantity},
@@ -1482,7 +1517,6 @@ Only charged hadrons have valid dN/dx values.
 # Returns
 Vector of vectors of dN/dx values (one vector per jet, one value per constituent)
 """
-# TODO: Fix the issue here with the tracks relationship
 function get_dndx(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
                 dNdx::StructVector{EDM4hep.Quantity},
                 trackdata::StructVector{EDM4hep.Track}, 
@@ -1537,6 +1571,10 @@ function get_dndx(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
     
     return result
 end
+
+#################################################################################
+# B-tagging variables, signed impact parameter, dist, etc.
+#################################################################################
 
 """
     get_Sip2dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
@@ -1858,6 +1896,11 @@ function get_btagJetDistSig(JetDistVal::Vector{JetConstituentsData},
     # Simply call the implementation function
     return get_JetDistSig(JetDistVal, err2_D0, err2_Z0)
 end
+
+#################################################################################
+# Counting variables
+#################################################################################
+
 """
     count_jets(jets::Vector{JetConstituents}) -> Int
 
