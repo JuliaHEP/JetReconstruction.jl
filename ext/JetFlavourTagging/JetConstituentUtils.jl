@@ -3,14 +3,15 @@ using JetReconstruction
 using StructArrays: StructVector
 
 ### TODO's:
-# 1) Fixing the covariance matrix extraction to avoid out-of-bounds errors. (DONE, Jun 9, 2025)
+# 1) Fix the covariance matrix extraction to avoid out-of-bounds errors. (DONE, Jun 9, 2025)
 # 2) Move class type alias in line 11-12 to JetFlavourTagging file. But requires more checks.
 # 3) For Vector structs and operations, maybe those file can go to another vector helper module, or I can use julia buildin Vector type.
-# 4) Optimize the kinematic variable sections (Currently working on, expect Jun 11, 2025)
+# 4) Fix the kinematic variable sections (Currently working on, expect Jun 11, 2025)
 # 5) Fix the vertex extraction from MCParticles 
 #   a) prepare the vertex in the main file and pass it to here (currently working on, expect Jun 13, 2025)
-#   b) MTOF, dNdx (expected Jun 20, 2025)
-#   c) kinematic variables (currently working on, expect Jun 16, 2025)
+#   b) MTOF, dNdx (done)
+#   c) dNdx based on EDM4hep version 
+#   d) kinematic variables (currently working on, expect Jun 16, 2025)
 # 6) Optimize the b-tagging section. (expected Jun 17, 2025)
 # 7) Unit tests! (Extract one event!)
 
@@ -72,7 +73,6 @@ function v3_dot(v::Vector3, w::Vector3)
     return v.X*w.X + v.Y*w.Y + v.Z*w.Z
 end
 
-
 """
     v3_norm(v::Vector3) -> Float64
 
@@ -84,7 +84,6 @@ The magnitude of the vector.
 function v3_norm(v::Vector3)
     return sqrt(v.X^2 + v.Y^2 + v.Z^2)
 end
-
 
 """
     v3_unit(v::Vector3) -> Vector3
@@ -150,9 +149,56 @@ function get_Bz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
 end
 
 """
+    get_mass(jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
+
+Get the mass of each particle in each jet.
+
+# Arguments
+- jcs: Vector of jet constituents (each element contains particles for one jet)
+
+# Returns
+A vector of vectors of mass values
+"""
+function get_mass(jcs::Vector{JetConstituents})
+    result = Vector{JetConstituentsData}()
+    for jet_constituents in jcs
+        mass_values = JetConstituentsData()
+        for p in jet_constituents
+            mass = p.mass
+            push!(mass_values, mass)
+        end
+        push!(result, mass_values)
+    end
+    return result
+end
+
+"""
+    get_eta(jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
+
+Get the pseudorapidity of each particle in each jet.
+
+# Arguments
+- jcs: Vector of jet constituents (each element contains particles for one jet)
+
+# Returns
+A vector of vectors of pseudorapidity values (eta = -ln(tan(theta/2)))
+"""
+function get_eta(jcs::Vector{JetConstituents})
+    theta_result = get_theta(jcs)
+    result = -ln.(tan.(theta_result ./ 2))
+    return result
+end
+
+"""
     get_pt(jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
 
 Get the transverse momentum of each particle in each jet.
+
+# Arguments
+- jcs: Vector of jet constituents (each element contains particles for one jet)
+
+# Returns
+A vector of vectors of transverse momentum values (sqrt(px^2 + py^2))
 """
 function get_pt(jcs::Vector{JetConstituents})
     result = Vector{JetConstituentsData}()
@@ -171,6 +217,12 @@ end
     get_p(jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
 
 Get the momentum magnitude of each particle in each jet.
+
+# Arguments
+- jcs: Vector of jet constituents
+
+# Returns
+A vector of vectors of momentum magnitudes (sqrt(px^2 + py^2 + pz^2))
 """
 function get_p(jcs::Vector{JetConstituents})
     result = Vector{JetConstituentsData}()
@@ -212,13 +264,7 @@ function get_theta(jcs::Vector{JetConstituents})
     for jet_constituents in jcs
         theta_values = JetConstituentsData()
         for p in jet_constituents
-            # Calculate theta from momentum components
-            p_mag = sqrt(p.momentum.x^2 + p.momentum.y^2 + p.momentum.z^2)
-            if p_mag > 0
-                theta = acos(p.momentum.z / p_mag)
-            else
-                theta = 0.0
-            end
+            theta = (p.momentum.x == 0.0 && p.momentum.y == 0.0 && p.momentum.z == 0.0) ? 0.0 : atan(sqrt(p.momentum.x^2 + p.momentum.y^2), p.momentum.z)
             push!(theta_values, theta)
         end
         push!(result, theta_values)
@@ -236,10 +282,28 @@ function get_phi(jcs::Vector{JetConstituents})
     for jet_constituents in jcs
         phi_values = JetConstituentsData()
         for p in jet_constituents
-            phi = atan(p.momentum.y, p.momentum.x)
+            phi = (p.momentum.x == 0.0 && p.momentum.y == 0.0) ? 0.0 : atan(p.momentum.y, p.momentum.x)
             push!(phi_values, phi)
         end
         push!(result, phi_values)
+    end
+    return result
+end
+
+"""
+    get_y(jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
+    
+Get the rapidity of each particle in each jet.
+"""
+function get_y(jcs::Vector{JetConstituents})
+    result = Vector{JetConstituentsData}()
+    for jet_constituents in jcs
+        y_values = JetConstituentsData()
+        for p in jet_constituents
+            y = 0.5 * log((p.energy + p.momentum.z) / (p.energy - p.momentum.z))
+            push!(y_values, y)
+        end
+        push!(result, y_values)
     end
     return result
 end
@@ -305,58 +369,39 @@ function get_phi0(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
     cSpeed = 2.99792458e8 * 1.0e-9 
     
     result = Vector{JetConstituentsData}()
+    tracks_len = length(tracks)
     
-    for jet_constituents in jcs
+    for jc in jcs
         phi_values = JetConstituentsData()
-        for p in jet_constituents
-            track_found = false
-            
-            if p.charge != 0.0
-                if !isempty(tracks)
-                    track = tracks[1]
-                    
-                    D0_wrt0 = track.D0
-                    Z0_wrt0 = track.Z0
-                    phi0_wrt0 = track.phi
-                    
-                    # Create position vector at closest approach to (0,0,0)
-                    X = [-D0_wrt0 * sin(phi0_wrt0), 
-                        D0_wrt0 * cos(phi0_wrt0), 
-                        Z0_wrt0]
-                    
-                    # Position vector relative to vertex V
-                    x = X .- [V.x, V.y, V.z]
-                    
-                    # Momentum vector
-                    p_vec = [p.momentum.x, p.momentum.y, p.momentum.z]
-                    
-                    # Calculate phi parameter
-                    a = -p.charge * Bz * cSpeed
-                    pt = sqrt(p.momentum.x^2 + p.momentum.y^2)
-                    r2 = x[1]^2 + x[2]^2
-                    cross = x[1] * p_vec[2] - x[2] * p_vec[1]
-                    
-                    # Calculate factor T
-                    T = sqrt(pt^2 - 2 * a * cross + a^2 * r2)
-                    
-                    # Calculate phi angle at point of closest approach
-                    # Using atan2 to correctly handle quadrants
-                    phi0 = atan((p_vec[2] - a * x[1]) / T, 
-                                (p_vec[1] + a * x[2]) / T)
-                    
-                    push!(phi_values, Float32(phi0))
-                    track_found = true
-                end
-            end
-            
-            if !track_found
+        for p in jc
+            if p.tracks.first < tracks_len
+                track = tracks[p.tracks.first + 1]
+                
+                D0_wrt0 = track.D0
+                Z0_wrt0 = track.Z0
+                phi0_wrt0 = track.phi
+
+                X = [-D0_wrt0 * sin(phi0_wrt0), 
+                    D0_wrt0 * cos(phi0_wrt0), 
+                    Z0_wrt0]
+                
+                x = X .- [V.x, V.y, V.z]
+                p3 = [p.momentum.x, p.momentum.y, p.momentum.z]
+                a = -p.charge * Bz * cSpeed
+                pt = sqrt(p.momentum.x^2 + p.momentum.y^2)
+                r2 = x[1]^2 + x[2]^2
+                cross = x[1] * p3[2] - x[2] * p3[1]
+                T = sqrt(pt^2 - 2 * a * cross + a^2 * r2)
+                phi0 = atan((p3[2] - a * x[1]) / T, (p3[1] + a * x[2]) / T)
+
+                push!(phi_values, Float32(phi0))
+            else
                 push!(phi_values, -9.0f0)
             end
         end
-        
         push!(result, phi_values)
     end
-    
+
     return result
 end
 
@@ -381,58 +426,48 @@ function get_dxy(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
                 tracks::StructVector{EDM4hep.TrackState}, 
                 V::LorentzVector, Bz::Float32)
 
-    cSpeed = 2.99792458e8 * 1.0e-9  # Speed of light in m/ns
+    cSpeed = 2.99792458e8 * 1.0e-9 
     
     result = Vector{JetConstituentsData}()
+    tracks_len = length(tracks)
     
-    for jet_constituents in jcs
+    for jc in jcs
         dxy_values = JetConstituentsData()
-        
-        for p in jet_constituents
-            track_found = false
-            
-            if p.charge != 0.0
-                if !isempty(tracks)
-                    track = tracks[1] 
-                    
-                    D0_wrt0 = track.D0
-                    Z0_wrt0 = track.Z0
-                    phi0_wrt0 = track.phi
-                    
-                    X = [-D0_wrt0 * sin(phi0_wrt0), D0_wrt0 * cos(phi0_wrt0), Z0_wrt0]
-                    
-                    x = X .- [V.x, V.y, V.z]
-                    
-                    p_vec = [p.momentum.x, p.momentum.y, p.momentum.z]
-                    
-                    a = -p.charge * Bz * cSpeed
-                    pt = sqrt(p.momentum.x^2 + p.momentum.y^2)
-                    r2 = x[1]^2 + x[2]^2
-                    cross = x[1] * p_vec[2] - x[2] * p_vec[1]
-                    
-                    D = -9.0f0
-                    if pt^2 - 2 * a * cross + a^2 * r2 > 0
-                        T = sqrt(pt^2 - 2 * a * cross + a^2 * r2)
-                        if pt < 10.0
-                            D = (T - pt) / a
-                        else
-                            D = (-2 * cross + a * r2) / (T + pt)
-                        end
+        for p in jc
+            if p.tracks.first < tracks_len
+                track = tracks[p.tracks.first + 1]
+                
+                D0_wrt0 = track.D0
+                Z0_wrt0 = track.Z0
+                phi0_wrt0 = track.phi
+
+                X = [-D0_wrt0 * sin(phi0_wrt0), 
+                    D0_wrt0 * cos(phi0_wrt0), 
+                    Z0_wrt0]
+                
+                x = X .- [V.x, V.y, V.z]
+                p3 = [p.momentum.x, p.momentum.y, p.momentum.z]
+                a = -p.charge * Bz * cSpeed
+                pt = sqrt(p.momentum.x^2 + p.momentum.y^2)
+                r2 = x[1]^2 + x[2]^2
+                cross = x[1] * p3[2] - x[2] * p3[1]
+                D = -9.0f0
+
+                if (pt^2 - 2 * a * cross + a^2 * r2) > 0
+                    T = sqrt(pt^2 - 2 * a * cross + a^2 * r2)
+                    if pt < 10.0
+                        D = (T - pt) / a
+                    else
+                        D = (-2 * cross + a * r2) / (T + pt)
                     end
-                    
-                    push!(dxy_values, D)
-                    track_found = true
                 end
-            end
-            
-            if !track_found
+                push!(dxy_values, D)
+            else
                 push!(dxy_values, -9.0f0)
             end
         end
-        
         push!(result, dxy_values)
     end
-    
     return result
 end
 
@@ -457,87 +492,145 @@ function get_dz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
                 tracks::StructVector{EDM4hep.TrackState}, 
                 V::LorentzVector, Bz::Float32)
 
-    cSpeed = 2.99792458e8 * 1.0e-9  # Speed of light in m/ns
+    cSpeed = 2.99792458e8 * 1.0e-9 
     
     result = Vector{JetConstituentsData}()
-
-    for jet_constituents in jcs
+    tracks_len = length(tracks)
+    
+    for jc in jcs
         dz_values = JetConstituentsData()
-        
-        for p in jet_constituents
-            track_found = false
-            
-            if p.charge != 0.0
-                if !isempty(tracks)
-                    track = tracks[1]
-                    
-                    D0_wrt0 = track.D0
-                    Z0_wrt0 = track.Z0
-                    phi0_wrt0 = track.phi
-                    
-                    X = [
-                        -D0_wrt0 * sin(phi0_wrt0), 
-                        D0_wrt0 * cos(phi0_wrt0), 
-                        Z0_wrt0
-                    ]
-                    
-                    # Position vector relative to vertex V
-                    x = X .- [V.x, V.y, V.z]
-                    
-                    # Momentum vector
-                    p_vec = [p.momentum.x, p.momentum.y, p.momentum.z]
-                    
-                    # Calculate dz parameter
-                    a = -p.charge * Bz * cSpeed
-                    pt = sqrt(p.momentum.x^2 + p.momentum.y^2)
-                    C = a / (2 * pt)
-                    r2 = x[1]^2 + x[2]^2
-                    cross = x[1] * p_vec[2] - x[2] * p_vec[1]
-                    T = sqrt(pt^2 - 2 * a * cross + a^2 * r2)
-                    
-                    # Calculate the distance D
-                    D = 0.0
-                    if pt < 10.0
-                        D = (T - pt) / a
-                    else
-                        D = (-2 * cross + a * r2) / (T + pt)
-                    end
-                    
-                    # Calculate the sine of helical parameter
-                    B = C * sqrt(max(r2 - D^2, 0.0) / (1 + 2 * C * D))
-                    if abs(B) > 1.0
-                        B = sign(B)
-                    end
-                    
-                    # Path length
-                    st = asin(B) / C
-                    
-                    # Directional tangent
-                    ct = p_vec[3] / pt
-                    
-                    # Calculate z0 (longitudinal impact parameter)
-                    dot_prod = x[1] * p_vec[1] + x[2] * p_vec[2]
-                    z0 = 0.0
-                    
-                    if dot_prod > 0.0
-                        z0 = x[3] - ct * st
-                    else
-                        z0 = x[3] + ct * st
-                    end
-                    
-                    push!(dz_values, Float32(z0))
-                    track_found = true
+        for p in jc
+            if p.tracks.first < tracks_len
+                track = tracks[p.tracks.first + 1]
+                
+                D0_wrt0 = track.D0
+                Z0_wrt0 = track.Z0
+                phi0_wrt0 = track.phi
+
+                X = [-D0_wrt0 * sin(phi0_wrt0), 
+                    D0_wrt0 * cos(phi0_wrt0), 
+                    Z0_wrt0]
+                
+                x = X .- [V.x, V.y, V.z]
+                p3 = [p.momentum.x, p.momentum.y, p.momentum.z]
+                a = -p.charge * Bz * cSpeed
+                pt = sqrt(p.momentum.x^2 + p.momentum.y^2)
+                C = a / (2 * pt)
+                r2 = x[1]^2 + x[2]^2
+                cross = x[1] * p3[2] - x[2] * p3[1]
+                T = sqrt(pt^2 - 2 * a * cross + a^2 * r2)
+
+                D = if pt < 10.0
+                    (T - pt) / a
+                else
+                    (-2 * cross + a * r2) / (T + pt)
                 end
-            end
-            
-            if !track_found
+
+                B = C * sqrt(max(r2 - D^2, 0.0) / (1 + 2 * C * D))
+                if abs(B) > 1.0
+                    B = sign(B)
+                end
+
+                st = asin(B) / C
+                ct = p3[3] / pt
+
+                dot = x[1] * p3[1] + x[2] * p3[2]
+                z0 = if dot > 0.0
+                    x[3] - ct * st
+                else
+                    x[3] + ct * st
+                end
+
+                push!(dz_values, z0)
+            else
                 push!(dz_values, -9.0f0)
             end
         end
-        
         push!(result, dz_values)
     end
+    return result
+end
+
+"""
+    get_c(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+            tracks::StructVector{EDM4hep.TrackState}, 
+            Bz::Float32) -> Vector{JetConstituentsData}
+
+Calculate the C for each particle in each jet.
+Reference: FCCAnalyses c++ function XPtoPar_C, adapted for jet constituents.
+
+# Arguments
+- jcs: Vector of jet constituents (each element contains particles for one jet)
+- tracks: StructVector of TrackState objects
+- Bz: The magnetic field in Tesla
+
+# Returns
+Vector of vectors of C values (one vector per jet)
+"""
+function get_c(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+                tracks::StructVector{EDM4hep.TrackState}, 
+                Bz::Float32)
+
+    cSpeed = 2.99792458e8 * 1.0e3 * 1.0e-15
     
+    result = Vector{JetConstituentsData}()
+    tracks_len = length(tracks)
+    
+    for jc in jcs
+        c_values = JetConstituentsData()
+        for p in jc
+            if p.tracks.first < tracks_len
+                a = copysign(1.0, p.charge) * Bz * cSpeed
+                pt = sqrt(p.momentum.x^2 + p.momentum.y^2)
+                C = a/(2 * pt)
+                push!(c_values, C)
+            else
+                push!(c_values, -9.0f0)
+            end
+        end
+        push!(result, c_values)
+    end
+    return result
+end
+
+"""
+    get_ct(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+            tracks::StructVector{EDM4hep.TrackState}, 
+            Bz::Float32) -> Vector{JetConstituentsData}
+
+Calculate the ct for each particle in each jet.
+Reference: FCCAnalyses c++ function XPtoPar_C, adapted for jet constituents.
+
+# Arguments
+- jcs: Vector of jet constituents (each element contains particles for one jet)
+- tracks: StructVector of TrackState objects
+- Bz: The magnetic field in Tesla
+
+# Returns
+Vector of vectors of ct values (one vector per jet)
+"""
+function get_ct(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+                tracks::StructVector{EDM4hep.TrackState}, 
+                Bz::Float32)
+
+    cSpeed = 2.99792458e8 * 1.0e-9
+    
+    result = Vector{JetConstituentsData}()
+    tracks_len = length(tracks)
+    
+    for jc in jcs
+        ct_values = JetConstituentsData()
+        for p in jc
+            if p.tracks.first < tracks_len
+                pt = sqrt(p.momentum.x^2 + p.momentum.y^2)
+                ct = p.momentum.z / pt
+                push!(ct_values, ct)
+            else
+                push!(ct_values, -9.0f0)
+            end
+        end
+        push!(result, ct_values)
+    end
     return result
 end
 
@@ -1355,148 +1448,70 @@ function get_mtof(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
                 calohits::StructVector{EDM4hep.CalorimeterHit},
                 V::LorentzVector)
     
-    # Speed of light in m/s
     c_light = 2.99792458e8
-    
-    
     result = Vector{JetConstituentsData}()
-    
+    tracks_len = length(trackdata)
+    gamma_len = length(gammadata)
+    nh_len = length(nhdata)
+
     for i in eachindex(jcs)
-        # Get current jet constituents
-        constituents = jcs[i]
-        mtof_values = JetConstituentsData()
+        jc = jcs[i]
+        tmp = JetConstituentsData()
         
-        for j in eachindex(constituents)
-            particle = constituents[j]
-            mtof_added = false
-            
-            # NEUTRAL PARTICLES - Handle neutral hadrons (K_L^0) and photons
-            
-            # Check if this is a cluster-based particle (neutral hadron or photon)
-            if hasfield(typeof(particle), :clusters_begin) && particle.clusters_begin > 0
-                
-                # K_L^0 (PDG code 130)
-                if particle.type == 130 && particle.clusters_begin < length(nhdata) + length(gammadata)
-                    # For neutral hadrons
-                    cluster_idx = particle.clusters_begin - length(gammadata)
-                    
-                    if cluster_idx >= 0 && cluster_idx < length(nhdata)
-                        # Get the first hit from the neutral hadron cluster
-                        if nhdata[cluster_idx+1].hits_begin < length(calohits)
-                            hit_idx = nhdata[cluster_idx+1].hits_begin
-                            calohit = calohits[hit_idx+1]
-                            
-                            # Get time and position from calorimeter hit
-                            T = calohit.time
-                            X = calohit.position.x
-                            Y = calohit.position.y
-                            Z = calohit.position.z
-                            
-                            # Time of flight
-                            tof = T
-                            
-                            # Compute path length with respect to primary vertex (convert to km)
-                            L = sqrt((X - V.x)^2 + (Y - V.y)^2 + (Z - V.z)^2) * 0.001
-                            
-                            # Calculate beta (v/c)
-                            beta = L / (tof * c_light)
-                            
-                            # Get particle energy
-                            E = particle.energy
-                            
-                            # Calculate mass from relativistic formula: m = E * sqrt(1 - β²)
-                            if beta < 1.0 && beta > 0.0
-                                push!(mtof_values, Float32(E * sqrt(1.0 - beta * beta)))
-                                mtof_added = true
-                            else
-                                push!(mtof_values, 9.0f0)  # Invalid measurement
-                                mtof_added = true
-                            end
-                        end
+        for j in eachindex(jc)
+            # particle = jc[j]
+            if jc[j].clusters.first < nh_len + gamma_len
+                if jc[j].type == 130
+                    hit_idx = (nhdata[jc[j].clusters.first+1 - gamma_len].hits.first+1)
+
+                    T = calohits[hit_idx].time
+                    X = calohits[hit_idx].position.x
+                    Y = calohits[hit_idx].position.y
+                    Z = calohits[hit_idx].position.z
+
+                    tof = T 
+                    L = sqrt((X - V.x)^2 + (Y - V.y)^2 + (Z - V.z)^2) * 0.001
+                    beta = L/(tof * c_light)
+                    E = jc[j].energy
+                    if beta < 1.0 && beta > 0.0
+                        push!(tmp, E * sqrt(1.0 - beta^2))
+                    else
+                        push!(tmp, 9.0f0)  # Invalid measurement
                     end
-                elseif particle.type == 22  # Photon
-                    push!(mtof_values, 0.0f0)  # Photons have zero mass
-                    mtof_added = true
+                elseif jc[j].type == 22
+                    push!(tmp, 0.0f0)  # Photons have zero mass
                 end
             end
 
-            # CHARGED PARTICLES - Handle electrons, muons, and charged hadrons
-            
-            # Check if this is a track-based particle
-            if !mtof_added && hasfield(typeof(particle), :tracks_begin) && particle.tracks_begin > 0
-                # Check if this is an electron
-                if abs(particle.charge) > 0 && abs(particle.mass - 0.000510999) < 1e-5
-                    push!(mtof_values, 0.000510999f0)  # Electron mass
-                    mtof_added = true
-                
-                # Check if this is a muon
-                elseif abs(particle.charge) > 0 && abs(particle.mass - 0.105658) < 1e-3
-                    push!(mtof_values, 0.105658f0)  # Muon mass
-                    mtof_added = true
-                    
-                # Other charged particles (mainly pions and kaons)
-                elseif particle.tracks_begin < length(trackdata)
-                    track_idx = particle.tracks_begin
-                    
-                    # Time given by primary vertex (convert from mm to seconds)
-                    Tin = V.t * 1e-3 / c_light
-                    
-                    # Get the last hit time from the track
-                    Tout = 0.0f0
-                    if track_idx < length(trackdata) && 
-                        trackdata[track_idx+1].trackerHits_begin < length(trackerhits) &&
-                        trackdata[track_idx+1].trackerHits_end > 0
-                        
-                        # Get the last hit in the track
-                        last_hit_idx = trackdata[track_idx+1].trackerHits_end - 1
-                        if last_hit_idx < length(trackerhits)
-                            Tout = trackerhits[last_hit_idx+1].time
-                        end
-                    end
-                    
-                    # Time of flight
+            if jc[j].tracks.first < tracks_len
+                if abs(jc[j].charge) > 0 && abs(jc[j].mass - 0.000510999) < 1e-5
+                    push!(tmp, 0.000510999f0)  # Electron mass
+                elseif abs(jc[j].charge) > 0 && abs(jc[j].mass - 0.105658) < 1e-3
+                    push!(tmp, 0.105658f0)  # Muon mass
+                else
+                    Tin = V.t * 1e-3 / c_light 
+                    Tout = trackerhits[trackdata[jc[j].tracks.first+1].trackerHits.last].time
                     tof = Tout - Tin
-                    
-                    # Get track length
-                    L = 0.0f0
-                    if track_idx < length(track_L)
-                        L = track_L[track_idx+1] * 0.001  # Convert to km
-                    end
-                    
-                    # Calculate beta (v/c)
-                    beta = 0.0f0
-                    if tof > 0.0
-                        beta = L / (tof * c_light)
-                    end
-                    
-                    # Calculate momentum
-                    p = sqrt(particle.momentum.x^2 + particle.momentum.y^2 + particle.momentum.z^2)
-                    
-                    # Calculate mass from relativistic formula: m = p * sqrt(1/β² - 1)
+
+                    L = track_L[jc[j].tracks.first+1] * 0.001 
+                    beta =  L/(tof * c_light)
+                    p = sqrt(jc[j].momentum.x^2 + jc[j].momentum.y^2 + jc[j].momentum.z^2)
                     if beta < 1.0 && beta > 0.0
-                        push!(mtof_values, Float32(p * sqrt(1.0 / (beta * beta) - 1.0)))
-                        mtof_added = true
+                        push!(tmp, p * sqrt(1.0 / (beta^2) - 1.0))
                     else
-                        push!(mtof_values, 0.13957039f0)  # Default to pion mass
-                        mtof_added = true
+                        push!(tmp, 0.13957039f0)  # Default to pion mass
                     end
                 end
             end
-            
-            # Add default value if nothing was added for this particle
-            if !mtof_added
-                push!(mtof_values, -9.0f0)
-            end
         end
-        
-        push!(result, mtof_values)
+        push!(result, tmp)
     end
     
     return result
 end
 
 ##################################################################################
-# dE/dx and dN/dx calculation
+# dN/dx
 ##################################################################################
 
 """
@@ -1523,52 +1538,21 @@ function get_dndx(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
                 JetsConstituents_isChargedHad::Vector{JetConstituentsData})
     
     result = Vector{JetConstituentsData}()
-    
-    for i in eachindex(jcs)
-        # Get current jet constituents and charged hadron flags
-        constituents = jcs[i]
+    tracks_len = length(trackdata)
+
+    for i in 1:length(jcs)
         isChargedHad = JetsConstituents_isChargedHad[i]
-        dndx_values = JetConstituentsData()
-        
-        for j in eachindex(constituents)
-            particle = constituents[j]
-            
-            # Check if this is a charged hadron
-            if j <= length(isChargedHad) && isChargedHad[j] == 1.0
-                # For charged hadrons, try to find associated track
-                track_found = false
-                
-                # Check if particle has tracks relationship
-                if isdefined(particle, :tracks) && !isnothing(particle.tracks) && !isempty(particle.tracks)
-                    # Get the track directly from the relationship
-                    track = first(particle.tracks)  # Using first track if multiple are present
-                    
-                    # Check if track has dxQuantities relationship
-                    if isdefined(track, :dxQuantities) && !isnothing(track.dxQuantities) && 
-                        !isempty(track.dxQuantities)
-                        
-                        # Get the dxQuantity directly
-                        dx_quantity = first(track.dxQuantities)
-                        
-                        # Get dN/dx value and convert from MeV to GeV
-                        push!(dndx_values, dx_quantity.value / 1000.0)
-                        track_found = true
-                    end
-                end
-                
-                if !track_found
-                    # No valid dN/dx data found
-                    push!(dndx_values, -1.0f0)
-                end
+        tmp = JetConstituentsData()
+        for j in 1:length(jcs[i])
+            if jcs[i][j].tracks.first + 1 <= tracks_len && Int(isChargedHad[j]) == 1
+                push!(tmp, -1.0f0)
             else
-                # Not a charged hadron (neutral, muon, or electron)
-                push!(dndx_values, 0.0f0)
+                push!(tmp, 0.0f0)  # Not a charged hadron or no valid track
             end
         end
-        
-        push!(result, dndx_values)
+        push!(result, tmp)
     end
-    
+
     return result
 end
 
