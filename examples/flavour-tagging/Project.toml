@@ -1,0 +1,20 @@
+[deps]
+Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
+CodecZlib = "944b1d66-785c-5afd-91f1-9de20f533193"
+CodecZstd = "6b39b394-51ab-5f42-8807-6242bab2b4c2"
+EDM4hep = "eb32b910-dde9-4347-8fce-cd6be3498f0c"
+EnumX = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
+IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
+JetReconstruction = "44e8cb2c-dfab-4825-9c70-d4808a591196"
+Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
+LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
+LorentzVectorHEP = "f612022c-142a-473f-8cfd-a09cf3793c6c"
+LorentzVectors = "3f54b04b-17fc-5cd4-9758-90c048d965e3"
+MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
+ONNXRunTime = "e034b28e-924e-41b2-b98f-d2bbeb830c6a"
+StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
+
+[sources]
+JetReconstruction = {path = "../.."}
