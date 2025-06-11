@@ -36,3 +36,4 @@ benchmark/*
 /profile/*
 /statprof/*
 /debug/*
+/examples/flavour-tagging/data
