@@ -1,14 +1,3 @@
-_ = """
-run it with
-julia --project=examples examples/softk.jl  --maxevents=100 --grid-size=0.4  --algorithm=Kt/
-    --pileup-file=test/data/sk_example_PU.hepmc --hard-file=test/data/sk_example_HS.hepmc 
-----------------------------------------------------------------------
-"""
-
-_ = """
-A simple example of SoftKiller that reads from two HepMC3 files 
-and displays plots of clustering without SoftKiller and with SoftKiller 
-"""
 using ArgParse
 using Profile
 using Logging
@@ -18,6 +7,7 @@ using LorentzVectorHEP
 using JetReconstruction
 using Profile
 
+# Parsing for algorithm and strategy enums
 include(joinpath(@__DIR__, "..", "parse-options.jl"))
 
 function parse_command_line(args)
@@ -83,29 +73,12 @@ function parse_command_line(args)
     return parse_args(args, s; as_symbols = true)
 end
 
-function process_event(event::Vector{PseudoJet}, args::Dict{Symbol, Any},
-                       rapmax::Float64)
-    event = select_ABS_RAP_max(event, rapmax)
-
-    distance = args[:distance]
-    algorithm = args[:algorithm]
-    p = args[:power]
-    strategy = args[:strategy]
-
-    # Clustering of the given vector of PseudoJets 
-    cluster_seq_pu = jet_reconstruct(event,
-                                     R = distance, p = p, algorithm = algorithm,
-                                     strategy = strategy)
-
-    finaljets_pu_lorv = inclusive_jets(cluster_seq_pu, ptmin = 25.0)
-    return finaljets_pu_lorv
-end
-
 function main()
     args = parse_command_line(ARGS)
     logger = ConsoleLogger(stdout, Logging.Info)
     global_logger(logger)
 
+    # Only PseudoJet is supported for SoftKiller
     if JetReconstruction.is_ee(args[:algorithm])
         jet_type = EEjet
     else
@@ -115,7 +88,7 @@ function main()
 
     events = Vector{PseudoJet}[]
 
-    # Reading from input files 
+    # Reading pileup and hard event files
     events = read_final_state_particles(args[:pileup_file],
                                         maxevents = args[:maxevents],
                                         skipevents = args[:skip],
@@ -126,7 +99,7 @@ function main()
                                           skipevents = args[:skip],
                                           T = jet_type)
 
-    # Setting dimensions for Softkiller                                   
+    # Set up SoftKiller grid and rapidity range
     rapmax = 5.0
     grid_size = args[:grid_size]
     soft_killer = SoftKiller(rapmax, grid_size)
@@ -134,26 +107,30 @@ function main()
     algorithm = args[:algorithm]
     p = args[:power]
 
-    (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-                                                                       algorithm = algorithm)
+    # Ensure algorithm and power are consistent
+    (p,
+     algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
+                                                                    algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
 
-    # This is a vector of PseudoJets that contains hard event and pileup 
-    # but it will get clustered after SoftKiller was applied 
+    # all_jets_sk: all PseudoJets (hard + pileup), for SoftKiller application
     all_jets_sk = PseudoJet[]
+
+    # Fill pileup jets
     for event in events
         for pseudo_jet in event
             push!(all_jets_sk, pseudo_jet)
         end
     end
 
+    # Fill hard event jets (from second event in h_events)
     for pseudo_jet in h_events[2]
         push!(all_jets_sk, pseudo_jet)
     end
 
-    pt_threshold = 0.00
-    # Applying SoftKiller to a non-clustered vector of PseudoJets 
-    reduced_event, pt_threshold = softkiller!(soft_killer, all_jets_sk)
+    # Apply SoftKiller to all_jets_sk (hard + pileup) and 
+    # measure the runtime of the softkiller method 
+    @time softkiller!(soft_killer, all_jets_sk)
 end
 
-@time main()
+main()

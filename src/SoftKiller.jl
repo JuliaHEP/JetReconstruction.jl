@@ -176,9 +176,6 @@ function softkiller!(sk::SoftKiller, event::Vector{PseudoJet})
     max_pt2 = fill(0.0, sk._ntotal)
 
     for ev in event
-        if (ev == isnothing)
-            continue
-        end
         index = tile_index(sk, ev)
         if (index < 0)
             continue
