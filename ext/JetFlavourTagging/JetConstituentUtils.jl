@@ -1586,20 +1586,16 @@ function get_Sip2dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
     result = Vector{JetConstituentsData}()
     
     for i in eachindex(jets)
-        p = Vector2(jets[i].px, jets[i].py)
-        
+        # p = Vector2(jets[i].px, jets[i].py)
+        p = [jets[i].px, jets[i].py]  # don't use vector2 anymore. comment out first. TODO: Remove Vector2 in later versions
         sip2d_values = JetConstituentsData()
         
         for j in eachindex(D0[i])
             if D0[i][j] != -9.0f0
-                # Calculate the 2D impact point vector
-                d0 = Vector2(-D0[i][j] * sin(phi0[i][j]), 
-                              D0[i][j] * cos(phi0[i][j]))
-                dot_product = d0.X * p.X + d0.Y * p.Y
-
-                # Sign based on dot product and magnitude based on D0
+                d0 = [-D0[i][j] * sin(phi0[i][j]), 
+                      D0[i][j] * cos(phi0[i][j])]
+                dot_product = d0[1] * p[1] + d0[2] * p[2]
                 signed_ip = sign(dot_product) * abs(D0[i][j])
-                
                 push!(sip2d_values, signed_ip)
             else
                 push!(sip2d_values, -9.0f0)
@@ -1650,15 +1646,10 @@ function get_Sip2dSig(Sip2dVals::Vector{JetConstituentsData},
     
     for i in eachindex(Sip2dVals)
         sig_values = JetConstituentsData()
-        
         for j in eachindex(Sip2dVals[i])
-            # Only calculate significance if the error is positive
-            if j <= length(err2_D0[i]) && err2_D0[i][j] > 0.0
-                # Calculate significance by dividing the value by its error
-                significance = Sip2dVals[i][j] / sqrt(err2_D0[i][j])
-                push!(sig_values, significance)
+            if err2_D0[i][j] > 0.0f0
+                push!(sig_values, Sip2dVals[i][j] / sqrt(err2_D0[i][j]))
             else
-                # Invalid measurement
                 push!(sig_values, -9.0f0)
             end
         end
@@ -1697,28 +1688,22 @@ function get_Sip3dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
                             Bz::Float32)
     result = Vector{JetConstituentsData}()
     for i in eachindex(jets)
-        p = Vector3(jets[i].px, jets[i].py, jets[i].pz)
+        # p = Vector3(jets[i].px, jets[i].py, jets[i].pz)
+        p = [jets[i].px, jets[i].py, jets[i].pz]  # don't use vector3 anymore. comment out first. TODO: Remove Vector3 in later versions
         cprojs = JetConstituentsData()
         
         for j in eachindex(D0[i])
             if D0[i][j] != -9.0
-                # Create 3D vector of displacement at point of closest approach
-                d = Vector3(-D0[i][j] * sin(phi0[i][j]), 
-                            D0[i][j] * cos(phi0[i][j]), 
-                            Z0[i][j])
-                
-                # Sign the impact parameter based on the dot product with jet direction
-                # dot product in 3D
-                dot_prod = d.X * p.X + d.Y * p.Y + d.Z * p.Z
-                sign_val = dot_prod > 0.0 ? 1.0 : -1.0
-                impact_val = sqrt(D0[i][j]^2 + Z0[i][j]^2)
-                cprojs_val = sign_val * impact_val
-                push!(cprojs, cprojs_val)
+                d = [-D0[i][j] * sin(phi0[i][j]), 
+                     D0[i][j] * cos(phi0[i][j]), 
+                     Z0[i][j]]
+                dot_prod = d[1] * p[1] + d[2] * p[2] + d[3] * p[3]
+                cproj_val = sign(dot_prod) * abs(sqrt(D0[i][j]^2 + Z0[i][j]^2))
+                push!(cprojs, cproj_val)
             else
                 push!(cprojs, -9.0f0)
             end
         end
-        
         push!(result, cprojs)
     end
     
@@ -1746,12 +1731,10 @@ function get_Sip3dSig(Sip3dVals::Vector{JetConstituentsData},
     result = Vector{JetConstituentsData}()
     
     for i in eachindex(Sip3dVals)
-        sigs = JetConstituentsData()  # Changed to initialize sigs as a JetConstituentsData
-        
+        sigs = JetConstituentsData()  
         for j in eachindex(Sip3dVals[i])
-            if err2_D0[i][j] > 0.0
-                sig = Sip3dVals[i][j] / sqrt(err2_D0[i][j] + err2_Z0[i][j])
-                push!(sigs, sig)
+            if err2_D0[i][j] > 0.0f0
+                push!(sigs, Sip3dVals[i][j] / sqrt(err2_D0[i][j] + err2_Z0[i][j]))
             else
                 push!(sigs, -9.0f0)
             end
@@ -1791,33 +1774,29 @@ function get_JetDistVal_clusterV(jets::Vector{JetReconstruction.EEJet},
     
     for i in eachindex(jets)
         # p_jet = Vector3(jets[i].px, jets[i].py, jets[i].pz)
-        p_jet = Vector3(jets[i].px, jets[i].py, jets[i].pz)
+        p_jet = [jets[i].px, jets[i].py, jets[i].pz]  # don't use vector3 anymore. comment out first. TODO: Remove Vector3 in later versions
         tmp = JetConstituentsData()
+        ct = jcs[i]
         
-        for j in eachindex(D0[i])
-            if D0[i][j] != -9.0 && j <= length(jcs[i])
-                # Create 3D vector of displacement at point of closest approach
-                d = Vector3(-D0[i][j] * sin(phi0[i][j]), 
-                            D0[i][j] * cos(phi0[i][j]), 
-                            Z0[i][j])
-                
-                # Calculate particle momentum
-                p_ct = Vector3(jcs[i][j].momentum.x, 
-                                jcs[i][j].momentum.y, 
-                                jcs[i][j].momentum.z)
-                
-                # Jet origin
-                r_jet = Vector3(0.0, 0.0, 0.0)
-                
-                # Normal vector to plane containing particle and jet momenta
-                n = v3_unit(v3_cross(p_ct, p_jet))
-
-                
-                # Distance is projection of displacement onto normal vector
-                dist = n.X * (d.X - r_jet.X) + 
-                       n.Y * (d.Y - r_jet.Y) + 
-                       n.Z * (d.Z - r_jet.Z)
-                
+        for j in eachindex(ct)
+            if D0[i][j] != -9.0f0
+                d = [-D0[i][j] * sin(phi0[i][j]), 
+                     D0[i][j] * cos(phi0[i][j]), 
+                     Z0[i][j]]
+                p_ct = [ct[j].momentum.x, 
+                        ct[j].momentum.y, 
+                        ct[j].momentum.z]
+                r_jet = [0.0, 0.0, 0.0]
+                n = [
+                    p_ct[2] * p_jet[3] - p_ct[3] * p_jet[2],
+                    p_ct[3] * p_jet[1] - p_ct[1] * p_jet[3],
+                    p_ct[1] * p_jet[2] - p_ct[2] * p_jet[1]
+                ]
+                n_mag = sqrt(n[1]^2 + n[2]^2 + n[3]^2)
+                n = n./ n_mag  # Normalize the normal vector
+                dist = n[1] * (d[1] - r_jet[1]) + 
+                       n[2] * (d[2] - r_jet[2]) + 
+                       n[3] * (d[3] - r_jet[3])
                 push!(tmp, dist)
             else
                 push!(tmp, -9.0f0)
@@ -1836,7 +1815,7 @@ function get_btagJetDistVal(jets::Vector{JetReconstruction.EEJet},
                             Z0::Vector{JetConstituentsData},
                             phi0::Vector{JetConstituentsData},
                             Bz::Float32)
-    # Simply call the implementation functio
+    # Simply call the implementation function
     return get_JetDistVal_clusterV(jets, jcs, D0, Z0, phi0, Bz)
 end
 
@@ -1855,12 +1834,9 @@ function get_JetDistSig(JetDistVal::Vector{JetConstituentsData},
     
     for i in eachindex(JetDistVal)
         tmp = JetConstituentsData()
-        
         for j in eachindex(JetDistVal[i])
-            if err2_D0[i][j] > 0.0
-                # 3D error
+            if err2_D0[i][j] > 0.0f0
                 err3d = sqrt(err2_D0[i][j] + err2_Z0[i][j])
-                # Calculate significance
                 jetdistsig = JetDistVal[i][j] / err3d
                 push!(tmp, jetdistsig)
             else
