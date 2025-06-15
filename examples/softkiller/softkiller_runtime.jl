@@ -109,8 +109,8 @@ function main()
 
     # Ensure algorithm and power are consistent
     (p,
-     algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-                                                                    algorithm = algorithm)
+    algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
+                                                                   algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
 
     # all_jets_sk: all PseudoJets (hard + pileup), for SoftKiller application

@@ -58,8 +58,8 @@ function main()
     end
     # Set consistent algorithm and power
     (p,
-     algorithm) = JetReconstruction.get_algorithm_power_consistency(p = args[:power],
-                                                                    algorithm = args[:algorithm])
+    algorithm) = JetReconstruction.get_algorithm_power_consistency(p = args[:power],
+                                                                   algorithm = args[:algorithm])
     cs = jet_reconstruct(events[1], R = args[:distance], p = p, algorithm = algorithm,
                          strategy = args[:strategy])
 

@@ -145,8 +145,8 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
 
     # Set consistent algorithm and power
     (p,
-     algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-                                                                    algorithm = algorithm)
+    algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
+                                                                   algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
 
     # Now setup timers and run the loop
