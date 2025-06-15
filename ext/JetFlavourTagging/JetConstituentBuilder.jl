@@ -4,7 +4,7 @@ using EDM4hep
 using StructArrays: StructVector
 
 # Define type aliases for clarity # TODO: Move to JetFlavourTagging file. But requires more checks.
-const JetConstituents = StructVector{ReconstructedParticle}
+const JetConstituents = StructVector{ReconstructedParticle, <:Any}
 const JetConstituentsData = Vector{Float32}
 
 """
@@ -20,7 +20,7 @@ A vector of JetConstituents, each containing the constituents for a specific jet
 
 """
     build_constituents_cluster(rps::JetConstituents, 
-                              indices::Vector{Vector{Int}}) -> Vector{JetConstituents}
+                               indices::Vector{Vector{Int}}) -> Vector{JetConstituents}
 
 Build the collection of constituents using cluster indices.
 
@@ -31,13 +31,8 @@ Build the collection of constituents using cluster indices.
 # Returns
 A vector of JetConstituents, each containing the constituents for a specific cluster.
 """
-function build_constituents_cluster(rps::JetConstituents, indices::Vector{Vector{Int64}})
-    jcs = Vector{JetConstituents}()
-    for jet_indices in indices
-        jc = rps[jet_indices]
-        push!(jcs, jc)
-    end
-    return jcs
+function build_constituents_cluster(rps, indices)
+    return map(jet_indices -> rps[jet_indices], indices)
 end
 
 """

@@ -1,5 +1,4 @@
 using EDM4hep
-using JetReconstruction
 using StructArrays: StructVector
 
 ### TODO's:
@@ -16,100 +15,22 @@ using StructArrays: StructVector
 # 7) Unit tests! (Extract one event!)
 
 # Define type aliases for clarity 
-const JetConstituents = StructVector{ReconstructedParticle}
+const JetConstituents = StructVector{ReconstructedParticle, <:Any}
 const JetConstituentsData = Vector{Float32}
 
-#############################################################################
-# Vector structs and operations
-#############################################################################
-
-"""
-    Vector2(x::Float64, y::Float64) -> Vector2
-
-Create a 2D vector with x and y components.
-
-Fields: 
-- `X`: The x component of the vector.
-- `Y`: The y component of the vector.
-"""
-struct Vector2
-    X::Float64
-    Y::Float64
-end
-
-"""
-    Vector3(x::Float64, y::Float64, z::Float64) -> Vector3
-
-Create a 3D vector with x, y, and z components.
-
-Fields:
-- `X`: The x component of the vector.
-- `Y`: The y component of the vector.
-- `Z`: The z component of the vector.
-"""
-struct Vector3
-    X::Float64
-    Y::Float64
-    Z::Float64
-end
-
-function v3_cross(v::Vector3, w::Vector3)
-    return Vector3(
-        v.Y*w.Z - v.Z*w.Y,
-        v.Z*w.X - v.X*w.Z,
-        v.X*w.Y - v.Y*w.X,
-    )
-end
-
-"""
-    v3_dot(v::Vector3, w::Vector3) -> Float64
-
-Calculate the dot product of two 3D vectors.
-
-# Returns
-The dot product of the two vectors.
-"""
-function v3_dot(v::Vector3, w::Vector3)
-    return v.X*w.X + v.Y*w.Y + v.Z*w.Z
-end
-
-"""
-    v3_norm(v::Vector3) -> Float64
-
-Calculate the norm (magnitude) of a 3D vector.
-
-# Returns
-The magnitude of the vector.
-"""
-function v3_norm(v::Vector3)
-    return sqrt(v.X^2 + v.Y^2 + v.Z^2)
-end
-
-"""
-    v3_unit(v::Vector3) -> Vector3
-
-Calculate the unit vector of a 3D vector.
-
-# Returns
-The unit vector in the same direction as the input vector.
-"""
-function v3_unit(v::Vector3)
-    n = v3_norm(v)
-    return Vector3(v.X/n, v.Y/n, v.Z/n)
-end
 
 #################################################################################
 # Kinematic variables
 #################################################################################
 """
-    get_Bz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+    get_Bz(jcs::Vector{JetConstituents}, 
             tracks::StructVector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
 
 Calculate the magnetic field Bz for each particle based on track curvature and momentum.
 # Returns 
 A vector of vectors of Bz values (one vector per jet, one value per constituent).
 """
-function get_Bz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_Bz(jcs::Vector{JetConstituents}, 
                 tracks::StructVector{EDM4hep.TrackState})
     # Constants
     c_light = 2.99792458e8  # speed of light in m/s
@@ -243,15 +164,7 @@ end
 Get the energy of each particle in each jet.
 """
 function get_e(jcs::Vector{JetConstituents})
-    result = Vector{JetConstituentsData}()
-    for jet_constituents in jcs
-        e_values = JetConstituentsData()
-        for p in jet_constituents
-            push!(e_values, p.energy)
-        end
-        push!(result, e_values)
-    end
-    return result
+    return [jet_constituents.energy for jet_constituents in jcs]
 end
 
 """
@@ -346,7 +259,7 @@ function get_type(jcs::Vector{JetConstituents})
 end
 
 """
-    get_phi0(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+    get_phi0(jcs::Vector{JetConstituents}, 
             tracks::StructVector{EDM4hep.TrackState}, 
             V::LorentzVector, Bz::Float32) -> Vector{JetConstituentsData}
 
@@ -362,7 +275,7 @@ This is a Julia implementation of the C++ function XPtoPar_phi.
 # Returns
 Vector of vectors of phi values (one vector per jet)
 """
-function get_phi0(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_phi0(jcs::Vector{JetConstituents}, 
                 tracks::StructVector{EDM4hep.TrackState}, 
                 V::LorentzVector, Bz::Float32)
 
@@ -406,7 +319,7 @@ function get_phi0(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
 end
 
 """
-    get_dxy(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+    get_dxy(jcs::Vector{JetConstituents}, 
             tracks::StructVector{EDM4hep.TrackState}, 
             V::LorentzVector, Bz::Float32) -> Vector{JetConstituentsData}
 
@@ -422,7 +335,7 @@ Reference: FCCAnalyses c++ function XPtoPar_dxy, adapted for jet constituents.
 # Returns
 Vector of vectors of dxy values (one vector per jet)
 """
-function get_dxy(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_dxy(jcs::Vector{JetConstituents}, 
                 tracks::StructVector{EDM4hep.TrackState}, 
                 V::LorentzVector, Bz::Float32)
 
@@ -472,7 +385,7 @@ function get_dxy(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
 end
 
 """
-    get_dz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+    get_dz(jcs::Vector{JetConstituents}, 
             tracks::StructVector{EDM4hep.TrackState}, 
             V::LorentzVector, Bz::Float32) -> Vector{JetConstituentsData}
 
@@ -488,7 +401,7 @@ Reference: FCCAnalyses c++ function XPtoPar_dz, adapted for jet constituents.
 # Returns
 Vector of vectors of dz values (one vector per jet)
 """
-function get_dz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_dz(jcs::Vector{JetConstituents}, 
                 tracks::StructVector{EDM4hep.TrackState}, 
                 V::LorentzVector, Bz::Float32)
 
@@ -552,7 +465,7 @@ function get_dz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
 end
 
 """
-    get_c(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+    get_c(jcs::Vector{JetConstituents}, 
             tracks::StructVector{EDM4hep.TrackState}, 
             Bz::Float32) -> Vector{JetConstituentsData}
 
@@ -567,7 +480,7 @@ Reference: FCCAnalyses c++ function XPtoPar_C, adapted for jet constituents.
 # Returns
 Vector of vectors of C values (one vector per jet)
 """
-function get_c(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_c(jcs::Vector{JetConstituents}, 
                 tracks::StructVector{EDM4hep.TrackState}, 
                 Bz::Float32)
 
@@ -594,7 +507,7 @@ function get_c(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
 end
 
 """
-    get_ct(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+    get_ct(jcs::Vector{JetConstituents}, 
             tracks::StructVector{EDM4hep.TrackState}, 
             Bz::Float32) -> Vector{JetConstituentsData}
 
@@ -609,7 +522,7 @@ Reference: FCCAnalyses c++ function XPtoPar_C, adapted for jet constituents.
 # Returns
 Vector of vectors of ct values (one vector per jet)
 """
-function get_ct(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_ct(jcs::Vector{JetConstituents}, 
                 tracks::StructVector{EDM4hep.TrackState}, 
                 Bz::Float32)
 
@@ -650,7 +563,7 @@ Get the d0 covariance (dxy/dxy) for each particle.
 # Returns
 Vector of vectors of dxydxy values (one vector per jet)
 """
-function get_dxydxy(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_dxydxy(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
 
     result = Vector{JetConstituentsData}()
@@ -682,7 +595,7 @@ Get the phi0-d0 covariance (dphi/dxy) for each particle.
 # Returns
 Vector of vectors of dphidxy values (one vector per jet)
 """
-function get_dphidxy(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_dphidxy(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
 
     result = Vector{JetConstituentsData}()
@@ -703,7 +616,7 @@ function get_dphidxy(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
 end
 
 """
-    get_dphidphi(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+    get_dphidphi(jcs::Vector{JetConstituents}, 
                 tracks::StructVector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
 
 Get the phi covariance (dphi/dphi) for each particle in each jet from its associated track.
@@ -716,7 +629,7 @@ Reference: FCCAnalyses c++ function get_phi0_cov, adapted for jet constituents.
 # Returns
 Vector of vectors of dphidphi values (one vector per jet)
 """
-function get_dphidphi(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_dphidphi(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
 
     result = Vector{JetConstituentsData}()
@@ -748,7 +661,7 @@ Get the d0-omega covariance (dxy/c) for each particle.
 # Returns
 Vector of vectors of dxyc values (one vector per jet)
 """
-function get_dxyc(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_dxyc(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
     
     result = Vector{JetConstituentsData}()
@@ -780,7 +693,7 @@ Get the phi0-omega covariance (phi/c) for each particle.
 # Returns
 Vector of vectors of phiomega values (one vector per jet)
 """
-function get_phic(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_phic(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
     
     result = Vector{JetConstituentsData}()
@@ -801,7 +714,7 @@ function get_phic(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
 end
 
 """
-    get_dptdpt(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+    get_dptdpt(jcs::Vector{JetConstituents}, 
                 tracks::StructVector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
 
 Get the omega covariance (dpt/dpt) for each particle in each jet from its associated track.
@@ -814,7 +727,7 @@ Reference: FCCAnalyses c++ function get_omega_cov, adapted for jet constituents.
 # Returns
 Vector of vectors of dptdpt values (one vector per jet)
 """
-function get_dptdpt(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_dptdpt(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
                     
     result = Vector{JetConstituentsData}()
@@ -846,7 +759,7 @@ Get the d0-z0 covariance (dxy/dz) for each particle.
 # Returns
 Vector of vectors of dxy/dz values (one vector per jet)
 """
-function get_dxydz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_dxydz(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
                     
     result = Vector{JetConstituentsData}()
@@ -878,7 +791,7 @@ Get the phi0-z0 covariance (dphi/dz) for each particle.
 # Returns
 Vector of vectors of phidz values (one vector per jet)
 """
-function get_phidz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_phidz(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
     
     result = Vector{JetConstituentsData}()
@@ -910,7 +823,7 @@ Get the omega-z0 covariance (c/dz) for each particle.
 # Returns
 Vector of vectors of dxdz values (one vector per jet)
 """
-function get_cdz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_cdz(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
     
     result = Vector{JetConstituentsData}()
@@ -942,7 +855,7 @@ Get the z0 covariance (dz/dz) for each particle.
 # Returns
 Vector of vectors of dxdz values (one vector per jet)
 """
-function get_dzdz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_dzdz(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
 
     result = Vector{JetConstituentsData}()
@@ -974,7 +887,7 @@ Get the d0-tanLambda covariance (dxy/ctgtheta) for each particle.
 # Returns
 Vector of vectors of dxyctgtheta values (one vector per jet)
 """
-function get_dxyctgtheta(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_dxyctgtheta(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
     
     result = Vector{JetConstituentsData}()
@@ -1006,7 +919,7 @@ Get the phi0-tanLambda covariance (phi/ctgtheta) for each particle.
 # Returns
 Vector of vectors of phictgtheta values (one vector per jet)
 """
-function get_phictgtheta(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_phictgtheta(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
     
     result = Vector{JetConstituentsData}()
@@ -1038,7 +951,7 @@ Get the omega-tanLambda covariance (c/ctgtheta) for each particle.
 # Returns
 Vector of vectors of cctgtheta values (one vector per jet)
 """
-function get_cctgtheta(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_cctgtheta(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
     
     result = Vector{JetConstituentsData}()
@@ -1070,7 +983,7 @@ Get the tanLambda-z0 covariance (dlambda/dz) for each particle.
 # Returns
 Vector of vectors of dlambdadz values (one vector per jet)
 """
-function get_dlambdadz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_dlambdadz(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
 
     result = Vector{JetConstituentsData}()
@@ -1091,7 +1004,7 @@ function get_dlambdadz(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
 end
 
 """
-    get_detadeta(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+    get_detadeta(jcs::Vector{JetConstituents}, 
                 tracks::StructVector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
 
 Get the tanLambda covariance (deta/deta) for each particle in each jet from its associated track.
@@ -1104,7 +1017,7 @@ Reference: FCCAnalyses c++ function get_tanlambda_cov, adapted for jet constitue
 # Returns
 Vector of vectors of detadeta values (one vector per jet)
 """
-function get_detadeta(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_detadeta(jcs::Vector{JetConstituents}, 
                     tracks::StructVector{EDM4hep.TrackState})
 
     result = Vector{JetConstituentsData}()
@@ -1131,12 +1044,12 @@ end
 
 """
     get_erel_log_cluster(jets::Vector{EEJet}, 
-                        jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}) -> Vector{JetConstituentsData}
+                        jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
 
 Calculate log of relative energy (log(E_const/E_jet)) for each constituent particle in clustered jets.
 """
 function get_erel_log_cluster(jets::Vector{EEJet}, 
-                            jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}})
+                            jcs::Vector{JetConstituents})
     # Define the result type
     result = Vector{JetConstituentsData}()
     
@@ -1166,12 +1079,12 @@ end
 
 """
     get_thetarel_cluster(jets::Vector{EEJet}, 
-                        jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}) -> Vector{JetConstituentsData}
+                        jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
 
 Calculate relative theta angle between constituent particle and clustered jet axis.
 """
 function get_thetarel_cluster(jets::Vector{EEJet}, 
-                            jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}})
+                            jcs::Vector{JetConstituents})
     result = Vector{JetConstituentsData}()
     
     for i in eachindex(jets)
@@ -1224,12 +1137,12 @@ end
 
 """
     get_phirel_cluster(jets::Vector{EEJet}, 
-                        jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}) -> Vector{JetConstituentsData}
+                        jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
 
 Calculate relative phi angle between constituent particle and clustered jet axis.
 """
 function get_phirel_cluster(jets::Vector{EEJet}, 
-                            jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}})
+                            jcs::Vector{JetConstituents})
     result = Vector{JetConstituentsData}()
     
     for i in eachindex(jets)
@@ -1414,7 +1327,7 @@ end
 #################################################################################
 
 """
-    get_mtof(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+    get_mtof(jcs::Vector{JetConstituents}, 
             track_L::AbstractArray{T} where T <: AbstractFloat,
             trackdata::StructVector{EDM4hep.Track},
             trackerhits::StructVector{EDM4hep.TrackerHit},
@@ -1439,7 +1352,7 @@ This is a Julia implementation of the C++ function get_mtof.
 # Returns
 Vector of vectors of mtof values (one vector per jet)
 """
-function get_mtof(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_mtof(jcs::Vector{JetConstituents}, 
                 track_L::AbstractArray{T} where T <: AbstractFloat,
                 trackdata::StructVector{EDM4hep.Track},
                 trackerhits::StructVector{EDM4hep.TrackerHit},
@@ -1515,7 +1428,7 @@ end
 ##################################################################################
 
 """
-    get_dndx(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+    get_dndx(jcs::Vector{JetConstituents}, 
             dNdx::StructVector{EDM4hep.Quantity},
             trackdata::StructVector{EDM4hep.Track}, 
             JetsConstituents_isChargedHad::Vector{JetConstituentsData}) -> Vector{JetConstituentsData}
@@ -1532,7 +1445,7 @@ Only charged hadrons have valid dN/dx values.
 # Returns
 Vector of vectors of dN/dx values (one vector per jet, one value per constituent)
 """
-function get_dndx(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function get_dndx(jcs::Vector{JetConstituents}, 
                 dNdx::StructVector{EDM4hep.Quantity},
                 trackdata::StructVector{EDM4hep.Track}, 
                 JetsConstituents_isChargedHad::Vector{JetConstituentsData})
@@ -1586,8 +1499,7 @@ function get_Sip2dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
     result = Vector{JetConstituentsData}()
     
     for i in eachindex(jets)
-        # p = Vector2(jets[i].px, jets[i].py)
-        p = [jets[i].px, jets[i].py]  # don't use vector2 anymore. comment out first. TODO: Remove Vector2 in later versions
+        p = [jets[i].px, jets[i].py]
         sip2d_values = JetConstituentsData()
         
         for j in eachindex(D0[i])
@@ -1688,8 +1600,7 @@ function get_Sip3dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
                             Bz::Float32)
     result = Vector{JetConstituentsData}()
     for i in eachindex(jets)
-        # p = Vector3(jets[i].px, jets[i].py, jets[i].pz)
-        p = [jets[i].px, jets[i].py, jets[i].pz]  # don't use vector3 anymore. comment out first. TODO: Remove Vector3 in later versions
+        p = [jets[i].px, jets[i].py, jets[i].pz]
         cprojs = JetConstituentsData()
         
         for j in eachindex(D0[i])
@@ -1773,8 +1684,7 @@ function get_JetDistVal_clusterV(jets::Vector{JetReconstruction.EEJet},
     result = Vector{JetConstituentsData}()
     
     for i in eachindex(jets)
-        # p_jet = Vector3(jets[i].px, jets[i].py, jets[i].pz)
-        p_jet = [jets[i].px, jets[i].py, jets[i].pz]  # don't use vector3 anymore. comment out first. TODO: Remove Vector3 in later versions
+        p_jet = [jets[i].px, jets[i].py, jets[i].pz]
         tmp = JetConstituentsData()
         ct = jcs[i]
         

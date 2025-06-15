@@ -7,8 +7,7 @@ using ONNXRunTime
 using StructArrays: StructVector
 using LorentzVectorHEP
 
-
-const JetConstituents = StructVector{ReconstructedParticle}
+const JetConstituents = StructVector{ReconstructedParticle, <:Any}
 const JetConstituentsData = Vector{Float32}
 
 # Building jet constituents from the EDM4hep event
@@ -36,15 +35,15 @@ end
 include("JetFlavourHelper.jl")
 
 # extract_features, setup_weaver, prepare_input_tensor, get_weights, get_weight
-function JetReconstruction.extract_features(jets::Vector{EEJet}, jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
-                                            tracks::StructVector{EDM4hep.TrackState}, bz::Float32, 
+function JetReconstruction.extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents}, 
+                                            tracks::AbstractVector{EDM4hep.TrackState}, bz::Float32, 
                                             track_L::AbstractArray{T} where T <: AbstractFloat, 
-                                            trackdata::StructVector{EDM4hep.Track}=StructVector{EDM4hep.Track}(), 
-                                            trackerhits::StructVector{EDM4hep.TrackerHit}=StructVector{EDM4hep.TrackerHit}(), 
-                                            gammadata::StructVector{EDM4hep.Cluster}=StructVector{EDM4hep.Cluster}(), 
-                                            nhdata::StructVector{EDM4hep.Cluster}=StructVector{EDM4hep.Cluster}(), 
-                                            calohits::StructVector{EDM4hep.CalorimeterHit}=StructVector{EDM4hep.CalorimeterHit}(), 
-                                            dNdx::StructVector{EDM4hep.Quantity}=StructVector{EDM4hep.Quantity}())
+                                            trackdata::AbstractVector{EDM4hep.Track}=AbstractVector{EDM4hep.Track}(), 
+                                            trackerhits::AbstractVector{EDM4hep.TrackerHit}=AbstractVector{EDM4hep.TrackerHit}(), 
+                                            gammadata::AbstractVector{EDM4hep.Cluster}=AbstractVector{EDM4hep.Cluster}(), 
+                                            nhdata::AbstractVector{EDM4hep.Cluster}=AbstractVector{EDM4hep.Cluster}(), 
+                                            calohits::AbstractVector{EDM4hep.CalorimeterHit}=AbstractVector{EDM4hep.CalorimeterHit}(), 
+                                            dNdx::AbstractVector{EDM4hep.Quantity}=AbstractVector{EDM4hep.Quantity}())
     return JetFlavourHelper.extract_features(jets, jcs, tracks, bz, track_L, trackdata, trackerhits, gammadata, nhdata, calohits, dNdx)
 end
 
@@ -52,7 +51,7 @@ function JetReconstruction.setup_weaver(onnx_path::String, json_path::String)
     return JetFlavourHelper.setup_weaver(onnx_path, json_path) # TODO: Change this to setup_onnx_runtime
 end 
 
-function JetReconstruction.prepare_input_tensor(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function JetReconstruction.prepare_input_tensor(jcs::Vector{AbstractVector{EDM4hep.ReconstructedParticle}}, 
                             jets::Vector{EEJet}, 
                             config::Dict, 
                             feature_data::Dict)
@@ -60,7 +59,7 @@ function JetReconstruction.prepare_input_tensor(jcs::Vector{StructVector{EDM4hep
 end
 
 function JetReconstruction.get_weights(slot::Int, vars::Dict{String, Dict{String, Vector{Vector{Float32}}}}, 
-                                        jets::Vector{EEJet}, jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+                                        jets::Vector{EEJet}, jcs::Vector{AbstractVector{EDM4hep.ReconstructedParticle}}, 
                                         json_config::Dict, model::ONNXRunTime.InferenceSession)
     return JetFlavourHelper.get_weights(slot, vars, jets, jcs, json_config, model)
 end

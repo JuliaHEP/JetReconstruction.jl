@@ -5,7 +5,7 @@ using ONNXRunTime
 # using StaticArrays
 # using LinearAlgebra
 using StructArrays: StructVector
-## using JetReconstruction  # not needed when included in JetReconstruction module
+using JetReconstruction
 using EDM4hep
 using LorentzVectorHEP
 
@@ -81,7 +81,7 @@ Prepare input tensors for the neural network from jet constituents.
 # Returns
 Dictionary of input tensors
 """
-function prepare_input_tensor(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+function prepare_input_tensor(jcs::Vector{<:JetConstituents}, 
                             jets::Vector{EEJet}, 
                             config::Dict, 
                             feature_data::Dict)
@@ -191,7 +191,7 @@ Compute jet flavor probabilities for each jet.
 Vector of flavor probabilities for each jet
 """
 function get_weights(slot::Int, vars::Dict{String, Dict{String, Vector{Vector{Float32}}}}, 
-                    jets::Vector{EEJet}, jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+                    jets::Vector{EEJet}, jcs::Vector{<:JetConstituents}, 
                     json_config::Dict, model::ONNXRunTime.InferenceSession)
     
     # Prepare input tensor
@@ -313,15 +313,15 @@ end
 # TODO: Update the arguements
 # TODO: Add primary vertex as an argument (from MC Particle)
 """
-    extract_features(jets::Vector{EEJet}, jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
-                    tracks::StructVector{EDM4hep.TrackState}, bz::Float32, 
+    extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents}, 
+                    tracks::AbstractVector{EDM4hep.TrackState}, bz::Float32, 
                     track_L::AbstractArray{T} where T <: AbstractFloat, 
-                    trackdata::StructVector{EDM4hep.Track}=StructVector{EDM4hep.Track}(), 
-                    trackerhits::StructVector{EDM4hep.TrackerHit}=StructVector{EDM4hep.TrackerHit}(), 
-                    gammadata::StructVector{EDM4hep.Cluster}=StructVector{EDM4hep.Cluster}(), 
-                    nhdata::StructVector{EDM4hep.Cluster}=StructVector{EDM4hep.Cluster}(), 
-                    calohits::StructVector{EDM4hep.CalorimeterHit}=StructVector{EDM4hep.CalorimeterHit}(), 
-                    dNdx::StructVector{EDM4hep.Quantity}=StructVector{EDM4hep.Quantity}()) -> Dict
+                    trackdata::AbstractVector{EDM4hep.Track}=AbstractVector{EDM4hep.Track}(), 
+                    trackerhits::AbstractVector{EDM4hep.TrackerHit}=AbstractVector{EDM4hep.TrackerHit}(), 
+                    gammadata::AbstractVector{EDM4hep.Cluster}=AbstractVector{EDM4hep.Cluster}(), 
+                    nhdata::AbstractVector{EDM4hep.Cluster}=AbstractVector{EDM4hep.Cluster}(), 
+                    calohits::AbstractVector{EDM4hep.CalorimeterHit}=AbstractVector{EDM4hep.CalorimeterHit}(), 
+                    dNdx::AbstractVector{EDM4hep.Quantity}=AbstractVector{EDM4hep.Quantity}()) -> Dict
 
 Extract all required features for jet flavor tagging.
 
@@ -335,15 +335,15 @@ Extract all required features for jet flavor tagging.
 # Returns
 Dictionary containing all extracted features organized by input type
 """
-function extract_features(jets::Vector{EEJet}, jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
-                        tracks::StructVector{EDM4hep.TrackState}, bz::Float32, 
+function extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents}, 
+                        tracks::AbstractVector{EDM4hep.TrackState}, bz::Float32, 
                         track_L::AbstractArray{T} where T <: AbstractFloat, 
-                        trackdata::StructVector{EDM4hep.Track}=StructVector{EDM4hep.Track}(), 
-                        trackerhits::StructVector{EDM4hep.TrackerHit}=StructVector{EDM4hep.TrackerHit}(), 
-                        gammadata::StructVector{EDM4hep.Cluster}=StructVector{EDM4hep.Cluster}(), 
-                        nhdata::StructVector{EDM4hep.Cluster}=StructVector{EDM4hep.Cluster}(), 
-                        calohits::StructVector{EDM4hep.CalorimeterHit}=StructVector{EDM4hep.CalorimeterHit}(), 
-                        dNdx::StructVector{EDM4hep.Quantity}=StructVector{EDM4hep.Quantity}())
+                        trackdata::AbstractVector{EDM4hep.Track}=AbstractVector{EDM4hep.Track}(), 
+                        trackerhits::AbstractVector{EDM4hep.TrackerHit}=AbstractVector{EDM4hep.TrackerHit}(), 
+                        gammadata::AbstractVector{EDM4hep.Cluster}=AbstractVector{EDM4hep.Cluster}(), 
+                        nhdata::AbstractVector{EDM4hep.Cluster}=AbstractVector{EDM4hep.Cluster}(), 
+                        calohits::AbstractVector{EDM4hep.CalorimeterHit}=AbstractVector{EDM4hep.CalorimeterHit}(), 
+                        dNdx::AbstractVector{EDM4hep.Quantity}=AbstractVector{EDM4hep.Quantity}())
     
     # Primary vertex (0,0,0,0) for displacement calculations
     # TODO: Replace with actual primary vertex if available. Right now, the EDM4hep has bugs that don't allow me to get the f32 value.
