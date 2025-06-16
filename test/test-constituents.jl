@@ -19,7 +19,7 @@ events = read_final_state_particles(input_file)
 # Event to pick
 event_no = 1
 
-cluster_seq = jet_reconstruct(events[event_no], p = 1, R = 1.0)
+cluster_seq = jet_reconstruct(events[event_no]; algorithm = JetAlgorithm.Kt, R = 1.0)
 
 # Retrieve the exclusive pj_jets, but as `PseudoJet` types
 pj_jets = inclusive_jets(cluster_seq; ptmin = 5.0, T = PseudoJet)
