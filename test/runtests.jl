@@ -42,6 +42,9 @@ function main()
     # Substructure tests
     include("test-substructure.jl")
 
+    # SoftKiller tests
+    include("test-softkiller.jl")
+
     # Test with Aqua (https://juliatesting.github.io/Aqua.jl/stable/)
     include("test-aqua.jl")
 end
