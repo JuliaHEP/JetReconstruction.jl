@@ -27,7 +27,7 @@ algorithm and generalised $`k_\text{T}`$ for $`e^+e^-`$.
 The simplest interface is to call:
 
 ```julia
-cs = jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0, [p = nothing,] [strategy = RecoStrategy.Best])
+cs = jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.AntiKt, R = 1.0)
 ```
 
 - `particles` - a one dimensional array (vector) of input particles for the clustering
@@ -35,17 +35,17 @@ cs = jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.Anti
   - These methods have to be defined in the namespace of this package, i.e., `JetReconstruction.pt2(::T)`
   - The `PseudoJet` or `EEJet` types from this package, a 4-vector from `LorentzVectorHEP`, or a `ReconstructedParticle` from [EDM4hep](https://github.com/peremato/EDM4hep.jl) are suitable (and have the appropriate definitions)
 - `algorithm` is the name of the jet algorithm to be used (from the `JetAlgorithm` enum)
-  - `JetAlgorithm.AntiKt` anti-$`{k}_\text{T}`$ clustering (default)
+  - `JetAlgorithm.AntiKt` anti-$`{k}_\text{T}`$ clustering
   - `JetAlgorithm.CA` Cambridge/Aachen clustering
   - `JetAlgorithm.Kt` inclusive $k_\text{T}$
   - `JetAlgorithm.GenKt` generalised $k_\text{T}$ (which also requires specification of `p`)
   - `JetAlgorithm.Durham` the $e^+e-$ $k_\text{T}$ algorithm, also known as the Durham algorithm
-  - `JetAlgorithm.EEKt` the $e^+e-$ generalised $k_\text{T}$ algorithm
+  - `JetAlgorithm.EEKt` the $e^+e-$ generalised $k_\text{T}$ algorithm (which also requires specification of `p`)
 - `R` - the cone size parameter; no particles more geometrically distance than `R` will be merged (default 1.0; note this parameter is ignored for the Durham algorithm)
-- `p` - algorithm power which must be provided for generalised algorithms, for other algorithms this parameter is ignored
-- `strategy` - the algorithm strategy to adopt, as described below (default `RecoStrategy.Best`)
 
 The object returned is a `ClusterSequence`, which internally tracks all merge steps.
+
+For a more complete description of all possible parameters please [refer to the documentation](https://juliahep.github.io/JetReconstruction.jl/stable/#Reconstruction-Interface).
 
 To obtain the final inclusive jets, use the `inclusive_jets` method:
 
