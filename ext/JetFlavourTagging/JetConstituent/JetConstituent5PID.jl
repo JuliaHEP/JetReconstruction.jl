@@ -11,7 +11,7 @@ using StructArrays: StructVector
 # get_isNeutralHad - Check if constituent is neutral hadron
 
 """
-    get_isMu(jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
+    get_isMu(jcs::Vector{<:JetConstituents}) -> Vector{JetConstituentsData}
 
 Check if each constituent particle is a muon.
 
@@ -46,7 +46,7 @@ function get_isMu(jcs::Vector{<:JetConstituents})
 end
 
 """
-    get_isEl(jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
+    get_isEl(jcs::Vector{<:JetConstituents}) -> Vector{JetConstituentsData}
 
 Check if each constituent particle is an electron.
 
@@ -82,7 +82,7 @@ function get_isEl(jcs::Vector{<:JetConstituents})
 end
 
 """
-    get_isChargedHad(jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
+    get_isChargedHad(jcs::Vector{<:JetConstituents}) -> Vector{JetConstituentsData}
 
 Check if each constituent particle is a charged hadron.
     
@@ -92,7 +92,7 @@ Check if each constituent particle is a charged hadron.
 # Returns
 Vector of vectors of is charged hadron boolean values as Float32.
 """
-function get_isChargedHad(jcs::Vector{JetConstituents})
+function get_isChargedHad(jcs::Vector{<:JetConstituents})
     n_jets = length(jcs)
     result = Vector{Vector{Float32}}(undef, n_jets)
     
@@ -117,7 +117,7 @@ function get_isChargedHad(jcs::Vector{JetConstituents})
 end
 
 """
-    get_isGamma(jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
+    get_isGamma(jcs::Vector{<:JetConstituents}) -> Vector{JetConstituentsData}
 
 Check if each constituent particle is a photon (gamma) (PDG 22).
 
@@ -149,7 +149,7 @@ function get_isGamma(jcs::Vector{<:JetConstituents})
 end
 
 """
-    get_isNeutralHad(jcs::Vector{JetConstituents}) -> Vector{JetConstituentsData}
+    get_isNeutralHad(jcs::Vector{<:JetConstituents}) -> Vector{JetConstituentsData}
 
 Check if each constituent particle is a neutral hadron (PDG 130).
 
