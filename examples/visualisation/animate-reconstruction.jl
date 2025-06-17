@@ -56,10 +56,8 @@ function main()
         @warn "Neither algorithm nor power specified, defaulting to AntiKt"
         args[:algorithm] = JetAlgorithm.AntiKt
     end
-    # Set consistent algorithm and power
-    (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = args[:power],
-                                                                       algorithm = args[:algorithm])
-    cs = jet_reconstruct(events[1], R = args[:distance], p = p, algorithm = algorithm,
+    cs = jet_reconstruct(events[1], R = args[:distance], p = args[:power],
+                         algorithm = args[:algorithm],
                          strategy = args[:strategy])
 
     animatereco(cs, args[:output]; azimuth = (1.8, 3.0), elevation = 0.5,

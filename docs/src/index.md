@@ -31,8 +31,7 @@ jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, R = 0.4,
 ```
 
 Where `particles` is a collection of 4-vector objects (see [Input Particle
-Types](@ref)) to reconstruct and the algorithm is either given explicitly or
-implied by the power value.
+Types](@ref)) to reconstruct and the algorithm is given explicitly.
 
 For the case of generalised ``k_T`` (for ``pp`` and ``e^+e^-``) both the
 algorithm (`GenKt`, `EEKt`) and `p` are needed.
@@ -57,12 +56,6 @@ Each known algorithm is referenced using a `JetAlgorithm` scoped enum value.
 | generalised ``k_\text{T}`` | `JetAlgorithm.GenKt` | For $pp$, value of `p` must also be specified |
 | ``e^+e-`` ``k_\text{T}`` / Durham | `JetAlgorithm.Durham` | `R` value ignored and can be omitted |
 | generalised ``e^+e-`` ``k_\text{T}`` | `JetAlgorithm.EEKt` | For ``e^+e^-``, value of `p` must also be specified |
-
-#### ``pp`` Algorithms
-
-For the three ``pp`` algorithms with fixed `p` values, the `p` value can be
-given instead of the algorithm name. However, this should be considered
-*deprecated* and will be removed in a future release.
 
 ### Strategy
 

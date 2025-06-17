@@ -35,7 +35,7 @@ for m in keys(methods)
 
     @testset "$testname" begin
         for (ievt, evt) in enumerate(events)
-            cluster_seq = jet_reconstruct(evt, p = 0, R = 1.0)
+            cluster_seq = jet_reconstruct(evt; algorithm = JetAlgorithm.CA, R = 1.0)
             jets = inclusive_jets(cluster_seq; ptmin = 5.0, T = PseudoJet)
             groomed = sort!([methods[m](jet, cluster_seq; groomer...)
                              for jet in jets], by = JetReconstruction.pt2, rev = true)
