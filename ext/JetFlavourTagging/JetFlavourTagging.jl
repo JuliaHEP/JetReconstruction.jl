@@ -51,7 +51,7 @@ function JetReconstruction.setup_weaver(onnx_path::String, json_path::String)
     return JetFlavourHelper.setup_weaver(onnx_path, json_path) # TODO: Change this to setup_onnx_runtime
 end 
 
-function JetReconstruction.prepare_input_tensor(jcs::Vector{AbstractVector{EDM4hep.ReconstructedParticle}}, 
+function JetReconstruction.prepare_input_tensor(jcs::Vector{<:JetConstituents}, 
                             jets::Vector{EEJet}, 
                             config::Dict, 
                             feature_data::Dict)
@@ -59,7 +59,7 @@ function JetReconstruction.prepare_input_tensor(jcs::Vector{AbstractVector{EDM4h
 end
 
 function JetReconstruction.get_weights(slot::Int, vars::Dict{String, Dict{String, Vector{Vector{Float32}}}}, 
-                                        jets::Vector{EEJet}, jcs::Vector{AbstractVector{EDM4hep.ReconstructedParticle}}, 
+                                        jets::Vector{EEJet}, jcs::Vector{<:JetConstituents}, 
                                         json_config::Dict, model::ONNXRunTime.InferenceSession)
     return JetFlavourHelper.get_weights(slot, vars, jets, jcs, json_config, model)
 end

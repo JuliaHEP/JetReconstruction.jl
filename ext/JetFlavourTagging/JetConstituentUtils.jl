@@ -82,7 +82,7 @@ Get the energy of each particle in each jet.
 # Returns
 A vector of vectors of energy values
 """
-function get_e(jcs::Vector{JetConstituents})
+function get_e(jcs::Vector{<:JetConstituents})
     return [jet_constituents.energy for jet_constituents in jcs]
 end
 
@@ -1028,7 +1028,7 @@ function get_dzdz(jcs::Vector{<:JetConstituents},
 end
 
 """
-    get_dxyctgtheta(jcs::Vector{JetConstituents}, tracks::Vector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
+    get_dxyctgtheta(jcs::Vector{<:JetConstituents}, tracks::Vector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
 
 Get the d0-tanLambda covariance (dxy/ctgtheta) for each particle.
 
@@ -1067,7 +1067,7 @@ function get_dxyctgtheta(jcs::Vector{<:JetConstituents},
 end
 
 """
-    get_phictgtheta(jcs::Vector{JetConstituents}, tracks::Vector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
+    get_phictgtheta(jcs::Vector{<:JetConstituents}, tracks::Vector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
 
 Get the phi0-tanLambda covariance (phi/ctgtheta) for each particle.
 
@@ -1078,7 +1078,7 @@ Get the phi0-tanLambda covariance (phi/ctgtheta) for each particle.
 # Returns
 Vector of vectors of phictgtheta values 
 """
-function get_phictgtheta(jcs::Vector{JetConstituents}, 
+function get_phictgtheta(jcs::Vector{<:JetConstituents}, 
                          tracks::StructVector{EDM4hep.TrackState})
     
     n_jets = length(jcs)
@@ -1106,7 +1106,7 @@ function get_phictgtheta(jcs::Vector{JetConstituents},
 end
 
 """
-    get_cctgtheta(jcs::Vector{JetConstituents}, tracks::Vector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
+    get_cctgtheta(jcs::Vector{<:JetConstituents}, tracks::Vector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
 
 Get the omega-tanLambda covariance (c/ctgtheta) for each particle.
 
@@ -1117,7 +1117,7 @@ Get the omega-tanLambda covariance (c/ctgtheta) for each particle.
 # Returns
 Vector of vectors of cctgtheta values
 """
-function get_cctgtheta(jcs::Vector{JetConstituents}, 
+function get_cctgtheta(jcs::Vector{<:JetConstituents}, 
                        tracks::StructVector{EDM4hep.TrackState})
 
     n_jets = length(jcs)
@@ -1145,7 +1145,7 @@ function get_cctgtheta(jcs::Vector{JetConstituents},
 end
 
 """
-    get_dlambdadz(jcs::Vector{JetConstituents}, tracks::Vector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
+    get_dlambdadz(jcs::Vector{<:JetConstituents}, tracks::Vector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
 
 Get the tanLambda-z0 covariance (dlambda/dz) for each particle.
 
@@ -1156,7 +1156,7 @@ Get the tanLambda-z0 covariance (dlambda/dz) for each particle.
 # Returns
 Vector of vectors of dlambdadz values 
 """
-function get_dlambdadz(jcs::Vector{JetConstituents}, 
+function get_dlambdadz(jcs::Vector{<:JetConstituents}, 
                        tracks::StructVector{EDM4hep.TrackState})
 
     n_jets = length(jcs)
@@ -1184,7 +1184,7 @@ function get_dlambdadz(jcs::Vector{JetConstituents},
 end
 
 """
-    get_detadeta(jcs::Vector{JetConstituents}, 
+    get_detadeta(jcs::Vector{<:JetConstituents}, 
                  tracks::StructVector{EDM4hep.TrackState}) -> Vector{JetConstituentsData}
 
 Get the tanLambda covariance (deta/deta) for each particle in each jet from its associated track.
@@ -1197,7 +1197,7 @@ Reference: FCCAnalyses c++ function get_tanlambda_cov, adapted for jet constitue
 # Returns
 Vector of vectors of detadeta values
 """
-function get_detadeta(jcs::Vector{JetConstituents}, 
+function get_detadeta(jcs::Vector{<:JetConstituents}, 
                       tracks::StructVector{EDM4hep.TrackState})
 
     n_jets = length(jcs)
