@@ -110,37 +110,45 @@ Calculate relative theta angle between constituent particle and clustered jet ax
 Vector containing relative theta angle values for each constituent in the jets
 """
 function get_thetarel_cluster(jets::Vector{EEJet}, 
-                            jcs::Vector{JetConstituents})
-    result = Vector{JetConstituentsData}()
+                              jcs::Vector{<:JetConstituents})
+    n_jets = length(jets)
+    result = Vector{Vector{Float32}}(undef, n_jets)
     
-    for i in eachindex(jets)
-        jet_csts = Float32[]
-        
+    @inbounds for i in 1:n_jets
         jet = jets[i]
         px, py, pz = jet.px, jet.py, jet.pz
-        theta_jet = (px == 0.0f0 && py == 0.0f0 && pz == 0.0f0) ? 0.0f0 : atan(sqrt(px^2 + py^2), pz)
-        phi_jet = (px == 0.0f0 && py == 0.0f0) ? 0.0f0 : atan(py, px)
-
+        
+        # Pre-compute jet angles
+        pt_jet = sqrt(px^2 + py^2)
+        theta_jet = atan(pt_jet, pz)
+        phi_jet = atan(py, px)
+        
+        # Pre-compute trig values using sincos
+        sin_phi, cos_phi = sincos(-phi_jet)
+        sin_theta, cos_theta = sincos(-theta_jet)
+        
         csts = jcs[i]
-        for jc in csts
-            p_const_x = jc.momentum.x
-            p_const_y = jc.momentum.y
-            p_const_z = jc.momentum.z
+        mom_x = csts.momentum.x
+        mom_y = csts.momentum.y
+        mom_z = csts.momentum.z
+        n_constituents = length(mom_x)
+        jet_csts = Vector{Float32}(undef, n_constituents)
+        
+        @turbo for j in 1:n_constituents
+            # First rotation
+            p_rot_x = mom_x[j] * cos_phi - mom_y[j] * sin_phi
+            p_rot_y = mom_x[j] * sin_phi + mom_y[j] * cos_phi
+            
+            # Second rotation
+            p_rot2_x = p_rot_x * cos_theta - mom_z[j] * sin_theta
+            p_rot2_z = p_rot_x * sin_theta + mom_z[j] * cos_theta
 
-            # rotate z by -phi_jet, then rotate y by -theta_jet
-            # First rotate around z-axis by -phi_jet
-            p_rot_x = p_const_x * cos(-phi_jet) - p_const_y * sin(-phi_jet)
-            p_rot_y = p_const_x * sin(-phi_jet) + p_const_y * cos(-phi_jet)
-            p_rot_z = p_const_z
-            # Then rotate around y-axis by -theta_jet
-            p_rot2_x = p_rot_x * cos(-theta_jet) - p_rot_z * sin(-theta_jet)
-            p_rot2_z = p_rot_x * sin(-theta_jet) + p_rot_z * cos(-theta_jet)
-            p_rot2_y = p_rot_y
-            # Calculate theta in rotated frame
-            theta_rel = (p_rot2_x == 0.0f0 && p_rot2_y == 0.0f0 && p_rot2_z == 0.0f0) ? 0.0f0 : atan(sqrt(p_rot2_x^2 + p_rot2_y^2), p_rot2_z)
-            push!(jet_csts, theta_rel)
+            pt_rot_sq = p_rot2_x^2 + p_rot_y^2
+            pt_rot = sqrt(pt_rot_sq)
+            jet_csts[j] = atan(pt_rot, p_rot2_z)
         end
-        push!(result, jet_csts)
+        
+        result[i] = jet_csts
     end
     
     return result
@@ -160,38 +168,43 @@ Calculate relative phi angle between constituent particle and clustered jet axis
 Vector containing relative phi angle values for each constituent in the jets
 """
 function get_phirel_cluster(jets::Vector{EEJet}, 
-                            jcs::Vector{JetConstituents})
-    result = Vector{JetConstituentsData}()
+                            jcs::Vector{<:JetConstituents})
+    n_jets = length(jets)
+    result = Vector{Vector{Float32}}(undef, n_jets)
     
-    for i in eachindex(jets)
-        jet_csts = Float32[]
-
+    @inbounds for i in 1:n_jets
         jet = jets[i]
-        px, py, pz= jet.px, jet.py, jet.pz
-        theta_jet = (px == 0.0f0 && py == 0.0f0 && pz == 0.0f0) ? 0.0f0 : atan(sqrt(px^2 + py^2), pz)
-        phi_jet = (px == 0.0f0 && py == 0.0f0) ? 0.0f0 : atan(py, px)
+        px, py, pz = jet.px, jet.py, jet.pz
+        
+        # Pre-compute jet angles
+        pt_jet = sqrt(px^2 + py^2)
+        theta_jet = atan(pt_jet, pz)
+        phi_jet = atan(py, px)
+        
+        # Pre-compute trig values using sincos
+        sin_phi, cos_phi = sincos(-phi_jet)
+        sin_theta, cos_theta = sincos(-theta_jet)
         
         csts = jcs[i]
-        for jc in csts
-            p_const_x = jc.momentum.x
-            p_const_y = jc.momentum.y
-            p_const_z = jc.momentum.z
-
-            # rotate z by -phi_jet, then rotate y by -theta_jet
-            # First rotate around z-axis by -phi_jet
-            p_rot_x = p_const_x * cos(-phi_jet) - p_const_y * sin(-phi_jet)
-            p_rot_y = p_const_x * sin(-phi_jet) + p_const_y * cos(-phi_jet)
-            p_rot_z = p_const_z
-            # Then rotate around y-axis by -theta_jet
-            p_rot2_x = p_rot_x * cos(-theta_jet) - p_rot_z * sin(-theta_jet)
-            p_rot2_z = p_rot_x * sin(-theta_jet) + p_rot_z * cos(-theta_jet) # Not needed.
-            p_rot2_y = p_rot_y
+        mom_x = csts.momentum.x
+        mom_y = csts.momentum.y
+        mom_z = csts.momentum.z
+        n_constituents = length(mom_x)
+        jet_csts = Vector{Float32}(undef, n_constituents)
+        
+        @turbo for j in 1:n_constituents
+            # First rotation around z-axis by -phi_jet
+            p_rot_x = mom_x[j] * cos_phi - mom_y[j] * sin_phi
+            p_rot_y = mom_x[j] * sin_phi + mom_y[j] * cos_phi
+            
+            # Second rotation around y-axis by -theta_jet
+            p_rot2_x = p_rot_x * cos_theta - mom_z[j] * sin_theta
+            
             # Calculate phi in rotated frame
-            phi_rel = (p_rot2_x == 0.0f0 && p_rot2_y == 0.0f0) ? 0.0f0 : atan(p_rot2_y, p_rot2_x)
-            push!(jet_csts, phi_rel)
+            jet_csts[j] = atan(p_rot_y, p_rot2_x)
         end
         
-        push!(result, jet_csts)
+        result[i] = jet_csts
     end
     
     return result
@@ -210,44 +223,53 @@ Calculate relative theta and phi angles between constituent particles and cluste
 # Returns
 Tuple of Vectors containing relative theta and phi angle values for each constituent in the jets
 """
-function get_thetaphirel_cluster(jets::Vector{EEJet}, 
-                            jcs::Vector{JetConstituents})
-    result = Tuple{Vector{JetConstituentsData}, Vector{JetConstituentsData}}(Vector{JetConstituentsData}(), Vector{JetConstituentsData}())
+function get_thetarel_phirel_cluster(jets::Vector{EEJet}, 
+                                     jcs::Vector{<:JetConstituents})
+    n_jets = length(jets)
+    theta_result = Vector{Vector{Float32}}(undef, n_jets)
+    phi_result = Vector{Vector{Float32}}(undef, n_jets)
     
-    for i in eachindex(jets)
-        theta_csts = Float32[]
-        phi_csts = Float32[]
-
+    @inbounds for i in 1:n_jets
         jet = jets[i]
-        px, py, pz= jet.px, jet.py, jet.pz
-        theta_jet = (px == 0.0f0 && py == 0.0f0 && pz == 0.0f0) ? 0.0f0 : atan(sqrt(px^2 + py^2), pz)
-        phi_jet = (px == 0.0f0 && py == 0.0f0) ? 0.0f0 : atan(py, px)
+        px, py, pz = jet.px, jet.py, jet.pz
+        
+        # Pre-compute jet angles
+        pt_jet = sqrt(px^2 + py^2)
+        theta_jet = atan(pt_jet, pz)
+        phi_jet = atan(py, px)
+        
+        # Pre-compute trig values using sincos
+        sin_phi, cos_phi = sincos(-phi_jet)
+        sin_theta, cos_theta = sincos(-theta_jet)
         
         csts = jcs[i]
-        for jc in csts
-            p_const_x = jc.momentum.x
-            p_const_y = jc.momentum.y
-            p_const_z = jc.momentum.z
-
-            # rotate z by -phi_jet, then rotate y by -theta_jet
-            # First rotate around z-axis by -phi_jet
-            p_rot_x = p_const_x * cos(-phi_jet) - p_const_y * sin(-phi_jet)
-            p_rot_y = p_const_x * sin(-phi_jet) + p_const_y * cos(-phi_jet)
-            p_rot_z = p_const_z
-            # Then rotate around y-axis by -theta_jet
-            p_rot2_x = p_rot_x * cos(-theta_jet) - p_rot_z * sin(-theta_jet)
-            p_rot2_z = p_rot_x * sin(-theta_jet) + p_rot_z * cos(-theta_jet) # Not needed.
+        mom_x = csts.momentum.x
+        mom_y = csts.momentum.y
+        mom_z = csts.momentum.z
+        n_constituents = length(mom_x)
+        
+        jet_theta = Vector{Float32}(undef, n_constituents)
+        jet_phi = Vector{Float32}(undef, n_constituents)
+        
+        @turbo for j in 1:n_constituents
+            # First rotation around z-axis by -phi_jet
+            p_rot_x = mom_x[j] * cos_phi - mom_y[j] * sin_phi
+            p_rot_y = mom_x[j] * sin_phi + mom_y[j] * cos_phi
+            
+            # Second rotation around y-axis by -theta_jet
+            p_rot2_x = p_rot_x * cos_theta - mom_z[j] * sin_theta
+            p_rot2_z = p_rot_x * sin_theta + mom_z[j] * cos_theta
             p_rot2_y = p_rot_y
-            # Calculate in rotated frame
-            theta_rel = (p_rot2_x == 0.0f0 && p_rot2_y == 0.0f0 && p_rot2_z == 0.0f0) ? 0.0f0 : atan(sqrt(p_rot2_x^2 + p_rot2_y^2), p_rot2_z)
-            phi_rel = (p_rot2_x == 0.0f0 && p_rot2_y == 0.0f0) ? 0.0f0 : atan(p_rot2_y, p_rot2_x)
-            push!(theta_csts, theta_rel)
-            push!(phi_csts, phi_rel)
+            
+            # Calculate both theta and phi in rotated frame
+            pt_rot = sqrt(p_rot2_x^2 + p_rot2_y^2)
+            jet_theta[j] = atan(pt_rot, p_rot2_z)
+            jet_phi[j] = atan(p_rot2_y, p_rot2_x)
         end
-
-        push!(result[1], theta_csts)
-        push!(result[2], phi_csts)
+        
+        theta_result[i] = jet_theta
+        phi_result[i] = jet_phi
     end
     
-    return result
+    return (theta_result, phi_result)
 end
