@@ -42,6 +42,9 @@ function main()
     # Substructure tests
     include("test-substructure.jl")
 
+    # Jet flavour tagging extension tests
+    include("test-jet-flavour-tagging.jl")
+
     # Test with Aqua (https://juliatesting.github.io/Aqua.jl/stable/)
     include("test-aqua.jl")
 end

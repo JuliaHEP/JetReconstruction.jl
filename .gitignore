@@ -36,4 +36,3 @@ benchmark/*
 /profile/*
 /statprof/*
 /debug/*
-/examples/flavour-tagging/data/events_080263084.root
