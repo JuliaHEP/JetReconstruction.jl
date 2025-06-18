@@ -3,10 +3,10 @@
 include("common.jl")
 
 function do_test_compare_types(strategy::RecoStrategy.Strategy;
-                               algname = "Unknown",
+                               algorithm::JetAlgorithm.Algorithm,
                                ptmin::Float64 = 5.0,
                                distance::Float64 = 0.4,
-                               power::Integer = -1)
+                               power::Union{Real, Nothing} = nothing)
 
     # Strategy
     if (strategy == RecoStrategy.N2Plain)
@@ -25,6 +25,7 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
     jet_collection = FinalJets[]
     for (ievt, event) in enumerate(events)
         finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance,
+                                                                 algorithm = algorithm,
                                                                  p = power), ptmin = ptmin))
         sort_jets!(finaljets)
         push!(jet_collection, FinalJets(ievt, finaljets))
@@ -36,12 +37,13 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
     jet_collection_lv = FinalJets[]
     for (ievt, event) in enumerate(events_lv)
         finaljets = final_jets(inclusive_jets(jet_reconstruction(event, R = distance,
+                                                                 algorithm = algorithm,
                                                                  p = power), ptmin = ptmin))
         sort_jets!(finaljets)
         push!(jet_collection_lv, FinalJets(ievt, finaljets))
     end
 
-    @testset "Jet Reconstruction Compare PseudoJet and LorentzVector, Strategy $strategy_name, Algorithm $algname" begin
+    @testset "Jet Reconstruction Compare PseudoJet and LorentzVector, Strategy $strategy_name, Algorithm $algorithm" begin
         # Here we test that inputting LorentzVector gave the same results as PseudoJets
         for (ievt, (event, event_lv)) in enumerate(zip(jet_collection, jet_collection_lv))
             @testset "Event $(ievt)" begin
@@ -57,5 +59,5 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
     end
 end
 
-do_test_compare_types(RecoStrategy.N2Plain, algname = pp_algorithms[-1], power = -1)
-do_test_compare_types(RecoStrategy.N2Tiled, algname = pp_algorithms[-1], power = -1)
+do_test_compare_types(RecoStrategy.N2Plain, algorithm = JetAlgorithm.AntiKt)
+do_test_compare_types(RecoStrategy.N2Tiled, algorithm = JetAlgorithm.AntiKt)

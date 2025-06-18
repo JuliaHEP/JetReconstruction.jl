@@ -24,8 +24,8 @@ happens inside the JetReconstruction package itself.
 Final jets can be serialised if the "dump" option is given
 """
 function jet_process(events::Vector{Vector{T}};
+                     algorithm::JetAlgorithm.Algorithm,
                      distance::Real = 0.4,
-                     algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                      p::Union{Real, Nothing} = nothing,
                      ptmin::Real = 5.0,
                      dcut = nothing,
@@ -34,9 +34,8 @@ function jet_process(events::Vector{Vector{T}};
                      dump::Union{String, Nothing} = nothing) where {T <:
                                                                     JetReconstruction.FourMomentum}
 
-    # Set consistent algorithm and power
-    (p, algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-                                                                       algorithm = algorithm)
+    # Set consistent algorithm power
+    p = JetReconstruction.get_algorithm_power(p = p, algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
 
     # A friendly label for the algorithm and final jet selection
