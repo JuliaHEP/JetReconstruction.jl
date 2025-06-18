@@ -20,7 +20,7 @@ A module for jet flavor identification using neural networks.
 """
 
 """
-    setup_weaver(onnx_path::String, json_path::String) -> ONNXRunTime.InferenceSession
+    setup_onnx_runtime(onnx_path::String, json_path::String) -> ONNXRunTime.InferenceSession
 
 Setup the ONNX model and preprocessing configuration for jet flavor tagging.
 
@@ -31,10 +31,9 @@ Setup the ONNX model and preprocessing configuration for jet flavor tagging.
 # Returns
 An ONNX inference session for the loaded model
 """
-function setup_weaver(onnx_path::String, json_path::String)
+function setup_onnx_runtime(onnx_path::String, json_path::String)
     # Load JSON configuration
     config = JSON.parsefile(json_path)
-
     model = ONNXRunTime.load_inference(onnx_path)
     
     return model, config
@@ -295,7 +294,7 @@ function inference(json_config_path::String, onnx_model_path::String,
     end
     
     # Setup model
-    model, _ = setup_weaver(onnx_model_path, json_config_path, initvars)
+    model, _ = setup_onnx_runtime(onnx_model_path, json_config_path, initvars)
     
     # Run inference
     weights = get_weights(0, feature_data, jets, jcs, config, model)
@@ -310,7 +309,6 @@ function inference(json_config_path::String, onnx_model_path::String,
     return jet_scores
 end
 
-# TODO: Update the arguements
 # TODO: Add primary vertex as an argument (from MC Particle)
 """
     extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents}, 
@@ -330,7 +328,13 @@ Extract all required features for jet flavor tagging.
 - `jcs`: Vector of jet constituents
 - `tracks`: StructVector of track states
 - `bz`: Magnetic field strength
-- Various optional collections required for specific features
+- `track_L`: Array of track lengths
+- `trackdata`: Vector of track data (optional)
+- `trackerhits`: Vector of tracker hits (optional)
+- `gammadata`: Vector of gamma clusters (optional)
+- `nhdata`: Vector of neutral hadron clusters (optional)
+- `calohits`: Vector of calorimeter hits (optional)
+- `dNdx`: Vector of dE/dx measurements (optional)   
 
 # Returns
 Dictionary containing all extracted features organized by input type
