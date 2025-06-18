@@ -76,18 +76,16 @@ function profile_code(events::Vector{Vector{T}}, profile, nsamples; R = 0.4, p =
 end
 
 """
-    allocation_stats(events::Vector{Vector{T}}; distance::Real = 0.4,
-                          p::Union{Real, Nothing} = nothing,
-                          algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
+    allocation_stats(events::Vector{Vector{T}}; algorithm::JetAlgorithm.Algorithm,
+                          distance::Real = 0.4, p::Union{Real, Nothing} = nothing,
                           strategy::RecoStrategy.Strategy,
+                          recombine = RecombinationMethods[RecombinationScheme.EScheme],
                           ptmin::Real = 5.0) where {T <: JetReconstruction.FourMomentum}
-
 Take a memory allocation profile of the jet reconstruction code, printing the
 output.
 """
-function allocation_stats(events::Vector{Vector{T}}; distance::Real = 0.4,
-                          p::Union{Real, Nothing} = nothing,
-                          algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
+function allocation_stats(events::Vector{Vector{T}}; algorithm::JetAlgorithm.Algorithm,
+                          distance::Real = 0.4, p::Union{Real, Nothing} = nothing,
                           strategy::RecoStrategy.Strategy,
                           recombine = RecombinationMethods[RecombinationScheme.EScheme],
                           ptmin::Real = 5.0) where {T <: JetReconstruction.FourMomentum}
@@ -103,8 +101,8 @@ end
 
 """
     benchmark_jet_reco(events::Vector{Vector{T}};
+                            algorithm::JetAlgorithm.Algorithm,
                             distance::Real = 0.4,
-                            algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                             p::Union{Real, Nothing} = nothing,
                             ptmin::Real = 5.0,
                             dcut = nothing,
@@ -125,8 +123,8 @@ print summary statistics on the runtime.
 - `dump_cs`: If `true`, dump the cluster sequence for each event.
 """
 function benchmark_jet_reco(events::Vector{Vector{T}};
+                            algorithm::JetAlgorithm.Algorithm,
                             distance::Real = 0.4,
-                            algorithm::Union{JetAlgorithm.Algorithm, Nothing} = nothing,
                             p::Union{Real, Nothing} = nothing,
                             strategy::RecoStrategy.Strategy,
                             recombine = RecombinationMethods[RecombinationScheme.EScheme],
@@ -143,10 +141,8 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
         jet_collection = FinalJets[]
     end
 
-    # Set consistent algorithm and power
-    (p,
-    algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-                                                                   algorithm = algorithm)
+    # Set consistent algorithm power
+    p = JetReconstruction.get_algorithm_power(p = p, algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
 
     # Now setup timers and run the loop

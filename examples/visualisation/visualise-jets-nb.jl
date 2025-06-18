@@ -30,7 +30,7 @@ md"""# Jet Reconstruction Visualisation
 
 This Pluto script visualises the result of a jet reconstruction process. 
 
-Use the sliders below to change the reconstructed event, the algorithm and the jet radius parameter."""
+Use the sliders below to change the reconstructed event, the GenKt algorithm power and the jet radius parameter."""
 
 # ╔═╡ 4e569f74-570b-4b30-9ea7-9cbc420f50f8
 md"Event number:"
@@ -60,7 +60,7 @@ events::Vector{Vector{PseudoJet}} = read_final_state_particles(input_file,
                                                                skipevents = event_no);
 
 # ╔═╡ 2a899d67-71f3-4fe0-8104-7633a44a06a8
-cs = jet_reconstruct(events[1], p = power, R = radius)
+cs = jet_reconstruct(events[1]; algorithm = JetAlgorithm.GenKt, p = power, R = radius)
 
 # ╔═╡ b5fd4e96-d073-4e5f-8de1-41addaa0dc3d
 jetreco_vis = jetsplot(events[1], cs; Module = GLMakie)
