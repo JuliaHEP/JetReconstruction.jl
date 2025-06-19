@@ -2,7 +2,7 @@
 
 ## Files
 
-- `events.hepmc3.gz` - 100 Pythia 13 TeV events in HepMC3 format (compressed)
+- `events.hepmc3.zst` - 100 Pythia 13 TeV events in HepMC3 format (compressed)
   - Unzip to `evemts.hepmc3` for actual use
 
 - `jet_collections_fastjet_akt.json` - JSON output from running anti-kt jet reconstruction using FastJet 3.4.1, with R=0.4 and p_t_min=5.0
