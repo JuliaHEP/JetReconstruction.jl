@@ -12,8 +12,7 @@ end
 const expected_constituent_indexes = [84, 85, 139, 86, 133, 74, 79, 124, 76, 75, 163]
 const expected_parent_indexes = [320, 335]
 
-input_file = joinpath(dirname(pathof(JetReconstruction)), "..", "test", "data",
-                      "events.pp13TeV.hepmc3.gz")
+input_file = events_file_pp
 events = read_final_state_particles(input_file)
 
 # Event to pick

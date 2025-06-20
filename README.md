@@ -86,16 +86,17 @@ Note that there is no `strategy` option in these interfaces.
 
 ### Examples
 
-In the examples directory there are a number of example scripts.
+In the examples directory there are a number of example scripts (note there is a
+specific `Project.toml` for `examples`).
 
 See the `jetreco.jl` script for an example of how to call jet reconstruction.
 
 ```sh
-julia --project=examples examples/jetreco.jl --algorithm=AntiKt test/data/events.pp13TeV.hepmc3.gz
+julia --project jetreco.jl --algorithm=AntiKt ../test/data/events.pp13TeV.hepmc3.zst
 ...
-julia --project=examples examples/jetreco.jl --algorithm=Durham test/data/events.eeH.hepmc3.gz
+julia --project jetreco.jl --algorithm=Durham ../test/data/events.eeH.hepmc3.zst
 ...
-julia --project=examples examples/jetreco.jl --maxevents=10 --strategy=N2Plain --algorithm=Kt --exclusive-njets=3 test/data/events.pp13TeV.hepmc3.gz
+julia --project jetreco.jl --maxevents=10 --strategy=N2Plain --algorithm=Kt --exclusive-njets=3 ../test/data/events.pp13TeV.hepmc3.zst
 ...
 ```
 

@@ -13,11 +13,11 @@ for alg in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.
     if alg == JetAlgorithm.GenKt
         power = test_genkt_power
         fastjet_file = joinpath(@__DIR__, "data",
-                                "jet-collections-fastjet-inclusive-$(alg)-p$(power).json.gz")
+                                "jet-collections-fastjet-inclusive-$(alg)-p$(power).json.zst")
     else
         power = JetReconstruction.algorithm2power[alg]
         fastjet_file = joinpath(@__DIR__, "data",
-                                "jet-collections-fastjet-inclusive-$(alg).json.gz")
+                                "jet-collections-fastjet-inclusive-$(alg).json.zst")
     end
 
     test = ComparisonTest(events_file_pp, fastjet_file,
@@ -30,7 +30,7 @@ end
 # Test exclusive njet selections for CA and Kt algorithms
 for alg in [JetAlgorithm.CA, JetAlgorithm.Kt]
     fastjet_file = joinpath(@__DIR__, "data",
-                            "jet-collections-fastjet-njets4-$(alg).json.gz")
+                            "jet-collections-fastjet-njets4-$(alg).json.zst")
     test = ComparisonTest(events_file_pp, fastjet_file,
                           alg, RecoStrategy.Best,
                           JetReconstruction.algorithm2power[alg], test_cone_size,
@@ -41,7 +41,7 @@ end
 # Test exclusive dij selections for CA and Kt algorithms
 for (alg, dij_max) in zip([JetAlgorithm.CA, JetAlgorithm.Kt], ["0.99", "20.0"])
     fastjet_file = joinpath(@__DIR__, "data",
-                            "jet-collections-fastjet-dij$(dij_max)-$(alg).json.gz")
+                            "jet-collections-fastjet-dij$(dij_max)-$(alg).json.zst")
     test = ComparisonTest(events_file_pp, fastjet_file,
                           alg, RecoStrategy.Best,
                           JetReconstruction.algorithm2power[alg], test_cone_size,

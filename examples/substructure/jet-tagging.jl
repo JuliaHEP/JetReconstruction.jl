@@ -2,7 +2,7 @@
 using JetReconstruction
 
 input_file = joinpath(dirname(pathof(JetReconstruction)),
-                      "..", "test", "data", "events.pp13TeV.hepmc3.gz")
+                      "..", "test", "data", "events.pp13TeV.hepmc3.zst")
 events = read_final_state_particles(input_file)
 
 # Event to pick

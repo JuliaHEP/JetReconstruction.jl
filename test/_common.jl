@@ -14,8 +14,8 @@ using Test
 logger = ConsoleLogger(stdout, Logging.Warn)
 global_logger(logger)
 
-const events_file_pp = joinpath(@__DIR__, "data", "events.pp13TeV.hepmc3.gz")
-const events_file_ee = joinpath(@__DIR__, "data", "events.eeH.hepmc3.gz")
+const events_file_pp = joinpath(@__DIR__, "data", "events.pp13TeV.hepmc3.zst")
+const events_file_ee = joinpath(@__DIR__, "data", "events.eeH.hepmc3.zst")
 
 const pp_algorithms = Dict(-1 => "Anti-kt",
                            0 => "Cambridge/Aachen",
