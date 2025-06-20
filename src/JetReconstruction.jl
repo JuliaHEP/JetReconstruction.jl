@@ -93,6 +93,18 @@ function jetsplot() end
 function animatereco() end
 export jetsplot, animatereco
 
+# Jet flavour tagging as an extension: Constituents
+function build_constituents_cluster() end
+export build_constituents_cluster
+
+# Jet flavour tagging as an extension: ONNX RunTime
+function extract_features() end
+function setup_onnx_runtime() end
+function prepare_input_tensor() end
+function get_weights() end
+function get_weight() end
+export extract_features, setup_onnx_runtime, prepare_input_tensor, get_weights, get_weight
+
 # JSON results
 include("JSONresults.jl")
 export FinalJet, FinalJets

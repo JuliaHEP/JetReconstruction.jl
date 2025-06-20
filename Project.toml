@@ -17,10 +17,13 @@ StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 [weakdeps]
 EDM4hep = "eb32b910-dde9-4347-8fce-cd6be3498f0c"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+ONNXRunTime = "e034b28e-924e-41b2-b98f-d2bbeb830c6a"
+JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 
 [extensions]
 EDM4hepJets = "EDM4hep"
 JetVisualisation = "Makie"
+JetFlavourTagging = ["EDM4hep", "ONNXRunTime", "JSON"]
 
 [compat]
 Accessors = "0.1.36"
@@ -35,6 +38,7 @@ LoopVectorization = "0.12.170"
 LorentzVectorHEP = "0.1.6"
 Makie = "0.20, 0.21, 0.22, 0.23"
 MuladdMacro = "0.2.4"
+ONNXRunTime = "1.3.1"
 StructArrays = "0.6.18, 0.7"
 Test = "1.9"
 julia = "1.9"
