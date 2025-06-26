@@ -123,12 +123,6 @@ directory.
 The plotting code is a package extension and will load if the one of the `Makie`
 modules is loaded in the environment.
 
-### Serialisation
-
-The package also provides methods such as `loadjets`, `loadjets!`, and
-`savejets` that one can use to save and load objects on/from disk easily in a
-very flexible format. See documentation for more.
-
 ## Reference
 
 Although it has been developed further since the CHEP2023 conference, the CHEP
