@@ -1,20 +1,14 @@
 using EDM4hep
 using JetReconstruction
 using LoopVectorization
-# TODO: Using PhysicsConstants.jl for constants
 using StructArrays: StructVector
+
+# Import physical constants
+include("JetPhysicalConstants.jl")
+using .JetPhysicalConstants
 
 const JetConstituents = StructVector{ReconstructedParticle, <:Any}
 const JetConstituentsData = Vector{Float32}
-
-const C_LIGHT = 2.99792458f8
-const C_LIGHT_INV = 1.0f0 / C_LIGHT
-const ELECTRON_MASS = 0.000510999f0
-const MUON_MASS = 0.105658f0
-const PION_MASS = 0.13957039f0
-const ELECTRON_TOLERANCE = 1.0f-5
-const MUON_TOLERANCE = 1.0f-3
-const PION_TOLERANCE = 1.0f-3
 
 ### Basic Kinematic (11)
 
@@ -246,7 +240,7 @@ A vector of vectors of Bz values.
 """
 function get_Bz(jcs::Vector{<:JetConstituents},
                 tracks::StructVector{EDM4hep.TrackState})
-    a = 2.99792458e8 * 1e3 * 1e-15
+    a = C_LIGHT * MM_TO_M / FS_TO_S
     n_tracks = length(tracks)
 
     # If tracks is a StructVector, we can access omega column directly
@@ -264,7 +258,7 @@ function get_Bz(jcs::Vector{<:JetConstituents},
                                           omega_values[track_idx + 1] / a * pt *
                                           copysign(1.0f0, charges[i])
                                       else
-                                          -9.0f0
+                                          UNDEF_VAL
                                       end
                                   end) for i in eachindex(mom_x)]
             end
@@ -300,7 +294,7 @@ Vector of vectors of dxy values (one vector per jet)
 function get_dxy(jcs::Vector{<:JetConstituents},
                  tracks::StructVector{EDM4hep.TrackState},
                  V::LorentzVector, Bz::Float32)
-    cSpeed_Bz = 2.99792458e8 * 1.0f-9 * Bz
+    cSpeed_Bz = C_LIGHT * NS_TO_S * Bz
     n_tracks = length(tracks)
 
     Vx, Vy = Float32(V.x), Float32(V.y)
@@ -342,10 +336,10 @@ function get_dxy(jcs::Vector{<:JetConstituents},
                                                   (-2 * cross + a * r2) / (T + pt)
                                               end
                                           else
-                                              -9.0f0
+                                              UNDEF_VAL
                                           end
                                       else
-                                          -9.0f0
+                                          UNDEF_VAL
                                       end
                                   end) for i in eachindex(mom_x)]
             end
@@ -372,7 +366,7 @@ Vector of vectors of dz values (one vector per jet)
 function get_dz(jcs::Vector{<:JetConstituents},
                 tracks::StructVector{EDM4hep.TrackState},
                 V::LorentzVector, Bz::Float32)
-    cSpeed_Bz = 2.99792458e8 * 1.0f-9 * Bz
+    cSpeed_Bz = C_LIGHT * NS_TO_S * Bz
     n_tracks = length(tracks)
 
     Vx, Vy, Vz = Float32(V.x), Float32(V.y), Float32(V.z)
@@ -437,7 +431,7 @@ function get_dz(jcs::Vector{<:JetConstituents},
                                               x3 + ct * st
                                           end
                                       else
-                                          -9.0f0
+                                          UNDEF_VAL
                                       end
                                   end) for i in eachindex(mom_x)]
             end
@@ -464,7 +458,7 @@ Vector of vectors of phi values (one vector per jet)
 function get_phi0(jcs::Vector{<:JetConstituents},
                   tracks::StructVector{EDM4hep.TrackState},
                   V::LorentzVector, Bz::Float32)
-    cSpeed_Bz = 2.99792458e8 * 1.0f-9 * Bz
+    cSpeed_Bz = C_LIGHT * NS_TO_S * Bz
     n_tracks = length(tracks)
 
     Vx, Vy = Float32(V.x), Float32(V.y)
@@ -508,7 +502,7 @@ function get_phi0(jcs::Vector{<:JetConstituents},
                                           a_x2 = a * x2
                                           atan((py - a_x1) * inv_T, (px + a_x2) * inv_T)
                                       else
-                                          -9.0f0
+                                          UNDEF_VAL
                                       end
                                   end) for i in eachindex(mom_x)]
             end
@@ -534,7 +528,7 @@ Vector of vectors of C values (one vector per jet)
 function get_c(jcs::Vector{<:JetConstituents},
                tracks::StructVector{EDM4hep.TrackState},
                Bz::Float32)
-    cSpeed_Bz_half = 2.99792458e8 * 1.0f3 * 1.0f-15 * Bz * 0.5f0
+    cSpeed_Bz_half = C_LIGHT * MM_TO_M / FS_TO_S * Bz * 0.5f0
     n_tracks = length(tracks)
 
     return [begin
@@ -550,7 +544,7 @@ function get_c(jcs::Vector{<:JetConstituents},
                                           inv_pt = 1.0f0 / sqrt(px^2 + py^2)
                                           copysign(cSpeed_Bz_half * inv_pt, charges[i])
                                       else
-                                          -9.0f0
+                                          UNDEF_VAL
                                       end
                                   end) for i in eachindex(mom_x)]
             end
@@ -592,7 +586,7 @@ function get_ct(jcs::Vector{<:JetConstituents},
                                           pt = sqrt(px^2 + py^2)
                                           pz / pt
                                       else
-                                          -9.0f0
+                                          UNDEF_VAL
                                       end
                                   end) for i in eachindex(mom_x)]
             end
@@ -649,7 +643,7 @@ function get_dxydxy(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[1],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -687,7 +681,7 @@ function get_dphidxy(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[2],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -727,7 +721,7 @@ function get_dphidphi(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[3],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -765,7 +759,7 @@ function get_dxyc(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[4],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -803,7 +797,7 @@ function get_phic(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[5],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -843,7 +837,7 @@ function get_dptdpt(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[6],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -881,7 +875,7 @@ function get_dxydz(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[7],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -919,7 +913,7 @@ function get_phidz(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[8],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -957,7 +951,7 @@ function get_cdz(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[9],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -995,7 +989,7 @@ function get_dzdz(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[10],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -1033,7 +1027,7 @@ function get_dxyctgtheta(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[11],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -1071,7 +1065,7 @@ function get_phictgtheta(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[12],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -1109,7 +1103,7 @@ function get_cctgtheta(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[13],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -1147,7 +1141,7 @@ function get_dlambdadz(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[14],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -1187,7 +1181,7 @@ function get_detadeta(jcs::Vector{<:JetConstituents},
             track_idx = track_indices[i].first
             jet_result[i] = ifelse(track_idx < n_tracks,
                                    tracks[track_idx + 1].covMatrix[15],
-                                   -9.0f0)
+                                   UNDEF_VAL)
         end
 
         result[j] = jet_result
@@ -1229,7 +1223,7 @@ function get_is_mu(jcs::Vector{<:JetConstituents})
 
         @simd for i in 1:n_particles
             charge_check = abs(charges[i]) > 0
-            mass_check = abs(masses[i] - 0.105658f0) < 1.0f-3
+            mass_check = abs(masses[i] - MUON_MASS) < MUON_TOLERANCE
             is_mu[i] = (charge_check & mass_check) ? 1.0f0 : 0.0f0
         end
 
@@ -1264,7 +1258,7 @@ function get_is_el(jcs::Vector{<:JetConstituents})
 
         @simd for i in 1:n_particles
             charge_check = abs(charges[i]) > 0
-            mass_check = abs(masses[i] - 0.000510999f0) < 1.0f-5
+            mass_check = abs(masses[i] - ELECTRON_MASS) < ELECTRON_TOLERANCE
             is_mu[i] = (charge_check & mass_check) ? 1.0f0 : 0.0f0
         end
 
@@ -1299,7 +1293,7 @@ function get_is_charged_had(jcs::Vector{<:JetConstituents})
 
         @simd for i in 1:n_particles
             charge_check = abs(charges[i]) > 0
-            mass_check = abs(masses[i] - 0.13957f0) < 1.0f-3
+            mass_check = abs(masses[i] - PION_MASS) < PION_TOLERANCE
             is_mu[i] = (charge_check & mass_check) ? 1.0f0 : 0.0f0
         end
 
@@ -1332,7 +1326,7 @@ function get_is_gamma(jcs::Vector{<:JetConstituents})
         is_gamma = Vector{Float32}(undef, n_particles)
 
         @simd for i in 1:n_particles
-            is_gamma[i] = types[i] == 22 ? 1.0f0 : 0.0f0
+            is_gamma[i] = types[i] == PDG_PHOTON ? 1.0f0 : 0.0f0
         end
 
         result[j] = is_gamma
@@ -1364,7 +1358,7 @@ function get_is_neutral_had(jcs::Vector{<:JetConstituents})
         is_gamma = Vector{Float32}(undef, n_particles)
 
         @simd for i in 1:n_particles
-            is_gamma[i] = types[i] == 130 ? 1.0f0 : 0.0f0
+            is_gamma[i] = types[i] == PDG_K_LONG ? 1.0f0 : 0.0f0
         end
 
         result[j] = is_gamma
@@ -1712,7 +1706,7 @@ function get_mtof(jcs::Vector{<:JetConstituents},
 
     # Pre-compute vertex values
     vx, vy, vz = V.x, V.y, V.z
-    v_t_scaled = V.t * 1.0f-3 * C_LIGHT_INV  # Tin calculation
+    v_t_scaled = V.t * MM_TO_M * C_LIGHT_INV  # Tin calculation
 
     @inbounds for i in 1:n_jets
         jc = jcs[i]
@@ -1738,11 +1732,11 @@ function get_mtof(jcs::Vector{<:JetConstituents},
             track_idx = tracks_first[j].first
             particle_type = types[j]
 
-            mass_calculated = -1.0f0  # Invalid marker
+            mass_calculated = INVALID_MASS  # Invalid marker
 
             # Handle cluster-based particles
             if cluster_idx < cluster_limit
-                if particle_type == 130  # Neutral hadron
+                if particle_type == PDG_K_LONG  # Neutral hadron
                     nh_idx = cluster_idx + 1 - gamma_len
                     hit_idx = nhdata[nh_idx].hits.first + 1
 
@@ -1754,7 +1748,7 @@ function get_mtof(jcs::Vector{<:JetConstituents},
                     dx = hit.position.x - vx
                     dy = hit.position.y - vy
                     dz = hit.position.z - vz
-                    L = sqrt(dx^2 + dy^2 + dz^2) * 0.001f0
+                    L = sqrt(dx^2 + dy^2 + dz^2) * MM_TO_M
 
                     beta = L / (tof * C_LIGHT)
 
@@ -1762,10 +1756,10 @@ function get_mtof(jcs::Vector{<:JetConstituents},
                         E = energies[j]
                         mass_calculated = E * sqrt(1.0f0 - beta^2)
                     else
-                        mass_calculated = 9.0f0  # Invalid measurement
+                        mass_calculated = INVALID_TOF_MASS  # Invalid measurement
                     end
 
-                elseif particle_type == 22  # Photon
+                elseif particle_type == PDG_PHOTON  # Photon
                     mass_calculated = 0.0f0
                 end
             end
@@ -1788,7 +1782,7 @@ function get_mtof(jcs::Vector{<:JetConstituents},
                         Tout = trackerhits[last_hit_idx].time
                         tof = Tout - v_t_scaled
 
-                        L = track_L[track_idx + 1] * 0.001f0
+                        L = track_L[track_idx + 1] * MM_TO_M
                         beta = L / (tof * C_LIGHT)
 
                         if 0.0f0 < beta < 1.0f0
@@ -1879,8 +1873,8 @@ function get_Sip2dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
             sign_dot = sign(dot_product)
             signed_ip = sign_dot * abs_d0
 
-            is_valid = Float32(d0_val != -9.0f0)
-            sip2d_values[j] = is_valid * signed_ip + (1.0f0 - is_valid) * (-9.0f0)
+            is_valid = Float32(d0_val != UNDEF_VAL)
+            sip2d_values[j] = is_valid * signed_ip + (1.0f0 - is_valid) * UNDEF_VAL
         end
 
         result[i] = sip2d_values
@@ -1938,7 +1932,7 @@ function get_Sip2dSig(Sip2dVals::Vector{JetConstituentsData},
             sqrt_err = sqrt(max(err_val, eps(Float32)))  # Avoid sqrt of negative
             sig = sip_val / sqrt_err
 
-            sig_values[j] = valid ? sig : -9.0f0
+            sig_values[j] = valid ? sig : UNDEF_VAL
         end
 
         result[i] = sig_values
@@ -2005,8 +1999,8 @@ function get_Sip3dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
             sign_dot = sign(dot_prod)
             signed_ip = sign_dot * magnitude
 
-            is_valid = Float32(d0_val != -9.0f0)
-            cprojs[j] = is_valid * signed_ip + (1.0f0 - is_valid) * (-9.0f0)
+            is_valid = Float32(d0_val != UNDEF_VAL)
+            cprojs[j] = is_valid * signed_ip + (1.0f0 - is_valid) * UNDEF_VAL
         end
 
         result[i] = cprojs
@@ -2055,7 +2049,7 @@ function get_Sip3dSig(Sip3dVals::Vector{JetConstituentsData},
             sqrt_err = sqrt(max(err_sum, eps(Float32)))
             sig = sip_val / sqrt_err
 
-            sigs[j] = valid ? sig : -9.0f0
+            sigs[j] = valid ? sig : UNDEF_VAL
         end
 
         result[i] = sigs
@@ -2098,7 +2092,7 @@ function get_JetDistVal_clusterV(jets::Vector{JetReconstruction.EEJet},
         tmp = Vector{Float32}(undef, n_constituents)
 
         for j in 1:n_constituents
-            if D0[i][j] != -9.0f0
+            if D0[i][j] != UNDEF_VAL
                 d0_val = D0[i][j]
                 z0_val = Z0[i][j]
 
@@ -2130,7 +2124,7 @@ function get_JetDistVal_clusterV(jets::Vector{JetReconstruction.EEJet},
                 # Distance (r_jet = [0,0,0], so we just need n·d)
                 tmp[j] = nx * dx + ny * dy + nz * dz
             else
-                tmp[j] = -9.0f0
+                tmp[j] = UNDEF_VAL
             end
         end
 
@@ -2181,7 +2175,7 @@ function get_JetDistSig(JetDistVal::Vector{JetConstituentsData},
             sqrt_err = sqrt(max(err_sum, eps(Float32)))
             sig = jet_val / sqrt_err
 
-            tmp[j] = valid ? sig : -9.0f0
+            tmp[j] = valid ? sig : UNDEF_VAL
         end
 
         result[i] = tmp
