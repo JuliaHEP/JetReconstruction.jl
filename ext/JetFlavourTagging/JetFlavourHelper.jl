@@ -2,8 +2,6 @@ module JetFlavourHelper
 
 using JSON
 using ONNXRunTime
-# using StaticArrays
-# using LinearAlgebra
 using StructArrays: StructVector
 using JetReconstruction
 using EDM4hep

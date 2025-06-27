@@ -36,39 +36,36 @@ function build_constituents_cluster(rps, indices)
 end
 
 """
-    get_jet_constituents(csts::Vector{JetConstituents}, jet::Int) -> JetConstituents
+    get_jet_constituents(csts::Vector{JetConstituents}, jet_index::Int) -> JetConstituents
 
 Retrieve the constituents of an indexed jet in the event.
 # Arguments
 - csts: constituents collection, a vector of `JetConstituents`.
-- jet: the index of the jet for which to retrieve constituents (1-based index) 
+- jet_index: the index of the jet for which to retrieve constituents (1-based index) 
 
 # Returns
 The constituents of the specified jet, or an empty collection if the jet index is invalid.
 """
-function get_jet_constituents(csts::Vector{JetConstituents}, jet::Int)
-    if jet < 1 # Julia's 1-indexing.
-        return JetConstituents()
-    end
-    return csts[jet]
+function get_jet_constituents(csts::Vector{JetConstituents}, jet_index::Int)
+    return csts[jet_index]
 end
 
 """
-    get_constituents(csts::Vector{JetConstituents}, jets::Vector{Int}) -> Vector{JetConstituents}
+    get_constituents(csts::Vector{JetConstituents}, jet_indices::Vector{Int}) -> Vector{JetConstituents}
 
 Retrieve the constituents of a collection of indexed jets in the event.
 
 # Arguments
 - csts: constituents collection, a vector of `JetConstituents`.
-- jets: a vector of jet indices (1-based index) for which to retrieve constituents.
+- jet_indices: a vector of jet indices (1-based index) for which to retrieve constituents.
 
 # Returns
 A vector of `JetConstituents`, each containing the constituents for the specified jets.
 """
-function get_constituents(csts::Vector{JetConstituents}, jets::Vector{Int})
+function get_constituents(csts::Vector{JetConstituents}, jet_indices::Vector{Int})
     jcs = Vector{JetConstituents}()
-    for i in 1:length(jets)
-        if jets[i] >= 1
+    for i in 1:length(jet_indices)
+        if jet_indices[i] >= 1
             if i <= length(csts)
                 push!(jcs, csts[i])
             end
