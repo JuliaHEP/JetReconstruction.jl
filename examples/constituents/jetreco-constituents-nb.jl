@@ -14,7 +14,7 @@ Perform a simple reconstruction example and show how to retrieve constituent jet
 
 # ╔═╡ 79f24ec1-a63e-4e96-bd67-49661125be66
 input_file = joinpath(dirname(pathof(JetReconstruction)), "..", "test", "data",
-                      "events.pp13TeV.hepmc3.gz")
+                      "events.pp13TeV.hepmc3.zst")
 
 # ╔═╡ 7d7a8b11-19b3-4b83-a0b1-8201b74b588e
 events = read_final_state_particles(input_file)
