@@ -3,7 +3,7 @@ module JetConstituentBuilder
 using EDM4hep
 using StructArrays: StructVector
 
-# Define type aliases for clarity # TODO: Move to JetFlavourTagging file. But requires more checks.
+# Define type aliases for clarity
 const JetConstituents = StructVector{ReconstructedParticle, <:Any}
 const JetConstituentsData = Vector{Float32}
 
