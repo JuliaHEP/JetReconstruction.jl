@@ -47,7 +47,7 @@ include("JetFlavourHelper.jl")
                     calohits::AbstractVector{EDM4hep.CalorimeterHit}=AbstractVector{EDM4hep.CalorimeterHit}(), 
                     dNdx::AbstractVector{EDM4hep.Quantity}=AbstractVector{EDM4hep.Quantity}()) -> Dict
 
-Extract all required features for jet flavor tagging.
+Extract all required features for jet flavour tagging.
 
 # Arguments 
 - `jets`: Vector of jets (EEJet)
@@ -84,7 +84,7 @@ end
 """
     setup_onnx_runtime(onnx_path::String, json_path::String) -> ONNXRunTime.InferenceSession
 
-Setup the ONNX model and preprocessing configuration for jet flavor tagging.
+Setup the ONNX model and preprocessing configuration for jet flavour tagging.
 
 # Arguments
 - `onnx_path`: Path to the ONNX model file
@@ -125,7 +125,7 @@ end
     get_weights(slot::Int, vars::Dict{String, Vector{Vector{Float32}}}, 
                 jets::Vector{EEJet}, json_config::Dict, model::ONNXRunTime.InferenceSession) -> Vector{Vector{Float32}}
 
-Compute jet flavor probabilities for each jet.
+Compute jet flavour probabilities for each jet.
 
 # Arguments
 - `slot`: Threading slot

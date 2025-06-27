@@ -16,13 +16,13 @@ include("JetConstituentUtils.jl")
 """
     JetFlavourHelper
 
-A module for jet flavor identification using neural networks.
+A module for jet flavour identification using neural networks.
 """
 
 """
     setup_onnx_runtime(onnx_path::String, json_path::String) -> ONNXRunTime.InferenceSession
 
-Setup the ONNX model and preprocessing configuration for jet flavor tagging.
+Setup the ONNX model and preprocessing configuration for jet flavour tagging.
 
 # Arguments
 - `onnx_path`: Path to the ONNX model file
@@ -177,7 +177,7 @@ end
     get_weights(slot::Int, vars::Dict{String, Vector{Vector{Float32}}}, 
                 jets::Vector{EEJet}, json_config::Dict, model::ONNXRunTime.InferenceSession) -> Vector{Vector{Float32}}
 
-Compute jet flavor probabilities for each jet.
+Compute jet flavour probabilities for each jet.
 
 # Arguments
 - `slot`: Threading slot
@@ -187,7 +187,7 @@ Compute jet flavor probabilities for each jet.
 - `model`: ONNX inference session
 
 # Returns
-Vector of flavor probabilities for each jet
+Vector of flavour probabilities for each jet
 """
 function get_weights(slot::Int, vars::Dict{String, Dict{String, Vector{Vector{Float32}}}},
                      jets::Vector{EEJet}, jcs::Vector{<:JetConstituents},
@@ -253,7 +253,7 @@ end
                 jets::Vector{EEJet}, jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
                 feature_data::Dict) -> DataFrame
 
-Run flavor tagging inference on a collection of jets.
+Run flavour tagging inference on a collection of jets.
 
 # Arguments
 - `json_config_path`: Path to the JSON configuration file
@@ -263,7 +263,7 @@ Run flavor tagging inference on a collection of jets.
 - `feature_data`: Dictionary containing all extracted features
 
 # Returns
-DataFrame with added flavor tagging scores
+DataFrame with added flavour tagging scores
 """
 function inference(json_config_path::String, onnx_model_path::String,
                    jets::Vector{EEJet},
@@ -322,7 +322,7 @@ end
                     calohits::AbstractVector{EDM4hep.CalorimeterHit}=AbstractVector{EDM4hep.CalorimeterHit}(), 
                     dNdx::AbstractVector{EDM4hep.Quantity}=AbstractVector{EDM4hep.Quantity}()) -> Dict
 
-Extract all required features for jet flavor tagging.
+Extract all required features for jet flavour tagging.
 
 # Arguments 
 - `jets`: Vector of jets (EEJet)
@@ -416,7 +416,7 @@ function extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents},
     features["pf_features"]["pfcand_cctgtheta"] = cctgtheta
 
     # Particle ID
-    jcs_isChargedHad = get_isChargedHad(jcs)
+    jcs_isChargedHad = get_is_charged_had(jcs)
 
     # Time-of-flight and dE/dx if data available
     if !isempty(track_L) && !isempty(trackdata) && !isempty(trackerhits) &&
@@ -438,11 +438,11 @@ function extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents},
 
     # Particle type information
     charge = get_charge(jcs)
-    isMu = get_isMu(jcs)
-    isEl = get_isEl(jcs)
+    isMu = get_is_mu(jcs)
+    isEl = get_is_el(jcs)
     isChargedHad = jcs_isChargedHad
-    isGamma = get_isGamma(jcs)
-    isNeutralHad = get_isNeutralHad(jcs)
+    isGamma = get_is_gamma(jcs)
+    isNeutralHad = get_is_neutral_had(jcs)
 
     features["pf_features"]["pfcand_charge"] = charge
     features["pf_features"]["pfcand_isMu"] = isMu
