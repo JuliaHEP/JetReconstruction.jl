@@ -2,7 +2,7 @@ module JetFlavourTagging
 
 using JetReconstruction
 using EDM4hep
-using JSON # TODO: Require to change this in main module
+using JSON
 using ONNXRunTime
 using StructArrays: StructVector
 using LorentzVectorHEP
@@ -82,7 +82,7 @@ function JetReconstruction.extract_features(jets::Vector{EEJet},
 end
 
 """
-    setup_onnx_runtime(onnx_path::String, json_path::String) -> ONNXRunTime.InferenceSession
+    setup_onnx_runtime(onnx_path::AbstractString, json_path::AbstractString) -> ONNXRunTime.InferenceSession
 
 Setup the ONNX model and preprocessing configuration for jet flavour tagging.
 
@@ -93,7 +93,7 @@ Setup the ONNX model and preprocessing configuration for jet flavour tagging.
 # Returns
 An ONNX inference session for the loaded model
 """
-function JetReconstruction.setup_onnx_runtime(onnx_path::String, json_path::String)
+function JetReconstruction.setup_onnx_runtime(onnx_path::AbstractString, json_path::AbstractString)
     return JetFlavourHelper.setup_onnx_runtime(onnx_path, json_path)
 end
 

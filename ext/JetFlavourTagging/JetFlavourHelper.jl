@@ -20,7 +20,7 @@ A module for jet flavour identification using neural networks.
 """
 
 """
-    setup_onnx_runtime(onnx_path::String, json_path::String) -> ONNXRunTime.InferenceSession
+    setup_onnx_runtime(onnx_path::AbstractString, json_path::AbstractString) -> ONNXRunTime.InferenceSession
 
 Setup the ONNX model and preprocessing configuration for jet flavour tagging.
 
@@ -31,7 +31,7 @@ Setup the ONNX model and preprocessing configuration for jet flavour tagging.
 # Returns
 An ONNX inference session for the loaded model
 """
-function setup_onnx_runtime(onnx_path::String, json_path::String)
+function setup_onnx_runtime(onnx_path::AbstractString, json_path::AbstractString)
     # Load JSON configuration
     config = JSON.parsefile(json_path)
     model = ONNXRunTime.load_inference(onnx_path)
@@ -249,7 +249,7 @@ function get_weight(jet_weights::Vector{Vector{Float32}}, weight_idx::Int)
 end
 
 """
-    inference(json_config_path::String, onnx_model_path::String, df::DataFrame,
+    inference(json_config_path::AbstractString, onnx_model_path::AbstractString, df::DataFrame,
                 jets::Vector{EEJet}, jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
                 feature_data::Dict) -> DataFrame
 
@@ -265,7 +265,7 @@ Run flavour tagging inference on a collection of jets.
 # Returns
 DataFrame with added flavour tagging scores
 """
-function inference(json_config_path::String, onnx_model_path::String,
+function inference(json_config_path::AbstractString, onnx_model_path::AbstractString,
                    jets::Vector{EEJet},
                    jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
                    feature_data::Dict)
