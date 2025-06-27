@@ -1388,8 +1388,8 @@ Calculate relative energy (E_const/E_jet) for each constituent particle in clust
 # Returns
 Vector containing relative energy values for each constituent in the jets.
 """
-function get_erel_log_cluster(jets::Vector{EEJet},
-                              jets_constituents::Vector{<:JetConstituents})
+function get_erel_cluster(jets::Vector{EEJet},
+                          jets_constituents::Vector{<:JetConstituents})
     n_jets = length(jets)
     res = Vector{Vector{Float32}}(undef, n_jets)
 

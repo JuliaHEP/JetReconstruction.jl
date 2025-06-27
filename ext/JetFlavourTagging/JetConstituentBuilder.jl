@@ -31,7 +31,8 @@ Build the collection of constituents using cluster indices.
 # Returns
 A vector of JetConstituents, each containing the constituents for a specific cluster.
 """
-function build_constituents_cluster(reco_particles, indices)
+function build_constituents_cluster(reco_particles::JetConstituents,
+                                    indices::Vector{Vector{Int64}})
     return map(jet_indices -> reco_particles[jet_indices], indices)
 end
 
