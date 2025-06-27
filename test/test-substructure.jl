@@ -10,7 +10,7 @@ methods = Dict("jet-filter" => jet_filtering,
 
 for m in keys(methods)
     test_file = joinpath(@__DIR__, "data",
-                         "fastjet-$m.json.gz")
+                         "fastjet-$m.json.zst")
 
     test_data = read_fastjet_outputs(test_file)
     tol = 1e-7
