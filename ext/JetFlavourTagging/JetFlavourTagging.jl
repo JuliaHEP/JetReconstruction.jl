@@ -93,7 +93,8 @@ Setup the ONNX model and preprocessing configuration for jet flavour tagging.
 # Returns
 An ONNX inference session for the loaded model
 """
-function JetReconstruction.setup_onnx_runtime(onnx_path::AbstractString, json_path::AbstractString)
+function JetReconstruction.setup_onnx_runtime(onnx_path::AbstractString,
+                                              json_path::AbstractString)
     return JetFlavourHelper.setup_onnx_runtime(onnx_path, json_path)
 end
 
