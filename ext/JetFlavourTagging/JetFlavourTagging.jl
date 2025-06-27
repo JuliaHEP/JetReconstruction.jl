@@ -14,21 +14,21 @@ const JetConstituentsData = Vector{Float32}
 include("JetConstituentBuilder.jl")
 
 """
-    build_constituents_cluster(rps::JetConstituents, 
+    build_constituents_cluster(reco_particles::JetConstituents, 
                                indices::Vector{Vector{Int}}) -> Vector{JetConstituents}
 
 Build the collection of constituents using cluster indices.
 
 # Arguments
-- rps: a vector of `JetConstituents` representing reconstructed particles.
+- reco_particles: a vector of `JetConstituents` representing reconstructed particles.
 - indices: a vector of vectors, where each inner vector contains indices of particles for a specific cluster.
 
 # Returns
 A vector of JetConstituents, each containing the constituents for a specific cluster.
 """
-function JetReconstruction.build_constituents_cluster(rps::JetConstituents,
+function JetReconstruction.build_constituents_cluster(reco_particles::JetConstituents,
                                                       indices::Vector{Vector{Int64}})
-    JetConstituentBuilder.build_constituents_cluster(rps, indices)
+    JetConstituentBuilder.build_constituents_cluster(reco_particles, indices)
 end
 
 # TODO: Restore get_jets_constituents, get_constituents, build_constituents function.
@@ -37,7 +37,7 @@ end
 include("JetFlavourHelper.jl")
 
 """
-    extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents}, 
+    extract_features(jets::Vector{EEJet}, jets_constituents::Vector{<:JetConstituents}, 
                     tracks::AbstractVector{EDM4hep.TrackState}, bz::Float32, 
                     track_L::AbstractArray{T} where T <: AbstractFloat, 
                     trackdata::AbstractVector{EDM4hep.Track}=AbstractVector{EDM4hep.Track}(), 
@@ -51,7 +51,7 @@ Extract all required features for jet flavour tagging.
 
 # Arguments 
 - `jets`: Vector of jets (EEJet)
-- `jcs`: Vector of jet constituents
+- `jets_constituents`: Vector of jet constituents
 - `tracks`: StructVector of track states
 - `bz`: Magnetic field strength
 - `track_L`: Array of track lengths
@@ -66,7 +66,7 @@ Extract all required features for jet flavour tagging.
 Dictionary containing all extracted features organized by input type
 """
 function JetReconstruction.extract_features(jets::Vector{EEJet},
-                                            jcs::Vector{<:JetConstituents},
+                                            jets_constituents::Vector{<:JetConstituents},
                                             tracks::AbstractVector{EDM4hep.TrackState},
                                             bz::Float32,
                                             track_L::AbstractArray{T} where {T <:
@@ -77,7 +77,8 @@ function JetReconstruction.extract_features(jets::Vector{EEJet},
                                             nhdata::AbstractVector{EDM4hep.Cluster} = AbstractVector{EDM4hep.Cluster}(),
                                             calohits::AbstractVector{EDM4hep.CalorimeterHit} = AbstractVector{EDM4hep.CalorimeterHit}(),
                                             dNdx::AbstractVector{EDM4hep.Quantity} = AbstractVector{EDM4hep.Quantity}())
-    return JetFlavourHelper.extract_features(jets, jcs, tracks, bz, track_L, trackdata,
+    return JetFlavourHelper.extract_features(jets, jets_constituents, tracks, bz, track_L,
+                                             trackdata,
                                              trackerhits, gammadata, nhdata, calohits, dNdx)
 end
 
@@ -99,7 +100,7 @@ function JetReconstruction.setup_onnx_runtime(onnx_path::AbstractString,
 end
 
 """
-    prepare_input_tensor(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+    prepare_input_tensor(jets_constituents::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
                         jets::Vector{EEJet}, 
                         config::Dict, 
                         feature_data::Dict) -> Dict{String, Array}
@@ -107,7 +108,7 @@ end
 Prepare input tensors for the neural network from jet constituents.
 
 # Arguments
-- `jcs`: Vector of jet constituents (structured as a vector of StructVector of ReconstructedParticle)
+- `jets_constituents`: Vector of jet constituents (structured as a vector of StructVector of ReconstructedParticle)
 - `jets`: Vector of jets (EEJet)
 - `config`: JSON configuration for preprocessing
 - `feature_data`: Dictionary containing all extracted features
@@ -115,11 +116,12 @@ Prepare input tensors for the neural network from jet constituents.
 # Returns
 Dictionary of input tensors
 """
-function JetReconstruction.prepare_input_tensor(jcs::Vector{<:JetConstituents},
+function JetReconstruction.prepare_input_tensor(jets_constituents::Vector{<:JetConstituents},
                                                 jets::Vector{EEJet},
                                                 config::Dict,
                                                 feature_data::Dict)
-    return JetFlavourHelper.prepare_input_tensor(jcs, jets, config, feature_data)
+    return JetFlavourHelper.prepare_input_tensor(jets_constituents, jets, config,
+                                                 feature_data)
 end
 
 """
@@ -141,10 +143,12 @@ Vector of flavor probabilities for each jet
 function JetReconstruction.get_weights(slot::Int,
                                        vars::Dict{String,
                                                   Dict{String, Vector{Vector{Float32}}}},
-                                       jets::Vector{EEJet}, jcs::Vector{<:JetConstituents},
+                                       jets::Vector{EEJet},
+                                       jets_constituents::Vector{<:JetConstituents},
                                        json_config::Dict,
                                        model::ONNXRunTime.InferenceSession)
-    return JetFlavourHelper.get_weights(slot, vars, jets, jcs, json_config, model)
+    return JetFlavourHelper.get_weights(slot, vars, jets, jets_constituents, json_config,
+                                        model)
 end
 
 """

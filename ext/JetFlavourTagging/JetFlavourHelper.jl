@@ -62,7 +62,7 @@ function normalize_feature(value::Float32, info::Dict)
 end
 
 """
-    prepare_input_tensor(jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+    prepare_input_tensor(jets_constituents::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
                         jets::Vector{EEJet}, 
                         config::Dict, 
                         feature_data::Dict) -> Dict{String, Array}
@@ -70,7 +70,7 @@ end
 Prepare input tensors for the neural network from jet constituents.
 
 # Arguments
-- `jcs`: Vector of jet constituents (structured as a vector of StructVector of ReconstructedParticle)
+- `jets_constituents`: Vector of jet constituents (structured as a vector of StructVector of ReconstructedParticle)
 - `jets`: Vector of jets (EEJet)
 - `config`: JSON configuration for preprocessing
 - `feature_data`: Dictionary containing all extracted features
@@ -78,7 +78,7 @@ Prepare input tensors for the neural network from jet constituents.
 # Returns
 Dictionary of input tensors
 """
-function prepare_input_tensor(jcs::Vector{<:JetConstituents},
+function prepare_input_tensor(jets_constituents::Vector{<:JetConstituents},
                               jets::Vector{EEJet},
                               config::Dict,
                               feature_data::Dict)
@@ -114,7 +114,7 @@ function prepare_input_tensor(jcs::Vector{<:JetConstituents},
         end
 
         # Fill each tensor for this jet
-        constituents = jcs[i]
+        constituents = jets_constituents[i]
         num_constituents = min(length(constituents), max_length)
 
         # Fill mask (1 for valid constituents, 0 for padding)
@@ -188,11 +188,11 @@ Compute jet flavour probabilities for each jet.
 Vector of flavour probabilities for each jet
 """
 function get_weights(slot::Int, vars::Dict{String, Dict{String, Vector{Vector{Float32}}}},
-                     jets::Vector{EEJet}, jcs::Vector{<:JetConstituents},
+                     jets::Vector{EEJet}, jets_constituents::Vector{<:JetConstituents},
                      json_config::Dict, model::ONNXRunTime.InferenceSession)
 
     # Prepare input tensor
-    input_tensors = prepare_input_tensor(jcs, jets, json_config, vars)
+    input_tensors = prepare_input_tensor(jets_constituents, jets, json_config, vars)
 
     # Run inference
     output = model(input_tensors)
@@ -248,7 +248,7 @@ end
 
 """
     inference(json_config_path::AbstractString, onnx_model_path::AbstractString, df::DataFrame,
-                jets::Vector{EEJet}, jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
+                jets::Vector{EEJet}, jets_constituents::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
                 feature_data::Dict) -> DataFrame
 
 Run flavour tagging inference on a collection of jets.
@@ -257,7 +257,7 @@ Run flavour tagging inference on a collection of jets.
 - `json_config_path`: Path to the JSON configuration file
 - `onnx_model_path`: Path to the ONNX model file
 - `jets`: Vector of jets
-- `jcs`: Vector of jet constituents
+- `jets_constituents`: Vector of jet constituents
 - `feature_data`: Dictionary containing all extracted features
 
 # Returns
@@ -265,7 +265,7 @@ DataFrame with added flavour tagging scores
 """
 function inference(json_config_path::AbstractString, onnx_model_path::AbstractString,
                    jets::Vector{EEJet},
-                   jcs::Vector{StructVector{EDM4hep.ReconstructedParticle}},
+                   jets_constituents::Vector{StructVector{EDM4hep.ReconstructedParticle}},
                    feature_data::Dict)
 
     # Extract input variables/score names from JSON file
@@ -296,7 +296,7 @@ function inference(json_config_path::AbstractString, onnx_model_path::AbstractSt
     model, _ = setup_onnx_runtime(onnx_model_path, json_config_path, initvars)
 
     # Run inference
-    weights = get_weights(0, feature_data, jets, jcs, config, model)
+    weights = get_weights(0, feature_data, jets, jets_constituents, config, model)
 
     # Extract individual scores
     jet_scores = Dict{String, Vector{Float32}}()
@@ -310,7 +310,7 @@ end
 
 # TODO: Add primary vertex as an argument (from MC Particle)
 """
-    extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents}, 
+    extract_features(jets::Vector{EEJet}, jets_constituents::Vector{<:JetConstituents}, 
                     tracks::AbstractVector{EDM4hep.TrackState}, bz::Float32, 
                     track_L::AbstractArray{T} where T <: AbstractFloat, 
                     trackdata::AbstractVector{EDM4hep.Track}=AbstractVector{EDM4hep.Track}(), 
@@ -324,7 +324,7 @@ Extract all required features for jet flavour tagging.
 
 # Arguments 
 - `jets`: Vector of jets (EEJet)
-- `jcs`: Vector of jet constituents
+- `jets_constituents`: Vector of jet constituents
 - `tracks`: StructVector of track states
 - `bz`: Magnetic field strength
 - `track_L`: Array of track lengths
@@ -338,7 +338,7 @@ Extract all required features for jet flavour tagging.
 # Returns
 Dictionary containing all extracted features organized by input type
 """
-function extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents},
+function extract_features(jets::Vector{EEJet}, jets_constituents::Vector{<:JetConstituents},
                           tracks::AbstractVector{EDM4hep.TrackState}, bz::Float32,
                           track_L::AbstractArray{T} where {T <: AbstractFloat},
                           trackdata::AbstractVector{EDM4hep.Track} = AbstractVector{EDM4hep.Track}(),
@@ -364,37 +364,37 @@ function extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents},
     # Extract basic features
 
     # Points (spatial coordinates)
-    thetarel = get_thetarel_cluster(jets, jcs)
-    phirel = get_phirel_cluster(jets, jcs)
+    thetarel = get_thetarel_cluster(jets, jets_constituents)
+    phirel = get_phirel_cluster(jets, jets_constituents)
 
     features["pf_points"]["pfcand_thetarel"] = thetarel
     features["pf_points"]["pfcand_phirel"] = phirel
 
     # Extract PF features
-    erel_log = get_erel_log_cluster(jets, jcs)
+    erel_log = get_erel_log_cluster(jets, jets_constituents)
     features["pf_features"]["pfcand_erel_log"] = erel_log
     features["pf_features"]["pfcand_thetarel"] = thetarel
     features["pf_features"]["pfcand_phirel"] = phirel
 
     # Track parameters and covariance matrices
-    dxy = get_dxy(jcs, tracks, v_in, bz)
-    dz = get_dz(jcs, tracks, v_in, bz)
-    phi0 = get_phi0(jcs, tracks, v_in, bz)
-    dptdpt = get_dptdpt(jcs, tracks)
-    detadeta = get_detadeta(jcs, tracks)
-    dphidphi = get_dphidphi(jcs, tracks)
-    dxydxy = get_dxydxy(jcs, tracks)
-    dzdz = get_dzdz(jcs, tracks)
-    dxydz = get_dxydz(jcs, tracks)
-    dphidxy = get_dphidxy(jcs, tracks)
-    dlambdadz = get_dlambdadz(jcs, tracks)
-    dxyc = get_dxyc(jcs, tracks)
-    dxyctgtheta = get_dxyctgtheta(jcs, tracks)
-    phic = get_phic(jcs, tracks)
-    phidz = get_phidz(jcs, tracks)
-    phictgtheta = get_phictgtheta(jcs, tracks)
-    cdz = get_cdz(jcs, tracks)
-    cctgtheta = get_cctgtheta(jcs, tracks)
+    dxy = get_dxy(jets_constituents, tracks, v_in, bz)
+    dz = get_dz(jets_constituents, tracks, v_in, bz)
+    phi0 = get_phi0(jets_constituents, tracks, v_in, bz)
+    dptdpt = get_dptdpt(jets_constituents, tracks)
+    detadeta = get_detadeta(jets_constituents, tracks)
+    dphidphi = get_dphidphi(jets_constituents, tracks)
+    dxydxy = get_dxydxy(jets_constituents, tracks)
+    dzdz = get_dzdz(jets_constituents, tracks)
+    dxydz = get_dxydz(jets_constituents, tracks)
+    dphidxy = get_dphidxy(jets_constituents, tracks)
+    dlambdadz = get_dlambdadz(jets_constituents, tracks)
+    dxyc = get_dxyc(jets_constituents, tracks)
+    dxyctgtheta = get_dxyctgtheta(jets_constituents, tracks)
+    phic = get_phic(jets_constituents, tracks)
+    phidz = get_phidz(jets_constituents, tracks)
+    phictgtheta = get_phictgtheta(jets_constituents, tracks)
+    cdz = get_cdz(jets_constituents, tracks)
+    cctgtheta = get_cctgtheta(jets_constituents, tracks)
 
     # Add track parameters to features
     features["pf_features"]["pfcand_dptdpt"] = dptdpt
@@ -414,12 +414,13 @@ function extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents},
     features["pf_features"]["pfcand_cctgtheta"] = cctgtheta
 
     # Particle ID
-    jcs_isChargedHad = get_is_charged_had(jcs)
+    jets_constituents_isChargedHad = get_is_charged_had(jets_constituents)
 
     # Time-of-flight and dE/dx if data available
     if !isempty(track_L) && !isempty(trackdata) && !isempty(trackerhits) &&
        !isempty(gammadata) && !isempty(nhdata) && !isempty(calohits)
-        mtof = get_mtof(jcs, track_L, trackdata, trackerhits, gammadata, nhdata, calohits,
+        mtof = get_mtof(jets_constituents, track_L, trackdata, trackerhits, gammadata,
+                        nhdata, calohits,
                         v_in)
         features["pf_features"]["pfcand_mtof"] = mtof
     else
@@ -428,19 +429,20 @@ function extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents},
     end
 
     if !isempty(dNdx) && !isempty(trackdata)
-        dndx_vals = get_dndx(jcs, dNdx, trackdata, jcs_isChargedHad)
+        dndx_vals = get_dndx(jets_constituents, dNdx, trackdata,
+                             jets_constituents_isChargedHad)
         features["pf_features"]["pfcand_dndx"] = dndx_vals
     else
         features["pf_features"]["pfcand_dndx"] = [Float32[] for _ in 1:length(jets)]
     end
 
     # Particle type information
-    charge = get_charge(jcs)
-    isMu = get_is_mu(jcs)
-    isEl = get_is_el(jcs)
-    isChargedHad = jcs_isChargedHad
-    isGamma = get_is_gamma(jcs)
-    isNeutralHad = get_is_neutral_had(jcs)
+    charge = get_charge(jets_constituents)
+    isMu = get_is_mu(jets_constituents)
+    isEl = get_is_el(jets_constituents)
+    isChargedHad = jets_constituents_isChargedHad
+    isGamma = get_is_gamma(jets_constituents)
+    isNeutralHad = get_is_neutral_had(jets_constituents)
 
     features["pf_features"]["pfcand_charge"] = charge
     features["pf_features"]["pfcand_isMu"] = isMu
@@ -458,7 +460,7 @@ function extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents},
     btagSip2dSig = get_btagSip2dSig(btagSip2dVal, dxydxy)
     btagSip3dVal = get_btagSip3dVal(jets, dxy, dz, phi0, bz)
     btagSip3dSig = get_btagSip3dSig(btagSip3dVal, dxydxy, dzdz)
-    btagJetDistVal = get_btagJetDistVal(jets, jcs, dxy, dz, phi0, bz)
+    btagJetDistVal = get_btagJetDistVal(jets, jets_constituents, dxy, dz, phi0, bz)
     btagJetDistSig = get_btagJetDistSig(btagJetDistVal, dxydxy, dzdz)
 
     features["pf_features"]["pfcand_btagSip2dVal"] = btagSip2dVal
@@ -469,14 +471,14 @@ function extract_features(jets::Vector{EEJet}, jcs::Vector{<:JetConstituents},
     features["pf_features"]["pfcand_btagJetDistSig"] = btagJetDistSig
 
     # Vector features (energy and momentum)
-    e = get_e(jcs)
-    p = get_p(jcs)
+    e = get_e(jets_constituents)
+    p = get_p(jets_constituents)
 
     features["pf_vectors"]["pfcand_e"] = e
     features["pf_vectors"]["pfcand_p"] = p
 
     # Add mask (all 1s for real particles, 0s for padding)
-    mask = [fill(1.0f0, length(constituents)) for constituents in jcs]
+    mask = [fill(1.0f0, length(constituents)) for constituents in jets_constituents]
     features["pf_mask"]["pfcand_mask"] = mask
 
     return features
