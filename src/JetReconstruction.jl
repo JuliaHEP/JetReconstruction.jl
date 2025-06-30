@@ -93,4 +93,8 @@ export jetsplot, animatereco
 include("JSONresults.jl")
 export FinalJet, FinalJets
 
+# Ghost generation
+include("GhostGeneration.jl")
+export GhostedArea, add_ghosts!
+
 end
