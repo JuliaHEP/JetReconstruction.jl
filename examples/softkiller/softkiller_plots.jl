@@ -1,5 +1,4 @@
 using ArgParse
-using Profile
 using Logging
 using JSON
 
@@ -150,10 +149,7 @@ function plot_set_up(y::Vector{Float64}, phi::Vector{Float64}, pt::Vector{Float6
            ],
            ["Pileup", "Hard Event", "Jet"], "Legend")
 
-    save_dir = "examples/softkiller"
-    mkpath(save_dir)
-    file_path = joinpath(save_dir, plot_title * ".png")
-    save(file_path, fig)
+    save(plot_title * ".png", fig)
 end
 
 function main()
@@ -162,13 +158,12 @@ function main()
     global_logger(logger)
 
     # Only PseudoJet is supported for SoftKiller
-    if JetReconstruction.is_ee(args[:algorithm])
-        jet_type = EEjet
-    else
-        jet_type = PseudoJet
-    end
-    @assert jet_type==PseudoJet "SoftKiller only supports PseudoJet"
+    @assert JetReconstruction.is_pp(args[:algorithm]) "SoftKiller only supports pp algorithms and PseudoJet"
+    jet_type = PseudoJet
 
+    args[:pileup_file] = normpath(joinpath(@__DIR__, args[:pileup_file]))
+    args[:hard_file]   = normpath(joinpath(@__DIR__, args[:hard_file]))
+   
     # Reading pileup and hard event files
     events = read_final_state_particles(args[:pileup_file],
                                         maxevents = args[:maxevents],
@@ -189,10 +184,10 @@ function main()
     p = args[:power]
 
     # Ensure algorithm and power are consistent
-    (p,
-    algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-                                                                   algorithm = algorithm)
-    @info "Jet reconstruction will use $(algorithm) with power $(p)"
+    if isnothing(args[:algorithm]) && isnothing(args[:power])
+        @warn "Neither algorithm nor power specified, defaulting to AntiKt"
+        args[:algorithm] = JetAlgorithm.AntiKt
+    end
 
     # all_jets: all PseudoJets (hard + pileup), before SoftKiller
     # all_jets_sk: all PseudoJets (hard + pileup), for SoftKiller application

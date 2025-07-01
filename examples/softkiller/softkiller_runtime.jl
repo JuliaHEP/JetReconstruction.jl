@@ -1,11 +1,9 @@
 using ArgParse
-using Profile
 using Logging
 using JSON
 
 using LorentzVectorHEP
 using JetReconstruction
-using Profile
 
 # Parsing for algorithm and strategy enums
 include(joinpath(@__DIR__, "..", "parse-options.jl"))
@@ -79,15 +77,14 @@ function main()
     global_logger(logger)
 
     # Only PseudoJet is supported for SoftKiller
-    if JetReconstruction.is_ee(args[:algorithm])
-        jet_type = EEjet
-    else
-        jet_type = PseudoJet
-    end
-    @assert jet_type==PseudoJet "SoftKiller only supports PseudoJet"
-
+    @assert JetReconstruction.is_pp(args[:algorithm]) "SoftKiller only supports pp algorithms and PseudoJet"
+    jet_type = PseudoJet
+    
     events = Vector{PseudoJet}[]
 
+    args[:pileup_file] = normpath(joinpath(@__DIR__, args[:pileup_file]))
+    args[:hard_file]   = normpath(joinpath(@__DIR__, args[:hard_file]))
+   
     # Reading pileup and hard event files
     events = read_final_state_particles(args[:pileup_file],
                                         maxevents = args[:maxevents],
@@ -104,14 +101,11 @@ function main()
     grid_size = args[:grid_size]
     soft_killer = SoftKiller(rapmax, grid_size)
 
-    algorithm = args[:algorithm]
-    p = args[:power]
-
     # Ensure algorithm and power are consistent
-    (p,
-    algorithm) = JetReconstruction.get_algorithm_power_consistency(p = p,
-                                                                   algorithm = algorithm)
-    @info "Jet reconstruction will use $(algorithm) with power $(p)"
+    if isnothing(args[:algorithm]) && isnothing(args[:power])
+        @warn "Neither algorithm nor power specified, defaulting to AntiKt"
+        args[:algorithm] = JetAlgorithm.AntiKt
+    end
 
     # all_jets_sk: all PseudoJets (hard + pileup), for SoftKiller application
     all_jets_sk = PseudoJet[]
@@ -128,9 +122,8 @@ function main()
         push!(all_jets_sk, pseudo_jet)
     end
 
-    # Apply SoftKiller to all_jets_sk (hard + pileup) and 
-    # measure the runtime of the softkiller method 
-    @time softkiller!(soft_killer, all_jets_sk)
+    # Apply SoftKiller to all_jets_sk (hard + pileup)
+    softkiller!(soft_killer, all_jets_sk)
 end
 
 main()
