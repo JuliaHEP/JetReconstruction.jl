@@ -1,7 +1,7 @@
 using JetReconstruction
 
 """
-SoftKiller
+    mutable struct SoftKiller
 
 Implements the SoftKiller pileup mitigation algorithm, inspired by the FastJet contrib package.
 
