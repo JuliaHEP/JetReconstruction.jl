@@ -41,3 +41,24 @@ eej2 = EEJet(-1.0, 3.2, -1.2, 39.0)
     @test LorentzVectorHEP.mass(lvc_pj1) ≈ JetReconstruction.mass(eej1) ≈
           JetReconstruction.mass(eej1) ≈ LorentzVectorHEP.mass(lvc_eej1)
 end
+
+@testset "Final jets extraction" begin
+    # Test final jets extraction from different jet types
+    vec_pj = [pj1, pj2]
+    finaljets_pj = JetReconstruction.final_jets(vec_pj)
+
+    vec_lorentzhep = [JetReconstruction.lorentzvector(pj1),
+                             JetReconstruction.lorentzvector(pj2)]
+    finaljets_lorentzhep = JetReconstruction.final_jets(vec_lorentzhep)
+
+    vec_lorentzhepcyl = [JetReconstruction.lorentzvector_cyl(pj1),
+                             JetReconstruction.lorentzvector_cyl(pj2)]
+    finaljets_lorentzhepcyl = JetReconstruction.final_jets(vec_lorentzhepcyl)
+
+    @test length(finaljets_pj) == 2
+    @test length(finaljets_lorentzhep) == 2
+    @test length(finaljets_lorentzhepcyl) == 2
+    for i in 1:2
+        @test finaljets_pj[i] ≈ finaljets_lorentzhep[i] ≈ finaljets_lorentzhepcyl[i]
+    end
+end

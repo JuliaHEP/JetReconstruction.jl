@@ -16,6 +16,36 @@ struct FinalJet
 end
 
 """
+    FinalJet(jet::T)
+
+Convert a jet of type `T` to a `FinalJet` object. `T` must be a type that
+supports the methods `rapidity`, `phi`, and `pt`.
+"""
+FinalJet(jet::T) where {T} = FinalJet(rapidity(jet), phi(jet), sqrt(pt2(jet)))
+
+
+import Base: ==, ≈
+"""
+    ==(fj1::FinalJet, fj2::FinalJet)
+
+Compare two `FinalJet` objects for equality based on their rapidity, azimuthal
+angle, and transverse momentum.
+"""
+function ==(fj1::FinalJet, fj2::FinalJet)
+    (fj1.rap == fj2.rap) && (fj1.phi == fj2.phi) && (fj1.pt == fj2.pt)
+end
+
+"""
+    ≈(fj1::FinalJet, fj2::FinalJet)
+
+Compare two `FinalJet` objects for approximate equality based on their rapidity,
+azimuthal angle, and transverse momentum.
+"""
+function ≈(fj1::FinalJet, fj2::FinalJet; tol = 1e-6)
+    fj1.rap ≈ fj2.rap && fj1.phi ≈ fj2.phi && fj1.pt ≈ fj2.pt
+end
+
+"""
     struct FinalJets
 
 A struct with the vector of all jets for a certain jet identifier, used for
