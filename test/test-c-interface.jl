@@ -17,13 +17,13 @@ function compare_results(ptr::Ptr{C_JetReconstruction.C_ClusterSequence{T}},
     @test c_cluster_seq.R ≈ cluster_seq.R
     @test c_cluster_seq.strategy == cluster_seq.strategy
     @test c_cluster_seq.jets_length == length(cluster_seq.jets)
-    c_jets = C_JetReconstruction.unsafe_wrap_c_array(c_cluster_seq.jets,
-                                                     c_cluster_seq.jets_length)
+    c_jets = unsafe_wrap(Vector{T}, c_cluster_seq.jets,
+                         c_cluster_seq.jets_length)
     @test all(struct_approx_equal.(c_jets, cluster_seq.jets))
     @test c_cluster_seq.n_initial_jets == cluster_seq.n_initial_jets
     @test c_cluster_seq.history_length == length(cluster_seq.history)
-    c_history = C_JetReconstruction.unsafe_wrap_c_array(c_cluster_seq.history,
-                                                        c_cluster_seq.history_length)
+    c_history = unsafe_wrap(Vector{JetReconstruction.HistoryElement}, c_cluster_seq.history,
+                            c_cluster_seq.history_length)
     @test all(struct_approx_equal.(c_history, cluster_seq.history))
     @test c_cluster_seq.Qtot ≈ cluster_seq.Qtot
 end
@@ -33,8 +33,7 @@ function compare_results(ptr::Ptr{C_JetReconstruction.C_JetsResult{T}},
     @test ptr != C_NULL
     c_results = unsafe_load(ptr)
     @test c_results.length == length(jets)
-    c_data = C_JetReconstruction.unsafe_wrap_c_array(c_results.data,
-                                                     c_results.length)
+    c_data = unsafe_wrap(Vector{T}, c_results.data, c_results.length)
     @test all(struct_approx_equal.(c_data, jets))
 end
 

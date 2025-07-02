@@ -60,37 +60,9 @@ exception_to_enum(::UndefVarError) = Cint(StatusCode.UndefVarError)
 exception_to_enum(::StringIndexError) = Cint(StatusCode.StringIndexError)
 
 """
-    unsafe_wrap_c_array(ptr::Ptr{T}, array_length::Csize_t) where {T}
-
-Wraps a C array into a Julia `Vector` for both bits and non-bits types.
-
-# Arguments
-- `ptr::Ptr{T}`: A pointer to the C array.
-- `array_length::Csize_t`: The length of the C array.
-
-# Returns
-- A Julia `Vector{T}` containing the elements of the C array.
-
-# Safety
-This function use 'unsafe' methods and has undefined behaviour
-if pointer isn't valid or length isn't correct.
-"""
-function unsafe_wrap_c_array(ptr::Ptr{T}, array_length::Csize_t) where {T}
-    if isbitstype(T)
-        return unsafe_wrap(Vector{T}, ptr, array_length)
-    end
-
-    vec = Vector{T}(undef, array_length)
-    for i in eachindex(vec)
-        @inbounds vec[i] = unsafe_load(ptr, i)
-    end
-    return vec
-end
-
-"""
     make_c_array(v::Vector{T}) where {T}
 
-Helper function for converting a Julia vector to a C-style array.
+Helper function for converting a Julia vector of isbits objects to a C-style array.
 A C-style array is dynamically allocated and contents of input vector copied to it.
 
 # Arguments
@@ -105,6 +77,7 @@ A C-style array is dynamically allocated and contents of input vector copied to 
 
 # Notes
 - The caller is responsible for freeing the allocated memory using `Libc.free(ptr)`.
+- The `T` type must be an isbits type.
 """
 function make_c_array(v::Vector{T}) where {T}
     len = length(v)
@@ -112,9 +85,7 @@ function make_c_array(v::Vector{T}) where {T}
     if ptr == C_NULL
         throw(OutOfMemoryError("Libc.malloc failed to allocate memory"))
     end
-    for i in 1:len
-        @inbounds unsafe_store!(ptr, v[i], i)
-    end
+    unsafe_copyto!(ptr, pointer(v), len)
     return ptr, Csize_t(len)
 end
 
@@ -217,8 +188,8 @@ Convert a `C_ClusterSequence` object to a `ClusterSequence` object.
 - The input object must remain valid while the output object is used.
 """
 function ClusterSequence{T}(c::C_ClusterSequence{T}) where {T}
-    jets_v = unsafe_wrap_c_array(c.jets, c.jets_length)
-    history_v = unsafe_wrap_c_array(c.history, c.history_length)
+    jets_v = unsafe_wrap(Vector{T}, c.jets, c.jets_length)
+    history_v = unsafe_wrap(Vector{HistoryElement}, c.history, c.history_length)
     return ClusterSequence{T}(c.algorithm, c.power, c.R, c.strategy, jets_v,
                               c.n_initial_jets,
                               history_v, c.Qtot)
@@ -279,7 +250,7 @@ function c_jet_reconstruct(particles::Ptr{T},
                            strategy::RecoStrategy.Strategy,
                            result::Ptr{C_ClusterSequence{U}}) where {T, U}
     try
-        particles_v = unsafe_wrap_c_array(particles, particles_length)
+        particles_v = unsafe_wrap(Vector{T}, particles, particles_length)
         clusterseq = jet_reconstruct(particles_v; p = nothing, algorithm = algorithm, R = R,
                                      strategy = strategy)
         c_clusterseq = C_ClusterSequence{U}(clusterseq)
