@@ -61,11 +61,12 @@ int main(int argc, char *argv[]) {
   jetreconstruction_JetAlgorithm algorithm = JETRECONSTRUCTION_JETALGORITHM_CA;
   double R = 3.0;
   jetreconstruction_RecoStrategy strategy = JETRECONSTRUCTION_RECOSTRATEGY_BEST;
+  jetreconstruction_RecombinationScheme recombination = JETRECONCSTRUCTION_RECOMBINATIONSCHEME_ESCHEME;
 
   jetreconstruction_ClusterSequence cluster_seq;
-  int ret = jetreconstruction_jet_reconstruct(particles, len, algorithm, R, strategy,
-                                              &cluster_seq);
-  if (ret != JETRECONSTRUCTION_STATUSCODE_OK){
+  jetreconstruction_StatusCode sc = jetreconstruction_jet_reconstruct(particles, len, algorithm, R,
+                                                                      strategy, recombination, &cluster_seq);
+  if (sc != JETRECONSTRUCTION_STATUSCODE_OK){
     /*An error occurred check the value or stderr for more information*/
     return 1;
   }

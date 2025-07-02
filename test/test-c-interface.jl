@@ -47,7 +47,7 @@ function test_pseudojet()
     struct_approx_equal(jet, c_jet)
 end
 
-function test_jet_reconstruct(filename; algorithm, R, strategy, power = nothing,
+function test_jet_reconstruct(filename; algorithm, R, strategy, recombine, power = nothing,
                               T = PseudoJet)
     @testset "C-interface jet reconstruct" begin
         events = JetReconstruction.read_final_state_particles(filename)
@@ -64,13 +64,15 @@ function test_jet_reconstruct(filename; algorithm, R, strategy, power = nothing,
                                                                         algorithm,
                                                                         R,
                                                                         strategy,
+                                                                        recombine,
                                                                         cluster_seq_ptr)
             @test C_JetReconstruction.StatusCode.T(ret) == C_JetReconstruction.StatusCode.OK
 
             cluster_seq = JetReconstruction.jet_reconstruct(event; R = R,
                                                             p = power,
                                                             algorithm = algorithm,
-                                                            strategy = strategy)
+                                                            strategy = strategy,
+                                                            RecombinationMethods[recombine]...)
             compare_results(cluster_seq_ptr, cluster_seq)
             @inbounds results[ievent] = cluster_seq
             @inbounds c_results[ievent] = cluster_seq_ptr
@@ -136,6 +138,7 @@ end
 
 @testset "C-interface JetReconstruction pp" begin
     test_cone_size = 0.4
+    test_recombine_scheme = RecombinationScheme.EScheme
 
     test_pseudojet()
 
@@ -147,6 +150,7 @@ end
             cluster_seq_ptrs, cluster_seqs = test_jet_reconstruct(events_file_pp;
                                                                   algorithm = alg,
                                                                   strategy = stg,
+                                                                  recombine = test_recombine_scheme,
                                                                   R = test_cone_size,
                                                                   power = power)
             test_inclusive_jets(cluster_seq_ptrs, cluster_seqs; ptmin = 5.0)

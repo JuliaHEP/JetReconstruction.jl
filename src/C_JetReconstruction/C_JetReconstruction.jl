@@ -3,9 +3,10 @@ Minimal C bindings for JetReconstruction.jl
 """
 module C_JetReconstruction
 
-using ..JetReconstruction: JetAlgorithm, RecoStrategy, PseudoJet, ClusterSequence,
-                           HistoryElement, jet_reconstruct,
-                           exclusive_jets, inclusive_jets
+using ..JetReconstruction: JetAlgorithm, RecoStrategy,
+                           RecombinationScheme, RecombinationMethods,
+                           PseudoJet, ClusterSequence, HistoryElement,
+                           jet_reconstruct, exclusive_jets, inclusive_jets
 using EnumX
 
 """
@@ -225,6 +226,7 @@ end
                       algorithm::JetAlgorithm.Algorithm,
                       R::Cdouble,
                       strategy::RecoStrategy.Strategy,
+                      recombination_scheme::RecombinationScheme.Recombine,
                       result::Ptr{C_ClusterSequence{U}})::Cint where {T, U}
 
 Internal helper functions for calling `jet_reconstruct` with C-compatible data-structers.
@@ -233,8 +235,9 @@ Internal helper functions for calling `jet_reconstruct` with C-compatible data-s
 - `particles::Ptr{T}`: Pointer to an array of pseudojet objects used for jet reconstruction.
 - `particles_length::Csize_t`: The length of `particles`` array.
 - `algorithm::JetAlgorithm.Algorithm`: The algorithm to use for jet reconstruction.
-- `R::Cdouble`: The jet radius parameter..
+- `R::Cdouble`: The jet radius parameter.
 - `strategy::RecoStrategy.Strategy`: The jet reconstruction strategy to use.
+- `recombination_scheme::RecombinationScheme.Recombine`: The recombination scheme used for combining particles.
 - `result::Ptr{C_ClusterSequence{U}}`: A pointer to which a cluster sequence containing the reconstructed jets and the merging history will be stored.
 
 # Returns
@@ -248,11 +251,13 @@ function c_jet_reconstruct(particles::Ptr{T},
                            algorithm::JetAlgorithm.Algorithm,
                            R::Cdouble,
                            strategy::RecoStrategy.Strategy,
+                           recombination_scheme::RecombinationScheme.Recombine,
                            result::Ptr{C_ClusterSequence{U}}) where {T, U}
     try
         particles_v = unsafe_wrap(Vector{T}, particles, particles_length)
         clusterseq = jet_reconstruct(particles_v; p = nothing, algorithm = algorithm, R = R,
-                                     strategy = strategy)
+                                     strategy = strategy,
+                                     RecombinationMethods[recombination_scheme]...)
         c_clusterseq = C_ClusterSequence{U}(clusterseq)
         unsafe_store!(result, c_clusterseq)
     catch e
@@ -267,6 +272,7 @@ end
                                       algorithm::JetAlgorithm.Algorithm,
                                       R::Cdouble,
                                       strategy::RecoStrategy.Strategy,
+                                      recombination_scheme::RecombinationScheme.Recombine,
                                       result::Ptr{C_ClusterSequence{PseudoJet}})::Cint
 
 C-binding for `jet_reconstruct`.
@@ -277,6 +283,7 @@ C-binding for `jet_reconstruct`.
 - `algorithm::JetAlgorithm.Algorithm`: The algorithm to use for jet reconstruction.
 - `R::Cdouble`: The jet radius parameter..
 - `strategy::RecoStrategy.Strategy`: The jet reconstruction strategy to use.
+- `recombination_scheme::RecombinationScheme.Recombine`: The recombination scheme used for combining particles.
 - `result::Ptr{C_ClusterSequence{PseudoJet}}`: A pointer to which a cluster sequence containing the reconstructed jets and the merging history will be stored.
 
 # Returns
@@ -290,8 +297,10 @@ Base.@ccallable function jetreconstruction_jet_reconstruct(particles::Ptr{Pseudo
                                                            algorithm::JetAlgorithm.Algorithm,
                                                            R::Cdouble,
                                                            strategy::RecoStrategy.Strategy,
+                                                           recombination_scheme::RecombinationScheme.Recombine,
                                                            result::Ptr{C_ClusterSequence{PseudoJet}})::Cint
-    return c_jet_reconstruct(particles, particles_length, algorithm, R, strategy, result)
+    return c_jet_reconstruct(particles, particles_length, algorithm, R, strategy,
+                             recombination_scheme, result)
 end
 
 """

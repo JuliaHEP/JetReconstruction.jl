@@ -54,7 +54,7 @@ void printJetsResult(const jetreconstruction_JetsResult *results) {
 
 int main(int argc, char *argv[]) {
   clock_t start_time = clock();
-  int sc = 0;
+  jetreconstruction_StatusCode sc = 0;
 #ifdef JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER
   init_julia(0, NULL);
 #endif
@@ -68,10 +68,12 @@ int main(int argc, char *argv[]) {
   jetreconstruction_JetAlgorithm algorithm = JETRECONSTRUCTION_JETALGORITHM_CA;
   double R = 3.0;
   jetreconstruction_RecoStrategy strategy = JETRECONSTRUCTION_RECOSTRATEGY_BEST;
+  jetreconstruction_RecombinationScheme recombination =
+      JETRECONCSTRUCTION_RECOMBINATIONSCHEME_ESCHEME;
 
   jetreconstruction_ClusterSequence cluster_seq;
   sc = jetreconstruction_jet_reconstruct(particles, len, algorithm, R, strategy,
-                                         &cluster_seq);
+                                         recombination, &cluster_seq);
   assert(sc == JETRECONSTRUCTION_STATUSCODE_OK);
 
   printClusterSequence(&cluster_seq);
