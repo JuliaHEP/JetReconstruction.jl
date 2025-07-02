@@ -29,9 +29,9 @@ clustersequence_ptr = Ptr{C_ClusterSequence{PseudoJet}}(Libc.malloc(sizeof(C_Clu
 results_ptr = Ptr{C_JetsResult{PseudoJet}}(Libc.malloc(sizeof(C_JetsResult{PseudoJet})))
 @assert results_ptr != C_NULL
 
-assert_ok(jetreconstruction_PseudoJet_init(jets_ptr, 0.0, 1.0, 2.0, 3.0))
+assert_ok(jetreconstruction_PseudoJet_init(jets_ptr, 0.0, 1.0, 2.0, 3.0, 1))
 assert_ok(jetreconstruction_PseudoJet_init(jets_ptr + sizeof(PseudoJet), 1.0, 2.0, 3.0,
-                                           4.0))
+                                           4.0, 2))
 
 for algorithm in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt]
     for strategy in [RecoStrategy.N2Plain, RecoStrategy.N2Tiled, RecoStrategy.Best]

@@ -60,9 +60,9 @@ int main(int argc, char *argv[]) {
 #endif
   size_t len = 2;
   jetreconstruction_PseudoJet particles[2];
-  sc = jetreconstruction_PseudoJet_init(&particles[0], 0.0, 1.0, 2.0, 3.0);
+  sc = jetreconstruction_PseudoJet_init(&particles[0], 0.0, 1.0, 2.0, 3.0, 1);
   assert(sc == JETRECONSTRUCTION_STATUSCODE_OK);
-  sc = jetreconstruction_PseudoJet_init(&particles[1], 1.0, 2.0, 3.0, 4.0);
+  sc = jetreconstruction_PseudoJet_init(&particles[1], 1.0, 2.0, 3.0, 4.0, 2);
   assert(sc == JETRECONSTRUCTION_STATUSCODE_OK);
 
   jetreconstruction_JetAlgorithm algorithm = JETRECONSTRUCTION_JETALGORITHM_CA;

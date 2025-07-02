@@ -119,8 +119,9 @@ function make_c_array(v::Vector{T}) where {T}
 end
 
 """
-    jetreconstruction_PseudoJet_init(ptr::Ptr{PseudoJet}, px::Cdouble, py::Cdouble, pz::Cdouble, E::Cdouble) -> Cint
-
+    jetreconstruction_PseudoJet_init(ptr::Ptr{PseudoJet}, px::Cdouble,
+                                     py::Cdouble, pz::Cdouble,
+                                     E::Cdouble, cluster_hist_index::Clong) -> Cint
 C-binding for `PseudoJet` initialization.
 
 # Arguments
@@ -129,6 +130,7 @@ C-binding for `PseudoJet` initialization.
 - `py::Cdouble`: The y-component of the momentum.
 - `pz::Cdouble`: The z-component of the momentum.
 - `E::Cdouble`: The energy of the jet.
+- `cluster_hist_index::Clong`: The index of the cluster history.
 
 # Returns
 - `Cint`: An integer status code indicating the success or failure.
@@ -136,9 +138,10 @@ C-binding for `PseudoJet` initialization.
 """
 Base.@ccallable function jetreconstruction_PseudoJet_init(ptr::Ptr{PseudoJet}, px::Cdouble,
                                                           py::Cdouble, pz::Cdouble,
-                                                          E::Cdouble)::Cint
+                                                          E::Cdouble,
+                                                          cluster_hist_index::Clong)::Cint
     try
-        pseudojet = PseudoJet(px, py, pz, E)
+        pseudojet = PseudoJet(px, py, pz, E; cluster_hist_index = cluster_hist_index)
         unsafe_store!(ptr, pseudojet)
     catch e
         return handle_exception(e)

@@ -132,12 +132,13 @@ typedef struct {
  * @param[in] py The y-component of the momentum.
  * @param[in] pz The z-component of the momentum.
  * @param[in] E The energy component of the momentum.
+ * @param[in] cluter_hist_index The index of the cluster history.
  * @return An integer status code indicating the success or failure. See common
  * status codes jetreconstruction_StatusCode.
  */
 jetreconstruction_StatusCode
 jetreconstruction_PseudoJet_init(jetreconstruction_PseudoJet *ptr, double px,
-                                 double py, double pz, double E);
+                                 double py, double pz, double E, long cluter_hist_index);
 
 /**
  * @struct jetreconstruction_HistoryElement
