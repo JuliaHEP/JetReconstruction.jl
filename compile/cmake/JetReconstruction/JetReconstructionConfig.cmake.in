@@ -1,5 +1,5 @@
 # Config file for the JetReconstruction.jl package
-# Manualy adjusted from standard cmake generated config file 
+# Manually adjusted from standard cmake generated config file 
 
 set(JETRECONSTRUCTION_COMPILER "@JETRECONSTRUCTION_COMPILER@")
 

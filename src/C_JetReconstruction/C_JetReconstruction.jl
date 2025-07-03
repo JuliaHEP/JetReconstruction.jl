@@ -90,7 +90,8 @@ function make_c_array(v::Vector{T}) where {T}
     return ptr, Csize_t(len)
 end
 
-"""
+# Workaround for Julia 1.10 not accepting docstrings together with `@ccallable`
+@doc """
     jetreconstruction_PseudoJet_init(ptr::Ptr{PseudoJet}, px::Cdouble,
                                      py::Cdouble, pz::Cdouble,
                                      E::Cdouble, cluster_hist_index::Clong) -> Cint
@@ -104,10 +105,14 @@ C-binding for `PseudoJet` initialization.
 - `E::Cdouble`: The energy of the jet.
 - `cluster_hist_index::Clong`: The index of the cluster history.
 
+# Note
+ For an array of initial jets the `cluster_hist_index` should be 1+index of the jet in an array.
+
 # Returns
 - `Cint`: An integer status code indicating the success or failure.
 
-"""
+""" jetreconstruction_PseudoJet_init
+
 Base.@ccallable function jetreconstruction_PseudoJet_init(ptr::Ptr{PseudoJet}, px::Cdouble,
                                                           py::Cdouble, pz::Cdouble,
                                                           E::Cdouble,
@@ -156,7 +161,8 @@ function free_members(ptr::Ptr{C_ClusterSequence{T}}) where {T}
     end
 end
 
-"""
+# Workaround for Julia 1.10 not accepting docstrings together with `@ccallable`
+@doc """
     jetreconstruction_ClusterSequence_free_members_(ptr::Ptr{C_ClusterSequence{PseudoJet}}) -> Cvoid
 
 C-binding for freeing the members of a `C_ClusterSequence` object pointed to by `ptr`.
@@ -166,7 +172,8 @@ C-binding for freeing the members of a `C_ClusterSequence` object pointed to by 
 
 # Returns
 - `Cvoid`: This function does not return a value.
-"""
+""" jetreconstruction_ClusterSequence_free_members_
+
 Base.@ccallable function jetreconstruction_ClusterSequence_free_members_(ptr::Ptr{C_ClusterSequence{PseudoJet}})::Cvoid
     free_members(ptr)
     return nothing
@@ -229,7 +236,7 @@ end
                       recombination_scheme::RecombinationScheme.Recombine,
                       result::Ptr{C_ClusterSequence{U}})::Cint where {T, U}
 
-Internal helper functions for calling `jet_reconstruct` with C-compatible data-structers.
+Internal helper functions for calling `jet_reconstruct` with C-compatible data-structures.
 
 # Arguments
 - `particles::Ptr{T}`: Pointer to an array of pseudojet objects used for jet reconstruction.
@@ -266,7 +273,8 @@ function c_jet_reconstruct(particles::Ptr{T},
     return Cint(StatusCode.OK)
 end
 
-"""
+# Workaround for Julia 1.10 not accepting docstrings together with `@ccallable`
+@doc """
     jetreconstruction_jet_reconstruct(particles::Ptr{PseudoJet},
                                       particles_length::Csize_t,
                                       algorithm::JetAlgorithm.Algorithm,
@@ -291,7 +299,8 @@ C-binding for `jet_reconstruct`.
 
 # Notes
 - To avoid memory leaks the memory allocated for members of `result` should be freed with `jetreconstruction_ClusterSequence_free_members_`.
-"""
+""" jetreconstruction_jet_reconstruct
+
 Base.@ccallable function jetreconstruction_jet_reconstruct(particles::Ptr{PseudoJet},
                                                            particles_length::Csize_t,
                                                            algorithm::JetAlgorithm.Algorithm,
@@ -333,7 +342,8 @@ function free_members(ptr::Ptr{C_JetsResult{T}}) where {T}
     end
 end
 
-"""
+# Workaround for Julia 1.10 not accepting docstrings together with `@ccallable`
+@doc """
     jetreconstruction_JetsResult_free_members_(ptr::Ptr{C_JetsResult{PseudoJet}})::Cvoid
 
 C-binding for freeing the members of a `C_JetsResult{PseudoJet}` object pointed to by `ptr`.
@@ -343,7 +353,8 @@ C-binding for freeing the members of a `C_JetsResult{PseudoJet}` object pointed 
 
 # Returns
 - `Cvoid`: This function does not return any value.
-"""
+""" jetreconstruction_JetsResult_free_members_
+
 Base.@ccallable function jetreconstruction_JetsResult_free_members_(ptr::Ptr{C_JetsResult{PseudoJet}})::Cvoid
     free_members(ptr)
     return nothing
@@ -378,7 +389,8 @@ function jets_selection(selector, clustersequence::Ptr{C_ClusterSequence{T}},
     return Cint(StatusCode.OK)
 end
 
-"""
+# Workaround for Julia 1.10 not accepting docstrings together with `@ccallable`
+@doc """
     jetreconstruction_exclusive_jets_dcut(clustersequence::Ptr{C_ClusterSequence{PseudoJet}},
                                           dcut::Cdouble,
                                           result::Ptr{C_JetsResult{PseudoJet}}) -> Cint
@@ -395,14 +407,16 @@ C-binding for `exclusive_jets` with a cut on the maximum distance parameter.
 
 # Notes
 - To avoid memory leaks the memory allocated for members of `result` should be freed with `jetreconstruction_JetsResult_free_members_`.
-"""
+""" jetreconstruction_exclusive_jets_dcut
+
 Base.@ccallable function jetreconstruction_exclusive_jets_dcut(clustersequence::Ptr{C_ClusterSequence{PseudoJet}},
                                                                dcut::Cdouble,
                                                                result::Ptr{C_JetsResult{PseudoJet}})::Cint
     return jets_selection(exclusive_jets, clustersequence, result; dcut = dcut)
 end
 
-"""
+# Workaround for Julia 1.10 not accepting docstrings together with `@ccallable`
+@doc """
     jetreconstruction_exclusive_jets_njets(clustersequence::Ptr{C_ClusterSequence{PseudoJet}},
                                            njets::Csize_t,
                                            result::Ptr{C_JetsResult{PseudoJet}}) -> Cint
@@ -419,14 +433,16 @@ C-binding for `exclusive_jets` with a specific number of jets.
 
 # Notes
 - To avoid memory leaks the memory allocated for members of `result` should be freed with `jetreconstruction_JetsResult_free_members_`.
-"""
+""" jetreconstruction_exclusive_jets_njets
+
 Base.@ccallable function jetreconstruction_exclusive_jets_njets(clustersequence::Ptr{C_ClusterSequence{PseudoJet}},
                                                                 njets::Csize_t,
                                                                 result::Ptr{C_JetsResult{PseudoJet}})::Cint
     return jets_selection(exclusive_jets, clustersequence, result; njets = njets)
 end
 
-"""
+# Workaround for Julia 1.10 not accepting docstrings together with `@ccallable`
+@doc """
     jetreconstruction_inclusive_jets(clustersequence::Ptr{C_ClusterSequence{PseudoJet}},
                                      ptmin::Cdouble,
                                      result::Ptr{C_JetsResult{PseudoJet}}) -> Cint
@@ -443,7 +459,8 @@ C-binding for `inclusive_jets`.
 
 # Notes
 - To avoid memory leaks the memory allocated for members of `result` should be freed with `jetreconstruction_JetsResult_free_members_`.
-"""
+""" jetreconstruction_inclusive_jets
+
 Base.@ccallable function jetreconstruction_inclusive_jets(clustersequence::Ptr{C_ClusterSequence{PseudoJet}},
                                                           ptmin::Cdouble,
                                                           result::Ptr{C_JetsResult{PseudoJet}})::Cint
