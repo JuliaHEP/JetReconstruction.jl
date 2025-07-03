@@ -41,8 +41,8 @@ for which these methods are already predefined in the `JetReconstruction` namesp
 
 **Note** when using `PseudoJet` or `EEJet`, the history indices (`_cluster_hist_index`)
 must be set correctly. For initial jets, this means assigning to each jet its index
-in the vector if you construct them manually. When using other jet types or jet read from a
-HepMC3 file, correct indices are set automatically.
+in the vector if you construct them manually. When using other jet types correct
+indices are set automatically internally.
     
 ## `recombine` argument
 The `recombine` argument is the function used to merge pairs of particles. The
