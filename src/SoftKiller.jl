@@ -22,7 +22,6 @@ are removed from the event.
 - `_requested_drap::Float64`: Requested grid spacing in rapidity.
 - `_requested_dphi::Float64`: Requested grid spacing in phi.
 - `_ntotal::Int64`: Total number of tiles.
-- `_ngood::Int64`: Number of tiles with at least one particle.
 - `_dy::Float64`: Actual grid spacing in rapidity.
 - `_dphi::Float64`: Actual grid spacing in phi.
 - `_cell_area::Float64`: Area of a single tile.
@@ -44,7 +43,6 @@ mutable struct SoftKiller
     _requested_drap::Float64
     _requested_dphi::Float64
     _ntotal::Int64
-    _ngood::Int64
     _dy::Float64
     _dphi::Float64
     _cell_area::Float64
@@ -53,24 +51,26 @@ mutable struct SoftKiller
     _ny::Int64
     _nphi::Int64
 
-    """
-        SoftKiller(rapmax::Float64, grid_size::Float64)
-
-    Construct a square SoftKiller grid from `-rapmax` to `rapmax` in rapidity, with tile size `grid_size`.
-    """
-    function SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)
-        grid = new(rapmax, rapmin, drap, dphi, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0)
-        _setup_grid!(grid)
-        grid
-    end
-
+    
     """
         SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)
 
     Construct a SoftKiller grid from `rapmin` to `rapmax` in rapidity, with tile sizes `drap` and `dphi`.
     """
+
+    function SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)
+        grid = new(rapmax, rapmin, drap, dphi, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0)
+        _setup_grid!(grid)
+        grid
+    end
+
+    """
+        SoftKiller(rapmax::Float64, grid_size::Float64)
+
+    Construct a square SoftKiller grid from `-rapmax` to `rapmax` in rapidity, with tile size `grid_size`.
+    """
     function SoftKiller(rapmax::Float64, grid_size::Float64)
-        grid = new(rapmax, -rapmax, grid_size, grid_size, 0, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0,
+        grid = new(rapmax, -rapmax, grid_size, grid_size, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0,
                    0)
         _setup_grid!(grid)
         grid
