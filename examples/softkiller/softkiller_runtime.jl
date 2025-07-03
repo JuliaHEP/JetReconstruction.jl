@@ -79,12 +79,12 @@ function main()
     # Only PseudoJet is supported for SoftKiller
     @assert JetReconstruction.is_pp(args[:algorithm]) "SoftKiller only supports pp algorithms and PseudoJet"
     jet_type = PseudoJet
-    
+
     events = Vector{PseudoJet}[]
 
     args[:pileup_file] = normpath(joinpath(@__DIR__, args[:pileup_file]))
-    args[:hard_file]   = normpath(joinpath(@__DIR__, args[:hard_file]))
-   
+    args[:hard_file] = normpath(joinpath(@__DIR__, args[:hard_file]))
+
     # Reading pileup and hard event files
     events = read_final_state_particles(args[:pileup_file],
                                         maxevents = args[:maxevents],
