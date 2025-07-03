@@ -92,7 +92,7 @@ function initial_history(particles)
 
         # get cross-referencing right from the Jets
         # particles[i]._cluster_hist_index = i
-        @assert cluster_hist_index(particles[i]) == i
+        @assert cluster_hist_index(particles[i])==i "Cluster history index should match jet's index in the input vector"
 
         # determine the total energy in the event
         Qtot += particles[i].E
