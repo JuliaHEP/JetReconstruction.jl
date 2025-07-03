@@ -21,8 +21,10 @@ extern "C" {
 
 #include <stddef.h>
 
+/* clang-format off */ 
 /** Compiler used to compiler JetReconstruction.jl package */
 #define @JETRECONSTRUCTION_COMPILER@ 1
+/* clang-format on */
 
 /*Special states in a history.*/
 
