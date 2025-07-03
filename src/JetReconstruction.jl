@@ -84,10 +84,6 @@ export mass_drop, soft_drop, jet_filtering, jet_trimming
 # Simple HepMC3 reader
 include("HepMC3.jl")
 
-# jet serialisation (saving to file)
-include("Serialize.jl")
-export savejets, loadjets!, loadjets
-
 # utility functions, useful for different primary scripts
 include("Utils.jl")
 export read_final_state_particles, final_jets

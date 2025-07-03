@@ -6,7 +6,12 @@ browsed directly on
 [GitHub](https://github.com/JuliaHEP/JetReconstruction.jl/tree/main/examples).
 
 *Note:* because of extra dependencies in these scripts, one must use the
-`Project.toml` file in the `examples` directory.
+`Project.toml` file in the `examples` directory (or from `examples/FEATURE`
+where there is a further dependency, e.g., for visualisation).
+
+In the following examples we assume that these are being run from the directory
+where the examples script is. Adjust the paths if you run from a different
+location.
 
 ## Standalone Basic Reconstruction Examples
 
@@ -17,11 +22,11 @@ perform a jet reconstruction, with different algorithms and (optionally)
 strategy, producing exclusive and inclusive jet selections.
 
 ```sh
-julia --project=examples examples/jetreco.jl --algorithm=AntiKt test/data/events.pp13TeV.hepmc3.gz
+julia --project jetreco.jl --algorithm=AntiKt ../test/data/events.pp13TeV.hepmc3.zst
 ...
-julia --project=examples examples/jetreco.jl --algorithm=Durham test/data/events.eeH.hepmc3.gz
+julia --project jetreco.jl --algorithm=Durham ../test/data/events.eeH.hepmc3.zst
 ...
-julia --project=examples examples/jetreco.jl --maxevents=10 --strategy=N2Plain --algorithm=Kt --exclusive-njets=3 test/data/events.pp13TeV.hepmc3.gz
+julia --project jetreco.jl --maxevents=10 --strategy=N2Plain --algorithm=Kt --exclusive-njets=3 ../test/data/events.pp13TeV.hepmc3.zst
 ...
 ```
 
@@ -35,7 +40,7 @@ profiling). Use the `--help` option to see usage. e.g., to extract timing
 performance for the AntiKt algorithm using the tiled strategy:
 
 ```sh
-julia --project instrumented-jetreco.jl -S N2Tiled -A AntiKt --nsamples 100 ../test/data/events.hepmc3
+julia --project instrumented-jetreco.jl -S N2Tiled -A AntiKt --nsamples 100 ../test/data/events.pp13TeV.hepmc3.zst
 ```
 
 ## Visualisation
@@ -54,7 +59,7 @@ This is a 3D plot where all the initial energy deposits are visualised, with
 colours that indicate in which final cluster the deposit ended up in.
 
 ```sh
-julia --project visualise-jets.jl -A AntiKt -R 1.0 ../../test/data/events.pp13TeV.hepmc3.gz test-pp.png
+julia --project visualise-jets.jl -A AntiKt -R 1.0 ../../test/data/events.pp13TeV.hepmc3.zst test-pp.png
 ```
 
 ### `visualise-jets.ipynb` and `visualise-jets-nb.ipynb`
@@ -72,7 +77,7 @@ Performs jet reconstruction and then produces and animation of the process,
 showing how the jets merge from their different constituents.
 
 ```sh
-julia --project animate-reconstruction.jl -A AntiKt -R 1.0 ../../test/data/events.pp13TeV.hepmc3.gz test-pp.mp4
+julia --project animate-reconstruction.jl -A AntiKt -R 1.0 ../../test/data/events.pp13TeV.hepmc3.zst test-pp.mp4
 ```
 
 ## EDM4hep

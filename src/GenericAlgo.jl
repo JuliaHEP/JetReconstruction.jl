@@ -36,9 +36,14 @@ history.
 ## `particles` argument
 Any type that supplies the methods `pt2()`, `phi()`, `rapidity()`, `px()`,
 `py()`, `pz()`, `energy()` (in the `JetReconstruction` namespace) can be used.
-This includes `LorentzVector`, `LorentzVectorCyl`, and `PseudoJet`, for which
-these methods are already predefined in the `JetReconstruction` namespace.
+This includes `LorentzVector`, `LorentzVectorCyl`, `PseudoJet` and `EEJet`,
+for which these methods are already predefined in the `JetReconstruction` namespace.
 
+**Note** when using `PseudoJet` or `EEJet`, the history indices (`_cluster_hist_index`)
+must be set correctly. For initial jets, this means assigning to each jet its index
+in the vector if you construct them manually. When using other jet types correct
+indices are set automatically internally.
+    
 ## `recombine` argument
 The `recombine` argument is the function used to merge pairs of particles. The
 default is `addjets`, which uses 4-momenta addition (a.k.a. the E-scheme).

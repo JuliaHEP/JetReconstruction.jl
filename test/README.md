@@ -22,3 +22,15 @@ Tests are factorised into individual files as `test-*.jl`. By use of `common.jl`
 ```sh
 julia --project test/test-pp-reconstruction.jl
 ```
+
+## Data Files
+
+In `data`:
+
+- `events.pp13TeV.hepmc3.zst` - 100 Pythia 13 TeV events in HepMC3 format (compressed)
+- `events.eeH.hepmc3.zst` - 100 Pythia $e^+e^- \rightarrow H$ events in HepMC3 format (compressed)
+
+- `hepmc32summary.jl` script that will calculate the average particle density of
+  a HepMC3 input file and plot an ASCII histogram of the distribution.
+
+Other files are reference outputs used by tests.
