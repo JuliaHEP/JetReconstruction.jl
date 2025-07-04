@@ -247,6 +247,9 @@ static inline void jetreconstruction_ClusterSequence_free_members(
  * reconstruction.
  * @param[in] particles_length The length of @p particles array.
  * @param[in] algorithm The algorithm to use for jet reconstruction.
+ * @param[in] power  The power value used for the distance measure for
+ * generalised k_T algorithms (GenKt, EEKt). Other algorithms will ignore this
+ * value.
  * @param[in] R The jet radius parameter.
  * @param[in] strategy The jet reconstruction strategy to use.
  * @param[in] recombination_scheme The recombination scheme used for combining
@@ -258,7 +261,7 @@ static inline void jetreconstruction_ClusterSequence_free_members(
  */
 jetreconstruction_StatusCode jetreconstruction_jet_reconstruct(
     const jetreconstruction_PseudoJet *particles, size_t particles_length,
-    jetreconstruction_JetAlgorithm algorithm, double R,
+    jetreconstruction_JetAlgorithm algorithm, double power, double R,
     jetreconstruction_RecoStrategy strategy,
     jetreconstruction_RecombinationScheme recombination_scheme,
     jetreconstruction_ClusterSequence *result);

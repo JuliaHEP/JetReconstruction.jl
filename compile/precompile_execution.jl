@@ -19,6 +19,7 @@ end
 
 R = 2.0
 jets_len = Csize_t(2)
+power = 0.5
 
 ### pp jets ###
 
@@ -33,7 +34,7 @@ assert_ok(jetreconstruction_PseudoJet_init(jets_ptr, 0.0, 1.0, 2.0, 3.0, 1))
 assert_ok(jetreconstruction_PseudoJet_init(jets_ptr + sizeof(PseudoJet), 1.0, 2.0, 3.0,
                                            4.0, 2))
 
-for algorithm in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt],
+for algorithm in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.GenKt],
     strategy in [RecoStrategy.N2Plain, RecoStrategy.N2Tiled, RecoStrategy.Best],
     recombination in [
         RecombinationScheme.EScheme,
@@ -41,7 +42,7 @@ for algorithm in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt],
         RecombinationScheme.Pt2Scheme
     ]
 
-    assert_ok(jetreconstruction_jet_reconstruct(jets_ptr, jets_len, algorithm, R,
+    assert_ok(jetreconstruction_jet_reconstruct(jets_ptr, jets_len, algorithm, power, R,
                                                 strategy, recombination,
                                                 clustersequence_ptr))
 

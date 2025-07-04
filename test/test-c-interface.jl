@@ -47,7 +47,7 @@ function test_pseudojet()
     struct_approx_equal(jet, c_jet)
 end
 
-function test_jet_reconstruct(filename; algorithm, R, strategy, recombine, power = nothing,
+function test_jet_reconstruct(filename; algorithm, R, strategy, recombine, power = 0.0,
                               T = PseudoJet)
     @testset "C-interface jet reconstruct" begin
         events = JetReconstruction.read_final_state_particles(filename)
@@ -62,6 +62,7 @@ function test_jet_reconstruct(filename; algorithm, R, strategy, recombine, power
             ret = C_JetReconstruction.jetreconstruction_jet_reconstruct(c_event,
                                                                         c_event_length,
                                                                         algorithm,
+                                                                        power,
                                                                         R,
                                                                         strategy,
                                                                         recombine,
@@ -139,20 +140,20 @@ end
 @testset "C-interface JetReconstruction pp" begin
     test_cone_size = 0.4
     test_recombine_scheme = RecombinationScheme.EScheme
+    test_power = 0.5
 
     test_pseudojet()
 
-    for alg in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt],
+    for alg in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.GenKt],
         stg in [RecoStrategy.Best, RecoStrategy.N2Plain, RecoStrategy.N2Tiled]
 
-        power = JetReconstruction.algorithm2power[alg]
-        @testset "C-interface JetReconstruction comparison: alg=$alg, p=$power, R=$test_cone_size, strategy=$stg" begin
+        @testset "C-interface JetReconstruction comparison: alg=$alg, R=$test_cone_size, strategy=$stg" begin
             cluster_seq_ptrs, cluster_seqs = test_jet_reconstruct(events_file_pp;
                                                                   algorithm = alg,
                                                                   strategy = stg,
                                                                   recombine = test_recombine_scheme,
                                                                   R = test_cone_size,
-                                                                  power = power)
+                                                                  power = test_power)
             test_inclusive_jets(cluster_seq_ptrs, cluster_seqs; ptmin = 5.0)
             if alg != JetAlgorithm.AntiKt
                 test_exclusive_jets_njets(cluster_seq_ptrs, cluster_seqs; njets = 4)

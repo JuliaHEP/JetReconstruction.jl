@@ -65,14 +65,15 @@ int main(int argc, char *argv[]) {
   sc = jetreconstruction_PseudoJet_init(&particles[1], 1.0, 2.0, 3.0, 4.0, 2);
   assert(sc == JETRECONSTRUCTION_STATUSCODE_OK);
 
-  jetreconstruction_JetAlgorithm algorithm = JETRECONSTRUCTION_JETALGORITHM_CA;
+  jetreconstruction_JetAlgorithm algorithm = JETRECONSTRUCTION_JETALGORITHM_GENKT;
   double R = 3.0;
+  double power = 0.5;
   jetreconstruction_RecoStrategy strategy = JETRECONSTRUCTION_RECOSTRATEGY_BEST;
   jetreconstruction_RecombinationScheme recombination =
       JETRECONCSTRUCTION_RECOMBINATIONSCHEME_ESCHEME;
 
   jetreconstruction_ClusterSequence cluster_seq;
-  sc = jetreconstruction_jet_reconstruct(particles, len, algorithm, R, strategy,
+  sc = jetreconstruction_jet_reconstruct(particles, len, algorithm, power, R, strategy,
                                          recombination, &cluster_seq);
   assert(sc == JETRECONSTRUCTION_STATUSCODE_OK);
 
