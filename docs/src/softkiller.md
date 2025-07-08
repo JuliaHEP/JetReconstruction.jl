@@ -10,13 +10,13 @@ The method is described in [Cacciari, Salam, Soyez, Eur. Phys. J. C75 (2015) 59]
 
 ## Interface
 
-The main interface for SoftKiller is the [`softkiller!`](@ref) function, which is used as follows:
+The main interface for SoftKiller is the [`softkiller`](@ref) function, which is used as follows:
 
 ```julia
 using JetReconstruction
 
 sk = SoftKiller(rapmax=5.0, grid_size=0.4)
-filtered_particles, pt_threshold = softkiller!(sk, particles)
+filtered_particles, pt_threshold = softkiller(sk, particles)
 ```
 
 - `particles` is a collection of `PseudoJet` objects (see [Input Particle Types](@ref)).
@@ -39,7 +39,7 @@ particles = read_final_state_particles("event.hepmc3", T=PseudoJet)[1]
 sk = SoftKiller(rapmax=5.0, grid_size=0.4)
 
 # Apply SoftKiller
-filtered_particles, pt_threshold = softkiller!(sk, particles)
+filtered_particles, pt_threshold = softkiller(sk, particles)
 
 # Cluster jets as usual
 cs = jet_reconstruct(filtered_particles; algorithm=JetAlgorithm.AntiKt, R=0.4)

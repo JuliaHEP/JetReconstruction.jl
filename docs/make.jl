@@ -22,7 +22,8 @@ makedocs(sitename = "JetReconstruction.jl",
              "Visualisation" => "visualisation.md",
              "Contributing" => "contributing.md",
              "Reference Docs" => Any["Public API" => "lib/public.md",
-                                     "Internal API" => "lib/internal.md"]
+                                     "Internal API" => "lib/internal.md"],
+             "SoftKiller" => "softkiller.md",  
          ])
 
 deploydocs(repo = "github.com/JuliaHEP/JetReconstruction.jl.git",

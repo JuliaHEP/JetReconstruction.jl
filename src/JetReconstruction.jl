@@ -71,7 +71,7 @@ export ee_genkt_algorithm
 
 ## SoftKiller
 include("SoftKiller.jl")
-export SoftKiller, softkiller!, select_ABS_RAP_max
+export SoftKiller, softkiller, select_ABS_RAP_max
 
 ## Generic algorithm, which can switch strategy dynamically
 include("GenericAlgo.jl")

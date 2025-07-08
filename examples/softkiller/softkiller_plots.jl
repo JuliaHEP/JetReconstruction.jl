@@ -249,7 +249,7 @@ function main()
 
     pt_threshold = 0.00
     # Apply SoftKiller to all_jets_sk (hard + pileup)
-    reduced_event, pt_threshold = softkiller!(soft_killer, all_jets_sk)
+    reduced_event, pt_threshold = softkiller(soft_killer, all_jets_sk)
 
     # Plot all PseudoJets after SoftKiller, before clustering
     y_all_sk, phi_all_sk, pt_all_sk,

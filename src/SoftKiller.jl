@@ -1,4 +1,5 @@
 using JetReconstruction
+using Statistics
 
 """
     mutable struct SoftKiller
@@ -51,7 +52,6 @@ mutable struct SoftKiller
     _ny::Int64
     _nphi::Int64
 
-    
     """
         SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)
 
@@ -167,7 +167,7 @@ Apply the SoftKiller algorithm to an event (a vector of `PseudoJet`s).
 Returns a tuple `(reduced_event, pt_threshold)`, where `reduced_event` is the filtered
 event and `pt_threshold` is the computed pt threshold.
 """
-function softkiller!(sk::SoftKiller, event::Vector{PseudoJet})
+function softkiller(sk::SoftKiller, event::Vector{PseudoJet})
     if (sk._ntotal < 2)
         throw("SoftKiller not properly initialized.")
     end
@@ -183,19 +183,9 @@ function softkiller!(sk::SoftKiller, event::Vector{PseudoJet})
         max_pt2[index] = max(max_pt2[index], pt2(ev))
     end
 
-    sort!(max_pt2)
+    pt2cut = median(max_pt2)
 
-    int_median_pos = length(max_pt2) ÷ 2
-    pt2cut = (1 + 1e-12) * max_pt2[int_median_pos]
-
-    indices = Int64[]
-    for (i, ps_jet) in enumerate(event)
-        if ps_jet === nothing || pt2(ps_jet) >= pt2cut
-            push!(indices, i)
-        end
-    end
-
-    reduced_event = event[indices]
+    reduced_event = filter(jet -> pt2(jet) >= pt2cut, event)
 
     pt_threshold = sqrt(pt2cut)
 

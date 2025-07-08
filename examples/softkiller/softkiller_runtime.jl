@@ -123,7 +123,7 @@ function main()
     end
 
     # Apply SoftKiller to all_jets_sk (hard + pileup)
-    softkiller!(soft_killer, all_jets_sk)
+    softkiller(soft_killer, all_jets_sk)
 end
 
 main()
