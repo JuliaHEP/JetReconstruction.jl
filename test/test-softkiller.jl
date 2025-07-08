@@ -65,7 +65,7 @@ end
     end
     event = [make_pj(pts[i], raps[i], phis[i]) for i in 1:N]
 
-    reduced, threshold = softkiller!(sk, event)
+    reduced, threshold = softkiller(sk, event)
 
     @test threshold > 0
     @test threshold < maximum(pts)

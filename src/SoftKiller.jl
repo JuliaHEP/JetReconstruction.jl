@@ -161,7 +161,7 @@ function select_ABS_RAP_max(event, absrapmax)
 end
 
 """
-    softkiller!(sk::SoftKiller, event::Vector{PseudoJet})
+    softkiller(sk::SoftKiller, event::Vector{PseudoJet})
 
 Apply the SoftKiller algorithm to an event (a vector of `PseudoJet`s).
 Returns a tuple `(reduced_event, pt_threshold)`, where `reduced_event` is the filtered
