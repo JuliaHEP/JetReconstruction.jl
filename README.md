@@ -1,6 +1,6 @@
 # JetReconstruction.jl
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-8-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Build Status](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml?query=branch%3Amain)
@@ -166,6 +166,7 @@ Thanks goes to these contributors to this code ([emoji key](https://allcontribut
     </tr>
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ExpandingMan"><img src="https://avatars.githubusercontent.com/u/11379353?v=4?s=100" width="100px;" alt="ExpandingMan"/><br /><sub><b>ExpandingMan</b></sub></a><br /><a href="#infra-ExpandingMan" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/emadmtr"><img src="https://avatars.githubusercontent.com/u/144483559?v=4?s=100" width="100px;" alt="emadmtr"/><br /><sub><b>emadmtr</b></sub></a><br /><a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=emadmtr" title="Tests">⚠️</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=emadmtr" title="Code">💻</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=emadmtr" title="Documentation">📖</a> <a href="#example-emadmtr" title="Examples">💡</a></td>
     </tr>
   </tbody>
 </table>
