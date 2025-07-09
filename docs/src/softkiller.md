@@ -21,7 +21,7 @@ filtered_particles, pt_threshold = softkiller(sk, particles)
 
 - `particles` is a collection of `PseudoJet` objects (see [Input Particle Types](@ref)).
 - `rapmax` sets the maximum rapidity considered.
-- `grid_size` sets the size of each grid cell in rapidity and azimuth.
+- `grid_size` sets the size of each grid cell in rapidity and azimuthal angle.
 
 The function returns the filtered list of particles and the computed ``p_T`` threshold.
 
