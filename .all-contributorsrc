@@ -94,6 +94,18 @@
       "contributions": [
         "infra"
       ]
+    },
+    {
+      "login": "emadmtr",
+      "name": "emadmtr",
+      "avatar_url": "https://avatars.githubusercontent.com/u/144483559?v=4",
+      "profile": "https://github.com/emadmtr",
+      "contributions": [
+        "test",
+        "code",
+        "doc",
+        "example"
+      ]
     }
   ],
   "contributorsPerLine": 7,
