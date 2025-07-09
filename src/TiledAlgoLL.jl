@@ -302,7 +302,7 @@ If both are given they must be consistent or an exception is thrown.
 ## Arguments
 - `particles::AbstractVector{T}`: A vector of particles used as input for jet
   reconstruction. T must support methods px, py, pz and energy (defined in the
-  JetReconstruction namespace)
+  JetReconstruction namespace).
 - `algorithm::JetAlgorithm.Algorithm`: The jet algorithm to use.
 - `p::Union{Real, Nothing} = nothing`: The power value used for jet reconstruction.
   Must be specified for GenKt algorithm. Other algorithms will ignore this value.
