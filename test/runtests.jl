@@ -42,7 +42,10 @@ function main()
     # Substructure tests
     include("test-substructure.jl")
 
-    # Jet flavour constituent utilities tests
+    # SoftKiller tests
+    include("test-softkiller.jl")
+  
+    # Jet flavour tests
     include("test-jet-flavour-utils.jl")
 
     # Test with Aqua (https://juliatesting.github.io/Aqua.jl/stable/)
