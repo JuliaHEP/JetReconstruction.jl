@@ -21,14 +21,14 @@ are removed from the event.
 - `_ymin::Float64`: Minimum rapidity of the grid.
 - `_requested_drap::Float64`: Requested grid spacing in rapidity.
 - `_requested_dphi::Float64`: Requested grid spacing in phi.
-- `_ntotal::Int64`: Total number of tiles.
+- `_ntotal::Int`: Total number of tiles.
 - `_dy::Float64`: Actual grid spacing in rapidity.
 - `_dphi::Float64`: Actual grid spacing in phi.
 - `_cell_area::Float64`: Area of a single tile.
 - `_inverse_dy::Float64`: Inverse of rapidity grid spacing.
 - `_inverse_dphi::Float64`: Inverse of phi grid spacing.
-- `_ny::Int64`: Number of tiles in rapidity.
-- `_nphi::Int64`: Number of tiles in phi.
+- `_ny::Int`: Number of tiles in rapidity.
+- `_nphi::Int`: Number of tiles in phi.
 
 # Constructors
 - `SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)`: 
@@ -42,14 +42,14 @@ struct SoftKiller
     _ymax::Float64
     _requested_drap::Float64
     _requested_dphi::Float64
-    _ntotal::Int64
+    _ntotal::Int
     _dy::Float64
     _dphi::Float64
     _cell_area::Float64
     _inverse_dy::Float64
     _inverse_dphi::Float64
-    _ny::Int64
-    _nphi::Int64
+    _ny::Int
+    _nphi::Int
 
     """
         SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)
@@ -63,11 +63,11 @@ struct SoftKiller
         @assert dphi > 0
 
         ny_double = (rapmax - rapmin) / drap
-        ny = max(round(Int64, ny_double + 0.5), 1)
+        ny = max(round(Int, ny_double + 0.5), 1)
         dy = (rapmax - rapmin) / ny
         inverse_dy = ny / (rapmax - rapmin)
 
-        nphi = round(Int64, (2 * π) / dphi + 0.5)
+        nphi = round(Int, (2 * π) / dphi + 0.5)
         dphi_final = (2 * π) / nphi
         inverse_dphi = nphi / (2 * π)
 
@@ -102,17 +102,17 @@ function tile_index(sk::SoftKiller, p::PseudoJet)
         return -1
     end
 
-    iy = round(Int64, y_minus_ymin * sk._inverse_dy)
+    iy = round(Int, y_minus_ymin * sk._inverse_dy)
     if iy >= sk._ny
         return -1
     end
 
-    iphi = round(Int64, phi(p) * sk._inverse_dphi)
+    iphi = round(Int, phi(p) * sk._inverse_dphi)
     if iphi == sk._nphi
         iphi = 0
     end
 
-    res = round(Int64, iy * sk._nphi + iphi)
+    res = round(Int, iy * sk._nphi + iphi)
 
     res + 1
 end
