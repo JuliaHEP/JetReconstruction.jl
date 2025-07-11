@@ -38,8 +38,8 @@ are removed from the event.
 
 """
 struct SoftKiller
-    _ymax::Float64
     _ymin::Float64
+    _ymax::Float64
     _requested_drap::Float64
     _requested_dphi::Float64
     _ntotal::Int64
@@ -76,7 +76,7 @@ struct SoftKiller
         ntotal = nphi * ny
         cell_area = dy * dphi_final
 
-        new(rapmax, rapmin, drap, dphi, ntotal, dy, dphi_final, cell_area,
+        new(rapmin, rapmax, drap, dphi, ntotal, dy, dphi_final, cell_area,
             inverse_dy, inverse_dphi, ny, nphi)
     end
 
@@ -86,7 +86,7 @@ struct SoftKiller
     Construct a square SoftKiller grid from `-rapmax` to `rapmax` in rapidity, with tile size `grid_size`.
     """
     function SoftKiller(rapmax::Float64, grid_size::Float64)
-        return SoftKiller(rapmax, -rapmax, grid_size, grid_size)
+        return SoftKiller(-rapmax, rapmax, grid_size, grid_size)
     end
 end
 
