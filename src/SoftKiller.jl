@@ -1,7 +1,7 @@
 using Statistics
 
 """
-    mutable struct SoftKiller
+    struct SoftKiller
 
 Implements the SoftKiller pileup mitigation algorithm, inspired by the FastJet contrib package.
 
@@ -37,7 +37,7 @@ are removed from the event.
   Construct a square grid from `-rapmax` to `rapmax` in rapidity, with tile size `grid_size`.
 
 """
-mutable struct SoftKiller
+struct SoftKiller
     _ymax::Float64
     _ymin::Float64
     _requested_drap::Float64
@@ -58,9 +58,26 @@ mutable struct SoftKiller
     """
 
     function SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)
-        grid = new(rapmax, rapmin, drap, dphi, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0, 0)
-        _setup_grid!(grid)
-        grid
+        @assert rapmax > rapmin
+        @assert drap > 0
+        @assert dphi > 0
+
+        ny_double = (rapmax - rapmin) / drap
+        ny = max(round(Int64, ny_double + 0.5), 1)
+        dy = (rapmax - rapmin) / ny
+        inverse_dy = ny / (rapmax - rapmin)
+
+        nphi = round(Int64, (2 * π) / dphi + 0.5)
+        dphi_final = (2 * π) / nphi
+        inverse_dphi = nphi / (2 * π)
+
+        @assert ny >= 1 && nphi >= 1
+
+        ntotal = nphi * ny
+        cell_area = dy * dphi_final
+
+        new(rapmax, rapmin, drap, dphi, ntotal, dy, dphi_final, cell_area,
+            inverse_dy, inverse_dphi, ny, nphi)
     end
 
     """
@@ -69,10 +86,7 @@ mutable struct SoftKiller
     Construct a square SoftKiller grid from `-rapmax` to `rapmax` in rapidity, with tile size `grid_size`.
     """
     function SoftKiller(rapmax::Float64, grid_size::Float64)
-        grid = new(rapmax, -rapmax, grid_size, grid_size, 0, 0.0, 0.0, 0.0, 0.0, 0.0, 0,
-                   0)
-        _setup_grid!(grid)
-        grid
+        return SoftKiller(rapmax, -rapmax, grid_size, grid_size)
     end
 end
 
@@ -101,31 +115,6 @@ function tile_index(sk::SoftKiller, p::PseudoJet)
     res = round(Int64, iy * sk._nphi + iphi)
 
     res + 1
-end
-
-"""
-    _setup_grid!(sk::SoftKiller)
-
-Internal function to initialize the grid parameters for a `SoftKiller` instance.
-"""
-function _setup_grid!(sk::SoftKiller)
-    @assert sk._ymax > sk._ymin
-    @assert sk._requested_drap > 0
-    @assert sk._requested_dphi > 0
-
-    ny_double = (sk._ymax - sk._ymin) / sk._requested_drap
-    sk._ny = max(round(Int64, ny_double + 0.5), 1)
-    sk._dy = (sk._ymax - sk._ymin) / sk._ny
-    sk._inverse_dy = sk._ny / (sk._ymax - sk._ymin)
-
-    sk._nphi = round(Int64, (2 * π) / sk._requested_dphi + 0.5)
-    sk._dphi = (2 * π) / sk._nphi
-    sk._inverse_dphi = sk._nphi / (2 * π)
-
-    @assert sk._ny>=1 && sk._nphi>=1
-
-    sk._ntotal = sk._nphi * sk._ny
-    sk._cell_area = sk._dy * sk._dphi
 end
 
 import Base: show
