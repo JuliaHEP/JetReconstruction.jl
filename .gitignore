@@ -36,3 +36,5 @@ benchmark/*
 /profile/*
 /statprof/*
 /debug/*
+ext/JetFlavourTagging/PROGRESS.md
+examples/flavour-tagging/data/events_080263084.root
