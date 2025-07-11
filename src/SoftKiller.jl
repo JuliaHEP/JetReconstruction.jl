@@ -122,7 +122,7 @@ function _setup_grid!(sk::SoftKiller)
     sk._dphi = (2 * π) / sk._nphi
     sk._inverse_dphi = sk._nphi / (2 * π)
 
-    @assert sk._ny>=1 and sk._nphi>=1
+    @assert sk._ny>=1 && sk._nphi>=1
 
     sk._ntotal = sk._nphi * sk._ny
     sk._cell_area = sk._dy * sk._dphi
