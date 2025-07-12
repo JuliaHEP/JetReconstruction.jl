@@ -316,7 +316,8 @@ If both are given they must be consistent or an exception is thrown.
 
 ## Example
 ```julia
-tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4)
+tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; algorithm = JetAlgorithm.GenKt, p = 0.5, R = 0.4)
+tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; algorithm = JetAlgorithm.AntiKt, R = 0.4)
 ```
 """
 function tiled_jet_reconstruct(particles::AbstractVector{T};
@@ -381,7 +382,7 @@ power parameter.
 
 ## Example
 ```julia
-tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 0.4)
+_tiled_jet_reconstruct(particles::Vector{PseudoJet}; algorithm = JetAlgorithm.Kt, p = 1, R = 0.4)
 ```
 """
 function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet};
