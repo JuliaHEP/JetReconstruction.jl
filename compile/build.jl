@@ -51,7 +51,7 @@ end
 
 function compile_w_juliac(source_dir, output_dir)
     julia_path = joinpath(Sys.BINDIR, Base.julia_exename())
-    juliac_path = joinpath(Sys.BINDIR, "..", "share", "julia", "juliac.jl")
+    juliac_path = joinpath(Sys.BINDIR, "..", "share", "julia", "juliac", "juliac.jl")
     jetreconstruction_path = joinpath(source_dir, "src", "JetReconstruction.jl")
     lib_dir = joinpath(output_dir, "lib")
     mkpath(lib_dir)
