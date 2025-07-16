@@ -176,7 +176,7 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
                     "$(jet_output)"
                 end
                 if !isnothing(dump)
-                    push!(jet_collection, FinalJets(ievt, finaljets))
+                    push!(jet_collection, FinalJets(ievt, final_jets(finaljets)))
                 end
                 if dump_cs
                     println("Cluster sequence for event $(ievt)")

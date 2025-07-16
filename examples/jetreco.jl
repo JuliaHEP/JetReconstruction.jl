@@ -34,6 +34,11 @@ function jet_process(events::Vector{Vector{T}};
                      dump::Union{String, Nothing} = nothing) where {T <:
                                                                     JetReconstruction.FourMomentum}
 
+    # If we are dumping the results, setup the JSON structure
+    if !isnothing(dump)
+        jet_collection = FinalJets[]
+    end
+
     # Set consistent algorithm power
     p = JetReconstruction.get_algorithm_power(p = p, algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
@@ -69,7 +74,7 @@ function jet_process(events::Vector{Vector{T}};
             "$(jet_output)"
         end
         if !isnothing(dump)
-            push!(jet_collection, FinalJets(ievt, finaljets))
+            push!(jet_collection, FinalJets(ievt, final_jets(finaljets)))
         end
     end
 
