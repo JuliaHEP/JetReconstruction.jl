@@ -47,6 +47,7 @@ function main()
 
     # Path to ROOT file with EDM4hep data
     edm4hep_path = "data/events_080263084.root"
+    # edm4hep_path = "/eos/experiment/fcc/ee/generation/DelphesEvents/winter2023/IDEA/wzp6_ee_nunuH_ecm240/events_080263084.root"
     if !isfile(edm4hep_path)
         error("EDM4hep data file not found at: $edm4hep_path")
     end
@@ -142,12 +143,6 @@ function main()
                                             jet_constituents,
                                             config,
                                             model)
-
-    # Debug: Print raw weights
-    println("\nDebug - Raw weights from neural network:")
-    for (i, jet_weights) in enumerate(weights)
-        println("  Jet $i: ", jet_weights)
-    end
 
     # Extract and display results
     println("\n" * "="^60)
