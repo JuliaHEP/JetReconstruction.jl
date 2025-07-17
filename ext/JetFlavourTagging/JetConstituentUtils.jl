@@ -328,11 +328,11 @@ function get_dxy(jets_constituents::Vector{<:JetConstituents},
                                           # Compute impact parameter
                                           discriminant = pt^2 - 2 * a * cross + a^2 * r2
                                           if discriminant > 0
-                                              T = sqrt(discriminant)
+                                              t = sqrt(discriminant)
                                               if pt < 10.0f0
-                                                  (T - pt) / a
+                                                  (t - pt) / a
                                               else
-                                                  (-2 * cross + a * r2) / (T + pt)
+                                                  (-2 * cross + a * r2) / (t + pt)
                                               end
                                           else
                                               UNDEF_VAL
@@ -401,25 +401,25 @@ function get_dz(jets_constituents::Vector{<:JetConstituents},
                                           # Compute intermediate values
                                           a = -charges[i] * cSpeed_Bz
                                           pt = sqrt(px^2 + py^2)
-                                          C = a / (2 * pt)
+                                          c = a / (2 * pt)
                                           r2 = x1^2 + x2^2
                                           cross = x1 * py - x2 * px
-                                          T = sqrt(pt^2 - 2 * a * cross + a^2 * r2)
+                                          t = sqrt(pt^2 - 2 * a * cross + a^2 * r2)
 
-                                          D = if pt < 10.0f0
-                                              (T - pt) / a
+                                          d = if pt < 10.0f0
+                                              (t - pt) / a
                                           else
-                                              (-2 * cross + a * r2) / (T + pt)
+                                              (-2 * cross + a * r2) / (t + pt)
                                           end
 
-                                          B_arg = max(r2 - D^2, 0.0f0) / (1 + 2 * C * D)
-                                          B = C * sqrt(B_arg)
-                                          if abs(B) > 1.0f0
-                                              B = sign(B)
+                                          b_arg = max(r2 - d^2, 0.0f0) / (1 + 2 * c * d)
+                                          b = c * sqrt(b_arg)
+                                          if abs(b) > 1.0f0
+                                              b = sign(b)
                                           end
 
                                           # Calculate st and ct
-                                          st = asin(B) / C
+                                          st = asin(b) / c
                                           ct = pz / pt
 
                                           # Calculate z0
@@ -494,12 +494,12 @@ function get_phi0(jets_constituents::Vector{<:JetConstituents},
                                           two_a_cross = 2 * a * cross
                                           a2_r2 = a^2 * r2
 
-                                          T = sqrt(pt2 - two_a_cross + a2_r2)
-                                          inv_T = 1.0f0 / T
+                                          t = sqrt(pt2 - two_a_cross + a2_r2)
+                                          inv_t = 1.0f0 / t
 
                                           a_x1 = a * x1
                                           a_x2 = a * x2
-                                          atan((py - a_x1) * inv_T, (px + a_x2) * inv_T)
+                                          atan((py - a_x1) * inv_t, (px + a_x2) * inv_t)
                                       else
                                           UNDEF_VAL
                                       end
@@ -1747,13 +1747,13 @@ function get_mtof(jets_constituents::Vector{<:JetConstituents},
                     dx = hit.position.x - vx
                     dy = hit.position.y - vy
                     dz = hit.position.z - vz
-                    L = sqrt(dx^2 + dy^2 + dz^2) * MM_TO_M
+                    l = sqrt(dx^2 + dy^2 + dz^2) * MM_TO_M
 
-                    beta = L / (tof * C_LIGHT)
+                    beta = l / (tof * C_LIGHT)
 
                     if 0.0f0 < beta < 1.0f0
-                        E = energies[j]
-                        mass_calculated = E * sqrt(1.0f0 - beta^2)
+                        energy = energies[j]
+                        mass_calculated = energy * sqrt(1.0f0 - beta^2)
                     else
                         mass_calculated = INVALID_TOF_MASS  # Invalid measurement
                     end
@@ -1781,8 +1781,8 @@ function get_mtof(jets_constituents::Vector{<:JetConstituents},
                         Tout = trackerhits[last_hit_idx].time
                         tof = Tout - v_t_scaled
 
-                        L = track_L[track_idx + 1] * MM_TO_M
-                        beta = L / (tof * C_LIGHT)
+                        l = track_L[track_idx + 1] * MM_TO_M
+                        beta = l / (tof * C_LIGHT)
 
                         if 0.0f0 < beta < 1.0f0
                             # Calculate momentum magnitude
