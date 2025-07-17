@@ -218,7 +218,7 @@ space.
 
 # Example
 ```julia
-jets = plain_jet_reconstruct(particles; p = -1, R = 0.4)
+jets = plain_jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, p = -1, R = 0.4)
 jets = plain_jet_reconstruct(particles; algorithm = JetAlgorithm.Kt, R = 1.0)
 ```
 """
