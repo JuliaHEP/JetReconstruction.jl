@@ -1,6 +1,5 @@
 using EDM4hep
 using JetReconstruction
-using LoopVectorization
 using StructArrays: StructVector
 
 # Import physical constants
@@ -1402,11 +1401,11 @@ function get_erel_cluster(jets::Vector{EEJet},
 
         if e_jet > 0.0f0
             inv_e_jet = 1.0f0 / e_jet
-            @turbo for j in 1:n_constituents
+            @inbounds @simd for j in 1:n_constituents
                 jet_constituents_collection[j] = energies[j] * inv_e_jet
             end
         else
-            @turbo for j in 1:n_constituents
+            @inbounds @simd for j in 1:n_constituents
                 jet_constituents_collection[j] = 0.0f0
             end
         end
@@ -1444,11 +1443,11 @@ function get_erel_log_cluster(jets::Vector{EEJet},
 
         if e_jet > 0.0f0
             inv_e_jet = 1.0f0 / e_jet
-            @turbo for j in 1:n_constituents
+            @inbounds @simd for j in 1:n_constituents
                 jet_constituents_collection[j] = log10(energies[j] * inv_e_jet)
             end
         else
-            @turbo for j in 1:n_constituents
+            @inbounds @simd for j in 1:n_constituents
                 jet_constituents_collection[j] = 0.0f0
             end
         end
@@ -1497,7 +1496,7 @@ function get_thetarel_cluster(jets::Vector{EEJet},
         n_constituents = length(mom_x)
         jet_constituents_collection = Vector{Float32}(undef, n_constituents)
 
-        @turbo for j in 1:n_constituents
+        @inbounds for j in 1:n_constituents
             # First rotation
             p_rot_x = mom_x[j] * cos_phi - mom_y[j] * sin_phi
             p_rot_y = mom_x[j] * sin_phi + mom_y[j] * cos_phi
@@ -1555,7 +1554,7 @@ function get_phirel_cluster(jets::Vector{EEJet},
         n_constituents = length(mom_x)
         jet_constituents_collection = Vector{Float32}(undef, n_constituents)
 
-        @turbo for j in 1:n_constituents
+        @inbounds for j in 1:n_constituents
             # First rotation around z-axis by -phi_jet
             p_rot_x = mom_x[j] * cos_phi - mom_y[j] * sin_phi
             p_rot_y = mom_x[j] * sin_phi + mom_y[j] * cos_phi
@@ -1614,7 +1613,7 @@ function get_thetarel_phirel_cluster(jets::Vector{EEJet},
         jet_theta = Vector{Float32}(undef, n_constituents)
         jet_phi = Vector{Float32}(undef, n_constituents)
 
-        @turbo for j in 1:n_constituents
+        @inbounds for j in 1:n_constituents
             # First rotation around z-axis by -phi_jet
             p_rot_x = mom_x[j] * cos_phi - mom_y[j] * sin_phi
             p_rot_y = mom_x[j] * sin_phi + mom_y[j] * cos_phi
@@ -1858,7 +1857,7 @@ function get_Sip2dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
 
         sip2d_values = Vector{Float32}(undef, n_constituents)
 
-        @turbo for j in 1:n_constituents
+        @inbounds for j in 1:n_constituents
             d0_val = d0_vals[j]
             phi_val = phi_vals[j]
 
@@ -1981,7 +1980,7 @@ function get_Sip3dVal_clusterV(jets::Vector{JetReconstruction.EEJet},
 
         cprojs = Vector{Float32}(undef, n_constituents)
 
-        @turbo for j in 1:n_constituents
+        @inbounds for j in 1:n_constituents
             d0_val = d0_vals[j]
             z0_val = z0_vals[j]
             phi_val = phi_vals[j]

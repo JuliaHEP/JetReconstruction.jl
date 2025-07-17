@@ -55,9 +55,9 @@ function main()
     reader = RootIO.Reader(edm4hep_path)
     events = RootIO.get(reader, "events")
     println("Loaded $(length(events)) events")
-    
-    # Process a specific event (event #16 as in the notebook)
-    event_id = 16
+
+    # Process a specific event (event #12 as in the notebook)
+    event_id = 12
     println("\nProcessing event #$event_id")
     evt = events[event_id]
     

@@ -25,7 +25,7 @@ else
     using StructArrays
     using JetReconstruction
 
-    @testset "Jet Constituent Utilities" begin
+    @testset "Jet Flavour Constituent Utilities" begin
         # Navigate to find the test reference file
         reference_file = joinpath(@__DIR__, "data", "jet-flavour-utils-event15.json")
         

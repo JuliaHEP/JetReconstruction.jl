@@ -9,13 +9,12 @@ IJulia = "7073ff75-c697-5162-941a-fcdaad2a7d2a"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 JetReconstruction = "44e8cb2c-dfab-4825-9c70-d4808a591196"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
-LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
 LorentzVectorHEP = "f612022c-142a-473f-8cfd-a09cf3793c6c"
 LorentzVectors = "3f54b04b-17fc-5cd4-9758-90c048d965e3"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 ONNXRunTime = "e034b28e-924e-41b2-b98f-d2bbeb830c6a"
-StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 PhysicalConstants = "5ad8b20f-a522-5ce9-bfc9-ddf1d5bda6ab"
+StructArrays = "09ab397b-f2b6-538f-b94a-2f83cf4a842a"
 
 [sources]
-JetReconstruction = {path = "../.."}
+JetReconstruction = {path = "/Users/harrywanghc/Developer/2025/JuliaHEPForkToMain/JetReconstruction.jl"}
