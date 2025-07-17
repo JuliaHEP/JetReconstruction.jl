@@ -6,3 +6,5 @@
 profile/*
 # Playground for development scripts and notebooks
 playground/*
+# Ignore outputs from tests
+test-output*
