@@ -81,6 +81,9 @@ export jet_reconstruct
 include("Substructure.jl")
 export mass_drop, soft_drop, jet_filtering, jet_trimming
 
+include("LundPlane.jl")
+export generate_lund_projection, generate_average_lund_image
+
 # Simple HepMC3 reader
 include("HepMC3.jl")
 
