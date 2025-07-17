@@ -44,7 +44,7 @@ function main()
 
     # SoftKiller tests
     include("test-softkiller.jl")
-  
+
     # Jet flavour tests
     include("test-jet-flavour-utils.jl")
 
