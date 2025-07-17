@@ -91,7 +91,7 @@ function sort_jets!(jet_array::Vector{FinalJet})
     sort!(jet_array, by = jet_pt, rev = true)
 end
 
-function sort_jets!(jet_array::Vector{LorentzVectorCyl})
+function sort_jets!(jet_array::Vector{<:LorentzVectorCyl})
     jet_pt(jet) = jet.pt
     sort!(jet_array, by = jet_pt, rev = true)
 end

@@ -35,8 +35,9 @@ function main()
     args = parse_command_line(ARGS)
 
     for file in args[:files]
-        events = read_final_state_particles(file; maxevents = args[:maxevents],
-                                            skipevents = args[:skip], T = LorentzVector)
+        events = read_final_state_particles(file, LorentzVector{Float64};
+                                            maxevents = args[:maxevents],
+                                            skipevents = args[:skip])
         n_events = length(events)
         n_particles = Int[]
         for e in events

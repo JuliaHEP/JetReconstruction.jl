@@ -86,15 +86,13 @@ function main()
     args[:hard_file] = normpath(joinpath(@__DIR__, args[:hard_file]))
 
     # Reading pileup and hard event files
-    events = read_final_state_particles(args[:pileup_file],
+    events = read_final_state_particles(args[:pileup_file], jet_type;
                                         maxevents = args[:maxevents],
-                                        skipevents = args[:skip],
-                                        T = jet_type)
+                                        skipevents = args[:skip])
 
-    h_events = read_final_state_particles(args[:hard_file],
+    h_events = read_final_state_particles(args[:hard_file], jet_type;
                                           maxevents = args[:maxevents],
-                                          skipevents = args[:skip],
-                                          T = jet_type)
+                                          skipevents = args[:skip])
 
     # Set up SoftKiller grid and rapidity range
     rapmax = 5.0

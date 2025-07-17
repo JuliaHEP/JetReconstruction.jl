@@ -14,7 +14,7 @@ recps = RootIO.get(reader, evt, "ReconstructedParticles")
 
 # Reconstruct and print the jets
 cs = jet_reconstruct(recps; algorithm = JetAlgorithm.Durham)
-dijets = exclusive_jets(cs; njets = 2, T = EEJet)
+dijets = exclusive_jets(cs, EEJet; njets = 2)
 for jet in dijets
     println(jet)
 end

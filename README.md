@@ -53,7 +53,7 @@ To obtain the final inclusive jets, use the `inclusive_jets` method:
 final_jets = inclusive_jets(cs::ClusterSequence; ptmin=0.0)
 ```
 
-Only jets passing the cut $p_T > p_{Tmin}$ will be returned. The result is returned as a `Vector{LorentzVectorHEP}`, but different return types can be specified (e.g., `T = EEJet`).
+Only jets passing the cut $p_T > p_{Tmin}$ will be returned. The result is returned as a `Vector{LorentzVectorHEP}`, but different return types can be specified (e.g., `inclusive_jets(cs::ClusterSequence, EEJet; ptmin=0.0)`).
 
 #### Sorting
 

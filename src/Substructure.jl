@@ -90,7 +90,7 @@ This function reclusters the jet and iteratively checks the soft-drop condition 
 function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; zcut::Real,
                    beta::Real, radius::Real = 1.0)
     new_clusterseq = recluster(jet, clusterseq; R = radius, algorithm = JetAlgorithm.CA)
-    new_jet = sort!(inclusive_jets(new_clusterseq; T = PseudoJet), by = pt2, rev = true)[1]
+    new_jet = sort!(inclusive_jets(new_clusterseq, PseudoJet), by = pt2, rev = true)[1]
 
     all_jets = new_clusterseq.jets
     hist = new_clusterseq.history
@@ -137,7 +137,7 @@ Filters a jet to retain only the hardest subjets based on a specified radius and
 function jet_filtering(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; radius::Real,
                        hardest_jets::Integer)
     new_clusterseq = recluster(jet, clusterseq; R = radius, algorithm = JetAlgorithm.CA)
-    reclustered = sort!(inclusive_jets(new_clusterseq; T = PseudoJet), by = pt2, rev = true)
+    reclustered = sort!(inclusive_jets(new_clusterseq, PseudoJet), by = pt2, rev = true)
 
     n = length(reclustered) <= hardest_jets ? length(reclustered) : hardest_jets
     hard = reclustered[1:n]
@@ -167,7 +167,7 @@ function jet_trimming(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; ra
     frac2 = fraction^2
 
     new_clusterseq = recluster(jet, clusterseq; R = radius, algorithm = recluster_method)
-    reclustered = sort!(inclusive_jets(new_clusterseq; T = PseudoJet), by = pt2, rev = true)
+    reclustered = sort!(inclusive_jets(new_clusterseq, PseudoJet), by = pt2, rev = true)
 
     hard = Vector{PseudoJet}(undef, 0)
     for item in reclustered

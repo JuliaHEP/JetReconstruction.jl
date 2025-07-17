@@ -18,7 +18,7 @@ event_no = 1
 cluster_seq = jet_reconstruct(events[event_no]; algorithm = JetAlgorithm.Kt, R = 1.0)
 
 # Retrieve the exclusive pj_jets, but as `PseudoJet` types
-pj_jets = inclusive_jets(cluster_seq; ptmin = 5.0, T = PseudoJet)
+pj_jets = inclusive_jets(cluster_seq, PseudoJet; ptmin = 5.0)
 
 # Get the constituents of the first jet
 my_constituents = JetReconstruction.constituents(pj_jets[1], cluster_seq)

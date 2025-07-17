@@ -33,7 +33,7 @@ A typical workflow using SoftKiller is:
 using JetReconstruction
 
 # Read event particles (see examples/softkiller/softkiller_plots.jl)
-particles = read_final_state_particles("event.hepmc3", T=PseudoJet)[1]
+particles = read_final_state_particles("event.hepmc3", PseudoJet)[1]
 
 # Set up SoftKiller
 sk = SoftKiller(rapmax=5.0, grid_size=0.4)

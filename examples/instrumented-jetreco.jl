@@ -341,10 +341,9 @@ function main()
     else
         jet_type = PseudoJet
     end
-    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file],
+    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file], jet_type;
                                                                   maxevents = args[:maxevents],
-                                                                  skipevents = args[:skip],
-                                                                  T = jet_type)
+                                                                  skipevents = args[:skip])
 
     # Major switch between modes of running 
     if args[:alloc]
