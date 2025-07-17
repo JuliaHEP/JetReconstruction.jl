@@ -45,7 +45,8 @@ include("JetFlavourHelper.jl")
                     gammadata::AbstractVector{EDM4hep.Cluster}=AbstractVector{EDM4hep.Cluster}(), 
                     nhdata::AbstractVector{EDM4hep.Cluster}=AbstractVector{EDM4hep.Cluster}(), 
                     calohits::AbstractVector{EDM4hep.CalorimeterHit}=AbstractVector{EDM4hep.CalorimeterHit}(), 
-                    dNdx::AbstractVector{EDM4hep.Quantity}=AbstractVector{EDM4hep.Quantity}()) -> Dict
+                    dNdx::AbstractVector{EDM4hep.Quantity}=AbstractVector{EDM4hep.Quantity}(),
+                    json_config::Union{Dict, Nothing}=nothing) -> Dict
 
 Extract all required features for jet flavour tagging.
 
@@ -61,9 +62,11 @@ Extract all required features for jet flavour tagging.
 - `nhdata`: Vector of neutral hadron clusters (optional)
 - `calohits`: Vector of calorimeter hits (optional)
 - `dNdx`: Vector of dE/dx measurements (optional)   
+- `json_config`: JSON configuration dict specifying which features to extract (optional)
 
 # Returns
-Dictionary containing all extracted features organized by input type
+Dictionary containing extracted features organized by input type. If `json_config` is provided,
+only features specified in the configuration are extracted.
 """
 function JetReconstruction.extract_features(jets::Vector{EEJet},
                                             jets_constituents::Vector{<:JetConstituents},
@@ -76,10 +79,12 @@ function JetReconstruction.extract_features(jets::Vector{EEJet},
                                             gammadata::AbstractVector{EDM4hep.Cluster} = AbstractVector{EDM4hep.Cluster}(),
                                             nhdata::AbstractVector{EDM4hep.Cluster} = AbstractVector{EDM4hep.Cluster}(),
                                             calohits::AbstractVector{EDM4hep.CalorimeterHit} = AbstractVector{EDM4hep.CalorimeterHit}(),
-                                            dNdx::AbstractVector{EDM4hep.Quantity} = AbstractVector{EDM4hep.Quantity}())
+                                            dNdx::AbstractVector{EDM4hep.Quantity} = AbstractVector{EDM4hep.Quantity}(),
+                                            json_config::Union{Dict, Nothing} = nothing)
     return JetFlavourHelper.extract_features(jets, jets_constituents, tracks, bz, track_L,
                                              trackdata,
-                                             trackerhits, gammadata, nhdata, calohits, dNdx)
+                                             trackerhits, gammadata, nhdata, calohits, dNdx,
+                                             json_config)
 end
 
 """

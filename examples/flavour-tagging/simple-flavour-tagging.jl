@@ -126,7 +126,8 @@ function main()
                                                       gammadata,
                                                       nhdata,
                                                       calohits,
-                                                      dNdx)
+                                                      dNdx,
+                                                      config)
 
     # Prepare input tensors
     println("Preparing input tensors...")
