@@ -59,22 +59,22 @@ function jet_process(events::Vector{Vector{T}};
                                       strategy = strategy)
         # Now select jets, with inclusive or exclusive parameters
         if !isnothing(njets)
-            finaljets = exclusive_jets(cluster_seq; njets = njets)
+            selectedjets = exclusive_jets(cluster_seq; njets = njets)
         elseif !isnothing(dcut)
-            finaljets = exclusive_jets(cluster_seq; dcut = dcut)
+            selectedjets = exclusive_jets(cluster_seq; dcut = dcut)
         else
-            finaljets = inclusive_jets(cluster_seq; ptmin = ptmin)
+            selectedjets = inclusive_jets(cluster_seq; ptmin = ptmin)
         end
         @info begin
             jet_output = "Event $(ievt)\n"
-            sort!(finaljets, by = x -> pt(x), rev = true)
-            for (ijet, jet) in enumerate(finaljets)
+            sort!(selectedjets, by = x -> pt(x), rev = true)
+            for (ijet, jet) in enumerate(selectedjets)
                 jet_output *= " $(ijet) - $(jet)\n"
             end
             "$(jet_output)"
         end
         if !isnothing(dump)
-            push!(jet_collection, FinalJets(ievt, final_jets(finaljets)))
+            push!(jet_collection, FinalJets(ievt, final_jets(selectedjets)))
         end
     end
 
