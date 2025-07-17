@@ -57,7 +57,7 @@ function main()
     println("Loaded $(length(events)) events")
 
     # Process a specific event (event #12 as in the notebook)
-    event_id = 12
+    event_id = 15
     println("\nProcessing event #$event_id")
     evt = events[event_id]
 
@@ -143,6 +143,12 @@ function main()
                                             config,
                                             model)
 
+    # Debug: Print raw weights
+    println("\nDebug - Raw weights from neural network:")
+    for (i, jet_weights) in enumerate(weights)
+        println("  Jet $i: ", jet_weights)
+    end
+
     # Extract and display results
     println("\n" * "="^60)
     println("FLAVOUR TAGGING RESULTS")
@@ -169,6 +175,19 @@ function main()
         for idx in sorted_indices
             label = labels[idx]
             score = scores[idx]
+
+            # Handle NaN or invalid scores
+            if isnan(score) || isinf(score)
+                flavor_map = Dict("recojet_isG" => "Gluon   ",
+                                  "recojet_isQ" => "Light q ",
+                                  "recojet_isS" => "Strange ",
+                                  "recojet_isC" => "Charm   ",
+                                  "recojet_isB" => "Bottom  ")
+                formatted_label = get(flavor_map, label, label)
+                println("  $formatted_label: [Invalid score]")
+                continue
+            end
+
             bar_length = Int(round(score * 30))
             bar = "█"^bar_length
             percentage = round(score * 100, digits = 1)

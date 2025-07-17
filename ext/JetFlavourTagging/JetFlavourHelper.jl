@@ -65,7 +65,8 @@ end
     prepare_input_tensor(jets_constituents::Vector{StructVector{EDM4hep.ReconstructedParticle}}, 
                         jets::Vector{EEJet}, 
                         config::Dict, 
-                        feature_data::Dict) -> Dict{String, Array}
+                        feature_data::Dict,
+                        jet_index::Int=1) -> Dict{String, Array}
 
 Prepare input tensors for the neural network from jet constituents.
 
@@ -74,6 +75,7 @@ Prepare input tensors for the neural network from jet constituents.
 - `jets`: Vector of jets (EEJet)
 - `config`: JSON configuration for preprocessing
 - `feature_data`: Dictionary containing all extracted features
+- `jet_index`: Index of the jet to process (default 1)
 
 # Returns
 Dictionary of input tensors
@@ -81,7 +83,8 @@ Dictionary of input tensors
 function prepare_input_tensor(jets_constituents::Vector{<:JetConstituents},
                               jets::Vector{EEJet},
                               config::Dict,
-                              feature_data::Dict)
+                              feature_data::Dict,
+                              jet_index::Int = 1)
 
     # Get input names and variable info
     input_names = config["input_names"]
@@ -92,29 +95,32 @@ function prepare_input_tensor(jets_constituents::Vector{<:JetConstituents},
     # Get max length for padding
     max_length = config["pf_points"]["var_length"]
 
-    # Process each jet
-    for (i, jet) in enumerate(jets)
-        # Initialize tensors
-        if i == 1
-            # Initialize tensor shapes based on config
-            for input_name in input_names
-                if input_name == "pf_features"
-                    feature_vars = length(config[input_name]["var_names"])
-                    input_tensors[input_name] = zeros(Float32, 1, feature_vars, max_length)
-                    # elseif input_name == "pf_points"
-                    #     points_vars = length(config[input_name]["var_names"])
-                    #     input_tensors[input_name] = zeros(Float32, 1, points_vars, max_length)
-                elseif input_name == "pf_vectors"
-                    vector_vars = length(config[input_name]["var_names"])
-                    input_tensors[input_name] = zeros(Float32, 1, vector_vars, max_length)
-                elseif input_name == "pf_mask"
-                    input_tensors[input_name] = zeros(Float32, 1, 1, max_length)
-                end
-            end
+    # Initialize tensors for single jet processing
+    for input_name in input_names
+        if input_name == "pf_features"
+            feature_vars = length(config[input_name]["var_names"])
+            input_tensors[input_name] = zeros(Float32, 1, feature_vars, max_length)
+            # elseif input_name == "pf_points"
+            #     points_vars = length(config[input_name]["var_names"])
+            #     input_tensors[input_name] = zeros(Float32, 1, points_vars, max_length)
+        elseif input_name == "pf_vectors"
+            vector_vars = length(config[input_name]["var_names"])
+            input_tensors[input_name] = zeros(Float32, 1, vector_vars, max_length)
+        elseif input_name == "pf_mask"
+            input_tensors[input_name] = zeros(Float32, 1, 1, max_length)
         end
+    end
+
+    # Note: This function prepares tensors for a single jet at a time
+    # The caller should loop through jets and process them individually
+
+    # Process the specified jet
+    if length(jets) >= jet_index && jet_index > 0
+        i = jet_index
+        jet = jets[1]  # We're processing single jets, so always use first element
 
         # Fill each tensor for this jet
-        constituents = jets_constituents[i]
+        constituents = jets_constituents[1]  # Single jet passed
         num_constituents = min(length(constituents), max_length)
 
         # Fill mask (1 for valid constituents, 0 for padding)
@@ -191,24 +197,45 @@ function get_weights(slot::Int, vars::Dict{String, Dict{String, Vector{Vector{Fl
                      jets::Vector{EEJet}, jets_constituents::Vector{<:JetConstituents},
                      json_config::Dict, model::ONNXRunTime.InferenceSession)
 
-    # Prepare input tensor
-    input_tensors = prepare_input_tensor(jets_constituents, jets, json_config, vars)
-
-    # Run inference
-    output = model(input_tensors)
-
-    # Extract probabilities
-    probabilities = output["softmax"]
-
-    # Convert to desired output format (one vector per jet)
+    # The model processes one jet at a time
     result = Vector{Vector{Float32}}()
 
-    # Reshape output to get probabilities for each jet
-    num_classes = size(probabilities, 2)
+    # Process each jet individually
     for i in 1:length(jets)
+        # Create single-jet arrays
+        single_jet = [jets[i]]
+        single_constituents = [jets_constituents[i]]
+
+        # Create single-jet feature data by extracting only features for this jet
+        single_jet_vars = Dict{String, Dict{String, Vector{Vector{Float32}}}}()
+        for (category, features) in vars
+            single_jet_vars[category] = Dict{String, Vector{Vector{Float32}}}()
+            for (fname, fvalues) in features
+                # Extract only the features for jet i
+                if i <= length(fvalues)
+                    single_jet_vars[category][fname] = [fvalues[i]]
+                else
+                    # If no features for this jet, create empty array
+                    single_jet_vars[category][fname] = [Float32[]]
+                end
+            end
+        end
+
+        # Prepare input tensor for this single jet with extracted features
+        input_tensors = prepare_input_tensor(single_constituents, single_jet, json_config,
+                                             single_jet_vars, 1)
+
+        # Run inference
+        output = model(input_tensors)
+
+        # Extract probabilities
+        probabilities = output["softmax"]
+
+        # Get probabilities for this jet
+        num_classes = size(probabilities, 2)
         jet_probs = Vector{Float32}(undef, num_classes)
         for c in 1:num_classes
-            jet_probs[c] = probabilities[1, c]
+            jet_probs[c] = probabilities[1, c]  # Always index 1 since we process one jet at a time
         end
         push!(result, jet_probs)
     end
