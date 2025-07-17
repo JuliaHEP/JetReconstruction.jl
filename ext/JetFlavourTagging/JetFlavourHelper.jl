@@ -339,16 +339,16 @@ end
 """
     extract_features(jets::Vector{EEJet}, jets_constituents::Vector{<:JetConstituents}, 
                     tracks::AbstractVector{EDM4hep.TrackState}, bz::Float32, 
-                    track_L::AbstractArray{T} where T <: AbstractFloat, 
+                    track_L::AbstractArray{T} where T <: AbstractFloat,
+                    json_config::Dict,
                     trackdata::AbstractVector{EDM4hep.Track}=AbstractVector{EDM4hep.Track}(), 
                     trackerhits::AbstractVector{EDM4hep.TrackerHit}=AbstractVector{EDM4hep.TrackerHit}(), 
                     gammadata::AbstractVector{EDM4hep.Cluster}=AbstractVector{EDM4hep.Cluster}(), 
                     nhdata::AbstractVector{EDM4hep.Cluster}=AbstractVector{EDM4hep.Cluster}(), 
                     calohits::AbstractVector{EDM4hep.CalorimeterHit}=AbstractVector{EDM4hep.CalorimeterHit}(), 
-                    dNdx::AbstractVector{EDM4hep.Quantity}=AbstractVector{EDM4hep.Quantity}(),
-                    json_config::Union{Dict, Nothing}=nothing) -> Dict
+                    dNdx::AbstractVector{EDM4hep.Quantity}=AbstractVector{EDM4hep.Quantity}()) -> Dict
 
-Extract all required features for jet flavour tagging.
+Extract features for jet flavour tagging based on JSON configuration.
 
 # Arguments 
 - `jets`: Vector of jets (EEJet)
@@ -356,28 +356,27 @@ Extract all required features for jet flavour tagging.
 - `tracks`: StructVector of track states
 - `bz`: Magnetic field strength
 - `track_L`: Array of track lengths
+- `json_config`: JSON configuration dict specifying which features to extract (required)
 - `trackdata`: Vector of track data (optional)
 - `trackerhits`: Vector of tracker hits (optional)
 - `gammadata`: Vector of gamma clusters (optional)
 - `nhdata`: Vector of neutral hadron clusters (optional)
 - `calohits`: Vector of calorimeter hits (optional)
 - `dNdx`: Vector of dE/dx measurements (optional)   
-- `json_config`: JSON configuration dict specifying which features to extract (optional)
 
 # Returns
-Dictionary containing extracted features organized by input type. If `json_config` is provided,
-only features specified in the configuration are extracted.
+Dictionary containing extracted features as specified in the JSON configuration.
 """
 function extract_features(jets::Vector{EEJet}, jets_constituents::Vector{<:JetConstituents},
                           tracks::AbstractVector{EDM4hep.TrackState}, bz::Float32,
                           track_L::AbstractArray{T} where {T <: AbstractFloat},
+                          json_config::Dict,
                           trackdata::AbstractVector{EDM4hep.Track} = AbstractVector{EDM4hep.Track}(),
                           trackerhits::AbstractVector{EDM4hep.TrackerHit} = AbstractVector{EDM4hep.TrackerHit}(),
                           gammadata::AbstractVector{EDM4hep.Cluster} = AbstractVector{EDM4hep.Cluster}(),
                           nhdata::AbstractVector{EDM4hep.Cluster} = AbstractVector{EDM4hep.Cluster}(),
                           calohits::AbstractVector{EDM4hep.CalorimeterHit} = AbstractVector{EDM4hep.CalorimeterHit}(),
-                          dNdx::AbstractVector{EDM4hep.Quantity} = AbstractVector{EDM4hep.Quantity}(),
-                          json_config::Union{Dict, Nothing} = nothing)
+                          dNdx::AbstractVector{EDM4hep.Quantity} = AbstractVector{EDM4hep.Quantity}())
 
     # Primary vertex (0,0,0,0) for displacement calculations
     # TODO: Replace with actual primary vertex if available. Right now, the EDM4hep has bugs that don't allow me to get the f32 value.
@@ -386,172 +385,117 @@ function extract_features(jets::Vector{EEJet}, jets_constituents::Vector{<:JetCo
     # Initialize feature containers
     features = Dict{String, Dict{String, Vector{Vector{Float32}}}}()
 
-    # Initialize sub-dictionaries
-    features["pf_points"] = Dict{String, Vector{Vector{Float32}}}()
-    features["pf_features"] = Dict{String, Vector{Vector{Float32}}}()
-    features["pf_vectors"] = Dict{String, Vector{Vector{Float32}}}()
-    features["pf_mask"] = Dict{String, Vector{Vector{Float32}}}()
+    # Cache for computed features to avoid redundant calculations
+    computed_features = Dict{String, Vector{Vector{Float32}}}()
 
-    # Extract basic features
+    # Create kwargs dict with all available data
+    kwargs = Dict(:jets => jets,
+                  :tracks => tracks,
+                  :v_in => v_in,
+                  :bz => bz,
+                  :track_L => track_L,
+                  :trackdata => trackdata,
+                  :trackerhits => trackerhits,
+                  :gammadata => gammadata,
+                  :nhdata => nhdata,
+                  :calohits => calohits,
+                  :dNdx => dNdx)
 
-    # Points (spatial coordinates)
-    thetarel = get_thetarel_cluster(jets, jets_constituents)
-    phirel = get_phirel_cluster(jets, jets_constituents)
+    # Process each input type specified in the JSON
+    for input_name in json_config["input_names"]
+        if !haskey(json_config, input_name) || !haskey(json_config[input_name], "var_names")
+            continue
+        end
 
-    features["pf_points"]["pfcand_thetarel"] = thetarel
-    features["pf_points"]["pfcand_phirel"] = phirel
+        features[input_name] = Dict{String, Vector{Vector{Float32}}}()
 
-    # Extract PF features
-    erel_log = get_erel_log_cluster(jets, jets_constituents)
-    features["pf_features"]["pfcand_erel_log"] = erel_log
-    features["pf_features"]["pfcand_thetarel"] = thetarel
-    features["pf_features"]["pfcand_phirel"] = phirel
+        # Extract each requested variable
+        for var_name in json_config[input_name]["var_names"]
+            # Remove "pfcand_" prefix if present
+            clean_name = replace(var_name, "pfcand_" => "")
 
-    # Track parameters and covariance matrices
-    dxy = get_dxy(jets_constituents, tracks, v_in, bz)
-    dz = get_dz(jets_constituents, tracks, v_in, bz)
-    phi0 = get_phi0(jets_constituents, tracks, v_in, bz)
-    dptdpt = get_dptdpt(jets_constituents, tracks)
-    detadeta = get_detadeta(jets_constituents, tracks)
-    dphidphi = get_dphidphi(jets_constituents, tracks)
-    dxydxy = get_dxydxy(jets_constituents, tracks)
-    dzdz = get_dzdz(jets_constituents, tracks)
-    dxydz = get_dxydz(jets_constituents, tracks)
-    dphidxy = get_dphidxy(jets_constituents, tracks)
-    dlambdadz = get_dlambdadz(jets_constituents, tracks)
-    dxyc = get_dxyc(jets_constituents, tracks)
-    dxyctgtheta = get_dxyctgtheta(jets_constituents, tracks)
-    phic = get_phic(jets_constituents, tracks)
-    phidz = get_phidz(jets_constituents, tracks)
-    phictgtheta = get_phictgtheta(jets_constituents, tracks)
-    cdz = get_cdz(jets_constituents, tracks)
-    cctgtheta = get_cctgtheta(jets_constituents, tracks)
+            # Check if already computed
+            if haskey(computed_features, clean_name)
+                features[input_name][var_name] = computed_features[clean_name]
+                continue
+            end
 
-    # Add track parameters to features
-    features["pf_features"]["pfcand_dptdpt"] = dptdpt
-    features["pf_features"]["pfcand_detadeta"] = detadeta
-    features["pf_features"]["pfcand_dphidphi"] = dphidphi
-    features["pf_features"]["pfcand_dxydxy"] = dxydxy
-    features["pf_features"]["pfcand_dzdz"] = dzdz
-    features["pf_features"]["pfcand_dxydz"] = dxydz
-    features["pf_features"]["pfcand_dphidxy"] = dphidxy
-    features["pf_features"]["pfcand_dlambdadz"] = dlambdadz
-    features["pf_features"]["pfcand_dxyc"] = dxyc
-    features["pf_features"]["pfcand_dxyctgtheta"] = dxyctgtheta
-    features["pf_features"]["pfcand_phic"] = phic
-    features["pf_features"]["pfcand_phidz"] = phidz
-    features["pf_features"]["pfcand_phictgtheta"] = phictgtheta
-    features["pf_features"]["pfcand_cdz"] = cdz
-    features["pf_features"]["pfcand_cctgtheta"] = cctgtheta
+            # Get the extractor function
+            extractor = get_feature_extractor(clean_name)
+            if extractor === nothing
+                # Feature not implemented, create empty arrays
+                features[input_name][var_name] = [Float32[] for _ in 1:length(jets)]
+                continue
+            end
 
-    # Particle ID
-    jets_constituents_isChargedHad = get_is_charged_had(jets_constituents)
+            # Handle dependencies for certain features
+            deps = get_feature_dependencies(clean_name)
+            if !isempty(deps)
+                dep_kwargs = Dict{Symbol, Any}()
 
-    # Time-of-flight and dE/dx if data available
-    if !isempty(track_L) && !isempty(trackdata) && !isempty(trackerhits) &&
-       !isempty(gammadata) && !isempty(nhdata) && !isempty(calohits)
-        mtof = get_mtof(jets_constituents, track_L, trackdata, trackerhits, gammadata,
-                        nhdata, calohits,
-                        v_in)
-        features["pf_features"]["pfcand_mtof"] = mtof
-    else
-        # Empty vectors if data not available
-        features["pf_features"]["pfcand_mtof"] = [Float32[] for _ in 1:length(jets)]
-    end
-
-    if !isempty(dNdx) && !isempty(trackdata)
-        dndx_vals = get_dndx(jets_constituents, dNdx, trackdata,
-                             jets_constituents_isChargedHad)
-        features["pf_features"]["pfcand_dndx"] = dndx_vals
-    else
-        features["pf_features"]["pfcand_dndx"] = [Float32[] for _ in 1:length(jets)]
-    end
-
-    # Particle type information
-    charge = get_charge(jets_constituents)
-    isMu = get_is_mu(jets_constituents)
-    isEl = get_is_el(jets_constituents)
-    isChargedHad = jets_constituents_isChargedHad
-    isGamma = get_is_gamma(jets_constituents)
-    isNeutralHad = get_is_neutral_had(jets_constituents)
-
-    features["pf_features"]["pfcand_charge"] = charge
-    features["pf_features"]["pfcand_isMu"] = isMu
-    features["pf_features"]["pfcand_isEl"] = isEl
-    features["pf_features"]["pfcand_isChargedHad"] = isChargedHad
-    features["pf_features"]["pfcand_isGamma"] = isGamma
-    features["pf_features"]["pfcand_isNeutralHad"] = isNeutralHad
-
-    # Displacement variables
-    features["pf_features"]["pfcand_dxy"] = dxy
-    features["pf_features"]["pfcand_dz"] = dz
-
-    # B-tagging variables
-    btagSip2dVal = get_btagSip2dVal(jets, dxy, phi0, bz)
-    btagSip2dSig = get_btagSip2dSig(btagSip2dVal, dxydxy)
-    btagSip3dVal = get_btagSip3dVal(jets, dxy, dz, phi0, bz)
-    btagSip3dSig = get_btagSip3dSig(btagSip3dVal, dxydxy, dzdz)
-    btagJetDistVal = get_btagJetDistVal(jets, jets_constituents, dxy, dz, phi0, bz)
-    btagJetDistSig = get_btagJetDistSig(btagJetDistVal, dxydxy, dzdz)
-
-    features["pf_features"]["pfcand_btagSip2dVal"] = btagSip2dVal
-    features["pf_features"]["pfcand_btagSip2dSig"] = btagSip2dSig
-    features["pf_features"]["pfcand_btagSip3dVal"] = btagSip3dVal
-    features["pf_features"]["pfcand_btagSip3dSig"] = btagSip3dSig
-    features["pf_features"]["pfcand_btagJetDistVal"] = btagJetDistVal
-    features["pf_features"]["pfcand_btagJetDistSig"] = btagJetDistSig
-
-    # Vector features (energy and momentum)
-    e = get_e(jets_constituents)
-    p = get_p(jets_constituents)
-
-    features["pf_vectors"]["pfcand_e"] = e
-    features["pf_vectors"]["pfcand_p"] = p
-
-    # Add mask (all 1s for real particles, 0s for padding)
-    mask = [fill(1.0f0, length(constituents)) for constituents in jets_constituents]
-    features["pf_mask"]["pfcand_mask"] = mask
-
-    # If json_config provided, extract only requested features dynamically
-    if json_config !== nothing
-        return extract_features_dynamic(jets, jets_constituents, tracks, bz, track_L,
-                                        trackdata, trackerhits, gammadata, nhdata, calohits,
-                                        dNdx, json_config)
-    end
-
-    return features
-end
-
-"""
-    filter_features_by_config(features::Dict, config::Dict) -> Dict
-
-Filter extracted features to only include those specified in the JSON configuration.
-
-# Arguments
-- `features`: Dictionary of all extracted features
-- `config`: JSON configuration specifying which features to include
-
-# Returns
-Filtered feature dictionary containing only requested features
-"""
-function filter_features_by_config(features::Dict, config::Dict)
-    filtered = Dict{String, Dict{String, Vector{Vector{Float32}}}}()
-
-    # Process each input type
-    for input_name in config["input_names"]
-        if haskey(config, input_name) && haskey(config[input_name], "var_names")
-            filtered[input_name] = Dict{String, Vector{Vector{Float32}}}()
-
-            # Only include features specified in the JSON
-            for var_name in config[input_name]["var_names"]
-                if haskey(features, input_name) && haskey(features[input_name], var_name)
-                    filtered[input_name][var_name] = features[input_name][var_name]
+                for (dep_key, dep_name) in deps
+                    if !haskey(computed_features, dep_name)
+                        # Recursively compute dependency
+                        dep_extractor = get_feature_extractor(dep_name)
+                        if dep_extractor !== nothing
+                            # Check if this dependency has its own dependencies
+                            sub_deps = get_feature_dependencies(dep_name)
+                            if !isempty(sub_deps)
+                                sub_dep_kwargs = Dict{Symbol, Any}()
+                                for (sub_dep_key, sub_dep_name) in sub_deps
+                                    if !haskey(computed_features, sub_dep_name)
+                                        sub_dep_extractor = get_feature_extractor(sub_dep_name)
+                                        if sub_dep_extractor !== nothing
+                                            computed_features[sub_dep_name] = sub_dep_extractor(jets_constituents;
+                                                                                                kwargs...)
+                                        end
+                                    end
+                                    if haskey(computed_features, sub_dep_name)
+                                        sub_dep_kwargs[sub_dep_key] = computed_features[sub_dep_name]
+                                    end
+                                end
+                                # Compute dependency with its dependencies
+                                temp_kwargs = merge(kwargs, sub_dep_kwargs)
+                                computed_features[dep_name] = dep_extractor(jets_constituents;
+                                                                            temp_kwargs...)
+                            else
+                                # No sub-dependencies, compute directly
+                                computed_features[dep_name] = dep_extractor(jets_constituents;
+                                                                            kwargs...)
+                            end
+                        end
+                    end
+                    if haskey(computed_features, dep_name)
+                        dep_kwargs[dep_key] = computed_features[dep_name]
+                    end
                 end
+
+                # Merge dependency kwargs with main kwargs
+                merge!(kwargs, dep_kwargs)
+            end
+
+            # Special handling for features that need isChargedHad
+            if clean_name == "dndx" && !haskey(kwargs, :jets_constituents_isChargedHad)
+                if !haskey(computed_features, "isChargedHad")
+                    computed_features["isChargedHad"] = get_is_charged_had(jets_constituents)
+                end
+                kwargs[:jets_constituents_isChargedHad] = computed_features["isChargedHad"]
+            end
+
+            # Extract the feature
+            try
+                feature_data = extractor(jets_constituents; kwargs...)
+                computed_features[clean_name] = feature_data
+                features[input_name][var_name] = feature_data
+            catch e
+                # If extraction fails, create empty arrays
+                @warn "Failed to extract feature $var_name: $e"
+                features[input_name][var_name] = [Float32[] for _ in 1:length(jets)]
             end
         end
     end
 
-    return filtered
+    return features
 end
 
 """
@@ -682,158 +626,6 @@ function get_feature_extractor(feature_name::String)
                                                                     for constituents in jets_constituents])
 
     return get(feature_map, feature_name, nothing)
-end
-
-"""
-    extract_features_dynamic(jets::Vector{EEJet}, jets_constituents::Vector{<:JetConstituents},
-                            tracks::AbstractVector{EDM4hep.TrackState}, bz::Float32,
-                            track_L::AbstractArray{T} where {T <: AbstractFloat},
-                            trackdata::AbstractVector{EDM4hep.Track},
-                            trackerhits::AbstractVector{EDM4hep.TrackerHit},
-                            gammadata::AbstractVector{EDM4hep.Cluster},
-                            nhdata::AbstractVector{EDM4hep.Cluster},
-                            calohits::AbstractVector{EDM4hep.CalorimeterHit},
-                            dNdx::AbstractVector{EDM4hep.Quantity},
-                            json_config::Dict) -> Dict
-
-Dynamically extract only the features specified in the JSON configuration.
-
-# Arguments
-- Same as extract_features
-- `json_config`: JSON configuration specifying which features to extract
-
-# Returns
-Dictionary containing only requested features
-"""
-function extract_features_dynamic(jets::Vector{EEJet},
-                                  jets_constituents::Vector{<:JetConstituents},
-                                  tracks::AbstractVector{EDM4hep.TrackState}, bz::Float32,
-                                  track_L::AbstractArray{T} where {T <: AbstractFloat},
-                                  trackdata::AbstractVector{EDM4hep.Track},
-                                  trackerhits::AbstractVector{EDM4hep.TrackerHit},
-                                  gammadata::AbstractVector{EDM4hep.Cluster},
-                                  nhdata::AbstractVector{EDM4hep.Cluster},
-                                  calohits::AbstractVector{EDM4hep.CalorimeterHit},
-                                  dNdx::AbstractVector{EDM4hep.Quantity},
-                                  json_config::Dict)
-
-    # Primary vertex (0,0,0,0) for displacement calculations
-    v_in = LorentzVector(0.0, 0.0, 0.0, 0.0)
-
-    # Initialize feature containers
-    features = Dict{String, Dict{String, Vector{Vector{Float32}}}}()
-
-    # Cache for computed features to avoid redundant calculations
-    computed_features = Dict{String, Vector{Vector{Float32}}}()
-
-    # Create kwargs dict with all available data
-    kwargs = Dict(:jets => jets,
-                  :tracks => tracks,
-                  :v_in => v_in,
-                  :bz => bz,
-                  :track_L => track_L,
-                  :trackdata => trackdata,
-                  :trackerhits => trackerhits,
-                  :gammadata => gammadata,
-                  :nhdata => nhdata,
-                  :calohits => calohits,
-                  :dNdx => dNdx)
-
-    # Process each input type specified in the JSON
-    for input_name in json_config["input_names"]
-        if !haskey(json_config, input_name) || !haskey(json_config[input_name], "var_names")
-            continue
-        end
-
-        features[input_name] = Dict{String, Vector{Vector{Float32}}}()
-
-        # Extract each requested variable
-        for var_name in json_config[input_name]["var_names"]
-            # Remove "pfcand_" prefix if present
-            clean_name = replace(var_name, "pfcand_" => "")
-
-            # Check if already computed
-            if haskey(computed_features, clean_name)
-                features[input_name][var_name] = computed_features[clean_name]
-                continue
-            end
-
-            # Get the extractor function
-            extractor = get_feature_extractor(clean_name)
-            if extractor === nothing
-                # Feature not implemented, create empty arrays
-                features[input_name][var_name] = [Float32[] for _ in 1:length(jets)]
-                continue
-            end
-
-            # Handle dependencies for certain features
-            deps = get_feature_dependencies(clean_name)
-            if !isempty(deps)
-                dep_kwargs = Dict{Symbol, Any}()
-
-                for (dep_key, dep_name) in deps
-                    if !haskey(computed_features, dep_name)
-                        # Recursively compute dependency
-                        dep_extractor = get_feature_extractor(dep_name)
-                        if dep_extractor !== nothing
-                            # Check if this dependency has its own dependencies
-                            sub_deps = get_feature_dependencies(dep_name)
-                            if !isempty(sub_deps)
-                                sub_dep_kwargs = Dict{Symbol, Any}()
-                                for (sub_dep_key, sub_dep_name) in sub_deps
-                                    if !haskey(computed_features, sub_dep_name)
-                                        sub_dep_extractor = get_feature_extractor(sub_dep_name)
-                                        if sub_dep_extractor !== nothing
-                                            computed_features[sub_dep_name] = sub_dep_extractor(jets_constituents;
-                                                                                                kwargs...)
-                                        end
-                                    end
-                                    if haskey(computed_features, sub_dep_name)
-                                        sub_dep_kwargs[sub_dep_key] = computed_features[sub_dep_name]
-                                    end
-                                end
-                                # Compute dependency with its dependencies
-                                temp_kwargs = merge(kwargs, sub_dep_kwargs)
-                                computed_features[dep_name] = dep_extractor(jets_constituents;
-                                                                            temp_kwargs...)
-                            else
-                                # No sub-dependencies, compute directly
-                                computed_features[dep_name] = dep_extractor(jets_constituents;
-                                                                            kwargs...)
-                            end
-                        end
-                    end
-                    if haskey(computed_features, dep_name)
-                        dep_kwargs[dep_key] = computed_features[dep_name]
-                    end
-                end
-
-                # Merge dependency kwargs with main kwargs
-                merge!(kwargs, dep_kwargs)
-            end
-
-            # Special handling for features that need isChargedHad
-            if clean_name == "dndx" && !haskey(kwargs, :jets_constituents_isChargedHad)
-                if !haskey(computed_features, "isChargedHad")
-                    computed_features["isChargedHad"] = get_is_charged_had(jets_constituents)
-                end
-                kwargs[:jets_constituents_isChargedHad] = computed_features["isChargedHad"]
-            end
-
-            # Extract the feature
-            try
-                feature_data = extractor(jets_constituents; kwargs...)
-                computed_features[clean_name] = feature_data
-                features[input_name][var_name] = feature_data
-            catch e
-                # If extraction fails, create empty arrays
-                @warn "Failed to extract feature $var_name: $e"
-                features[input_name][var_name] = [Float32[] for _ in 1:length(jets)]
-            end
-        end
-    end
-
-    return features
 end
 
 """

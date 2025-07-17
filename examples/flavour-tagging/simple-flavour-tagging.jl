@@ -121,13 +121,13 @@ function main()
                                                       tracks,
                                                       bz,
                                                       track_L,
+                                                      config,
                                                       trackdata,
                                                       trackerhits,
                                                       gammadata,
                                                       nhdata,
                                                       calohits,
-                                                      dNdx,
-                                                      config)
+                                                      dNdx)
 
     # Prepare input tensors
     println("Preparing input tensors...")

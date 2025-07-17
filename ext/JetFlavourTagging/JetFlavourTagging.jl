@@ -39,16 +39,16 @@ include("JetFlavourHelper.jl")
 """
     extract_features(jets::Vector{EEJet}, jets_constituents::Vector{<:JetConstituents}, 
                     tracks::AbstractVector{EDM4hep.TrackState}, bz::Float32, 
-                    track_L::AbstractArray{T} where T <: AbstractFloat, 
+                    track_L::AbstractArray{T} where T <: AbstractFloat,
+                    json_config::Dict,
                     trackdata::AbstractVector{EDM4hep.Track}=AbstractVector{EDM4hep.Track}(), 
                     trackerhits::AbstractVector{EDM4hep.TrackerHit}=AbstractVector{EDM4hep.TrackerHit}(), 
                     gammadata::AbstractVector{EDM4hep.Cluster}=AbstractVector{EDM4hep.Cluster}(), 
                     nhdata::AbstractVector{EDM4hep.Cluster}=AbstractVector{EDM4hep.Cluster}(), 
                     calohits::AbstractVector{EDM4hep.CalorimeterHit}=AbstractVector{EDM4hep.CalorimeterHit}(), 
-                    dNdx::AbstractVector{EDM4hep.Quantity}=AbstractVector{EDM4hep.Quantity}(),
-                    json_config::Union{Dict, Nothing}=nothing) -> Dict
+                    dNdx::AbstractVector{EDM4hep.Quantity}=AbstractVector{EDM4hep.Quantity}()) -> Dict
 
-Extract all required features for jet flavour tagging.
+Extract features for jet flavour tagging based on JSON configuration.
 
 # Arguments 
 - `jets`: Vector of jets (EEJet)
@@ -56,17 +56,16 @@ Extract all required features for jet flavour tagging.
 - `tracks`: StructVector of track states
 - `bz`: Magnetic field strength
 - `track_L`: Array of track lengths
+- `json_config`: JSON configuration dict specifying which features to extract (required)
 - `trackdata`: Vector of track data (optional)
 - `trackerhits`: Vector of tracker hits (optional)
 - `gammadata`: Vector of gamma clusters (optional)
 - `nhdata`: Vector of neutral hadron clusters (optional)
 - `calohits`: Vector of calorimeter hits (optional)
 - `dNdx`: Vector of dE/dx measurements (optional)   
-- `json_config`: JSON configuration dict specifying which features to extract (optional)
 
 # Returns
-Dictionary containing extracted features organized by input type. If `json_config` is provided,
-only features specified in the configuration are extracted.
+Dictionary containing extracted features as specified in the JSON configuration.
 """
 function JetReconstruction.extract_features(jets::Vector{EEJet},
                                             jets_constituents::Vector{<:JetConstituents},
@@ -74,17 +73,16 @@ function JetReconstruction.extract_features(jets::Vector{EEJet},
                                             bz::Float32,
                                             track_L::AbstractArray{T} where {T <:
                                                                              AbstractFloat},
+                                            json_config::Dict,
                                             trackdata::AbstractVector{EDM4hep.Track} = AbstractVector{EDM4hep.Track}(),
                                             trackerhits::AbstractVector{EDM4hep.TrackerHit} = AbstractVector{EDM4hep.TrackerHit}(),
                                             gammadata::AbstractVector{EDM4hep.Cluster} = AbstractVector{EDM4hep.Cluster}(),
                                             nhdata::AbstractVector{EDM4hep.Cluster} = AbstractVector{EDM4hep.Cluster}(),
                                             calohits::AbstractVector{EDM4hep.CalorimeterHit} = AbstractVector{EDM4hep.CalorimeterHit}(),
-                                            dNdx::AbstractVector{EDM4hep.Quantity} = AbstractVector{EDM4hep.Quantity}(),
-                                            json_config::Union{Dict, Nothing} = nothing)
+                                            dNdx::AbstractVector{EDM4hep.Quantity} = AbstractVector{EDM4hep.Quantity}())
     return JetFlavourHelper.extract_features(jets, jets_constituents, tracks, bz, track_L,
-                                             trackdata,
-                                             trackerhits, gammadata, nhdata, calohits, dNdx,
-                                             json_config)
+                                             json_config, trackdata,
+                                             trackerhits, gammadata, nhdata, calohits, dNdx)
 end
 
 """
