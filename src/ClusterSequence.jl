@@ -215,14 +215,14 @@ function add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jet
 end
 
 """
-    inclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVectorCyl; ptmin = 0.0) where {T, U}
+    inclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVectorCyl{Float64}; ptmin = 0.0) where {T, U}
 
 Return all inclusive jets of a ClusterSequence with pt > ptmin.
 
 # Arguments
 - `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the
   clustering history and jets.
-- `::Type{T} = LorentzVectorCyl`: The return type used for the selected jets.
+- `::Type{T} = LorentzVectorCyl{Float64}`: The return type used for the selected jets.
 - `ptmin::Float64 = 0.0`: The minimum transverse momentum (pt) threshold for the
   inclusive jets.
 
@@ -245,7 +245,8 @@ currently unrecognised types will return `LorentzVectorCyl`).
 inclusive_jets(clusterseq; ptmin = 10.0)
 ```
 """
-function inclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVectorCyl;
+function inclusive_jets(clusterseq::ClusterSequence{U},
+                        ::Type{T} = LorentzVectorCyl{Float64};
                         ptmin = 0.0) where {T, U}
     pt2min = ptmin * ptmin
     jets_local = T[]
@@ -272,7 +273,7 @@ function inclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVecto
 end
 
 """
-    exclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVectorCyl; dcut = nothing, njets = nothing) where {T, U}
+    exclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVectorCyl{Float64}; dcut = nothing, njets = nothing) where {T, U}
 
 Return all exclusive jets of a ClusterSequence, with either a specific number of
 jets or a cut on the maximum distance parameter.
@@ -280,7 +281,7 @@ jets or a cut on the maximum distance parameter.
 # Arguments
 - `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the
   clustering history and jets.
-- `::Type{T} = LorentzVectorCyl`: The return type used for the selected jets.
+- `::Type{T} = LorentzVectorCyl{Float64}`: The return type used for the selected jets.
 - `dcut::Union{Nothing, Real}`: The distance parameter used to define the
   exclusive jets. If `dcut` is provided, the number of exclusive jets will be
   calculated based on this parameter.
@@ -311,7 +312,8 @@ exclusive_jets(clusterseq, dcut = 20.0)
 exclusive_jets(clusterseq, PseudoJet, njets = 3)
 ```
 """
-function exclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVectorCyl;
+function exclusive_jets(clusterseq::ClusterSequence{U},
+                        ::Type{T} = LorentzVectorCyl{Float64};
                         dcut = nothing, njets = nothing,) where {T, U}
     if isnothing(dcut) && isnothing(njets)
         throw(ArgumentError("Must pass either a dcut or an njets value"))

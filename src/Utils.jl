@@ -103,7 +103,7 @@ function final_jets(jets::Vector{PseudoJet}, ptmin::AbstractFloat = 0.0)
 end
 
 """Specialisation for final jets from LorentzVectors (TODO: merge into more general function)"""
-function final_jets(jets::Vector{LorentzVector}, ptmin::AbstractFloat = 0.0)
+function final_jets(jets::Vector{<:LorentzVector}, ptmin::AbstractFloat = 0.0)
     count = 0
     final_jets = Vector{FinalJet}()
     sizehint!(final_jets, 6)
@@ -120,7 +120,7 @@ function final_jets(jets::Vector{LorentzVector}, ptmin::AbstractFloat = 0.0)
 end
 
 """Specialisation for final jets from LorentzVectorCyl (TODO: merge into more general function)"""
-function final_jets(jets::Vector{LorentzVectorCyl}, ptmin::AbstractFloat = 0.0)
+function final_jets(jets::Vector{<:LorentzVectorCyl}, ptmin::AbstractFloat = 0.0)
     count = 0
     final_jets = Vector{FinalJet}()
     sizehint!(final_jets, 6)
