@@ -311,8 +311,8 @@ exclusive_jets(clusterseq, dcut = 20.0)
 exclusive_jets(clusterseq, PseudoJet, njets = 3)
 ```
 """
-function exclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVectorCyl; dcut = nothing, njets = nothing,
-                        ) where {T, U}
+function exclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVectorCyl;
+                        dcut = nothing, njets = nothing,) where {T, U}
     if isnothing(dcut) && isnothing(njets)
         throw(ArgumentError("Must pass either a dcut or an njets value"))
     end
