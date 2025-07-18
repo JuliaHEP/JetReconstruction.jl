@@ -359,7 +359,8 @@ Extract features for jet flavour tagging based on JSON configuration.
 - `gammadata`: Vector of gamma clusters (optional)
 - `nhdata`: Vector of neutral hadron clusters (optional)
 - `calohits`: Vector of calorimeter hits (optional)
-- `dNdx`: Vector of dE/dx measurements (optional)   
+- `dNdx`: Vector of dE/dx measurements (optional)
+- `mc_vertices`: Vector of MC vertices for each reconstructed particle (optional)
 
 # Returns
 Dictionary containing extracted features as specified in the JSON configuration.
@@ -373,11 +374,25 @@ function extract_features(jets::Vector{EEJet}, jets_constituents::Vector{<:JetCo
                           gammadata::AbstractVector{EDM4hep.Cluster} = AbstractVector{EDM4hep.Cluster}(),
                           nhdata::AbstractVector{EDM4hep.Cluster} = AbstractVector{EDM4hep.Cluster}(),
                           calohits::AbstractVector{EDM4hep.CalorimeterHit} = AbstractVector{EDM4hep.CalorimeterHit}(),
-                          dNdx::AbstractVector{EDM4hep.Quantity} = AbstractVector{EDM4hep.Quantity}())
+                          dNdx::AbstractVector{EDM4hep.Quantity} = AbstractVector{EDM4hep.Quantity}(),
+                          mc_vertices::Union{Nothing, Vector{LorentzVector{Float32}}} = nothing)
 
-    # Primary vertex (0,0,0,0) for displacement calculations
-    # TODO: Replace with actual primary vertex if available. Right now, the EDM4hep has bugs that don't allow me to get the f32 value.
-    v_in = LorentzVector(0.0, 0.0, 0.0, 0.0)
+    # Primary vertex for displacement calculations
+    # Use provided MC vertices or default to (0,0,0,0)
+    # If mc_vertices are provided, find the most common vertex (primary vertex)
+    if isnothing(mc_vertices) || isempty(mc_vertices)
+        v_in = LorentzVector(0.0, 0.0, 0.0, 0.0)
+    else
+        # Find the most common vertex (likely the primary vertex)
+        # For simplicity, use the first non-zero vertex found
+        v_in = LorentzVector(0.0, 0.0, 0.0, 0.0)
+        for vertex in mc_vertices
+            if vertex.x != 0.0 || vertex.y != 0.0 || vertex.z != 0.0
+                v_in = vertex
+                break
+            end
+        end
+    end
 
     # Initialize feature containers
     features = Dict{String, Dict{String, Vector{Vector{Float32}}}}()

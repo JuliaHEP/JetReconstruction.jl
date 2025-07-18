@@ -58,13 +58,36 @@ function main()
     println("Loaded $(length(events)) events")
 
     # Process a specific event (event #12 as in the notebook)
-    event_id = 15
+    event_id = 12
     println("\nProcessing event #$event_id")
     evt = events[event_id]
 
     # Get reconstructed particles and tracks
     recps = RootIO.get(reader, evt, "ReconstructedParticles")
     tracks = RootIO.get(reader, evt, "EFlowTrack_1")
+
+    # Get MC particles and links for vertex information
+    mcps = RootIO.get(reader, evt, "Particle")
+    MCRecoLinks = RootIO.get(reader, evt, "MCRecoAssociations")
+
+    # Extract MC vertices for each reconstructed particle
+    mc_vertices = Vector{LorentzVector{Float32}}(undef, length(recps))
+    reco_to_mc = Dict(link.rec_idx.index => link.sim_idx.index for link in MCRecoLinks)
+    for (rec_idx, mc_idx) in reco_to_mc
+        if rec_idx < length(recps) && mc_idx < length(mcps)
+            mc_vertices[rec_idx + 1] = LorentzVector(Float32(mcps[mc_idx + 1].vertex.x),
+                                                     Float32(mcps[mc_idx + 1].vertex.y),
+                                                     Float32(mcps[mc_idx + 1].vertex.z),
+                                                     Float32(mcps[mc_idx + 1].time))
+        end
+    end
+
+    # Fill any missing vertices with (0,0,0,0)
+    for i in 1:length(recps)
+        if !isassigned(mc_vertices, i)
+            mc_vertices[i] = LorentzVector(0.0f0, 0.0f0, 0.0f0, 0.0f0)
+        end
+    end
 
     # Get needed collections for feature extraction
     bz = RootIO.get(reader, evt, "magFieldBz", register = false)[1]
@@ -79,6 +102,16 @@ function main()
     println("  - $(length(recps)) reconstructed particles")
     println("  - $(length(tracks)) tracks")
     println("  - Magnetic field Bz = $bz T")
+
+    # Print the primary vertex that will be used
+    primary_vertex = LorentzVector(0.0f0, 0.0f0, 0.0f0, 0.0f0)
+    for vertex in mc_vertices
+        if vertex.x != 0.0 || vertex.y != 0.0 || vertex.z != 0.0
+            primary_vertex = vertex
+            break
+        end
+    end
+    println("  - Primary vertex: ($(round(primary_vertex.x, digits=3)), $(round(primary_vertex.y, digits=3)), $(round(primary_vertex.z, digits=3))) mm")
 
     # Reconstruct jets
     println("\nReconstructing jets...")
@@ -127,7 +160,8 @@ function main()
                                                       gammadata,
                                                       nhdata,
                                                       calohits,
-                                                      dNdx)
+                                                      dNdx,
+                                                      mc_vertices)
 
     # Prepare input tensors
     println("Preparing input tensors...")

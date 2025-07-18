@@ -62,7 +62,8 @@ Extract features for jet flavour tagging based on JSON configuration.
 - `gammadata`: Vector of gamma clusters (optional)
 - `nhdata`: Vector of neutral hadron clusters (optional)
 - `calohits`: Vector of calorimeter hits (optional)
-- `dNdx`: Vector of dE/dx measurements (optional)   
+- `dNdx`: Vector of dE/dx measurements (optional)
+- `mc_vertices`: Vector of MC vertices for each reconstructed particle (optional)
 
 # Returns
 Dictionary containing extracted features as specified in the JSON configuration.
@@ -79,10 +80,13 @@ function JetReconstruction.extract_features(jets::Vector{EEJet},
                                             gammadata::AbstractVector{EDM4hep.Cluster} = AbstractVector{EDM4hep.Cluster}(),
                                             nhdata::AbstractVector{EDM4hep.Cluster} = AbstractVector{EDM4hep.Cluster}(),
                                             calohits::AbstractVector{EDM4hep.CalorimeterHit} = AbstractVector{EDM4hep.CalorimeterHit}(),
-                                            dNdx::AbstractVector{EDM4hep.Quantity} = AbstractVector{EDM4hep.Quantity}())
+                                            dNdx::AbstractVector{EDM4hep.Quantity} = AbstractVector{EDM4hep.Quantity}(),
+                                            mc_vertices::Union{Nothing,
+                                                               Vector{LorentzVector{Float32}}} = nothing)
     return JetFlavourHelper.extract_features(jets, jets_constituents, tracks, bz, track_L,
                                              json_config, trackdata,
-                                             trackerhits, gammadata, nhdata, calohits, dNdx)
+                                             trackerhits, gammadata, nhdata, calohits, dNdx,
+                                             mc_vertices)
 end
 
 """
