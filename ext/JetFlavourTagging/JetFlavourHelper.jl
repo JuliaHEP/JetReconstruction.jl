@@ -9,7 +9,6 @@ using LorentzVectorHEP
 
 # Utility functions for the jet features from EDM4hep
 include("JetConstituentUtils.jl")
-# include("ReconstructedParticle.jl")
 
 """
     JetFlavourHelper
@@ -100,9 +99,6 @@ function prepare_input_tensor(jets_constituents::Vector{<:JetConstituents},
         if input_name == "pf_features"
             feature_vars = length(config[input_name]["var_names"])
             input_tensors[input_name] = zeros(Float32, 1, feature_vars, max_length)
-            # elseif input_name == "pf_points"
-            #     points_vars = length(config[input_name]["var_names"])
-            #     input_tensors[input_name] = zeros(Float32, 1, points_vars, max_length)
         elseif input_name == "pf_vectors"
             vector_vars = length(config[input_name]["var_names"])
             input_tensors[input_name] = zeros(Float32, 1, vector_vars, max_length)
@@ -112,7 +108,8 @@ function prepare_input_tensor(jets_constituents::Vector{<:JetConstituents},
     end
 
     # Note: This function prepares tensors for a single jet at a time
-    # The caller should loop through jets and process them individually
+    # The caller can loop through jets and process them individually
+    # A batch processing version is planned for next version under the inference() function.
 
     # Process the specified jet
     if length(jets) >= jet_index && jet_index > 0
