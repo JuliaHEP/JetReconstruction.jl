@@ -386,7 +386,7 @@ function jets_selection(selector, clustersequence::Ptr{C_ClusterSequence{T}},
     try
         c_clusterseq = unsafe_load(clustersequence)
         clusterseq = ClusterSequence{T}(c_clusterseq)
-        jets_result = selector(clusterseq; T = U, kwargs...)
+        jets_result = selector(clusterseq, U; kwargs...)
         c_results = C_JetsResult{U}(make_c_array(jets_result)...)
         unsafe_store!(result, c_results)
     catch e
