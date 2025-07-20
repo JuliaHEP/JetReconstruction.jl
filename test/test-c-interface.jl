@@ -47,8 +47,8 @@ function test_pseudojet()
     struct_approx_equal(jet, c_jet)
 end
 
-function test_jet_reconstruct(filename; algorithm, R, strategy, recombine, power = 0.0,
-                              T = PseudoJet)
+function test_jet_reconstruct(filename, ::Type{T} = PseudoJet; algorithm, R, strategy,
+                              recombine, power = 0.0) where {T}
     @testset "C-interface jet reconstruct" begin
         events = JetReconstruction.read_final_state_particles(filename)
         results = Vector{ClusterSequence{T}}(undef, length(events))
@@ -93,7 +93,7 @@ function test_inclusive_jets(cluster_seq_ptrs::Vector{Ptr{C_JetReconstruction.C_
                                                                        ptmin,
                                                                        results_ptr)
             @test C_JetReconstruction.StatusCode.T(ret) == C_JetReconstruction.StatusCode.OK
-            results = inclusive_jets(cluster_seq; ptmin = ptmin, T = T)
+            results = inclusive_jets(cluster_seq, T; ptmin = ptmin)
             compare_results(results_ptr, results)
             C_JetReconstruction.jetreconstruction_JetsResult_free_members_(results_ptr)
         end
@@ -111,7 +111,7 @@ function test_exclusive_jets_njets(cluster_seq_ptrs::Vector{Ptr{C_JetReconstruct
                                                                              Csize_t(njets),
                                                                              results_ptr)
             @test C_JetReconstruction.StatusCode.T(ret) == C_JetReconstruction.StatusCode.OK
-            results = exclusive_jets(cluster_seq; njets = njets, T = T)
+            results = exclusive_jets(cluster_seq, T; njets = njets)
             compare_results(results_ptr, results)
             C_JetReconstruction.jetreconstruction_JetsResult_free_members_(results_ptr)
         end
@@ -129,7 +129,7 @@ function test_exclusive_jets_dcut(cluster_seq_ptrs::Vector{Ptr{C_JetReconstructi
                                                                             dcut,
                                                                             results_ptr)
             @test C_JetReconstruction.StatusCode.T(ret) == C_JetReconstruction.StatusCode.OK
-            results = exclusive_jets(cluster_seq; dcut = dcut, T = T)
+            results = exclusive_jets(cluster_seq, T; dcut = dcut)
             compare_results(results_ptr, results)
             C_JetReconstruction.jetreconstruction_JetsResult_free_members_(results_ptr)
         end
