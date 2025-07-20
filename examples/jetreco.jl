@@ -149,10 +149,9 @@ function main()
     else
         jet_type = PseudoJet
     end
-    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file],
+    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file], jet_type;
                                                                   maxevents = args[:maxevents],
-                                                                  skipevents = args[:skip],
-                                                                  T = jet_type)
+                                                                  skipevents = args[:skip])
     if isnothing(args[:algorithm]) && isnothing(args[:power])
         @warn "Neither algorithm nor power specified, defaulting to AntiKt"
         args[:algorithm] = JetAlgorithm.AntiKt

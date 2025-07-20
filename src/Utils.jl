@@ -21,17 +21,17 @@ open_with_stream(fname::AbstractString) = begin
 end
 
 """
-    read_final_state_particles(fname; maxevents = -1, skipevents = 0, T=PseudoJet)
+    read_final_state_particles(fname, ::Type{T} = PseudoJet; maxevents = -1, skipevents = 0) where {T}
 
 Reads final state particles from a file and returns them as a vector of type T.
 
 # Arguments
 - `fname`: The name of the HepMC3 ASCII file to read particles from. If the file
   is gzipped, the function will automatically decompress it.
+- `::Type{T}=PseudoJet`: The type of object to construct and return.
 - `maxevents=-1`: The maximum number of events to read. -1 means all events will
   be read.
 - `skipevents=0`: The number of events to skip before an event is included.
-- `T=PseudoJet`: The type of object to construct and return.
 
 # Returns
 A vector of vectors of T objects, where each inner vector represents all
@@ -39,7 +39,8 @@ the particles of a particular event. In particular T can be `PseudoJet` or
 a `LorentzVector` type. Note, if T is not `PseudoJet`, the order of the
 arguments in the constructor must be `(t, x, y, z)`.
 """
-function read_final_state_particles(fname; maxevents = -1, skipevents = 0, T = PseudoJet)
+function read_final_state_particles(fname, ::Type{T} = PseudoJet; maxevents = -1,
+                                    skipevents = 0) where {T}
     f = open_with_stream(fname)
     events = Vector{T}[]
 
@@ -102,7 +103,7 @@ function final_jets(jets::Vector{PseudoJet}, ptmin::AbstractFloat = 0.0)
 end
 
 """Specialisation for final jets from LorentzVectors (TODO: merge into more general function)"""
-function final_jets(jets::Vector{LorentzVector}, ptmin::AbstractFloat = 0.0)
+function final_jets(jets::Vector{<:LorentzVector}, ptmin::AbstractFloat = 0.0)
     count = 0
     final_jets = Vector{FinalJet}()
     sizehint!(final_jets, 6)
@@ -119,7 +120,7 @@ function final_jets(jets::Vector{LorentzVector}, ptmin::AbstractFloat = 0.0)
 end
 
 """Specialisation for final jets from LorentzVectorCyl (TODO: merge into more general function)"""
-function final_jets(jets::Vector{LorentzVectorCyl}, ptmin::AbstractFloat = 0.0)
+function final_jets(jets::Vector{<:LorentzVectorCyl}, ptmin::AbstractFloat = 0.0)
     count = 0
     final_jets = Vector{FinalJet}()
     sizehint!(final_jets, 6)
