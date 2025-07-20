@@ -12,6 +12,9 @@ julia --project instrumented-jetreco.jl --algorithm=CA -R 1.0 ../test/data/event
 echo "pp 14TeV Kt"
 julia --project instrumented-jetreco.jl --algorithm=Kt -R 1.0 ../test/data/events.pp13TeV.hepmc3.zst
 
+echo "pp 14TeV Kt with dump option"
+julia --project instrumented-jetreco.jl --algorithm=Kt -R 1.0 ../test/data/events.pp13TeV.hepmc3.zst --dump test-output-pp.csv
+
 echo "ee H Durham allocation test"
 julia --project instrumented-jetreco.jl --algorithm=Durham --alloc ../test/data/events.eeH.hepmc3.zst
 
@@ -21,3 +24,5 @@ julia --project jetreco.jl --algorithm=CA -R 1.0 ../test/data/events.pp13TeV.hep
 echo "ee basic reco test"
 julia --project jetreco.jl --algorithm=EEKt -R 1.0 -p -1.0 ../test/data/events.eeH.hepmc3.zst
 
+echo "ee basic reco test with dump"
+julia --project jetreco.jl --algorithm=EEKt -R 1.0 -p -1.0 ../test/data/events.eeH.hepmc3.zst --dump test-output-ee.csv

@@ -34,6 +34,11 @@ function jet_process(events::Vector{Vector{T}};
                      dump::Union{String, Nothing} = nothing) where {T <:
                                                                     JetReconstruction.FourMomentum}
 
+    # If we are dumping the results, setup the JSON structure
+    if !isnothing(dump)
+        jet_collection = FinalJets[]
+    end
+
     # Set consistent algorithm power
     p = JetReconstruction.get_algorithm_power(p = p, algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
@@ -54,22 +59,22 @@ function jet_process(events::Vector{Vector{T}};
                                       strategy = strategy)
         # Now select jets, with inclusive or exclusive parameters
         if !isnothing(njets)
-            finaljets = exclusive_jets(cluster_seq; njets = njets)
+            selectedjets = exclusive_jets(cluster_seq; njets = njets)
         elseif !isnothing(dcut)
-            finaljets = exclusive_jets(cluster_seq; dcut = dcut)
+            selectedjets = exclusive_jets(cluster_seq; dcut = dcut)
         else
-            finaljets = inclusive_jets(cluster_seq; ptmin = ptmin)
+            selectedjets = inclusive_jets(cluster_seq; ptmin = ptmin)
         end
         @info begin
             jet_output = "Event $(ievt)\n"
-            sort!(finaljets, by = x -> pt(x), rev = true)
-            for (ijet, jet) in enumerate(finaljets)
+            sort!(selectedjets, by = x -> pt(x), rev = true)
+            for (ijet, jet) in enumerate(selectedjets)
                 jet_output *= " $(ijet) - $(jet)\n"
             end
             "$(jet_output)"
         end
         if !isnothing(dump)
-            push!(jet_collection, FinalJets(ievt, finaljets))
+            push!(jet_collection, FinalJets(ievt, final_jets(selectedjets)))
         end
     end
 
@@ -144,10 +149,9 @@ function main()
     else
         jet_type = PseudoJet
     end
-    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file],
+    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file], jet_type;
                                                                   maxevents = args[:maxevents],
-                                                                  skipevents = args[:skip],
-                                                                  T = jet_type)
+                                                                  skipevents = args[:skip])
     if isnothing(args[:algorithm]) && isnothing(args[:power])
         @warn "Neither algorithm nor power specified, defaulting to AntiKt"
         args[:algorithm] = JetAlgorithm.AntiKt

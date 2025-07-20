@@ -159,24 +159,24 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
             cs = jet_reconstruct(event; R = distance, p = p, algorithm = algorithm,
                                  strategy = strategy, recombine...)
             if !isnothing(njets)
-                finaljets = exclusive_jets(cs; njets = njets)
+                selectedjets = exclusive_jets(cs; njets = njets)
             elseif !isnothing(dcut)
-                finaljets = exclusive_jets(cs; dcut = dcut)
+                selectedjets = exclusive_jets(cs; dcut = dcut)
             else
-                finaljets = inclusive_jets(cs; ptmin = ptmin)
+                selectedjets = inclusive_jets(cs; ptmin = ptmin)
             end
             # Only print the jet content once
             if irun == 0 || nsamples == 1
                 @info begin
                     jet_output = "Event $(ievt)\n"
-                    sort!(finaljets, by = x -> pt(x), rev = true)
-                    for (ijet, jet) in enumerate(finaljets)
+                    sort!(selectedjets, by = x -> pt(x), rev = true)
+                    for (ijet, jet) in enumerate(selectedjets)
                         jet_output *= " $(ijet) - $(jet)\n"
                     end
                     "$(jet_output)"
                 end
                 if !isnothing(dump)
-                    push!(jet_collection, FinalJets(ievt, finaljets))
+                    push!(jet_collection, FinalJets(ievt, final_jets(selectedjets)))
                 end
                 if dump_cs
                     println("Cluster sequence for event $(ievt)")
@@ -341,10 +341,9 @@ function main()
     else
         jet_type = PseudoJet
     end
-    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file],
+    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file], jet_type;
                                                                   maxevents = args[:maxevents],
-                                                                  skipevents = args[:skip],
-                                                                  T = jet_type)
+                                                                  skipevents = args[:skip])
 
     # Major switch between modes of running 
     if args[:alloc]

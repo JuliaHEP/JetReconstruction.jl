@@ -301,7 +301,7 @@ If both are given they must be consistent or an exception is thrown.
 ## Arguments
 - `particles::AbstractVector{T}`: A vector of particles used as input for jet
   reconstruction. T must support methods px, py, pz and energy (defined in the
-  JetReconstruction namespace)
+  JetReconstruction namespace).
 - `algorithm::JetAlgorithm.Algorithm`: The jet algorithm to use.
 - `p::Union{Real, Nothing} = nothing`: The power value used for jet reconstruction.
   Must be specified for GenKt algorithm. Other algorithms will ignore this value.
@@ -315,7 +315,8 @@ If both are given they must be consistent or an exception is thrown.
 
 ## Example
 ```julia
-tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; p = -1, R = 0.4)
+tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; algorithm = JetAlgorithm.GenKt, p = 0.5, R = 0.4)
+tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; algorithm = JetAlgorithm.AntiKt, R = 0.4)
 ```
 """
 function tiled_jet_reconstruct(particles::AbstractVector{T};
@@ -348,7 +349,7 @@ function tiled_jet_reconstruct(particles::AbstractVector{T};
         sizehint!(recombination_particles, length(particles) * 2)
         for (i, particle) in enumerate(particles)
             push!(recombination_particles,
-                  preprocess(particle; cluster_hist_index = i, jet_type = PseudoJet))
+                  preprocess(particle, PseudoJet; cluster_hist_index = i))
         end
     end
 
@@ -380,7 +381,7 @@ power parameter.
 
 ## Example
 ```julia
-tiled_jet_reconstruct(particles::Vector{PseudoJet}; p = 1, R = 0.4)
+_tiled_jet_reconstruct(particles::Vector{PseudoJet}; algorithm = JetAlgorithm.Kt, p = 1, R = 0.4)
 ```
 """
 function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet};

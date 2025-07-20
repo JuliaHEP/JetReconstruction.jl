@@ -25,7 +25,7 @@ end
 Compute the dij value for a given index `i` to its nearest neighbor. The nearest
 neighbor is determined from `nn[i]`, and the metric distance to the nearest
 neighbor is given by the distance `nndist[i]` applying the lower of the
-`kt2_array` values for the two particles.ßß
+`kt2_array` values for the two particles.
 
 # Arguments
 - `i`: The index of the element.
@@ -196,7 +196,7 @@ Perform pp jet reconstruction using the plain algorithm.
 - `particles::AbstractVector{T}`: A vector of particles used for jet
    reconstruction, any array of particles, which supports suitable 4-vector
    methods, viz. pt2(), phi(), rapidity(), px(), py(), pz(), energy(), can be
-   used. for each element.
+   used for each element.
 - `algorithm::JetAlgorithm.Algorithm`: The jet algorithm to use.
 - `p::Union{Real, Nothing} = nothing`: The power value used for jet reconstruction.
    Must be specified for GenKt algorithm. Other algorithms will ignore this value.
@@ -216,7 +216,7 @@ space.
 
 # Example
 ```julia
-jets = plain_jet_reconstruct(particles; p = -1, R = 0.4)
+jets = plain_jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, p = -1, R = 0.4)
 jets = plain_jet_reconstruct(particles; algorithm = JetAlgorithm.Kt, R = 1.0)
 ```
 """
@@ -253,7 +253,7 @@ function plain_jet_reconstruct(particles::AbstractVector{T};
         sizehint!(recombination_particles, length(particles) * 2)
         for (i, particle) in enumerate(particles)
             push!(recombination_particles,
-                  preprocess(particle; cluster_hist_index = i, jet_type = PseudoJet))
+                  preprocess(particle, PseudoJet; cluster_hist_index = i))
         end
     end
 

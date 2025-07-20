@@ -9,7 +9,7 @@ events = read_final_state_particles(input_file)
 event_no = 1
 
 cluster_seq = jet_reconstruct(events[event_no]; algorithm = JetAlgorithm.CA, R = 1.0)
-jets = inclusive_jets(cluster_seq; ptmin = 5.0, T = PseudoJet)
+jets = inclusive_jets(cluster_seq, PseudoJet; ptmin = 5.0)
 
 MDtagger = (mu = 0.67, y = 0.09)
 

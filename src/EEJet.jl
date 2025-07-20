@@ -51,7 +51,7 @@ end
 """
     EEJet(jet::Any; cluster_hist_index::Int = 0)
 
-Construct a PseudoJet from a generic object `jet` with the given cluster index.
+Construct a EEJet from a generic object `jet` with the given cluster index.
 This functions also for `LorentzVectorCyl` objects.
 
 # Details

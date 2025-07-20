@@ -52,18 +52,18 @@ A struct representing a particle in the HepMC3 library.
 
 # Fields
 - `momentum::LorentzVector{T}`: The momentum of the particle.
-- `status::Integer`: The status code of the particle.
-- `pdgid::Integer`: The PDG ID of the particle.
-- `barcode::Integer`: The barcode of the particle.
-- `vertex::Integer`: The vertex ID of the particle.
+- `status::Int`: The status code of the particle.
+- `pdgid::Int`: The PDG ID of the particle.
+- `barcode::Int`: The barcode of the particle.
+- `vertex::Int`: The vertex ID of the particle.
 
 """
 struct Particle{T}
     momentum::LorentzVector{T}
-    status::Integer
-    pdgid::Integer
-    barcode::Integer
-    vertex::Integer
+    status::Int
+    pdgid::Int
+    barcode::Int
+    vertex::Int
 end
 
 Particle{T}() where {T} = Particle(LorentzVector{T}(0.0, 0.0, 0.0, 0.0), 0, 0, 0, 0)
