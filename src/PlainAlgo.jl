@@ -255,7 +255,7 @@ function plain_jet_reconstruct(particles::AbstractVector{T};
         sizehint!(recombination_particles, length(particles) * 2)
         for (i, particle) in enumerate(particles)
             push!(recombination_particles,
-                  preprocess(particle; cluster_hist_index = i, jet_type = PseudoJet))
+                  preprocess(particle, PseudoJet; cluster_hist_index = i))
         end
     end
 
