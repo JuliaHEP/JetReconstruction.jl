@@ -236,21 +236,34 @@ function addjets_ptscheme(jet1::T, jet2::T;
 end
 
 """
-    preprocess_massless_pt(jet::T) where {T <: FourMomentum}
+    preprocess_ptscheme(jet::T, ::Type{OutputT};
+                             cluster_hist_index::Int = 0) -> OutputT where {T <: FourMomentum,
+                                                                            OutputT <: FourMomentum}
+
+Jet preprocessor for the massless ``p_T`` schemes, resetting the energy of the
+jet to be equal to the 3-momentum of the input jet.
+"""
+function preprocess_ptscheme(jet::T, ::Type{OutputT};
+                             cluster_hist_index::Int = 0) where {T <: FourMomentum,
+                                                                 OutputT <: FourMomentum}
+    OutputT(px(jet), py(jet), pz(jet), p(jet); cluster_hist_index = cluster_hist_index)
+end
+
+"""
+    preprocess_ptscheme(jet::T; cluster_hist_index::Int = 0) -> T where {T <: FourMomentum}
 
 Jet preprocessor for the massless ``p_T`` schemes, resetting the energy of the
 jet to be equal to the 3-momentum of the input jet.
 """
 function preprocess_ptscheme(jet::T;
-                             cluster_hist_index::Int = 0,
-                             jet_type = T) where {T <: FourMomentum}
-    T(px(jet), py(jet), pz(jet), p(jet); cluster_hist_index = cluster_hist_index)
+                             cluster_hist_index::Int = 0) where {T <: FourMomentum}
+    preprocess_ptscheme(jet, T; cluster_hist_index = cluster_hist_index)
 end
 
 """
-    preprocess_ptscheme(particle::Union{LorentzVector, LorentzVectorCyl};
-                             cluster_hist_index::Int = 0,
-                             jet_type = PseudoJet)
+    preprocess_ptscheme(particle::Union{LorentzVector, LorentzVectorCyl},
+                             ::Type{OutputT}= PseudoJet,;
+                             cluster_hist_index::Int = 0) -> OutputT where {OutputT <: FourMomentum}
 
 Jet preprocessor for the massless ``p_T`` schemes, resetting the energy of the
 jet to be equal to the 3-momentum of the input jet (generic particle type).
@@ -262,11 +275,11 @@ This function is used to convert a particle of type `LorentzVector` or
 `FourMomentum`. (This is a work around until `LorentzVectorBase` can be used,
 which will make the accessors uniform.)
 """
-function preprocess_ptscheme(particle::Union{LorentzVector, LorentzVectorCyl};
-                             cluster_hist_index::Int = 0,
-                             jet_type = PseudoJet)
-    T(px(particle), py(particle), pz(particle), mag(particle);
-      cluster_hist_index = cluster_hist_index)
+function preprocess_ptscheme(particle::Union{LorentzVector, LorentzVectorCyl},
+                             ::Type{OutputT} = PseudoJet;
+                             cluster_hist_index::Int = 0) where {OutputT <: FourMomentum}
+    OutputT(px(particle), py(particle), pz(particle), mag(particle);
+            cluster_hist_index = cluster_hist_index)
 end
 
 """

@@ -256,7 +256,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
         sizehint!(recombination_particles, length(particles) * 2)
         for (i, particle) in enumerate(particles)
             push!(recombination_particles,
-                  preprocess(particle; cluster_hist_index = i, jet_type = EEJet))
+                  preprocess(particle, EEJet; cluster_hist_index = i))
         end
     end
 
