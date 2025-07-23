@@ -17,12 +17,12 @@ count = 1
                      by = JetReconstruction.pt2, rev = true)
 
         for (ijet, jet) in enumerate(jets)
-            lundvars = generate_lund_projection(jet, cluster_seq)
+            lundvars = generate_lund_emissions(jet, cluster_seq)
             for temp in lundvars
-                @test temp.kt ≈ test_data[count]["kt"] atol=tol
-                @test temp.delta ≈ test_data[count]["Delta"] atol=tol
-                @test temp.h_pt ≈ test_data[count]["h_pt"] atol=tol
-                @test temp.s_pt ≈ test_data[count]["s_pt"] atol=tol
+                @test temp.kt≈test_data[count]["kt"] atol=tol
+                @test temp.delta≈test_data[count]["Delta"] atol=tol
+                @test temp.h_pt≈test_data[count]["h_pt"] atol=tol
+                @test temp.s_pt≈test_data[count]["s_pt"] atol=tol
                 global count += 1
             end
         end

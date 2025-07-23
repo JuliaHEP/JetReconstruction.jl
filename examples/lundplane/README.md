@@ -6,8 +6,8 @@ This script:
 - Loads events from a sample data file
 - Clusters final state particles using the anti-kt algorithm
 - Sorts jets by transverse momentum squared
-- Applies `generate_lund_projection` on each jet to calculate all the lund plane projections
-- Prints the number of lund plane projections for each jet
+- Applies `generate_lund_emissions` on each jet to calculate all the lund plane emissions
+- Prints the number of lund plane emissions for each jet
 
 #### How to Run
 

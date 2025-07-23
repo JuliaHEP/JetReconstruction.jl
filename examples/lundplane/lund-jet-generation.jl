@@ -2,7 +2,7 @@ using JetReconstruction
 
 input_file = joinpath(dirname(pathof(JetReconstruction)),
                       "..", "test", "data", "events.pp13TeV.hepmc3.zst")
-# input_file = "/Users/sattwamoghosh/IISER/Sem7/PH4112/hepmc_file/pp_to_tt.hepmc"
+
 events = read_final_state_particles(input_file)
 
 # Event to pick
@@ -12,8 +12,8 @@ cluster_seq = jet_reconstruct(events[event_no]; algorithm = JetAlgorithm.AntiKt,
 jets = sort!(inclusive_jets(cluster_seq; T = PseudoJet, ptmin = 10.0),
              by = JetReconstruction.pt2, rev = true)
 
-@info "Generating Lund Jets for $(length(jets)) jets for Event $(event_no):"
+@info "Generating Primary Lund Emissions for $(length(jets)) jets for Event $(event_no):"
 for (ijet, jet) in enumerate(jets)
-    lundvars = generate_lund_projection(jet, cluster_seq)
-    println("- Jet $(ijet) has $(length(lundvars)) projections in lund plane")
+    lundvars = generate_lund_emissions(jet, cluster_seq)
+    println("- Jet $(ijet) has $(length(lundvars)) emissions in lund plane")
 end

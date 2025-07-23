@@ -21,9 +21,9 @@ function decluster(jet::T, clusterseq::ClusterSequence{T}) where {T <: FourMomen
 end
 
 """
-    generate_lund_projection(jet::PseudoJet, cs::ClusterSequence{PseudoJet})
+    generate_lund_emissions(jet::PseudoJet, cs::ClusterSequence{PseudoJet})
 
-Generates the Lund plane projection for a given jet. 
+Generates the Lund plane emissions for a given jet. 
 The jet is reclustered using the CA algorithm with a very
 large R to fully capture the jet structure.
 
@@ -38,7 +38,7 @@ Returns:
   - `psi`: azimuthal angle between branches
   - `kappa`: z * ΔR
 """
-function generate_lund_projection(jet::PseudoJet, cs::ClusterSequence{PseudoJet})
+function generate_lund_emissions(jet::PseudoJet, cs::ClusterSequence{PseudoJet})
 
     # Recluster the input jet using Cambridge/Aachen with large R
     reconstructed_cluster_seq = recluster(jet, cs; algorithm = JetAlgorithm.CA,
@@ -79,65 +79,4 @@ function generate_lund_projection(jet::PseudoJet, cs::ClusterSequence{PseudoJet}
     end
 
     return lundPoints
-end
-
-"""
-generate_average_lund_image(njets::Int, delta_array::Vector{Vector{Real}}, 
-                            kt_array::Vector{Vector{Real}}; xrange::Tuple{Real}, 
-                            yrange::Tuple{Real}, bins::Int) -> (xgrid, ygrid, avg_image)
-
-Computes an average Lund image from a set of jets by binning the (log(1/ΔR), log(kt))
-coordinates into a fixed-size 2D histogram. Each jet's histogram is normalized and
-then averaged across all jets.
-
-Arguments:
-- `njets`: Number of jets
-- `delta_array`: Vector of vectors, where each inner vector contains ΔR values for a jet
-- `kt_array`: Vector of vectors, where each inner vector contains kt values for a jet
-- `xrange`: Tuple defining the x-axis (log(1/ΔR)) range
-- `yrange`: Tuple defining the y-axis (log(kt)) range
-- `bins`: Number of bins along each axis
-
-Returns:
-- A tuple `(xgrid, ygrid, avg_image)` where `xgrid` and `ygrid` are coordinate axes labels and
-  `avg_image` is the averaged 2D histogram as a matrix
-"""
-function generate_average_lund_image(njets::Int, delta_array::Vector{Vector{Real}},
-                                     kt_array::Vector{Vector{Real}}; xrange = (0.0, 9.0),
-                                     yrange = (-5.0, 7.0), bins = 25)
-    xmin, xmax = xrange
-    ymin, ymax = yrange
-
-    x_width = (xmax - xmin)/bins
-    y_width = (ymax - ymin)/bins
-
-    total_res = []
-
-    for i in 1:njets
-        Xind = ceil.((delta_array[i] .- xmin) ./ x_width)
-        Yind = ceil.((kt_array[i] .- ymin) ./ y_width)
-
-        res = zeros(Float32, bins, bins)
-        L1norm = 0.0
-
-        for i in 1:length(Xind)
-            x = Int(Xind[i])
-            y = Int(Yind[i])
-            if (maximum([x, y]) < bins && minimum([x, y]) >= 1)
-                res[x, y] += 1
-                L1norm += 1
-            end
-        end
-
-        if L1norm > 0
-            res[1, :] .= res[1, :] ./ L1norm
-            push!(total_res, res)
-        end
-    end
-
-    avg_res = mean(total_res, dims = 1)[1]
-    x = range(xmin, xmax; length = bins)
-    y = range(ymin, ymax; length = bins)
-
-    return (x, y, avg_res)
 end
