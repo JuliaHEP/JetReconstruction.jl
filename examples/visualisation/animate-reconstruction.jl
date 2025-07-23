@@ -37,6 +37,10 @@ function main()
         arg_type = RecoStrategy.Strategy
         default = RecoStrategy.Best
 
+        "--ancestors", "-a"
+        help = """Show ancestors of jets in the animation"""
+        action = :store_true
+
         "--title", "-t"
         help = """Title for animation"""
 
@@ -71,7 +75,7 @@ function main()
                          strategy = args[:strategy])
 
     animatereco(cs, args[:output]; azimuth = (1.8, 3.0), elevation = 0.5,
-                perspective = 0.5, ancestors = true,
+                perspective = 0.5, ancestors = args[:ancestors],
                 barsize_phi = 0.1, barsize_y = 0.3, title = args[:title],
                 framerate = args[:framerate], end_frames = args[:end_frames])
 
