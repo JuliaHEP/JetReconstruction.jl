@@ -13,7 +13,7 @@ count = 1
 @testset "FastJet comparison: Lund Plane coordinates" begin
     for (ievt, evt) in enumerate(events)
         cluster_seq = jet_reconstruct(evt; algorithm = JetAlgorithm.AntiKt, R = 1.0)
-        jets = sort!(inclusive_jets(cluster_seq; ptmin = 10.0, T = PseudoJet),
+        jets = sort!(inclusive_jets(cluster_seq, PseudoJet; ptmin = 10.0),
                      by = JetReconstruction.pt2, rev = true)
 
         for (ijet, jet) in enumerate(jets)

@@ -9,7 +9,7 @@ events = read_final_state_particles(input_file)
 event_no = 1
 
 cluster_seq = jet_reconstruct(events[event_no]; algorithm = JetAlgorithm.AntiKt, R = 1.0)
-jets = sort!(inclusive_jets(cluster_seq; T = PseudoJet, ptmin = 10.0),
+jets = sort!(inclusive_jets(cluster_seq, PseudoJet, ptmin = 10.0),
              by = JetReconstruction.pt2, rev = true)
 
 @info "Generating Primary Lund Emissions for $(length(jets)) jets for Event $(event_no):"

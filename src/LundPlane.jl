@@ -43,7 +43,7 @@ function generate_lund_emissions(jet::PseudoJet, cs::ClusterSequence{PseudoJet})
     # Recluster the input jet using Cambridge/Aachen with large R
     reconstructed_cluster_seq = recluster(jet, cs; algorithm = JetAlgorithm.CA,
                                           R = 1000.0)
-    reconstructed_jet = inclusive_jets(reconstructed_cluster_seq; T = PseudoJet)[1]
+    reconstructed_jet = inclusive_jets(reconstructed_cluster_seq, PseudoJet)[1]
 
     lundPoints = Vector{NamedTuple}()
     p1 = reconstructed_jet
