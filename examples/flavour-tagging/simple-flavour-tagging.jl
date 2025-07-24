@@ -118,7 +118,7 @@ function main()
     cs = jet_reconstruct(recps; p = 1.0, R = 2.0, algorithm = JetAlgorithm.EEKt)
 
     # Get 2 exclusive jets
-    jets = exclusive_jets(cs; njets = 2, T = EEJet)
+    jets = exclusive_jets(cs, EEJet; njets = 2)
     println("Found $(length(jets)) jets")
 
     # Print jet properties
