@@ -50,7 +50,9 @@ function main()
             println("File $file")
             println("  Number of events: $n_events")
             println("  Average number of particles: ", mean(n_particles))
-            println(histogram(n_particles))
+            if n_events > 1
+                println(histogram(n_particles))
+            end
         end
     end
 end
