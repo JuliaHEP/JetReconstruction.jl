@@ -23,6 +23,10 @@ function parse_command_line(args)
         arg_type = Int
         default = 0
 
+        "--details"
+        help = "Print per-event density"
+        action = :store_true
+
         "files"
         help = "The HepMC3 event files to read."
         required = true
@@ -42,6 +46,11 @@ function main()
         n_particles = Int[]
         for e in events
             push!(n_particles, length(e))
+        end
+        if args[:details]
+            for (i, n) in enumerate(n_particles)
+                println("Event $i: $n")
+            end
         end
         average_n = mean(n_particles)
         if args[:summary]

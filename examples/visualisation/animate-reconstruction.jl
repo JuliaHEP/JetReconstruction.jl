@@ -26,6 +26,7 @@ function main()
         "--algorithm", "-A"
         help = """Algorithm to use for jet reconstruction: $(join(JetReconstruction.AllJetRecoAlgorithms, ", "))"""
         arg_type = JetAlgorithm.Algorithm
+        default = JetAlgorithm.AntiKt
 
         "--power", "-p"
         help = """Power value for jet reconstruction"""
@@ -35,6 +36,23 @@ function main()
         help = """Strategy for the algorithm, valid values: $(join(JetReconstruction.AllJetRecoStrategies, ", "))"""
         arg_type = RecoStrategy.Strategy
         default = RecoStrategy.Best
+
+        "--ancestors", "-a"
+        help = """Show ancestors of jets in the animation"""
+        action = :store_true
+
+        "--title", "-t"
+        help = """Title for animation"""
+
+        "--framerate"
+        help = """Framerate per second"""
+        arg_type = Int
+        default = 10
+
+        "--end-frames"
+        help = """Number of end frames to pad animation with"""
+        arg_type = Int
+        default = 0
 
         "file"
         help = "HepMC3 event file in HepMC3 to read"
@@ -52,17 +70,14 @@ function main()
     events::Vector{Vector{PseudoJet}} = read_final_state_particles(args[:file],
                                                                    maxevents = args[:event],
                                                                    skipevents = args[:event])
-    if isnothing(args[:algorithm]) && isnothing(args[:power])
-        @warn "Neither algorithm nor power specified, defaulting to AntiKt"
-        args[:algorithm] = JetAlgorithm.AntiKt
-    end
     cs = jet_reconstruct(events[1], R = args[:distance], p = args[:power],
                          algorithm = args[:algorithm],
                          strategy = args[:strategy])
 
     animatereco(cs, args[:output]; azimuth = (1.8, 3.0), elevation = 0.5,
-                perspective = 0.5, framerate = 20, ancestors = true,
-                barsize_phi = 0.1, barsize_y = 0.3)
+                perspective = 0.5, ancestors = args[:ancestors],
+                barsize_phi = 0.1, barsize_y = 0.3, title = args[:title],
+                framerate = args[:framerate], end_frames = args[:end_frames])
 
     @info "Saved jet reconstruction animation to $(args[:output])"
 end
