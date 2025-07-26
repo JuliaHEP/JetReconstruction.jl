@@ -91,6 +91,22 @@ function deltar(jet1::T, jet2::T) where {T <: FourMomentum}
 end
 
 """
+    delta_phi(jet1::T, jet2::T) where {T <: FourMomentum}
+
+Computes the difference in azimuthal angle φ between two jets,
+wrapped into the range [-π, π].
+
+# Returns
+- `δφ` as a Float64 in radians.
+"""
+function delta_phi(jet1::T, jet2::T) where {T <: FourMomentum}
+    δϕ = phi(jet1) - phi(jet2)
+    δϕ = abs(δϕ) > π ? 2π - abs(δϕ) : δϕ
+
+    return δϕ
+end
+
+"""
     pt_fraction(jet1::T, jet2::T) where T <: FourMomentum
 
 Computes the transverse momentum fraction of the softer of two jets.

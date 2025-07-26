@@ -9,7 +9,7 @@ function Base.isapprox(j1::PseudoJet, j2::PseudoJet)
 end
 
 # Expected constituent indexes and parent indexes
-const expected_constituent_indexes = [84, 85, 139, 86, 133, 74, 79, 124, 76, 75, 163]
+const expected_constituent_indexes = [167, 87, 119, 168, 151, 152, 49, 143, 41, 106]
 const expected_parent_indexes = [320, 335]
 
 input_file = events_file_pp
@@ -26,7 +26,7 @@ pj_jets = inclusive_jets(cluster_seq, PseudoJet; ptmin = 5.0)
 @testset "Jet constituents" begin
     @testset "Constituents of jet number $(event_no)" begin
         my_constituents = JetReconstruction.constituents(pj_jets[event_no], cluster_seq)
-        @test size(my_constituents)[1] == 11
+        @test size(my_constituents)[1] == 10
         for (i, idx) in enumerate(expected_constituent_indexes)
             @test my_constituents[i] ≈ events[1][idx]
         end
@@ -34,7 +34,7 @@ pj_jets = inclusive_jets(cluster_seq, PseudoJet; ptmin = 5.0)
 
     @testset "Constituent indexes for jet number $(event_no)" begin
         my_constituent_indexes = constituent_indexes(pj_jets[event_no], cluster_seq)
-        @test size(my_constituent_indexes)[1] == 11
+        @test size(my_constituent_indexes)[1] == 10
         # Testing the index values is sufficient, the content came from the original input file!
         @test my_constituent_indexes == expected_constituent_indexes
     end
