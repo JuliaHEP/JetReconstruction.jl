@@ -263,8 +263,8 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
 
     # Now call the actual reconstruction method, tuned for our internal EDM
     _ee_genkt_algorithm!(recombination_particles; p = p, R = R,
-                        algorithm = algorithm,
-                        recombine = recombine)
+                         algorithm = algorithm,
+                         recombine = recombine)
 end
 
 """
@@ -295,8 +295,8 @@ entry point to this jet reconstruction.
   reconstructed jets.
 """
 function _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
-                             algorithm::JetAlgorithm.Algorithm, p::Real, R::Real = 4.0,
-                             recombine = addjets)
+                              algorithm::JetAlgorithm.Algorithm, p::Real, R::Real = 4.0,
+                              recombine = addjets)
     # Bounds
     N::Int = length(particles)
 

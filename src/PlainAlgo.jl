@@ -268,7 +268,7 @@ function plain_jet_reconstruct(particles::AbstractVector{T};
 
     # Now call the actual reconstruction method, tuned for our internal EDM
     _plain_jet_reconstruct!(recombination_particles; algorithm = algorithm, p = p, R = R,
-                           recombine = recombine)
+                            recombine = recombine)
 end
 
 """
@@ -300,8 +300,8 @@ entry point to this jet reconstruction.
   reconstructed jets.
 """
 function _plain_jet_reconstruct!(particles::AbstractVector{PseudoJet};
-                                algorithm::JetAlgorithm.Algorithm, p::Real, R = 1.0,
-                                recombine = addjets)
+                                 algorithm::JetAlgorithm.Algorithm, p::Real, R = 1.0,
+                                 recombine = addjets)
     # Bounds
     N::Int = length(particles)
     # Parameters
