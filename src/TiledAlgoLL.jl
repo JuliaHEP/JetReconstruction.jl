@@ -354,22 +354,24 @@ function tiled_jet_reconstruct(particles::AbstractVector{T};
         end
     end
 
-    _tiled_jet_reconstruct(recombination_particles; algorithm = algorithm, p = p, R = R,
+    _tiled_jet_reconstruct!(recombination_particles; algorithm = algorithm, p = p, R = R,
                            recombine = recombine)
 end
 
 """
-    _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet};
+    _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
                            algorithm::JetAlgorithm.Algorithm,
                            p::Real, R = 1.0, recombine = addjets)
 
-Main jet reconstruction algorithm entry point for reconstructing jets once preprocessing
-of data types are done. The algorithm parameter must be consistent with the
-power parameter.
+Main jet internal reconstruction algorithm entry point for reconstructing jets
+once preprocessing of data types are done. The algorithm parameter must be
+consistent with the power parameter.
 
 ## Arguments
-- `particles::AbstractVector{PseudoJet}`: A vector of `PseudoJet` particles used as input for jet
-  reconstruction.
+- `particles::AbstractVector{PseudoJet}`: A vector of `PseudoJet` particles used
+  as input for jet reconstruction. This vector must supply the correct
+  `cluster_hist_index` values and will be *mutated* as part of the returned
+  `ClusterSequence`.
 - `algorithm::JetAlgorithm.Algorithm`: The jet reconstruction algorithm to use.
 - `p::Real`: The power parameter for the jet reconstruction algorithm, thus
   switching between different algorithms.
@@ -382,10 +384,10 @@ power parameter.
 
 ## Example
 ```julia
-_tiled_jet_reconstruct(particles::Vector{PseudoJet}; algorithm = JetAlgorithm.Kt, p = 1, R = 0.4)
+_tiled_jet_reconstruct!(particles::Vector{PseudoJet}; algorithm = JetAlgorithm.Kt, p = 1, R = 0.4)
 ```
 """
-function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet};
+function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
                                 algorithm::JetAlgorithm.Algorithm,
                                 p::Real, R = 1.0, recombine = addjets)
     # Bounds
