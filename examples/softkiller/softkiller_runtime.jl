@@ -11,15 +11,20 @@ include(joinpath(@__DIR__, "..", "parse-options.jl"))
 function parse_command_line(args)
     s = ArgParseSettings(autofix_names = true)
     @add_arg_table! s begin
-        "--maxevents", "-n"
-        help = "Maximum number of events to read. -1 to read all events from the  file."
+        "--pileup-maxevents", "-n"
+        help = "Maximum number of pileup events to read. -1 to read all events from the pileup events file."
         arg_type = Int
         default = -1
 
-        "--skip", "-s"
-        help = "Number of events to skip at beginning of the file."
+        "--pileup-skip", "-s"
+        help = "Number of events to skip in the pileup events file."
         arg_type = Int
         default = 0
+
+        "--eventno", "-e"
+        help = "Event number to process from the hard scatter events file. If not specified, the first event will be processed."
+        arg_type = Int
+        default = 1
 
         "--ptmin"
         help = "Minimum p_t for final inclusive jets (energy unit is the same as the input clusters, usually GeV)"
@@ -52,20 +57,17 @@ function parse_command_line(args)
         arg_type = RecoStrategy.Strategy
         default = RecoStrategy.Best
 
-        "--dump"
-        help = "Write list of reconstructed jets to a JSON formatted file"
-
         "--grid-size"
         help = "Size of Rectangular grid"
         arg_type = Float64
         default = 0.4
 
-        "--hard-file"
-        help = "HepMC3 event file in HepMC3 to read."
+        "hard-file"
+        help = "HepMC3 event file containing hard scatter events."
         required = true
 
-        "--pileup-file"
-        help = "HepMC3 event file in HepMC3 to read."
+        "pileup-file"
+        help = "HepMC3 event file containing pileup events."
         required = true
     end
     return parse_args(args, s; as_symbols = true)
@@ -87,12 +89,12 @@ function main()
 
     # Reading pileup and hard event files
     events = read_final_state_particles(args[:pileup_file], jet_type;
-                                        maxevents = args[:maxevents],
-                                        skipevents = args[:skip])
+                                        maxevents = args[:pileup_maxevents],
+                                        skipevents = args[:pileup_skip])
 
     h_events = read_final_state_particles(args[:hard_file], jet_type;
-                                          maxevents = args[:maxevents],
-                                          skipevents = args[:skip])
+                                          maxevents = args[:eventno],
+                                          skipevents = args[:eventno])
 
     # Set up SoftKiller grid and rapidity range
     rapmax = 5.0
@@ -110,18 +112,30 @@ function main()
 
     # Fill pileup jets
     for event in events
-        for pseudo_jet in event
-            push!(all_jets_sk, pseudo_jet)
-        end
+        append!(all_jets_sk, event)
     end
 
-    # Fill hard event jets (from second event in h_events)
-    for pseudo_jet in h_events[2]
-        push!(all_jets_sk, pseudo_jet)
-    end
+    # Fill hard event jets from first read event in h_events (actually should be only one event!)
+    append!(all_jets_sk, h_events[1])
 
     # Apply SoftKiller to all_jets_sk (hard + pileup)
-    softkiller(soft_killer, all_jets_sk)
+    reduced_event, pt_threshold = softkiller(soft_killer, all_jets_sk)
+    @info "SoftKiller applied: $(length(reduced_event)) clusters remaining from $(length(all_jets_sk)), pt threshold = $pt_threshold"
+
+    # Workaround for cluster_hist_indedx not being correct after SoftKiller filtering
+    fixed_reduced_event = PseudoJet[]
+    sizehint!(fixed_reduced_event, length(reduced_event))
+    for i in eachindex(reduced_event)
+        push!(fixed_reduced_event,
+              PseudoJet(reduced_event[i].px, reduced_event[i].py, reduced_event[i].pz,
+                        reduced_event[i].E, i,
+                        reduced_event[i]._pt2, reduced_event[i]._inv_pt2,
+                        reduced_event[i]._rap, reduced_event[i]._phi))
+    end
+    cs = jet_reconstruct(fixed_reduced_event; algorithm = args[:algorithm],
+                         R = args[:distance], p = args[:power],
+                         strategy = args[:strategy])
+    @info "Reconstructed softkiller filtered clusters with algorithm $(args[:algorithm]), radius $(args[:distance]) and strategy $(args[:strategy])"
 end
 
 main()
