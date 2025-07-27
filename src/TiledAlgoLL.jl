@@ -407,17 +407,8 @@ function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet};
     # memory (de)allocation gets done only once
     tile_union = Vector{Int}(undef, 3 * _n_tile_neighbours)
 
-    # Container for pseudojets, sized for all initial particles, plus all of the
-    # merged jets that can be created during reconstruction
-    jets = PseudoJet[]
-    sizehint!(jets, N * 2)
-    resize!(jets, N)
-
-    # Copy input data into the jets container
-    copyto!(jets, particles)
-
     # Setup the initial history and get the total energy
-    history, Qtot = initial_history(jets)
+    history, Qtot = initial_history(particles)
 
     # Now get the tiling setup
     _eta = Vector{Float64}(undef, length(particles))
@@ -428,7 +419,7 @@ function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet};
     tiling = Tiling(setup_tiling(_eta, R))
 
     # ClusterSequence is the struct that holds the state of the reconstruction
-    clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Tiled, jets, history, Qtot)
+    clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Tiled, particles, history, Qtot)
 
     # Tiled jets is a structure that has additional variables for tracking which tile a jet is in
     tiledjets = similar(clusterseq.jets, TiledJet)
