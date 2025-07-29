@@ -312,7 +312,8 @@ If both are given they must be consistent or an exception is thrown.
 - `preprocess::Function = nothing`: A function to preprocess the input particles.
 
 ## Returns
-- `Vector{PseudoJet}`: A vector of reconstructed jets.
+- `ClusterSequence`: The resulting `ClusterSequence` object representing the
+  reconstructed jets.
 
 ## Example
 ```julia
@@ -380,7 +381,8 @@ consistent with the power parameter.
   pseudojets.
 
 ## Returns
-- `Vector{PseudoJet}`: A vector of reconstructed jets.
+- `clusterseq`: The resulting `ClusterSequence` object representing the
+  reconstructed jets.
 
 ## Example
 ```julia
