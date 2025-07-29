@@ -292,8 +292,7 @@ entry point to this jet reconstruction.
 - `p::Real`: The power to which the transverse momentum (`pt`) of each particle
   is raised.
 - `R = 1.0`: The jet radius parameter.
-- `recombine`: The recombination function used to merge two jets. Default is `+`
-  (additive recombination).
+- `recombine = addjets`: The recombination scheme to use.
 
 # Returns
 - `clusterseq`: The resulting `ClusterSequence` object representing the

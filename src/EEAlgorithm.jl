@@ -201,7 +201,7 @@ Run an e+e- reconstruction algorithm on a set of initial particles.
 - `particles::AbstractVector{T}`: A vector of particles to be clustered.
 - `algorithm::JetAlgorithm.Algorithm`: The jet algorithm to use.
 - `p::Union{Real, Nothing} = nothing`: The power parameter for the algorithm.
-  This is not required for the `Durham` algorithm, but must specified for the
+  This is not required for the `Durham` algorithm, but must be specified for the
   `EEKt`` algorithm.
 - `R = 4.0`: The jet radius parameter. Not required and ignored for the `Durham`
   algorithm.
@@ -287,8 +287,8 @@ entry point to this jet reconstruction.
 - `algorithm::JetAlgorithm.Algorithm`: The jet reconstruction algorithm to use.
 - `p::Real`: The power to which the transverse momentum (`pt`) of each particle
   is raised.
-- `R = 1.0`: The jet radius parameter.
-- `recombine`: The recombination function used to merge two jets.
+- `R = 4.0`: The jet radius parameter.
+- `recombine = addjets`: The recombination function used to merge two jets.
 
 # Returns
 - `clusterseq`: The resulting `ClusterSequence` object representing the
