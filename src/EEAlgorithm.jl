@@ -321,7 +321,7 @@ Run an e+e- reconstruction algorithm on a set of initial particles.
 This is the public interface to the e+e- jet clustering algorithm. The function
 will check for consistency between the algorithm and the power parameter as
 needed. It will then prepare the internal EDM particles for the clustering
-itself, and call the actual reconstruction method `_ee_genkt_algorithm`.
+itself, and call the actual reconstruction method `_ee_genkt_algorithm!`.
 
 If the algorithm is Durham, `R` is nominally set to 4.
 If the algorithm is EEkt, power `p` must be specified.
@@ -383,13 +383,33 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
 end
 
 """
-    _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
+    _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
                         algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
                         recombine = addjets, γ::Real = 1.0)
 
-This function is the actual implementation of the e+e- jet clustering algorithm.
+This function is the internal implementation of the e+e- jet clustering
+algorithm. It takes a vector of `EEJet` `particles` representing the input
+particles and reconstructs jets based on the specified parameters.
+
+Users of the package should use the `ee_genkt_algorithm` function as their
+entry point to this jet reconstruction.
+
+# Arguments
+- `particles::AbstractVector{EEJet}`: A vector of `EEJet` particles used
+  as input for jet reconstruction. This vector must supply the correct
+  `cluster_hist_index` values and will be *mutated* as part of the returned
+  `ClusterSequence`.
+- `algorithm::JetAlgorithm.Algorithm`: The jet reconstruction algorithm to use.
+- `p::Real`: The power to which the transverse momentum (`pt`) of each particle
+  is raised.
+- `R = 4.0`: The jet radius parameter.
+- `recombine = addjets`: The recombination function used to merge two jets.
+
+# Returns
+- `clusterseq`: The resulting `ClusterSequence` object representing the
+  reconstructed jets.
 """
-function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
+function _ee_genkt_algorithm!(particles::AbstractVector{EEJet},
                              algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
                              recombine = addjets, γ::Real = 1.0,
                              beta::Union{Real, Nothing} = nothing)
