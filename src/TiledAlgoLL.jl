@@ -312,7 +312,8 @@ If both are given they must be consistent or an exception is thrown.
 - `preprocess::Function = nothing`: A function to preprocess the input particles.
 
 ## Returns
-- `Vector{PseudoJet}`: A vector of reconstructed jets.
+- `ClusterSequence`: The resulting `ClusterSequence` object representing the
+  reconstructed jets.
 
 ## Example
 ```julia
@@ -354,22 +355,24 @@ function tiled_jet_reconstruct(particles::AbstractVector{T};
         end
     end
 
-    _tiled_jet_reconstruct(recombination_particles; algorithm = algorithm, p = p, R = R,
-                           recombine = recombine)
+    _tiled_jet_reconstruct!(recombination_particles; algorithm = algorithm, p = p, R = R,
+                            recombine = recombine)
 end
 
 """
-    _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet};
+    _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
                            algorithm::JetAlgorithm.Algorithm,
                            p::Real, R = 1.0, recombine = addjets)
 
-Main jet reconstruction algorithm entry point for reconstructing jets once preprocessing
-of data types are done. The algorithm parameter must be consistent with the
-power parameter.
+Main jet internal reconstruction algorithm entry point for reconstructing jets
+once preprocessing of data types are done. The algorithm parameter must be
+consistent with the power parameter.
 
 ## Arguments
-- `particles::AbstractVector{PseudoJet}`: A vector of `PseudoJet` particles used as input for jet
-  reconstruction.
+- `particles::AbstractVector{PseudoJet}`: A vector of `PseudoJet` particles used
+  as input for jet reconstruction. This vector must supply the correct
+  `cluster_hist_index` values and will be *mutated* as part of the returned
+  `ClusterSequence`.
 - `algorithm::JetAlgorithm.Algorithm`: The jet reconstruction algorithm to use.
 - `p::Real`: The power parameter for the jet reconstruction algorithm, thus
   switching between different algorithms.
@@ -378,16 +381,17 @@ power parameter.
   pseudojets.
 
 ## Returns
-- `Vector{PseudoJet}`: A vector of reconstructed jets.
+- `clusterseq`: The resulting `ClusterSequence` object representing the
+  reconstructed jets.
 
 ## Example
 ```julia
-_tiled_jet_reconstruct(particles::Vector{PseudoJet}; algorithm = JetAlgorithm.Kt, p = 1, R = 0.4)
+_tiled_jet_reconstruct!(particles::Vector{PseudoJet}; algorithm = JetAlgorithm.Kt, p = 1, R = 0.4)
 ```
 """
-function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet};
-                                algorithm::JetAlgorithm.Algorithm,
-                                p::Real, R = 1.0, recombine = addjets)
+function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
+                                 algorithm::JetAlgorithm.Algorithm,
+                                 p::Real, R = 1.0, recombine = addjets)
     # Bounds
     N::Int = length(particles)
 
@@ -407,17 +411,8 @@ function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet};
     # memory (de)allocation gets done only once
     tile_union = Vector{Int}(undef, 3 * _n_tile_neighbours)
 
-    # Container for pseudojets, sized for all initial particles, plus all of the
-    # merged jets that can be created during reconstruction
-    jets = PseudoJet[]
-    sizehint!(jets, N * 2)
-    resize!(jets, N)
-
-    # Copy input data into the jets container
-    copyto!(jets, particles)
-
     # Setup the initial history and get the total energy
-    history, Qtot = initial_history(jets)
+    history, Qtot = initial_history(particles)
 
     # Now get the tiling setup
     _eta = Vector{Float64}(undef, length(particles))
@@ -428,7 +423,8 @@ function _tiled_jet_reconstruct(particles::AbstractVector{PseudoJet};
     tiling = Tiling(setup_tiling(_eta, R))
 
     # ClusterSequence is the struct that holds the state of the reconstruction
-    clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Tiled, jets, history, Qtot)
+    clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Tiled, particles, history,
+                                 Qtot)
 
     # Tiled jets is a structure that has additional variables for tracking which tile a jet is in
     tiledjets = similar(clusterseq.jets, TiledJet)
