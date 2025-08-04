@@ -264,7 +264,7 @@ function inclusive_jets(clusterseq::ClusterSequence{U}; ptmin = 0.0,
                 push!(jets_local, jet)
             else
                 push!(jets_local,
-                      LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
+                      LorentzVectorCyl(pt(jet), eta(jet), phi(jet), mass(jet)))
             end
         end
     end
@@ -355,7 +355,7 @@ function exclusive_jets(clusterseq::ClusterSequence{U}; dcut = nothing, njets = 
                     push!(excl_jets, jet)
                 else
                     push!(excl_jets,
-                          LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
+                          LorentzVectorCyl(pt(jet), eta(jet), phi(jet), mass(jet)))
                 end
             end
         end
