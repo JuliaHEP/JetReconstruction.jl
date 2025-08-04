@@ -48,11 +48,11 @@ end
     finaljets_pj = JetReconstruction.final_jets(vec_pj)
 
     vec_lorentzhep = [JetReconstruction.lorentzvector(pj1),
-                             JetReconstruction.lorentzvector(pj2)]
+        JetReconstruction.lorentzvector(pj2)]
     finaljets_lorentzhep = JetReconstruction.final_jets(vec_lorentzhep)
 
     vec_lorentzhepcyl = [JetReconstruction.lorentzvector_cyl(pj1),
-                             JetReconstruction.lorentzvector_cyl(pj2)]
+        JetReconstruction.lorentzvector_cyl(pj2)]
     finaljets_lorentzhepcyl = JetReconstruction.final_jets(vec_lorentzhepcyl)
 
     @test length(finaljets_pj) == 2

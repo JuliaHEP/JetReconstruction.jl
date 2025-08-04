@@ -23,7 +23,6 @@ supports the methods `rapidity`, `phi`, and `pt`.
 """
 FinalJet(jet::T) where {T} = FinalJet(rapidity(jet), phi(jet), pt(jet))
 
-
 import Base: ==, ≈
 """
     ==(fj1::FinalJet, fj2::FinalJet)

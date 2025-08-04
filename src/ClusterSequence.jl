@@ -363,7 +363,7 @@ function exclusive_jets(clusterseq::ClusterSequence{U},
                     push!(excl_jets, lorentzvector(jet))
                 else
                     error("Unsupported return type $T for inclusive jets")
-            end
+                end
             end
         end
     end
