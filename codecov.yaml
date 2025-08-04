@@ -1,0 +1,11 @@
+# Ignore some of the untestable examples
+# until we can find a good way to handle
+# their heavy package dependencies
+ignore:
+  - "examples/constituents"
+  - "examples/EDM4hep"
+  - "examples/lundplane"
+  - "examples/softkiller"
+  - "examples/substructure"
+  - "examples/visualisation"
+  - "test/data"
