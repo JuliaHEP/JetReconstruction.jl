@@ -1,6 +1,7 @@
 using JetReconstruction
 using CairoMakie
 using StatsBase
+using LaTeXStrings
 
 """
 generate_average_lund_image(njets::Int, delta_array::Vector{Vector{Real}}, 
@@ -97,7 +98,7 @@ njets = length(lundX)
 x, y, avg_res = generate_average_lund_image(njets, lundX, lundY)
 
 fig = Figure()
-ax = Axis(fig[1, 1], xlabel = "ln(R/Δ)", ylabel = "ln(kt/GeV)",
+ax = Axis(fig[1, 1], xlabel = L"\ln(R/\Delta)", ylabel = L"\ln(k_T/\mathrm{GeV})",
           title = "Average Lund Image")
 hm = heatmap!(ax, x, y, avg_res; colormap = :viridis, colorrange = extrema(avg_res))
 Colorbar(fig[1, 2], hm; label = "")

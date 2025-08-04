@@ -1,6 +1,6 @@
 # Lund Jet Plane
 
-The Lund jet plane ([arXiv:1807.04758](https://arxiv.org/abs/1807.04758)) is a simple and intuitive way to visualize how a jet breaks up into smaller pieces. Each point in the plane represents a branching in the jet, helping us see how energy and angles are distributed inside it.
+The Lund jet plane ([arXiv:1807.04758](https://arxiv.org/abs/1807.04758)) is a simple and intuitive way to visualize how a jet breaks up into smaller components. Each point in the plane represents a branching in the jet, helping understand how energy and angles are distributed within.
 
 ---
 
@@ -10,7 +10,7 @@ The Lund jet plane ([arXiv:1807.04758](https://arxiv.org/abs/1807.04758)) is a s
 decluster(jet::T, clusterseq::ClusterSequence{T}) where {T <: FourMomentum} -> Tuple{PseudoJet}
 ```
 
-Recursively declusters a jet into two parent subjets using a provided clustering sequence. The subjets are ordered by descending transverse momentum squared (`pt²`).
+Recursively declusters a jet into two parent subjets using a provided clustering sequence. The subjets are ordered by decreasing transverse momentum squared (`pt²`).
 
 ```julia
 j1, j2 = decluster(jet, clusterseq)
@@ -28,13 +28,13 @@ Useful for building recursive jet trees and jet grooming algorithms.
 generate_lund_emissions(jet::PseudoJet, cs::ClusterSequence{PseudoJet}) -> Vector{NamedTuple}
 ```
 
-Constructs the Lund plane emissions of a jet. The result is a list of declustering steps, each represented by a tuple of physics observables.
+Constructs the Lund plane emissions of a jet. The result is a list of declustering steps, each represented by a named tuple of physics observables.
 
 ```julia
 lund_points = generate_lund_emissions(jet, cluster_seq)
 ```
 
-Each tuple includes:
+Each named tuple includes:
 
 - `h_pt`: transverse momentum of the harder branch
 - `s_pt`: transverse momentum of the softer branch

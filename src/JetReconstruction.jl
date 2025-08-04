@@ -36,6 +36,9 @@ py(p::LorentzVectorCyl) = LorentzVectorHEP.py(p)
 pz(p::LorentzVectorCyl) = LorentzVectorHEP.pz(p)
 energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
 
+# Some useful constants/limits that are used internally
+const max_allowable_R = 1000.
+
 # Pseudojet and EEJet types
 include("CommonJetStructs.jl")
 include("PseudoJet.jl")
