@@ -45,6 +45,9 @@ function main()
     # Substructure tests
     include("test-substructure.jl")
 
+    # LundPlane tests
+    include("test-lundplane.jl")
+
     # SoftKiller tests
     include("test-softkiller.jl")
 

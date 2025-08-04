@@ -624,7 +624,7 @@ given jet.
 An vector of indices representing the original constituents of the given jet.
 """
 function constituent_indexes(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
-    get_all_ancestors(cs.history[jet._cluster_hist_index].jetp_index, cs)
+    get_all_ancestors(jet._cluster_hist_index, cs)
 end
 
 """
