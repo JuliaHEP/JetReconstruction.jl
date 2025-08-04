@@ -26,19 +26,6 @@ function parse_command_line(args)
         arg_type = Int
         default = 1
 
-        "--ptmin"
-        help = "Minimum p_t for final inclusive jets (energy unit is the same as the input clusters, usually GeV)"
-        arg_type = Float64
-        default = 5.0
-
-        "--exclusive-dcut"
-        help = "Return all exclusive jets where further merging would have d>d_cut"
-        arg_type = Float64
-
-        "--exclusive-njets"
-        help = "Return all exclusive jets once clusterisation has produced n jets"
-        arg_type = Int
-
         "--distance", "-R"
         help = "Distance parameter for jet merging"
         arg_type = Float64
