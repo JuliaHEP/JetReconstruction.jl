@@ -21,7 +21,7 @@ end
 Convert a jet of type `T` to a `FinalJet` object. `T` must be a type that
 supports the methods `rapidity`, `phi`, and `pt`.
 """
-FinalJet(jet::T) where {T} = FinalJet(rapidity(jet), phi(jet), sqrt(pt2(jet)))
+FinalJet(jet::T) where {T} = FinalJet(rapidity(jet), phi(jet), pt(jet))
 
 
 import Base: ==, ≈

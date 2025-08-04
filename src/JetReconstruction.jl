@@ -21,16 +21,20 @@ using StructArrays
 
 # Import from LorentzVectorHEP methods for those 4-vector types
 pt2(p::LorentzVector) = LorentzVectorHEP.pt2(p)
+pt(p::LorentzVector) = LorentzVectorHEP.pt(p)
 phi(p::LorentzVector) = LorentzVectorHEP.phi(p)
 rapidity(p::LorentzVector) = LorentzVectorHEP.rapidity(p)
+eta(p::LorentzVector) = LorentzVectorHEP.eta(p)
 px(p::LorentzVector) = LorentzVectorHEP.px(p)
 py(p::LorentzVector) = LorentzVectorHEP.py(p)
 pz(p::LorentzVector) = LorentzVectorHEP.pz(p)
 energy(p::LorentzVector) = LorentzVectorHEP.energy(p)
 
 pt2(p::LorentzVectorCyl) = LorentzVectorHEP.pt2(p)
+pt(p::LorentzVectorCyl) = LorentzVectorHEP.pt(p)
 phi(p::LorentzVectorCyl) = LorentzVectorHEP.phi(p)
 rapidity(p::LorentzVectorCyl) = LorentzVectorHEP.rapidity(p)
+eta(p::LorentzVectorCyl) = LorentzVectorHEP.eta(p)
 px(p::LorentzVectorCyl) = LorentzVectorHEP.px(p)
 py(p::LorentzVectorCyl) = LorentzVectorHEP.py(p)
 pz(p::LorentzVectorCyl) = LorentzVectorHEP.pz(p)
