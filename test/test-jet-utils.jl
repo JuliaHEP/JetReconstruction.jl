@@ -3,10 +3,10 @@
 include("common.jl")
 
 pj1 = PseudoJet(1.0, 1.3, -2.3, 25.0)
-pj2 = PseudoJet(1.0, 0.3, -1.3, 17.0)
+pj2 = PseudoJet(1.0, 0.3, 1.3, 17.0)
 
 eej1 = EEjet(1.0, 1.3, -2.3, 25.0)
-eej2 = EEjet(-1.0, 3.2, -1.2, 39.0)
+eej2 = EEjet(-1.0, 3.2, 1.2, 39.0)
 
 @testset "Common jet utilities" begin
     @test JetReconstruction.pt_fraction(pj1, pj2) ≈ 0.3889609897118418
@@ -19,8 +19,9 @@ eej2 = EEjet(-1.0, 3.2, -1.2, 39.0)
     @test jr_kt_scale ≈ lvhep_kt_scale
 
     # Accessors and utilities
-    @test JetReconstruction.rapidity(eej1) ≈ JetReconstruction.rapidity(pj1) ≈ -0.09226088885177856
-
+    @test JetReconstruction.rapidity(eej1) ≈ JetReconstruction.rapidity(pj1) ≈
+          -0.09226088885177856
+    @test JetReconstruction.rapidity(eej2) ≈ 0.030778946499716776
 
     # Test conversions
     lv_pj1 = JetReconstruction.lorentzvector(pj1)
