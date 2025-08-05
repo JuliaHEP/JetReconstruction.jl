@@ -18,6 +18,10 @@ eej2 = EEjet(-1.0, 3.2, -1.2, 39.0)
                             JetReconstruction.lorentzvector_cyl(pj2))
     @test jr_kt_scale ≈ lvhep_kt_scale
 
+    # Accessors and utilities
+    @test JetReconstruction.rapidity(eej1) ≈ JetReconstruction.rapidity(pj1) ≈ -0.09226088885177856
+
+
     # Test conversions
     lv_pj1 = JetReconstruction.lorentzvector(pj1)
     lv_eej1 = JetReconstruction.lorentzvector(eej1)
