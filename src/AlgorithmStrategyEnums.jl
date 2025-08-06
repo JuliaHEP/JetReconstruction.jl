@@ -26,8 +26,9 @@ Scoped enumeration (using EnumX) representing different jet algorithms used in t
 - `GenKt`: The Generalised Kt algorithm (with arbitrary power).
 - `EEKt`: The Generalised e+e- kt algorithm.
 - `Durham`: The e+e- kt algorithm, aka Durham.
+- `Valencia`: The Valencia e+e- algorithm.
 """
-@enumx T=Algorithm JetAlgorithm AntiKt CA Kt GenKt EEKt Durham
+@enumx T=Algorithm JetAlgorithm AntiKt CA Kt GenKt EEKt Durham Valencia
 const AllJetRecoAlgorithms = [String(Symbol(x)) for x in instances(JetAlgorithm.Algorithm)]
 
 """
@@ -36,7 +37,7 @@ const AllJetRecoAlgorithms = [String(Symbol(x)) for x in instances(JetAlgorithm.
 A constant array that contains the jet algorithms for which power is variable.
 
 """
-const varpower_algorithms = [JetAlgorithm.GenKt, JetAlgorithm.EEKt]
+const varpower_algorithms = [JetAlgorithm.GenKt, JetAlgorithm.EEKt, JetAlgorithm.Valencia]
 
 """
     algorithm2power
@@ -46,7 +47,8 @@ A dictionary that maps algorithm names to their corresponding power values.
 const algorithm2power = Dict(JetAlgorithm.AntiKt => -1,
                              JetAlgorithm.CA => 0,
                              JetAlgorithm.Kt => 1,
-                             JetAlgorithm.Durham => 1)
+                             JetAlgorithm.Durham => 1,
+                             JetAlgorithm.Valencia => 1)
 
 """
     get_algorithm_power(; algorithm::JetAlgorithm.Algorithm, p::Union{Real, Nothing}) -> Real
@@ -109,7 +111,7 @@ Check if the algorithm is a e+e- reconstruction algorithm.
 `true` if the algorithm is a e+e- reconstruction algorithm, `false` otherwise.
 """
 function is_ee(algorithm::JetAlgorithm.Algorithm)
-    return algorithm in [JetAlgorithm.EEKt, JetAlgorithm.Durham]
+    return algorithm in [JetAlgorithm.EEKt, JetAlgorithm.Durham, JetAlgorithm.Valencia]
 end
 
 """
