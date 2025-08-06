@@ -19,6 +19,9 @@ function main()
     include("test-pp-reconstruction.jl")
     include("test-ee-reconstruction.jl")
 
+    # Valencia algorithm tests
+    include("test-valencia.jl")
+
     # Test jets selection
     include("test-selection.jl")
 
