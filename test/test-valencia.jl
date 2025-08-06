@@ -2,10 +2,10 @@
 Test for Valencia algorithm implementation
 """
 
-using Test
-using JetReconstruction
-import JetReconstruction: pt, rapidity, px, py, pz, energy
-
+# Include common test utilities
+include("common.jl")
+import JetReconstruction: pt, rapidity, PseudoJet
+ 
 @testset "Valencia algorithm basic test" begin
     # Test with simple 2-particle system
     particles = [
@@ -42,10 +42,6 @@ import JetReconstruction: pt, rapidity, px, py, pz, energy
         # These are the same parameters used in the FastJet reference
         clusterseq2 = ee_genkt_algorithm(filtered_event, algorithm=JetAlgorithm.Valencia, p=1.2, γ=0.8)
         
-        # Debug: Print cluster sequence for comparison with C++
-        include("../debug_cluster_sequence.jl")
-        debug_cluster_sequence(clusterseq2, filtered_event, "Valencia Julia")
-        
         # Basic sanity checks
         @test length(clusterseq2.jets) >= length(filtered_event)
         @test clusterseq2.algorithm == JetAlgorithm.Valencia
@@ -58,73 +54,62 @@ import JetReconstruction: pt, rapidity, px, py, pz, energy
         inclusive_jets_result = inclusive_jets(clusterseq2, ptmin=10.0)
         @test isa(inclusive_jets_result, Vector)
         
-        # Detailed comparison with FastJet C++ reference values
-        # Reference from fastjet::contrib::ValenciaPlugin(1.2, 0.8) on first event
+        # === Detailed comparison with FastJet C++ reference values ===
         
-        # Test inclusive jets (pT > 20 GeV)
+        # Test inclusive jets (pT > 20 GeV) against reference
         inclusive_20gev = inclusive_jets(clusterseq2, ptmin=20.0)
-        # Reference: 2 jets with pt = 122.875, rap = 0.0201274 and pt = 122.944, rap = -0.0140412
-        # Note: Our implementation may give slightly different results due to implementation differences
-        # We'll test that we get the right number of jets and reasonable pt values
         
-        @info "Testing inclusive jets (pT > 20 GeV):"
+        # Load reference data from JSON files
+        inclusive_ref_file = joinpath(@__DIR__, "data", "jet-collections-fastjet-valencia-inclusive20-eeH.json.zst")
+        inclusive_ref_data = read_fastjet_outputs(inclusive_ref_file)[1]["jets"]
+        
+        @info "Testing inclusive jets (pT > 20 GeV) against FastJet reference:"
         @info "Number of inclusive jets found: $(length(inclusive_20gev))"
-        @info "FastJet reference: 2 jets expected"
+        @info "FastJet reference: $(length(inclusive_ref_data)) jets expected"
         
-        if length(inclusive_20gev) > 0
-            # Sort by pt (descending) for comparison
-            inclusive_sorted = sort(inclusive_20gev, by=jet->pt(PseudoJet(px(jet), py(jet), pz(jet), energy(jet))), rev=true)
-            
-            @info "Our inclusive jets (pT > 20 GeV, sorted by pT):"
-            for (i, jet) in enumerate(inclusive_sorted)
-                jet_pj = PseudoJet(px(jet), py(jet), pz(jet), energy(jet))
-                jet_pt = pt(jet_pj)
-                jet_rap = rapidity(jet_pj)
-                @info "  Jet $i: pt = $(round(jet_pt, digits=6)), rap = $(round(jet_rap, digits=7))"
-            end
-            
-            @info "FastJet reference inclusive jets:"
-            @info "  Jet 1: pt = 122.875, rap = 0.0201274"
-            @info "  Jet 2: pt = 122.944, rap = -0.0140412"
-            
-            # Basic validation - should have reasonable number of jets
-            @test length(inclusive_20gev) >= 1  # Should have at least 1 jet above 20 GeV
-            @test length(inclusive_20gev) <= 10  # Should not have unreasonably many
-            
-            # Validate all jets are above threshold
-            for jet in inclusive_20gev
-                jet_pj = PseudoJet(px(jet), py(jet), pz(jet), energy(jet))
-                @test pt(jet_pj) >= 20.0
-            end
-        else
-            @info "No inclusive jets found above 20 GeV threshold"
+        # Sort by pt (descending) for comparison
+        inclusive_sorted = sort(inclusive_20gev, by=jet->pt(PseudoJet(px(jet), py(jet), pz(jet), energy(jet))), rev=true)
+        ref_sorted = sort(inclusive_ref_data, by=jet->jet["pt"], rev=true)
+        
+        @info "Our inclusive jets (pT > 20 GeV, sorted by pT):"
+        for (i, jet) in enumerate(inclusive_sorted)
+            jet_pj = PseudoJet(px(jet), py(jet), pz(jet), energy(jet))
+            jet_pt = pt(jet_pj)
+            jet_rap = rapidity(jet_pj)
+            @info "  Jet $i: pt = $(round(jet_pt, digits=6)), rap = $(round(jet_rap, digits=7))"
         end
         
-        # @test length(inclusive_20gev) == 2
+        @info "FastJet reference inclusive jets:"
+        for (i, jet) in enumerate(ref_sorted)
+            @info "  Jet $i: pt = $(jet["pt"]), rap = $(jet["rap"])"
+        end
         
-        # Test exclusive N=4 clustering
+        # Test against reference with tolerance
+        @test length(inclusive_20gev) == length(inclusive_ref_data)
+        for (i, (our_jet, ref_jet)) in enumerate(zip(inclusive_sorted, ref_sorted))
+            jet_pj = PseudoJet(px(our_jet), py(our_jet), pz(our_jet), energy(our_jet))
+            our_pt = pt(jet_pj)
+            our_rap = rapidity(jet_pj)
+            
+            @test abs(our_pt - ref_jet["pt"]) < 0.1  # 0.1 GeV tolerance
+            @test abs(our_rap - ref_jet["rap"]) < 0.01  # 0.01 rapidity tolerance
+        end
+        
+        # Test exclusive N=4 clustering against reference
         exclusive_4 = exclusive_jets(clusterseq2, njets=4)
         @test length(exclusive_4) == 4
+        
+        # Load reference data from JSON file
+        exclusive_ref_file = joinpath(@__DIR__, "data", "jet-collections-fastjet-valencia-exclusive4-eeH.json.zst")
+        exclusive_ref_data = read_fastjet_outputs(exclusive_ref_file)[1]["jets"]
         
         # Convert to PseudoJets for pt/rapidity calculation and sort by pt (descending)
         jets_with_pt = [(PseudoJet(px(jet), py(jet), pz(jet), energy(jet)), i) for (i, jet) in enumerate(exclusive_4)]
         sort!(jets_with_pt, by=x->pt(x[1]), rev=true)
-        
-        # Reference values (sorted by pt descending):
-        # pt = 112.065, rap = -0.0029899
-        # pt = 97.3956, rap = 0.0428278  
-        # pt = 25.5392, rap = -0.0655267
-        # pt = 11.2882, rap = -0.122071
-        reference_pts = [112.065, 97.3956, 25.5392, 11.2882]
-        reference_raps = [-0.0029899, 0.0428278, -0.0655267, -0.122071]
-        
-        # Test that our results are reasonably close to reference
-        # Allow for some tolerance due to implementation differences
-        tolerance_pt = 15.0  # GeV - increased tolerance for now
-        tolerance_rap = 0.1  # rapidity units
+        ref_sorted = sort(exclusive_ref_data, by=jet->jet["pt"], rev=true)
         
         # Print our results for comparison
-        @info "Valencia algorithm comparison with FastJet reference (with |rap| <= 4.0 filter):"
+        @info "Valencia algorithm comparison with FastJet reference (exclusive N=4, with |rap| <= 4.0 filter):"
         @info "Our Valencia results (exclusive N=4, sorted by pt):"
         for i in 1:4
             jet_pt = pt(jets_with_pt[i][1])
@@ -133,69 +118,58 @@ import JetReconstruction: pt, rapidity, px, py, pz, energy
         end
         
         @info "FastJet reference (exclusive N=4):"
-        for i in 1:4
-            @info "  Jet $i: pt = $(reference_pts[i]), rap = $(reference_raps[i])"
+        for (i, jet) in enumerate(ref_sorted)
+            @info "  Jet $i: pt = $(jet["pt"]), rap = $(jet["rap"])"
         end
         
-        # Test algorithm behavior - our implementation produces different but valid results
-        # The key things to verify are:
-        # 1. Algorithm runs without errors
-        # 2. Produces reasonable pt values
-        # 3. Some jets match closely with reference (indicating correct distance calculation)
-        
-        for i in 1:4
-            jet_pt = pt(jets_with_pt[i][1])
-            @test jet_pt > 10.0  # Should have reasonable pt values
-            @test jet_pt < 150.0  # Should not be unreasonably large
+        # Test against reference with tolerance
+        @test length(exclusive_4) == length(exclusive_ref_data)
+        for (i, (our_jet_data, ref_jet)) in enumerate(zip(jets_with_pt, ref_sorted))
+            our_pt = pt(our_jet_data[1])
+            our_rap = rapidity(our_jet_data[1])
+            
+            @test abs(our_pt - ref_jet["pt"]) < 0.1  # 0.1 GeV tolerance
+            @test abs(our_rap - ref_jet["rap"]) < 0.01  # 0.01 rapidity tolerance
         end
         
-        # Test that at least one of our jets matches closely with a reference jet
-        # This indicates the Valencia distance calculation is working correctly
-        our_pts = [pt(jets_with_pt[i][1]) for i in 1:4]
-        min_diff = minimum(minimum(abs(our_pt - ref_pt) for ref_pt in reference_pts) for our_pt in our_pts)
-        @test min_diff < 1.0  # At least one jet should be very close (within 1 GeV)
-        
-        # Key observation: Our jet with pt=97.395625 matches FastJet's pt=97.3956 (diff=0.0001 GeV)
-        # This near-exact match strongly indicates our Valencia distance calculation is correct.
-        # The different clustering sequence produces different final jets, but individual 
-        # distance calculations are working properly.
-        
-        # Additional validation: check we have at least one very close match (< 0.01 GeV)
-        very_close_match = any(any(abs(our_pt - ref_pt) < 0.01 for ref_pt in reference_pts) for our_pt in our_pts)
-        @test very_close_match  # Should have at least one nearly exact match
-        
-        # Document the behavior: implementation differences lead to different clustering
-        # but individual distance calculations appear correct (97.3956 match is nearly exact)
-        
-        # Test exclusive clustering up to d = 500
+        # Test exclusive clustering up to d = 500 against reference
         exclusive_d500 = exclusive_jets(clusterseq2, dcut=500.0)
-        # Reference: 2 jets with pt = 122.944, rap = -0.0140412 and pt = 122.875, rap = 0.0201274
-        # Again, allow for implementation differences
         
-        @info "Testing exclusive clustering up to d = 500:"
+        # Load reference data from JSON file
+        exclusive_d500_ref_file = joinpath(@__DIR__, "data", "jet-collections-fastjet-valencia-exclusive-d500-eeH.json.zst")
+        exclusive_d500_ref_data = read_fastjet_outputs(exclusive_d500_ref_file)[1]["jets"]
+        
+        @info "Testing exclusive clustering up to d = 500 against FastJet reference:"
         @info "Number of exclusive jets found: $(length(exclusive_d500))"
-        @info "FastJet reference: 2 jets expected"
+        @info "FastJet reference: $(length(exclusive_d500_ref_data)) jets expected"
         
-        if length(exclusive_d500) > 0
-            # Sort by pt (descending) for comparison
-            exclusive_d500_sorted = sort(exclusive_d500, by=jet->pt(PseudoJet(px(jet), py(jet), pz(jet), energy(jet))), rev=true)
-            
-            @info "Our exclusive jets (d < 500, sorted by pT):"
-            for (i, jet) in enumerate(exclusive_d500_sorted)
-                jet_pj = PseudoJet(px(jet), py(jet), pz(jet), energy(jet))
-                jet_pt = pt(jet_pj)
-                jet_rap = rapidity(jet_pj)
-                @info "  Jet $i: pt = $(round(jet_pt, digits=6)), rap = $(round(jet_rap, digits=7))"
-            end
-            
-            @info "FastJet reference exclusive jets (d < 500):"
-            @info "  Jet 1: pt = 122.944, rap = -0.0140412"
-            @info "  Jet 2: pt = 122.875, rap = 0.0201274"
-        else
-            @info "No exclusive jets found for d < 500"
+        # Sort by pt (descending) for comparison
+        exclusive_d500_sorted = sort(exclusive_d500, by=jet->pt(PseudoJet(px(jet), py(jet), pz(jet), energy(jet))), rev=true)
+        ref_d500_sorted = sort(exclusive_d500_ref_data, by=jet->jet["pt"], rev=true)
+        
+        @info "Our exclusive jets (d < 500, sorted by pT):"
+        for (i, jet) in enumerate(exclusive_d500_sorted)
+            jet_pj = PseudoJet(px(jet), py(jet), pz(jet), energy(jet))
+            jet_pt = pt(jet_pj)
+            jet_rap = rapidity(jet_pj)
+            @info "  Jet $i: pt = $(round(jet_pt, digits=6)), rap = $(round(jet_rap, digits=7))"
         end
         
-        @test length(exclusive_d500) >= 1  # Should have at least 1 jet
-        @test length(exclusive_d500) <= 4  # Should not have more than all particles
+        @info "FastJet reference exclusive jets (d < 500):"
+        for (i, jet) in enumerate(ref_d500_sorted)
+            @info "  Jet $i: pt = $(jet["pt"]), rap = $(jet["rap"])"
+        end
+        
+        # Test against reference with tolerance
+        @test length(exclusive_d500) == length(exclusive_d500_ref_data)
+        for (i, (our_jet, ref_jet)) in enumerate(zip(exclusive_d500_sorted, ref_d500_sorted))
+            jet_pj = PseudoJet(px(our_jet), py(our_jet), pz(our_jet), energy(our_jet))
+            our_pt = pt(jet_pj)
+            our_rap = rapidity(jet_pj)
+
+            @test abs(our_pt - ref_jet["pt"]) < 0.1  # 0.1 GeV tolerance
+            @test abs(our_rap - ref_jet["rap"]) < 0.01  # 0.01 rapidity tolerance
+        end
+        
     end
 end
