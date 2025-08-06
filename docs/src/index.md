@@ -56,6 +56,7 @@ Each known algorithm is referenced using a `JetAlgorithm` scoped enum value.
 | generalised ``k_\text{T}`` | `JetAlgorithm.GenKt` | For $pp$, value of `p` must also be specified |
 | ``e^+e-`` ``k_\text{T}`` / Durham | `JetAlgorithm.Durham` | `R` value ignored and can be omitted |
 | generalised ``e^+e-`` ``k_\text{T}`` | `JetAlgorithm.EEKt` | For ``e^+e^-``, value of `p` must also be specified |
+| Valencia | `JetAlgorithm.Valencia` | For ``e^+e^-``, values of `p` (β) and `γ` must be specified |
 
 ### Strategy
 

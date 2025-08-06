@@ -1,6 +1,6 @@
 """
     jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algorithm,
-                         p::Union{Real, Nothing} = nothing, R = 1.0,
+                         p::Union{Real, Nothing} = nothing, R = 1.0, γ::Real = 1.0,
                          recombine = addjets_eschene, preprocess = preprocess_escheme,
                          strategy::RecoStrategy.Strategy = RecoStrategy.Best)
 
@@ -22,6 +22,8 @@ strategy.
 - `strategy::RecoStrategy.Strategy = RecoStrategy.Best`: The jet reconstruction
    strategy to use. `RecoStrategy.Best` makes a dynamic decision based on the
    number of starting particles.
+- `γ::Real = 1.0`: The angular exponent parameter for Valencia algorithm. Ignored
+  by other algorithms.
 
 Note that `p` must be specified for `GenKt` and `EEKt` algorithms,
 other algorithms will ignore its value.
@@ -71,9 +73,10 @@ jet_reconstruct(particles; algorithm = JetAlgorithm.AntiKt, R = 1.0, preprocess 
 ```
 """
 function jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algorithm,
-                         p::Union{Real, Nothing} = nothing, R = 1.0,
+                         p::Union{Real, Nothing} = nothing, R = 1.0, γ::Real = 1.0,
                          recombine = addjets_escheme, preprocess = preprocess_escheme,
                          strategy::RecoStrategy.Strategy = RecoStrategy.Best)
+
     if is_pp(algorithm)
         # We assume a pp reconstruction
         if strategy == RecoStrategy.Best
@@ -93,6 +96,11 @@ function jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algo
     end
 
     # Now call the chosen algorithm, passing through the other parameters
-    alg(particles; p = p, algorithm = algorithm, R = R, recombine = recombine,
-        preprocess = preprocess)
+    if is_ee(algorithm)
+        alg(particles; p, algorithm, R, recombine,
+            preprocess, γ)
+    else
+        alg(particles; p, algorithm, R, recombine,
+            preprocess)
+    end
 end
