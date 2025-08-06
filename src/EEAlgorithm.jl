@@ -26,18 +26,17 @@ end
 """
     valencia_distance(eereco, i, j, β, γ, R) -> Float64
 
-Calculate the Valencia distance between two jets `i` and `j` using the FastJet formula
+Calculate the Valencia distance between two jets `i` and `j` as
 ``min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos(θ_{ij})) / R²``.
 
-Note: This matches the FastJet contrib::ValenciaPlugin implementation exactly.
-The γ parameter is only used for beam distances, not inter-particle distances.
+Note that the γ parameter is only used for beam distances, not inter-particle distances.
 
 # Arguments
 - `eereco`: The array of `EERecoJet` objects.
 - `i`: The first jet.
 - `j`: The second jet.
 - `β`: The energy exponent parameter.
-- `γ`: The angular exponent parameter (unused for inter-particle distance).
+- `γ`: The angular exponent parameter.
 - `R`: The jet radius parameter.
 
 # Returns
@@ -45,7 +44,7 @@ The γ parameter is only used for beam distances, not inter-particle distances.
 """
 @inline function valencia_distance(eereco, i, j, β, γ, R)
     angular_dist = angular_distance(eereco, i, j)
-    # FastJet Valencia formula: min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos θ) / R²
+    # Valencia dij : min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos θ) / R²
     @inbounds min(eereco[i].E2p, eereco[j].E2p) * 2.0 * angular_dist / (R * R)
 end
 
@@ -65,7 +64,7 @@ Calculate the Valencia beam distance for jet `i` using the formula
 - `Float64`: The Valencia beam distance for jet `i`.
 """
 @inline function valencia_beam_distance(eereco, i, β, γ)
-    # FastJet Valencia beam distance: E^(2β)
+    # Valencia beam distance: E^(2β)
     @inbounds eereco[i].E2p
 end
 
@@ -124,7 +123,6 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, β = 1.0
     # Nearest neighbour dij distance
     for i in 1:N
         if algorithm == JetAlgorithm.Valencia
-            # For Valencia, compute the full Valencia distance (already includes /R² division)
             eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, β, γ, R)
         else
             eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, β, γ, R)
@@ -139,7 +137,6 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, β = 1.0
             eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
         end
     elseif algorithm == JetAlgorithm.Valencia
-        # For Valencia algorithm, check beam distance using Valencia-specific formula
         @inbounds for i in 1:N
             valencia_beam_dist = valencia_beam_distance(eereco, i, β, γ) * dij_factor
             beam_closer = valencia_beam_dist < eereco[i].dijdist
@@ -299,7 +296,8 @@ Run an e+e- reconstruction algorithm on a set of initial particles.
 - `particles::AbstractVector{T}`: A vector of particles to be clustered.
 - `algorithm::JetAlgorithm.Algorithm`: The jet algorithm to use.
 - `p::Union{Real, Nothing} = nothing`: The power parameter for the algorithm.
-  Must be specified for EEKt algorithm. For Valencia algorithm, this is the β parameter.
+  Must be specified for EEKt algorithm. 
+  For Valencia algorithm, this corresponds to the β parameter.
   Other algorithms will ignore this value.
 - `R = 4.0`: The jet radius parameter. Not required / ignored for the Durham
   algorithm.
@@ -335,7 +333,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
         R = 4.0
     elseif algorithm == JetAlgorithm.Valencia
         # For Valencia algorithm, p corresponds to R parameter in FastJet
-        # Keep R as passed from the p parameter
+        # Keep R as passed from the p parameter, following FastJet implementation
         R = p
     end
 
@@ -412,9 +410,8 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
     # We need N slots for this array
     eereco = StructArray{EERecoJet}(undef, N)
     
-    # For Valencia algorithm, we use γ (which maps to β in FastJet) for energy powers
     if algorithm == JetAlgorithm.Valencia
-        fill_reco_array!(eereco, particles, R2, γ)  # Use γ (β) for Valencia energy powers
+        fill_reco_array!(eereco, particles, R2, γ)  # Use γ for Valencia energy powers
     else
         fill_reco_array!(eereco, particles, R2, p)  # Use p for other algorithms
     end

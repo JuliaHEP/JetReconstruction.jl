@@ -1,5 +1,9 @@
 """
-Test for Valencia algorithm implementation
+    test-valencia.jl
+
+Test for the Valencia jet algorithm implementation.
+
+Validates clustering results and cluster sequence against FastJet C++ reference output.
 """
 
 # Include common test utilities
