@@ -24,29 +24,53 @@ Calculate the angular distance between two jets `i` and `j` using the formula
 end
 
 """
-    valencia_distance(eereco, i, j, β, γ) -> Float64
+    valencia_distance(eereco, i, j, β, γ, R) -> Float64
 
-Calculate the Valencia distance between two jets `i` and `j` using the formula
-``min(E_i^{2β}, E_j^{2β}) * (1 - cos(θ_{ij}))^γ``.
+Calculate the Valencia distance between two jets `i` and `j` using the FastJet formula
+``min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos(θ_{ij})) / R²``.
+
+Note: This matches the FastJet contrib::ValenciaPlugin implementation exactly.
+The γ parameter is only used for beam distances, not inter-particle distances.
 
 # Arguments
 - `eereco`: The array of `EERecoJet` objects.
 - `i`: The first jet.
 - `j`: The second jet.
 - `β`: The energy exponent parameter.
-- `γ`: The angular exponent parameter.
+- `γ`: The angular exponent parameter (unused for inter-particle distance).
+- `R`: The jet radius parameter.
 
 # Returns
 - `Float64`: The Valencia distance between `i` and `j`.
 """
-@inline function valencia_distance(eereco, i, j, β, γ)
+@inline function valencia_distance(eereco, i, j, β, γ, R)
     angular_dist = angular_distance(eereco, i, j)
-    # For Valencia algorithm, E2p stores E^(2β)
-    @inbounds min(eereco[i].E2p, eereco[j].E2p) * (angular_dist^γ)
+    # FastJet Valencia formula: min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos θ) / R²
+    @inbounds min(eereco[i].E2p, eereco[j].E2p) * 2.0 * angular_dist / (R * R)
 end
 
 """
-    dij_dist(eereco, i, j, dij_factor, algorithm = JetAlgorithm.Durham, β = 1.0, γ = 1.0)
+    valencia_beam_distance(eereco, i, β, γ) -> Float64
+
+Calculate the Valencia beam distance for jet `i` using the formula
+``E_i^{2β}``. This matches the FastJet contrib::ValenciaPlugin implementation.
+
+# Arguments
+- `eereco`: The array of `EERecoJet` objects.
+- `i`: The jet index.
+- `β`: The energy exponent parameter.
+- `γ`: The angular exponent parameter (unused for beam distance in Valencia).
+
+# Returns
+- `Float64`: The Valencia beam distance for jet `i`.
+"""
+@inline function valencia_beam_distance(eereco, i, β, γ)
+    # FastJet Valencia beam distance: E^(2β)
+    @inbounds eereco[i].E2p
+end
+
+"""
+    dij_dist(eereco, i, j, dij_factor, algorithm = JetAlgorithm.Durham, β = 1.0, γ = 1.0, R = 4.0)
 
 Calculate the dij distance between two ``e^+e^-``jets.
 
@@ -62,18 +86,18 @@ Calculate the dij distance between two ``e^+e^-``jets.
 # Returns
 - The dij distance between `i` and `j`.
 """
-@inline function dij_dist(eereco, i, j, dij_factor, algorithm = JetAlgorithm.Durham, β = 1.0, γ = 1.0)
+@inline function dij_dist(eereco, i, j, dij_factor, algorithm = JetAlgorithm.Durham, β = 1.0, γ = 1.0, R = 4.0)
     # Calculate the dij distance for jet i from jet j
     j == 0 && return large_dij
     
     if algorithm == JetAlgorithm.Valencia
-        @inbounds valencia_distance(eereco, i, j, β, γ) * dij_factor
+        @inbounds valencia_distance(eereco, i, j, β, γ, R)  # Valencia distance already includes /R² division
     else
         @inbounds min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[i].nndist
     end
 end
 
-function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, β = 1.0, γ = 1.0)
+function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, β = 1.0, γ = 1.0, R = 4.0)
     # Get the initial nearest neighbours for each jet
     N = length(eereco)
     # this_dist_vector = Vector{Float64}(undef, N)
@@ -100,10 +124,10 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, β = 1.0
     # Nearest neighbour dij distance
     for i in 1:N
         if algorithm == JetAlgorithm.Valencia
-            # For Valencia, compute the full Valencia distance
-            eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, β, γ) * dij_factor
+            # For Valencia, compute the full Valencia distance (already includes /R² division)
+            eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, β, γ, R)
         else
-            eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, β, γ)
+            eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, β, γ, R)
         end
     end
     # For the EEKt algorithm, we need to check the beam distance as well
@@ -114,11 +138,19 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, β = 1.0
             eereco.dijdist[i] = beam_closer ? eereco[i].E2p : eereco.dijdist[i]
             eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
         end
+    elseif algorithm == JetAlgorithm.Valencia
+        # For Valencia algorithm, check beam distance using Valencia-specific formula
+        @inbounds for i in 1:N
+            valencia_beam_dist = valencia_beam_distance(eereco, i, β, γ) * dij_factor
+            beam_closer = valencia_beam_dist < eereco[i].dijdist
+            eereco.dijdist[i] = beam_closer ? valencia_beam_dist : eereco.dijdist[i]
+            eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
+        end
     end
 end
 
 # Update the nearest neighbour for jet i, w.r.t. all other active jets
-function update_nn_no_cross!(eereco, i, N, algorithm, dij_factor, β = 1.0, γ = 1.0)
+function update_nn_no_cross!(eereco, i, N, algorithm, dij_factor, β = 1.0, γ = 1.0, R = 4.0)
     eereco.nndist[i] = large_distance
     eereco.nni[i] = i
     @inbounds for j in 1:N
@@ -131,18 +163,23 @@ function update_nn_no_cross!(eereco, i, N, algorithm, dij_factor, β = 1.0, γ =
         end
     end
     if algorithm == JetAlgorithm.Valencia
-        eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, β, γ) * dij_factor
+        eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, β, γ, R)
     else
-        eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, β, γ)
+        eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, β, γ, R)
     end
     if algorithm == JetAlgorithm.EEKt
         beam_close = eereco[i].E2p < eereco[i].dijdist
         eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
         eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
+    elseif algorithm == JetAlgorithm.Valencia
+        valencia_beam_dist = valencia_beam_distance(eereco, i, β, γ) * dij_factor
+        beam_close = valencia_beam_dist < eereco[i].dijdist
+        eereco.dijdist[i] = beam_close ? valencia_beam_dist : eereco.dijdist[i]
+        eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
     end
 end
 
-function update_nn_cross!(eereco, i, N, algorithm, dij_factor, β = 1.0, γ = 1.0)
+function update_nn_cross!(eereco, i, N, algorithm, dij_factor, β = 1.0, γ = 1.0, R = 4.0)
     # Update the nearest neighbour for jet i, w.r.t. all other active jets
     # also doing the cross check for the other jet
     eereco.nndist[i] = large_distance
@@ -159,13 +196,19 @@ function update_nn_cross!(eereco, i, N, algorithm, dij_factor, β = 1.0, γ = 1.
                 eereco.nni[j] = i
                 # j will not be revisited, so update metric distance here
                 if algorithm == JetAlgorithm.Valencia
-                    eereco.dijdist[j] = valencia_distance(eereco, j, i, β, γ) * dij_factor
+                    eereco.dijdist[j] = valencia_distance(eereco, j, i, β, γ, R)
                 else
-                    eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor, algorithm, β, γ)
+                    eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor, algorithm, β, γ, R)
                 end
                 if algorithm == JetAlgorithm.EEKt
                     if eereco[j].E2p < eereco[j].dijdist
                         eereco.dijdist[j] = eereco[j].E2p
+                        eereco.nni[j] = 0
+                    end
+                elseif algorithm == JetAlgorithm.Valencia
+                    valencia_beam_dist = valencia_beam_distance(eereco, j, β, γ) * dij_factor
+                    if valencia_beam_dist < eereco[j].dijdist
+                        eereco.dijdist[j] = valencia_beam_dist
                         eereco.nni[j] = 0
                     end
                 end
@@ -173,13 +216,18 @@ function update_nn_cross!(eereco, i, N, algorithm, dij_factor, β = 1.0, γ = 1.
         end
     end
     if algorithm == JetAlgorithm.Valencia
-        eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, β, γ) * dij_factor
+        eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, β, γ, R)
     else
-        eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, β, γ)
+        eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, β, γ, R)
     end
     if algorithm == JetAlgorithm.EEKt
         beam_close = eereco[i].E2p < eereco[i].dijdist
         eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
+        eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
+    elseif algorithm == JetAlgorithm.Valencia
+        valencia_beam_dist = valencia_beam_distance(eereco, i, β, γ) * dij_factor
+        beam_close = valencia_beam_dist < eereco[i].dijdist
+        eereco.dijdist[i] = beam_close ? valencia_beam_dist : eereco.dijdist[i]
         eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
     end
 end
@@ -286,8 +334,9 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
     if algorithm == JetAlgorithm.Durham
         R = 4.0
     elseif algorithm == JetAlgorithm.Valencia
-        # For Valencia algorithm, R is not used, but nominally set to 4
-        R = 4.0
+        # For Valencia algorithm, p corresponds to R parameter in FastJet
+        # Keep R as passed from the p parameter
+        R = p
     end
 
     if isnothing(preprocess)
@@ -353,7 +402,7 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
             dij_factor = 1 / (3 + cos(R))
         end
     elseif algorithm == JetAlgorithm.Valencia
-        dij_factor = 2.0  # Valencia uses factor similar to Durham
+        dij_factor = 1.0  # Valencia distance function contains complete formula with /R² division
     else
         throw(ArgumentError("Algorithm $algorithm not supported for e+e-"))
     end
@@ -362,7 +411,13 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
     # jet information and populate it accordingly
     # We need N slots for this array
     eereco = StructArray{EERecoJet}(undef, N)
-    fill_reco_array!(eereco, particles, R2, p)
+    
+    # For Valencia algorithm, we use γ (which maps to β in FastJet) for energy powers
+    if algorithm == JetAlgorithm.Valencia
+        fill_reco_array!(eereco, particles, R2, γ)  # Use γ (β) for Valencia energy powers
+    else
+        fill_reco_array!(eereco, particles, R2, p)  # Use p for other algorithms
+    end
 
     # Setup the initial history and get the total energy
     history, Qtot = initial_history(particles)
@@ -371,7 +426,10 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
                                  Qtot)
 
     # Run over initial pairs of jets to find nearest neighbours
-    get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ)
+    # For Valencia: p is R, γ is β, and FastJet's γ defaults to β
+    β_valencia = (algorithm == JetAlgorithm.Valencia) ? γ : p
+    γ_valencia = (algorithm == JetAlgorithm.Valencia) ? γ : γ  # For Valencia, both β and γ are the same
+    get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, β_valencia, γ_valencia, R)
 
     # Only for debugging purposes...
     # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, "Start")
@@ -420,7 +478,11 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
                                  newjet_k, dij_min)
 
             # Update the compact arrays, reusing the JetA slot
-            insert_new_jet!(eereco, ijetA, newjet_k, R2, merged_jet, p)
+            if algorithm == JetAlgorithm.Valencia
+                insert_new_jet!(eereco, ijetA, newjet_k, R2, merged_jet, γ)  # Use γ (β) for Valencia energy powers
+            else
+                insert_new_jet!(eereco, ijetA, newjet_k, R2, merged_jet, p)  # Use p for other algorithms
+            end
         end
 
         # Squash step - copy the final jet's compact data into the jetB slot
@@ -442,7 +504,7 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
                 # plus "belt and braces" check for an invalid NN (>N)
                 if (eereco[i].nni == ijetA) || (eereco[i].nni == ijetB) ||
                    (eereco[i].nni > N)
-                    update_nn_no_cross!(eereco, i, N, algorithm, dij_factor, p, γ)
+                    update_nn_no_cross!(eereco, i, N, algorithm, dij_factor, β_valencia, γ_valencia, R)
                 end
             end
         end
@@ -450,7 +512,7 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
         # Finally, we need to update the nearest neighbours for the new jet, checking both ways
         # (But only if there was a new jet!)
         if ijetA != ijetB
-            update_nn_cross!(eereco, ijetA, N, algorithm, dij_factor, p, γ)
+            update_nn_cross!(eereco, ijetA, N, algorithm, dij_factor, β_valencia, γ_valencia, R)
         end
 
         # Only for debugging purposes...
