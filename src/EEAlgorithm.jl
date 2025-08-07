@@ -41,7 +41,6 @@ Calculate the Valencia distance between two jets `i` and `j` as
     angular_dist = angular_distance(eereco, i, j)
     # Valencia dij : min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos θ) / R²
     # Note that β plays the role of p in other algorithms, so E2p can be used.
-
     @inbounds min(eereco[i].E2p, eereco[j].E2p) * 2.0 * angular_dist / (R * R)
 end
 
@@ -94,8 +93,7 @@ Calculate the dij distance between two ``e^+e^-``jets.
 # Returns
 - The dij distance between `i` and `j`.
 """
-@inline function dij_dist(eereco, i, j, dij_factor, algorithm = JetAlgorithm.Durham,
-                          R = 4.0)
+@inline function dij_dist(eereco, i, j, dij_factor, algorithm = JetAlgorithm.Durham, R = 4.0)
     # Calculate the dij distance for jet i from jet j
     j == 0 && return large_dij
 
@@ -105,7 +103,6 @@ Calculate the dij distance between two ``e^+e^-``jets.
         @inbounds min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[i].nndist
     end
 end
-
 
 function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ = 1.0, R = 4.0)
     # Get the initial nearest neighbours for each jet
@@ -360,16 +357,23 @@ If the algorithm is Valencia, both `p` (β) and `γ` should be specified.
 function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
                             p::Union{Real, Nothing} = nothing, R = 4.0, recombine = addjets,
 <<<<<<< HEAD
+<<<<<<< HEAD
                             preprocess = nothing, γ::Real = 1.0,
                             β::Union{Real, Nothing} = nothing) where {T}
+=======
+                            preprocess = nothing, γ::Real = 1.0, β::Union{Real, Nothing} = nothing) where {T}
+>>>>>>> 4d57624 (Mysteries solved? Had an issue with parameters ...)
 
     # For Valencia, if β is provided, overwrite p
     if algorithm == JetAlgorithm.Valencia && β !== nothing
         p = β
     end
+<<<<<<< HEAD
 =======
                             preprocess = nothing, γ::Real = 1.0) where {T}
 >>>>>>> 3f4c52a (Initial VLC implementation)
+=======
+>>>>>>> 4d57624 (Mysteries solved? Had an issue with parameters ...)
 
     # Check for consistency algorithm power
     p = get_algorithm_power(p = p, algorithm = algorithm)
@@ -382,6 +386,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
     # For the Durham algorithm, p=1 and R is not used, but nominally set to 4
     if algorithm == JetAlgorithm.Durham
         R = 4.0
+<<<<<<< HEAD
     elseif algorithm == JetAlgorithm.Valencia
 <<<<<<< HEAD
         # For Valencia algorithm, R is not used, but nominally set to 4
@@ -391,6 +396,8 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
         # Keep R as passed from the p parameter, following FastJet implementation
         R = p
 >>>>>>> 9589f7e (Starting cleanup)
+=======
+>>>>>>> 4d57624 (Mysteries solved? Had an issue with parameters ...)
     end
 
     if isnothing(preprocess)
@@ -453,16 +460,13 @@ entry point to this jet reconstruction.
 """
 function _ee_genkt_algorithm!(particles::AbstractVector{EEJet},
                              algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
-                             recombine = addjets, γ::Real = 1.0)
+                             recombine = addjets, γ::Real = 1.0, beta::Union{Real, Nothing} = nothing)
     # Bounds
     N::Int = length(particles)
 
-    # For Valencia algorithm, R2 should be initialized differently
-    if algorithm == JetAlgorithm.Valencia
-        # For Valencia, initialize with a large distance
-        R2 = large_distance
-    else
-        R2 = R^2
+    R2 = R^2
+    if algorithm == JetAlgorithm.Valencia && beta !== nothing
+        p = beta
     end
 
     # Constant factor for the dij metric and the beam distance function
@@ -489,12 +493,16 @@ function _ee_genkt_algorithm!(particles::AbstractVector{EEJet},
     fill_reco_array!(eereco, particles, R2, p)
 =======
     
+<<<<<<< HEAD
     if algorithm == JetAlgorithm.Valencia
         fill_reco_array!(eereco, particles, R2, γ)  # Use γ for Valencia energy powers
     else
         fill_reco_array!(eereco, particles, R2, p)  # Use p for other algorithms
     end
 >>>>>>> 9589f7e (Starting cleanup)
+=======
+    fill_reco_array!(eereco, particles, R2, p)
+>>>>>>> 4d57624 (Mysteries solved? Had an issue with parameters ...)
 
     # Setup the initial history and get the total energy
     history, Qtot = initial_history(particles)
