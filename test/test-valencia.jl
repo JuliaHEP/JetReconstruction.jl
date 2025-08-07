@@ -17,16 +17,25 @@ import JetReconstruction: pt, rapidity, PseudoJet
         PseudoJet(0.0, 1.0, 0.0, 1.0)
     ]
     
+    
     # Run Valencia algorithm with test parameters
-    β = 1.2
+    β = 0.8
     γ = 0.8
-    clusterseq = ee_genkt_algorithm(particles, algorithm=JetAlgorithm.Valencia, p=β, γ=γ)
+    R = 1.2
     
     # Basic checks
+    
+    clusterseq = ee_genkt_algorithm(particles, algorithm=JetAlgorithm.Valencia, β=β, γ=γ, R=R)
     @test length(clusterseq.jets) >= 2  # At least input particles
     @test clusterseq.algorithm == JetAlgorithm.Valencia
     @test clusterseq.power == β
-    
+
+    clusterseq = ee_genkt_algorithm(particles, algorithm=JetAlgorithm.Valencia, p=β, γ=γ, R=R)
+    @test length(clusterseq.jets) >= 2  # At least input particles
+    @test clusterseq.algorithm == JetAlgorithm.Valencia
+    @test clusterseq.power == β
+
+
     # Test exclusive jets
     exclusive_jets_result = exclusive_jets(clusterseq, njets=1)
     @test length(exclusive_jets_result) == 1
@@ -42,9 +51,9 @@ import JetReconstruction: pt, rapidity, PseudoJet
         filtered_event = filter(p -> abs(rapidity(p)) <= 4.0, event)
         @info "Applied rapidity filter |rap| <= 4.0: $(length(event)) -> $(length(filtered_event)) particles"
         
-        # Run Valencia algorithm on first event with β=1.2, γ=0.8
+        # Run Valencia algorithm on first event with β=0.8, γ=0.8, R=1.2
         # These are the same parameters used in the FastJet reference
-        clusterseq2 = ee_genkt_algorithm(filtered_event, algorithm=JetAlgorithm.Valencia, p=1.2, γ=0.8)
+        clusterseq2 = ee_genkt_algorithm(filtered_event, algorithm=JetAlgorithm.Valencia, p=0.8, γ=0.8, R=1.2)
         
         # Basic sanity checks
         @test length(clusterseq2.jets) >= length(filtered_event)
