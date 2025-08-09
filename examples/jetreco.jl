@@ -5,7 +5,6 @@ and performs standard jet reconstruction on the final state particles.
 """
 
 using ArgParse
-using Profile
 using Logging
 using JSON
 
