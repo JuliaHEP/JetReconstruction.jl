@@ -3,6 +3,12 @@
 
 include("common.jl")
 
+
+"""
+    test_jet_equality(ref, test)
+
+Test two jet representations for equality.
+"""
 function test_jet_equality(ref, test)
     for (j1, j2) in zip(ref, test)
         @test JetReconstruction.pt(j1) ≈ JetReconstruction.pt(j2)
@@ -35,5 +41,13 @@ end
     ee_ref_jets = exclusive_jets(ee_cs, EEJet; njets=2)
     for T in (LorentzVectorCyl, LorentzVector)
         test_jet_equality(ee_ref_jets, exclusive_jets(ee_cs, T; njets=2))
+    end
+
+    # Also check that for an unknown type we throw
+    @test_throws ErrorException begin
+        inclusive_jets(pp_cs, Float64; ptmin=10.0)
+    end
+        @test_throws ErrorException begin
+        exclusive_jets(ee_cs, Float64; njets=2)
     end
 end
