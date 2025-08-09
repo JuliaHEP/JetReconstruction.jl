@@ -26,7 +26,7 @@ function test_jet_equality(ref, test)
 end
 
 
-@testset "Jet selections" begin
+@testset "Jet selections to types" begin
     pp_event = first(JetReconstruction.read_final_state_particles(events_file_pp; maxevents=1))
     ee_event = first(JetReconstruction.read_final_state_particles(events_file_ee; maxevents=1))
 
