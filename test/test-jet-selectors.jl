@@ -15,11 +15,13 @@ function test_jet_equality(ref, test)
         test_phi = test_phi < 0.0 ? test_phi + 2π : test_phi
         @test JetReconstruction.phi(j1) ≈ test_phi
         @test JetReconstruction.rapidity(j1) ≈ JetReconstruction.rapidity(j2)
+        @test JetReconstruction.eta(j1) ≈ JetReconstruction.eta(j2)
         @test JetReconstruction.px(j1) ≈ JetReconstruction.px(j2)
         @test JetReconstruction.py(j1) ≈ JetReconstruction.py(j2)
         @test JetReconstruction.pz(j1) ≈ JetReconstruction.pz(j2)
         @test JetReconstruction.energy(j1) ≈ JetReconstruction.energy(j2)
         @test JetReconstruction.mass2(j1) ≈ JetReconstruction.mass2(j2)
+        @test JetReconstruction.mass(j1) ≈ JetReconstruction.mass(j2)
     end
     nothing
 end
