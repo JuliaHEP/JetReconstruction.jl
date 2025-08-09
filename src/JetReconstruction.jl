@@ -29,6 +29,8 @@ px(p::LorentzVector) = LorentzVectorHEP.px(p)
 py(p::LorentzVector) = LorentzVectorHEP.py(p)
 pz(p::LorentzVector) = LorentzVectorHEP.pz(p)
 energy(p::LorentzVector) = LorentzVectorHEP.energy(p)
+mass2(p::LorentzVector) = LorentzVectorHEP.mass2(p)
+mass(p::LorentzVector) = LorentzVectorHEP.mass(p)
 
 pt2(p::LorentzVectorCyl) = LorentzVectorHEP.pt2(p)
 pt(p::LorentzVectorCyl) = LorentzVectorHEP.pt(p)
@@ -39,6 +41,8 @@ px(p::LorentzVectorCyl) = LorentzVectorHEP.px(p)
 py(p::LorentzVectorCyl) = LorentzVectorHEP.py(p)
 pz(p::LorentzVectorCyl) = LorentzVectorHEP.pz(p)
 energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
+mass2(p::LorentzVectorCyl) = LorentzVectorHEP.mass2(p)
+mass(p::LorentzVectorCyl) = LorentzVectorHEP.mass(p)
 
 # Some useful constants/limits that are used internally
 const max_allowable_R = 1000.0

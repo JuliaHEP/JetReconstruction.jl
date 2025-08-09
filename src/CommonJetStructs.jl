@@ -109,6 +109,9 @@ phi(j::FourMomentum) = begin
     phi
 end
 
+# Alternative name for [0, 2π) range
+const phi02pi = phi
+
 """Used to protect against parton-level events where pt can be zero
 for some partons, giving rapidity=infinity. KtJet fails in those cases."""
 const _MaxRap = 1e5
