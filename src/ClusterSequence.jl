@@ -235,10 +235,9 @@ It iterates over the clustering history and checks the transverse momentum of
 each parent jet. If the transverse momentum is greater than or equal to `ptmin`,
 the jet is added to the array of inclusive jets.
 
-Valid return types are `LorentzVectorCyl` and the jet type of the input `clusterseq`
-(`U` - either `PseudoJet` or `EEJet` depending which algorithm was used)
-(N.B. this will evolve in the future to be any subtype of `FourMomentumBase`;
-currently unrecognised types will return `LorentzVectorCyl`).
+Valid return types are `LorentzVector` `LorentzVectorCyl` or the jet type of the
+input `clusterseq` (`U` - either `PseudoJet` or `EEJet` depending which
+algorithm was used).
 
 # Example
 ```julia
@@ -246,7 +245,7 @@ inclusive_jets(clusterseq; ptmin = 10.0)
 ```
 """
 function inclusive_jets(clusterseq::ClusterSequence{U},
-                        ::Type{T} = LorentzVectorCyl{Float64};
+                        ::Type{T} = LorentzVector{Float64};
                         ptmin = 0.0) where {T, U}
     pt2min = ptmin * ptmin
     jets_local = T[]
@@ -263,9 +262,12 @@ function inclusive_jets(clusterseq::ClusterSequence{U},
             @debug "Added inclusive jet index $iparent_jet"
             if T == U
                 push!(jets_local, jet)
+            elseif T <: LorentzVectorCyl
+                push!(jets_local, lorentzvector_cyl(jet))
+            elseif T <: LorentzVector
+                push!(jets_local, lorentzvector(jet))
             else
-                push!(jets_local,
-                      LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
+                error("Unsupported return type $T for inclusive jets")
             end
         end
     end
@@ -273,7 +275,7 @@ function inclusive_jets(clusterseq::ClusterSequence{U},
 end
 
 """
-    exclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVectorCyl{Float64}; dcut = nothing, njets = nothing) where {T, U}
+    exclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVector{Float64}; dcut = nothing, njets = nothing) where {T, U}
 
 Return all exclusive jets of a ClusterSequence, with either a specific number of
 jets or a cut on the maximum distance parameter.
@@ -281,7 +283,8 @@ jets or a cut on the maximum distance parameter.
 # Arguments
 - `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the
   clustering history and jets.
-- `::Type{T} = LorentzVectorCyl{Float64}`: The return type used for the selected jets.
+- `::Type{T} = LorentzVectorCyl{Float64}`: The return type used for the selected
+  jets.
 - `dcut::Union{Nothing, Real}`: The distance parameter used to define the
   exclusive jets. If `dcut` is provided, the number of exclusive jets will be
   calculated based on this parameter.
@@ -294,10 +297,9 @@ jets or a cut on the maximum distance parameter.
 # Returns
 - An array of `T` objects representing the exclusive jets.
 
-Valid return types are `LorentzVectorCyl` and the jet type of the input `clusterseq`
-(`U` - either `PseudoJet` or `EEJet` depending which algorithm was used)
-(N.B. this will evolve in the future to be any subtype of `FourMomentumBase`;
-currently unrecognised types will return `LorentzVectorCyl`).
+Valid return types are `LorentzVector` `LorentzVectorCyl` or the jet type of the
+input `clusterseq` (`U` - either `PseudoJet` or `EEJet` depending which
+algorithm was used).
 
 # Exceptions
 - `ArgumentError`: If neither `dcut` nor `njets` is provided.
@@ -313,7 +315,7 @@ exclusive_jets(clusterseq, PseudoJet, njets = 3)
 ```
 """
 function exclusive_jets(clusterseq::ClusterSequence{U},
-                        ::Type{T} = LorentzVectorCyl{Float64};
+                        ::Type{T} = LorentzVector{Float64};
                         dcut = nothing, njets = nothing,) where {T, U}
     if isnothing(dcut) && isnothing(njets)
         throw(ArgumentError("Must pass either a dcut or an njets value"))
@@ -355,14 +357,16 @@ function exclusive_jets(clusterseq::ClusterSequence{U},
                 jet = clusterseq.jets[clusterseq.history[parent].jetp_index]
                 if T == U
                     push!(excl_jets, jet)
+                elseif T <: LorentzVectorCyl
+                    push!(excl_jets, lorentzvector_cyl(jet))
+                elseif T <: LorentzVector
+                    push!(excl_jets, lorentzvector(jet))
                 else
-                    push!(excl_jets,
-                          LorentzVectorCyl(pt(jet), rapidity(jet), phi(jet), mass(jet)))
+                    error("Unsupported return type $T for inclusive jets")
                 end
             end
         end
     end
-
     excl_jets
 end
 
