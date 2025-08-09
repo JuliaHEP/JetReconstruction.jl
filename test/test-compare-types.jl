@@ -49,9 +49,7 @@ function do_test_compare_types(strategy::RecoStrategy.Strategy;
                 @test size(event.jets) == size(event_lv.jets)
                 # Test each jet in turn
                 for (jet, jet_lv) in zip(event.jets, event_lv.jets)
-                    @test jet.rap≈jet_lv.rap atol=1e-7
-                    @test jet.phi≈jet_lv.phi atol=1e-7
-                    @test jet.pt≈jet_lv.pt rtol=1e-6
+                    @test jet == jet_lv
                 end
             end
         end
