@@ -28,6 +28,9 @@ function main()
     # Check jet constituents
     include("test-constituents.jl")
 
+    # Check jet selectors to different jet types
+    include("test-jet-selectors.jl")
+
     # Suppress these tests for now, as the examples Project.toml is rather heavy
     # because of the GLMakie dependency, plus on a CI there is no GL subsystem,
     # so things fail. The examples should be restructured to have a cleaner set
