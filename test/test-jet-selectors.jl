@@ -3,7 +3,6 @@
 
 include("common.jl")
 
-
 """
     test_jet_equality(ref, test)
 
@@ -25,29 +24,30 @@ function test_jet_equality(ref, test)
     nothing
 end
 
-
 @testset "Jet selections to types" begin
-    pp_event = first(JetReconstruction.read_final_state_particles(events_file_pp; maxevents=1))
-    ee_event = first(JetReconstruction.read_final_state_particles(events_file_ee; maxevents=1))
+    pp_event = first(JetReconstruction.read_final_state_particles(events_file_pp;
+                                                                  maxevents = 1))
+    ee_event = first(JetReconstruction.read_final_state_particles(events_file_ee;
+                                                                  maxevents = 1))
 
-    pp_cs = jet_reconstruct(pp_event; algorithm=JetAlgorithm.Kt)
-    ee_cs = jet_reconstruct(ee_event; algorithm=JetAlgorithm.Durham)
+    pp_cs = jet_reconstruct(pp_event; algorithm = JetAlgorithm.Kt)
+    ee_cs = jet_reconstruct(ee_event; algorithm = JetAlgorithm.Durham)
 
-    pp_ref_jets = inclusive_jets(pp_cs, PseudoJet; ptmin=10.0)
+    pp_ref_jets = inclusive_jets(pp_cs, PseudoJet; ptmin = 10.0)
     for T in (LorentzVectorCyl, LorentzVector)
-        test_jet_equality(pp_ref_jets, inclusive_jets(pp_cs, T; ptmin=10.0))
+        test_jet_equality(pp_ref_jets, inclusive_jets(pp_cs, T; ptmin = 10.0))
     end
 
-    ee_ref_jets = exclusive_jets(ee_cs, EEJet; njets=2)
+    ee_ref_jets = exclusive_jets(ee_cs, EEJet; njets = 2)
     for T in (LorentzVectorCyl, LorentzVector)
-        test_jet_equality(ee_ref_jets, exclusive_jets(ee_cs, T; njets=2))
+        test_jet_equality(ee_ref_jets, exclusive_jets(ee_cs, T; njets = 2))
     end
 
     # Also check that for an unknown type we throw
     @test_throws ErrorException begin
-        inclusive_jets(pp_cs, Float64; ptmin=10.0)
+        inclusive_jets(pp_cs, Float64; ptmin = 10.0)
     end
-        @test_throws ErrorException begin
-        exclusive_jets(ee_cs, Float64; njets=2)
+    @test_throws ErrorException begin
+        exclusive_jets(ee_cs, Float64; njets = 2)
     end
 end
