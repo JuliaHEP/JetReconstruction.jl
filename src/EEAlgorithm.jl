@@ -37,11 +37,11 @@ Calculate the Valencia distance between two jets `i` and `j` as
 # Returns
 - `Float64`: The Valencia distance between `i` and `j`.
 """
-@inline function valencia_distance(eereco, i, j, R)
+Base.@propagate_inbounds function valencia_distance(eereco, i, j, R)
     angular_dist = angular_distance(eereco, i, j)
     # Valencia dij : min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos θ) / R²
     # Note that β plays the role of p in other algorithms, so E2p can be used.
-    @inbounds min(eereco[i].E2p, eereco[j].E2p) * 2.0 * angular_dist / (R * R)
+    min(eereco[i].E2p, eereco[j].E2p) * 2 * angular_dist / (R * R)
 end
 
 """
