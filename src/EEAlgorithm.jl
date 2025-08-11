@@ -377,7 +377,9 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
     end
 
     # Now call the actual reconstruction method, tuned for our internal EDM
-    _ee_genkt_algorithm!(recombination_particles, algorithm, p, R, recombine, γ)
+    _ee_genkt_algorithm!(particles = recombination_particles, p = p, R = R,
+                        algorithm = algorithm,
+                        recombine = recombine, γ = γ)
 end
 
 """
