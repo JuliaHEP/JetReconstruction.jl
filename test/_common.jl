@@ -58,14 +58,18 @@ struct ComparisonTest
 end
 
 """Constructor where there is no selector_name given"""
-function ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R, selector)
+function ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R,
+                        selector)
     selector_name = ""
-    ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R, selector, selector_name, addjets, nothing)
+    ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R, selector,
+                   selector_name, addjets, nothing)
 end
 
 """Constructor with no recombine or preprocess specified"""
-function ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R, selector, selector_name)
-    ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R, selector, selector_name, addjets, nothing)
+function ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R,
+                        selector, selector_name)
+    ComparisonTest(events_file, fastjet_outputs, algorithm, strategy, power, R, selector,
+                   selector_name, addjets, nothing)
 end
 
 """
@@ -87,10 +91,11 @@ struct ComparisonTestValencia
     preprocess::Any
 end
 
-function ComparisonTestValencia(events_file, fastjet_outputs, algorithm, strategy, power, R, γ, selector, selector_name)
-    ComparisonTestValencia(events_file, fastjet_outputs, algorithm, strategy, power, R, γ, selector, selector_name, addjets, nothing)
+function ComparisonTestValencia(events_file, fastjet_outputs, algorithm, strategy, power, R,
+                                γ, selector, selector_name)
+    ComparisonTestValencia(events_file, fastjet_outputs, algorithm, strategy, power, R, γ,
+                           selector, selector_name, addjets, nothing)
 end
-
 
 """Read JSON file with fastjet jets in it"""
 function read_fastjet_outputs(fname)
@@ -129,7 +134,8 @@ function run_reco_test(test::ComparisonTest; testname = nothing)
     for (ievent, event) in enumerate(events)
         if test.algorithm == JetAlgorithm.Valencia
             # For VLC: pass both beta (power) and γ
-            cluster_seq = JetReconstruction.jet_reconstruct(event; R = test.R, p = test.power,
+            cluster_seq = JetReconstruction.jet_reconstruct(event; R = test.R,
+                                                            p = test.power,
                                                             γ = getfield(test, :γ),
                                                             algorithm = test.algorithm,
                                                             strategy = test.strategy,
@@ -137,7 +143,8 @@ function run_reco_test(test::ComparisonTest; testname = nothing)
                                                             preprocess = test.preprocess)
         else
             # All other algorithms
-            cluster_seq = JetReconstruction.jet_reconstruct(event; R = test.R, p = test.power,
+            cluster_seq = JetReconstruction.jet_reconstruct(event; R = test.R,
+                                                            p = test.power,
                                                             algorithm = test.algorithm,
                                                             strategy = test.strategy,
                                                             recombine = test.recombine,
@@ -244,9 +251,9 @@ function run_reco_test(test::ComparisonTestValencia; testname = nothing)
                     phi_ref = rjet["phi"]
                     pt_ref = rjet["pt"]
                     normalised_phi_ref = phi_ref < 0.0 ? phi_ref + 2π : phi_ref
-                    rap_test = isapprox(jet.rap, rap_ref; atol=2e-1)
-                    phi_test = isapprox(norm_phi, normalised_phi_ref; atol=2e-1)
-                    pt_test = isapprox(jet.pt, pt_ref; rtol=2e0)
+                    rap_test = isapprox(jet.rap, rap_ref; atol = 2e-1)
+                    phi_test = isapprox(norm_phi, normalised_phi_ref; atol = 2e-1)
+                    pt_test = isapprox(jet.pt, pt_ref; rtol = 2e0)
                     if !rap_test || !phi_test || !pt_test
                         println("Jet mismatch in Event $(ievt), Jet $(ijet):")
                         println("  Failing Jet: pt=$(jet.pt), rap=$(jet.rap), phi=$(norm_phi)")
