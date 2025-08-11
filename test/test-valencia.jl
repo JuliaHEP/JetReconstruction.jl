@@ -189,24 +189,7 @@ end
                                             algorithm = JetAlgorithm.Valencia, p = 0.8,
                                             γ = 0.8, R = 1.2)
 
-            # Debug Event 13 specifically
-            if evt_idx == 13
-                @info "=== EVENT 13 DEBUG ==="
-                inclusive_20gev = inclusive_jets(clusterseq, ptmin = 20.0)
-                inclusive_ref_data = inclusive_ref_all[evt_idx]["jets"]
-
-                @info "Reference jets:"
-                for (i, ref_jet) in enumerate(inclusive_ref_data)
-                    @info "  Jet $i: pT=$(ref_jet["pt"]), rap=$(ref_jet["rap"])"
-                end
-
-                @info "Julia jets:"
-                for (i, julia_jet) in enumerate(inclusive_20gev)
-                    jet_pj = PseudoJet(px(julia_jet), py(julia_jet), pz(julia_jet),
-                                       energy(julia_jet))
-                    @info "  Jet $i: pT=$(pt(jet_pj)), rap=$(rapidity(jet_pj))"
-                end
-
+                                            
                 @info "Matching results:"
                 matched_pairs = match_jets(inclusive_ref_data, inclusive_20gev;
                                            pt_tolerance = 0.5, rap_tolerance = 2.0)
