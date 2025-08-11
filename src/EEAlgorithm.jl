@@ -322,22 +322,11 @@ Run an e+e- reconstruction algorithm on a set of initial particles.
 - `particles::AbstractVector{T}`: A vector of particles to be clustered.
 - `algorithm::JetAlgorithm.Algorithm`: The jet algorithm to use.
 - `p::Union{Real, Nothing} = nothing`: The power parameter for the algorithm.
-<<<<<<< HEAD
-<<<<<<< HEAD
-=======
->>>>>>> 9589f7e (Starting cleanup)
   Must be specified for EEKt algorithm. 
   For Valencia algorithm, this corresponds to the β parameter.
   Other algorithms will ignore this value.
 - `R = 4.0`: The jet radius parameter. Not required / ignored for the Durham
   algorithm.
-<<<<<<< HEAD
-=======
-  This is not required for the `Durham` algorithm, but must be specified for the `EEKt` algorithm.
-- `R = 4.0`: The jet radius parameter. Not required and ignored for the `Durham` algorithm. For Valencia algorithm, this is the β parameter.
->>>>>>> 3f4c52a (Initial VLC implementation)
-=======
->>>>>>> 9589f7e (Starting cleanup)
 - `recombine`: The recombination scheme to use.
 - `preprocess`: Preprocessing function for input particles.
 - `γ::Real = 1.0`: The angular exponent parameter for Valencia algorithm. Ignored for other algorithms.
@@ -349,7 +338,7 @@ Run an e+e- reconstruction algorithm on a set of initial particles.
 This is the public interface to the e+e- jet clustering algorithm. The function
 will check for consistency between the algorithm and the power parameter as
 needed. It will then prepare the internal EDM particles for the clustering
-itself, and call the actual reconstruction method `_ee_genkt_algorithm!`.
+itself, and call the actual reconstruction method `_ee_genkt_algorithm`.
 
 If the algorithm is Durham, `R` is nominally set to 4.
 If the algorithm is EEkt, power `p` must be specified.
@@ -357,29 +346,12 @@ If the algorithm is Valencia, both `p` (β) and `γ` should be specified.
 """
 function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
                             p::Union{Real, Nothing} = nothing, R = 4.0, recombine = addjets,
-<<<<<<< HEAD
-<<<<<<< HEAD
-<<<<<<< HEAD
-                            preprocess = nothing, γ::Real = 1.0,
-                            β::Union{Real, Nothing} = nothing) where {T}
-=======
                             preprocess = nothing, γ::Real = 1.0, β::Union{Real, Nothing} = nothing) where {T}
->>>>>>> 4d57624 (Mysteries solved? Had an issue with parameters ...)
-=======
-                            preprocess = nothing, γ::Real = 1.0,
-                            β::Union{Real, Nothing} = nothing) where {T}
->>>>>>> ce0ed9b (Running julia formatter)
 
     # For Valencia, if β is provided, overwrite p
     if algorithm == JetAlgorithm.Valencia && β !== nothing
         p = β
     end
-<<<<<<< HEAD
-=======
-                            preprocess = nothing, γ::Real = 1.0) where {T}
->>>>>>> 3f4c52a (Initial VLC implementation)
-=======
->>>>>>> 4d57624 (Mysteries solved? Had an issue with parameters ...)
 
     # Check for consistency algorithm power
     p = get_algorithm_power(p = p, algorithm = algorithm)
@@ -392,18 +364,6 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
     # For the Durham algorithm, p=1 and R is not used, but nominally set to 4
     if algorithm == JetAlgorithm.Durham
         R = 4.0
-<<<<<<< HEAD
-    elseif algorithm == JetAlgorithm.Valencia
-<<<<<<< HEAD
-        # For Valencia algorithm, R is not used, but nominally set to 4
-        R = 4.0
-=======
-        # For Valencia algorithm, p corresponds to R parameter in FastJet
-        # Keep R as passed from the p parameter, following FastJet implementation
-        R = p
->>>>>>> 9589f7e (Starting cleanup)
-=======
->>>>>>> 4d57624 (Mysteries solved? Had an issue with parameters ...)
     end
 
     if isnothing(preprocess)
@@ -428,10 +388,11 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
         sizehint!(recombination_particles, length(particles) * 2)
         for (i, particle) in enumerate(particles)
             push!(recombination_particles,
-                  preprocess(particle, EEJet; cluster_hist_index = i))
+                  preprocess(particle; cluster_hist_index = i, jet_type = EEJet))
         end
     end
 
+    # Now call the actual reconstruction method, tuned for our internal EDM
     _ee_genkt_algorithm(particles = recombination_particles, p = p, R = R,
                         algorithm = algorithm,
                         recombine = recombine, γ = γ)
@@ -446,8 +407,7 @@ This function is the actual implementation of the e+e- jet clustering algorithm.
 """
 function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
                              algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
-                             recombine = addjets, γ::Real = 1.0,
-                             beta::Union{Real, Nothing} = nothing)
+                             recombine = addjets, γ::Real = 1.0, beta::Union{Real, Nothing} = nothing)
     # Bounds
     N::Int = length(particles)
 
@@ -475,7 +435,7 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
     # jet information and populate it accordingly
     # We need N slots for this array
     eereco = StructArray{EERecoJet}(undef, N)
-
+    
     fill_reco_array!(eereco, particles, R2, p)
 
     # Setup the initial history and get the total energy
