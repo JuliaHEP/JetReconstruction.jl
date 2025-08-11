@@ -92,10 +92,10 @@ function jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algo
 
     # Now call the chosen algorithm, passing through the other parameters
     if is_ee(algorithm)
-        alg(particles; p = p, algorithm = algorithm, R = R, recombine = recombine,
-            preprocess = preprocess, γ = γ)
+        alg(particles; p, algorithm, R, recombine,
+            preprocess, γ)
     else
-        alg(particles; p = p, algorithm = algorithm, R = R, recombine = recombine,
-            preprocess = preprocess)
+        alg(particles; p, algorithm, R, recombine,
+            preprocess)
     end
 end
