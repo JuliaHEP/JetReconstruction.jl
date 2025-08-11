@@ -222,7 +222,7 @@ function update_nn_cross!(eereco, i, N, algorithm, dij_factor, β = 1.0, γ = 1.
         end
     end
     if algorithm == JetAlgorithm.Valencia
-        eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, R)
+        eereco.dijdist[i] = @inbounds valencia_distance(eereco, i, eereco[i].nni, R)
     else
         eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, R)
     end
