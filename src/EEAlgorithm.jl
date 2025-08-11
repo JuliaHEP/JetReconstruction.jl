@@ -74,7 +74,8 @@ where β is the energy exponent (typically set via the algorithm parameters).
     nx = eereco[i].nx
     ny = eereco[i].ny
     sin_theta = sqrt(nx^2 + ny^2)
-    @inbounds eereco[i].E2p * sin_theta^(2γ)
+    two_gamma = 2 * γ
+    @inbounds eereco[i].E2p * sin_theta^(two_gamma)
 end
 
 """
@@ -236,23 +237,6 @@ function update_nn_cross!(eereco, i, N, algorithm, dij_factor, β = 1.0, γ = 1.
         eereco.dijdist[i] = beam_close ? valencia_beam_dist : eereco.dijdist[i]
         eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
     end
-end
-
-function ee_check_consistency(clusterseq, eereco, N)
-    # Check the consistency of the reconstruction state
-    for i in 1:N
-        if eereco[i].nni > N
-            @error "Jet $i has invalid nearest neighbour $(eereco[i].nni)"
-        end
-        for i in 1:N
-            jet = clusterseq.jets[eereco[i].index]
-            jet_hist = clusterseq.history[jet._cluster_hist_index]
-            if jet_hist.child != Invalid
-                @error "Jet $i has invalid child $(jet_hist.child)"
-            end
-        end
-    end
-    @debug "Consistency check passed at $msg"
 end
 
 function ee_check_consistency(clusterseq, eereco, N)
