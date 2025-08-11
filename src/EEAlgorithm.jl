@@ -93,10 +93,11 @@ Calculate the dij distance between two ``e^+e^-``jets.
 # Returns
 - The dij distance between `i` and `j`.
 """
-@inline function dij_dist(eereco, i, j, dij_factor, algorithm = JetAlgorithm.Durham, R = 4.0)
+@inline function dij_dist(eereco, i, j, dij_factor, algorithm = JetAlgorithm.Durham,
+                          R = 4.0)
     # Calculate the dij distance for jet i from jet j
     j == 0 && return large_dij
-    
+
     if algorithm == JetAlgorithm.Valencia
         @inbounds valencia_distance(eereco, i, j, R)
     else
@@ -328,7 +329,8 @@ If the algorithm is Valencia, both `p` (β) and `γ` should be specified.
 """
 function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
                             p::Union{Real, Nothing} = nothing, R = 4.0, recombine = addjets,
-                            preprocess = nothing, γ::Real = 1.0, β::Union{Real, Nothing} = nothing) where {T}
+                            preprocess = nothing, γ::Real = 1.0,
+                            β::Union{Real, Nothing} = nothing) where {T}
 
     # For Valencia, if β is provided, overwrite p
     if algorithm == JetAlgorithm.Valencia && β !== nothing
@@ -389,7 +391,8 @@ This function is the actual implementation of the e+e- jet clustering algorithm.
 """
 function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
                              algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
-                             recombine = addjets, γ::Real = 1.0, beta::Union{Real, Nothing} = nothing)
+                             recombine = addjets, γ::Real = 1.0,
+                             beta::Union{Real, Nothing} = nothing)
     # Bounds
     N::Int = length(particles)
 
@@ -417,7 +420,7 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
     # jet information and populate it accordingly
     # We need N slots for this array
     eereco = StructArray{EERecoJet}(undef, N)
-    
+
     fill_reco_array!(eereco, particles, R2, p)
 
     # Setup the initial history and get the total energy
