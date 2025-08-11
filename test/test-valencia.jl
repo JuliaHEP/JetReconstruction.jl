@@ -189,19 +189,23 @@ end
                                             algorithm = JetAlgorithm.Valencia, p = 0.8,
                                             γ = 0.8, R = 1.2)
 
-                                            
-                @info "Matching results:"
-                matched_pairs = match_jets(inclusive_ref_data, inclusive_20gev;
-                                           pt_tolerance = 0.5, rap_tolerance = 2.0)
-                for (ref_jet, julia_jet, ref_idx, julia_idx) in matched_pairs
-                    jet_pj = PseudoJet(px(julia_jet), py(julia_jet), pz(julia_jet),
-                                       energy(julia_jet))
-                    our_pt = pt(jet_pj)
-                    our_rap = rapidity(jet_pj)
-                    pt_diff = abs(our_pt - ref_jet["pt"])
-                    rap_diff = abs(our_rap - ref_jet["rap"])
-                    @info "  Ref $ref_idx -> Julia $julia_idx: pT_diff=$pt_diff, rap_diff=$rap_diff"
-                end
+            # Inclusive jets (pt > 20 GeV) with jet matching
+            inclusive_20gev = inclusive_jets(clusterseq, ptmin = 20.0)
+            inclusive_ref_data = inclusive_ref_all[evt_idx]["jets"]
+            @info "Event $evt_idx: Inclusive jets (pT > 20 GeV): found $(length(inclusive_20gev)), reference $(length(inclusive_ref_data))"
+
+            # Verbose matching output (moved after variables are defined)
+            @info "Matching results:"
+            matched_pairs_verbose = match_jets(inclusive_ref_data, inclusive_20gev;
+                                              pt_tolerance = 0.5, rap_tolerance = 2.0)
+            for (ref_jet, julia_jet, ref_idx, julia_idx) in matched_pairs_verbose
+                jet_pj = PseudoJet(px(julia_jet), py(julia_jet), pz(julia_jet),
+                                   energy(julia_jet))
+                our_pt = pt(jet_pj)
+                our_rap = rapidity(jet_pj)
+                pt_diff = abs(our_pt - ref_jet["pt"])
+                rap_diff = abs(our_rap - ref_jet["rap"])
+                @info "  Ref $ref_idx -> Julia $julia_idx: pT_diff=$pt_diff, rap_diff=$rap_diff"
             end
 
             # Inclusive jets (pt > 20 GeV) with jet matching
