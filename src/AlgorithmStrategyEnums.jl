@@ -111,7 +111,7 @@ Check if the algorithm is a e+e- reconstruction algorithm.
 `true` if the algorithm is a e+e- reconstruction algorithm, `false` otherwise.
 """
 function is_ee(algorithm::JetAlgorithm.Algorithm)
-    return algorithm in [JetAlgorithm.EEKt, JetAlgorithm.Durham, JetAlgorithm.Valencia]
+    return algorithm in (JetAlgorithm.EEKt, JetAlgorithm.Durham, JetAlgorithm.Valencia)
 end
 
 """
