@@ -45,36 +45,27 @@ Base.@propagate_inbounds function valencia_distance(eereco, i, j, R)
 end
 
 """
-    valencia_beam_distance(eereco, i, γ) -> Float64
+    valencia_beam_distance(eereco, i, γ, β) -> Float64
 
-Calculate the Valencia beam distance for jet `i` using the formula
-``E_i^{2β} * sin(θ_i)^{2γ}``, where `sin(θ_i) = pt / sqrt(pt^2 + pz^2)`.
-This matches the FastJet contrib::ValenciaPlugin implementation.
+Calculate the Valencia beam distance for jet `i` using the FastJet ValenciaPlugin
+definition: ``d_iB = E_i^{2β} * (sin θ_i)^{2γ}``, where ``cos θ_i = nz``
+for unit direction cosines. Since ``sin^2 θ = 1 - nz^2``, we implement
+``d_iB = E_i^{2β} * (1 - nz^2)^γ``.
 
 # Arguments
 - `eereco`: The array of `EERecoJet` objects.
 - `i`: The jet index.
 - `γ`: The angular exponent parameter used in the Valencia beam distance.
+- `β`: The energy exponent (same as `p` in our implementation).
 
 # Returns
 - `Float64`: The Valencia beam distance for jet `i`.
-
-# Details
-The Valencia beam distance is used in the Valencia jet algorithm for e⁺e⁻ collisions.
-It generalizes the beam distance by including an angular exponent γ, allowing for
-flexible jet finding. The formula is:
-
-    d_beam = E_i^{2β} * [pt / sqrt(pt^2 + pz^2)]^{2γ}
-
-where β is the energy exponent (typically set via the algorithm parameters).
 """
 @inline function valencia_beam_distance(eereco, i, γ, β)
-    # Since nx, ny, nz are normalized direction vectors (px/E, py/E, pz/E),
-    # sin(θ) = pt/sqrt(pt^2 + pz^2) = sqrt(nx^2 + ny^2)
-    nx = eereco[i].nx
-    ny = eereco[i].ny
-    sin_theta = sqrt(nx^2 + ny^2)
-    @inbounds eereco[i].E2p * sin_theta^(2γ)
+    nz = @inbounds eereco[i].nz
+    # sin^2(theta) = 1 - nz^2; beam distance independent of R
+    sin2 = 1 - nz * nz
+    @inbounds eereco[i].E2p * sin2^γ
 end
 
 """
@@ -108,24 +99,27 @@ end
 function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ = 1.0, R = 4.0)
     # Get the initial nearest neighbours for each jet
     N = length(eereco)
-    # this_dist_vector = Vector{Float64}(undef, N)
-    # Nearest neighbour geometric distance
+    # For Valencia, nearest-neighbour must be chosen on the full dij metric (FastJet NNH behaviour)
+    if algorithm == JetAlgorithm.Valencia
+        @inbounds for i in 1:N
+            eereco.nndist[i] = Inf
+            eereco.nni[i] = i
+        end
+    end
+    # Nearest neighbour search
     @inbounds for i in 1:N
-        # TODO: Replace the 'j' loop with a vectorised operation over the appropriate array elements?
-        # this_dist_vector .= 1.0 .- eereco.nx[i:N] .* eereco[i + 1:end].nx .-
-        #     eereco[i].ny .* eereco[i + 1:end].ny .- eereco[i].nz .* eereco[i + 1:end].nz
-        # The problem here will be avoiding allocations for the array outputs, which would easily
-        # kill performance
         @inbounds for j in (i + 1):N
-            # Always use angular distance for nearest neighbor search
-            this_nndist = angular_distance(eereco, i, j)
+            # Metric used to pick the nearest neighbour
+            this_metric = algorithm == JetAlgorithm.Valencia ?
+                          valencia_distance(eereco, i, j, R) :
+                          angular_distance(eereco, i, j)
 
             # Using these ternary operators is faster than the if-else block
-            better_nndist_i = this_nndist < eereco[i].nndist
-            eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
+            better_nndist_i = this_metric < eereco[i].nndist
+            eereco.nndist[i] = better_nndist_i ? this_metric : eereco.nndist[i]
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
-            better_nndist_j = this_nndist < eereco[j].nndist
-            eereco.nndist[j] = better_nndist_j ? this_nndist : eereco.nndist[j]
+            better_nndist_j = this_metric < eereco[j].nndist
+            eereco.nndist[j] = better_nndist_j ? this_metric : eereco.nndist[j]
             eereco.nni[j] = better_nndist_j ? i : eereco.nni[j]
         end
     end
@@ -157,14 +151,16 @@ end
 
 # Update the nearest neighbour for jet i, w.r.t. all other active jets
 function update_nn_no_cross!(eereco, i, N, algorithm, dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    eereco.nndist[i] = large_distance
+    eereco.nndist[i] = algorithm == JetAlgorithm.Valencia ? Inf : large_distance
     eereco.nni[i] = i
     @inbounds for j in 1:N
         if j != i
-            # Always use angular distance for nearest neighbor search
-            this_nndist = angular_distance(eereco, i, j)
-            better_nndist_i = this_nndist < eereco[i].nndist
-            eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
+            # Metric for nearest neighbour selection
+            this_metric = algorithm == JetAlgorithm.Valencia ?
+                          valencia_distance(eereco, i, j, R) :
+                          angular_distance(eereco, i, j)
+            better_nndist_i = this_metric < eereco[i].nndist
+            eereco.nndist[i] = better_nndist_i ? this_metric : eereco.nndist[i]
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
         end
     end
@@ -188,17 +184,19 @@ end
 function update_nn_cross!(eereco, i, N, algorithm, dij_factor, β = 1.0, γ = 1.0, R = 4.0)
     # Update the nearest neighbour for jet i, w.r.t. all other active jets
     # also doing the cross check for the other jet
-    eereco.nndist[i] = large_distance
+    eereco.nndist[i] = algorithm == JetAlgorithm.Valencia ? Inf : large_distance
     eereco.nni[i] = i
     @inbounds for j in 1:N
         if j != i
-            # Always use angular distance for nearest neighbor search  
-            this_nndist = angular_distance(eereco, i, j)
-            better_nndist_i = this_nndist < eereco[i].nndist
-            eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
+            # Metric for nearest neighbour selection  
+            this_metric = algorithm == JetAlgorithm.Valencia ?
+                          valencia_distance(eereco, i, j, R) :
+                          angular_distance(eereco, i, j)
+            better_nndist_i = this_metric < eereco[i].nndist
+            eereco.nndist[i] = better_nndist_i ? this_metric : eereco.nndist[i]
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
-            if this_nndist < eereco[j].nndist
-                eereco.nndist[j] = this_nndist
+            if this_metric < eereco[j].nndist
+                eereco.nndist[j] = this_metric
                 eereco.nni[j] = i
                 # j will not be revisited, so update metric distance here
                 if algorithm == JetAlgorithm.Valencia
