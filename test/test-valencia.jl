@@ -7,12 +7,7 @@ Validates clustering results and cluster sequence against FastJet C++ reference 
 using jet matching to handle numerical precision differences.
 """
 
-# Include common test utilities
 include("common.jl")
-import JetReconstruction: pt, rapidity, PseudoJet
-
-using Test
-using JetReconstruction
 
 # Reference outputs for R=0.8, beta=1.2, gamma=1.2
 valencia_inclusive = ComparisonTestValencia(events_file_ee,
@@ -69,3 +64,34 @@ valencia_exclusive_d500_b1g1 = ComparisonTestValencia(events_file_ee,
                                                       cs -> exclusive_jets(cs; dcut = 500.0),
                                                       "exclusive dcut=500 beta=1.0 gamma=1.0 R=1.0")
 run_reco_test(valencia_exclusive_d500_b1g1)
+
+# Bring required types/functions into scope for targeted unit tests
+using JetReconstruction: EERecoJet, PseudoJet, EEJet, ee_genkt_algorithm, dij_dist,
+                         valencia_distance
+
+# Test dij_dist for Valencia algorithm
+@testset "dij_dist Valencia" begin
+    # Minimal eereco with two reco jets; only nx,ny,nz,E2p are used by valencia_distance
+    eereco = EERecoJet[EERecoJet(1, 0, Inf, Inf, 1.0, 0.0, 0.0, 1.0),
+                       EERecoJet(2, 0, Inf, Inf, 0.0, 1.0, 0.0, 2.0)]
+    dij = dij_dist(eereco, 1, 2, 1.0, JetAlgorithm.Valencia, 0.8)
+    @test dij ≈ valencia_distance(eereco, 1, 2, 0.8)
+end
+
+# Test ee_genkt_algorithm for Valencia algorithm (covers β override and dij_factor selection)
+@testset "ee_genkt_algorithm Valencia" begin
+    particles = [PseudoJet(1.0, 0.0, 0.0, 1.0)]
+    cs = ee_genkt_algorithm(particles; algorithm = JetAlgorithm.Valencia, β = 1.2, γ = 1.2,
+                            R = 0.8)
+    @test cs isa JetReconstruction.ClusterSequence
+end
+
+# Test internal _ee_genkt_algorithm entry (touches StructArray init path too)
+@testset "_ee_genkt_algorithm Valencia dij_factor" begin
+    # Ensure cluster_hist_index(i) == i for initial jets
+    jets = [EEJet(1.0, 0.0, 0.0, 1.0; cluster_hist_index = 1)]
+    cs = JetReconstruction._ee_genkt_algorithm(particles = jets,
+                                               algorithm = JetAlgorithm.Valencia, p = 1.2,
+                                               R = 0.8, γ = 1.2)
+    @test cs isa JetReconstruction.ClusterSequence
+end
