@@ -251,9 +251,9 @@ function run_reco_test(test::ComparisonTestValencia; testname = nothing)
                     phi_ref = rjet["phi"]
                     pt_ref = rjet["pt"]
                     normalised_phi_ref = phi_ref < 0.0 ? phi_ref + 2π : phi_ref
-                    rap_test = isapprox(jet.rap, rap_ref; atol=1e-4)
-                    phi_test = isapprox(norm_phi, normalised_phi_ref;atol=1e-4)
-                    pt_test = isapprox(jet.pt, pt_ref; rtol=1e-5)
+                    rap_test = isapprox(jet.rap, rap_ref; atol = 1e-4)
+                    phi_test = isapprox(norm_phi, normalised_phi_ref; atol = 1e-4)
+                    pt_test = isapprox(jet.pt, pt_ref; rtol = 1e-5)
                     if !rap_test || !phi_test || !pt_test
                         println("Jet mismatch in Event $(ievt), Jet $(ijet):")
                         println("  Failing Jet: pt=$(jet.pt), rap=$(jet.rap), phi=$(norm_phi)")
