@@ -65,10 +65,6 @@ valencia_exclusive_d500_b1g1 = ComparisonTestValencia(events_file_ee,
                                                       "exclusive dcut=500 beta=1.0 gamma=1.0 R=1.0")
 run_reco_test(valencia_exclusive_d500_b1g1)
 
-# Bring required types/functions into scope for targeted unit tests
-using JetReconstruction: EERecoJet, PseudoJet, EEJet, ee_genkt_algorithm, dij_dist,
-                         valencia_distance
-
 # Test dij_dist for Valencia algorithm
 @testset "dij_dist Valencia" begin
     # Minimal eereco with two reco jets; only nx,ny,nz,E2p are used by valencia_distance
@@ -76,6 +72,17 @@ using JetReconstruction: EERecoJet, PseudoJet, EEJet, ee_genkt_algorithm, dij_di
                        EERecoJet(2, 0, Inf, Inf, 0.0, 1.0, 0.0, 2.0)]
     dij = dij_dist(eereco, 1, 2, 1.0, JetAlgorithm.Valencia, 0.8)
     @test dij ≈ valencia_distance(eereco, 1, 2, 0.8)
+end
+
+# Valencia distance wrapper coverage
+@testset "Valencia distance wrappers" begin
+    # Minimal eereco with two reco jets and identical directions so angle=0
+    eereco = EERecoJet[EERecoJet(1, 0, Inf, Inf, 1.0, 0.0, 0.0, 9.0),
+                       EERecoJet(2, 0, Inf, Inf, 1.0, 0.0, 0.0, 4.0)]
+    R = 2.0
+    invR2 = inv(R * R)
+    @test valencia_distance_inv(eereco, 1, 2, invR2) == 0.0
+    @test valencia_distance(eereco, 1, 2, R) == 0.0
 end
 
 # Test ee_genkt_algorithm for Valencia algorithm (covers β override and dij_factor selection)

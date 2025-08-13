@@ -10,6 +10,11 @@ using Logging
 using LorentzVectorHEP
 using JSON
 using Test
+using StructArrays
+
+using JetReconstruction: EERecoJet,
+                         fill_reco_array!, insert_new_jet!, copy_to_slot!,
+                         dij_dist, valencia_distance, valencia_distance_inv
 
 logger = ConsoleLogger(stdout, Logging.Warn)
 global_logger(logger)
