@@ -17,9 +17,9 @@ Calculate the angular distance between two jets `i` and `j` using the formula
 - `Float64`: The angular distance between `i` and `j`, which is ``1 -
   cos\theta``.
 """
-@inline function angular_distance(eereco, i, j)
-    @inbounds @muladd 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
-                      eereco[i].nz * eereco[j].nz
+Base.@propagate_inbounds @inline function angular_distance(eereco, i, j)
+    @muladd 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
+            eereco[i].nz * eereco[j].nz
 end
 
 """
@@ -37,7 +37,7 @@ Calculate the Valencia distance between two jets `i` and `j` as
 # Returns
 - `Float64`: The Valencia distance between `i` and `j`.
 """
-Base.@propagate_inbounds function valencia_distance(eereco, i, j, R)
+Base.@propagate_inbounds @inline function valencia_distance(eereco, i, j, R)
     angular_dist = angular_distance(eereco, i, j)
     # Valencia dij : min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos θ) / R²
     # Note that β plays the role of p in other algorithms, so E2p can be used.
@@ -61,11 +61,12 @@ for unit direction cosines. Since ``sin^2 θ = 1 - nz^2``, we implement
 # Returns
 - `Float64`: The Valencia beam distance for jet `i`.
 """
-Base.@propagate_inbounds function valencia_beam_distance(eereco, i, γ, β)
-    nz = @inbounds eereco[i].nz
+Base.@propagate_inbounds @inline function valencia_beam_distance(eereco, i, γ, β)
+    nz = eereco[i].nz
     # sin^2(theta) = 1 - nz^2; beam distance independent of R
     sin2 = 1 - nz * nz
-    return eereco[i].E2p * sin2^γ
+    E2p = eereco[i].E2p
+    return E2p * sin2^γ
 end
 
 """
@@ -141,9 +142,9 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ = 
         end
     end
     # Nearest neighbour dij distance
-    for i in 1:N
+    @inbounds for i in 1:N
         if algorithm == JetAlgorithm.Valencia
-            eereco.dijdist[i] = @inbounds valencia_distance(eereco, i, eereco[i].nni, R)
+            eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, R)
         else
             eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, R)
         end
@@ -158,7 +159,7 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ = 
         end
     elseif algorithm == JetAlgorithm.Valencia
         @inbounds for i in 1:N
-            valencia_beam_dist = @inbounds valencia_beam_distance(eereco, i, γ, p)
+            valencia_beam_dist = valencia_beam_distance(eereco, i, γ, p)
             beam_closer = valencia_beam_dist < eereco[i].dijdist
             eereco.dijdist[i] = beam_closer ? valencia_beam_dist : eereco.dijdist[i]
             eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
@@ -182,7 +183,7 @@ function update_nn_no_cross!(eereco, i, N, algorithm, dij_factor, β = 1.0, γ =
         end
     end
     if algorithm == JetAlgorithm.Valencia
-        eereco.dijdist[i] = @inbounds valencia_distance(eereco, i, eereco[i].nni, R)
+        eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, R)
     else
         eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, R)
     end
@@ -191,7 +192,7 @@ function update_nn_no_cross!(eereco, i, N, algorithm, dij_factor, β = 1.0, γ =
         eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
         eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
     elseif algorithm == JetAlgorithm.Valencia
-        valencia_beam_dist = @inbounds valencia_beam_distance(eereco, i, γ, β)
+        valencia_beam_dist = valencia_beam_distance(eereco, i, γ, β)
         beam_close = valencia_beam_dist < eereco[i].dijdist
         eereco.dijdist[i] = beam_close ? valencia_beam_dist : eereco.dijdist[i]
         eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
