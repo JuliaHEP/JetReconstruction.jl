@@ -70,6 +70,23 @@ Base.@propagate_inbounds @inline function valencia_distance_inv_arrays(E2p, nx, 
     min(E2p[i], E2p[j]) * 2 * angular_dist * invR2
 end
 
+"""
+        valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j) -> Float64
+
+Compute the Valencia pairwise metric using a pre-multiplied energy factor.
+
+Arguments
+- `E2p_scaled::AbstractVector`: precomputed per-jet values equal to E2p * (2 * invR2).
+- `nx, ny, nz::AbstractVector`: direction cosine arrays for jets.
+- `i, j::Integer`: indices of the two jets to compare.
+
+Returns
+- `Float64`: the Valencia dij metric computed as min(E2p_scaled[i], E2p_scaled[j]) * (1 - cos θ_{ij}).
+
+Notes
+- This helper assumes `E2p_scaled` already includes the factor `2 * inv(R^2)`, so the
+    function avoids multiplying by those constants inside hot inner loops.
+"""
 # Scaled variant: accepts pre-multiplied E2p_scaled = E2p * (2 * invR2)
 Base.@propagate_inbounds @inline function valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
     angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
@@ -327,6 +344,28 @@ end
     end
 end
 
+"""
+        get_angular_nearest_neighbours_valencia_precomputed!(eereco, E2p_scaled, beam_term, p, γ, R)
+
+Initialize nearest-neighbour data for a Valencia clustering using precomputed
+per-jet derived arrays.
+
+Arguments
+- `eereco::StructArray{EERecoJet}`: the SoA of reconstruction slots to initialize.
+- `E2p_scaled::AbstractVector`: per-jet pre-multiplied energy factor (E2p * 2 * inv(R^2)).
+- `beam_term::AbstractVector`: per-jet Valencia beam-term precomputed as E2p * (1 - nz^2)^γ.
+- `p`: energy exponent (β for Valencia).
+- `γ::Real`: angular exponent used in the Valencia beam-term.
+- `R::Real`: jet radius parameter (used indirectly via E2p_scaled construction).
+
+Behavior
+- Sets `eereco.nndist`, `eereco.nni`, and `eereco.dijdist` using the provided
+    precomputed arrays. The function avoids repeated pow() and constant multiplications
+    inside the hot O(N²) initialization loop.
+
+This function is Valencia-only and intended to be called from the Valencia entrypoint
+after `E2p_scaled` and `beam_term` have been populated.
+"""
 ## Precomputed Valencia nearest-neighbour initializer using precomputed arrays
 Base.@propagate_inbounds @inline function get_angular_nearest_neighbours_valencia_precomputed!(eereco,
                                                                                               E2p_scaled::AbstractVector,
@@ -365,6 +404,29 @@ Base.@propagate_inbounds @inline function get_angular_nearest_neighbours_valenci
         eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
     end
 end
+
+"""
+        get_angular_nearest_neighbours_valencia_precomputed!(eereco, E2p_scaled, beam_term, p, γ, R)
+
+Initialize nearest-neighbour data for a Valencia clustering using precomputed
+per-jet derived arrays.
+
+Arguments
+- `eereco::StructArray{EERecoJet}`: the SoA of reconstruction slots to initialize.
+- `E2p_scaled::AbstractVector`: per-jet pre-multiplied energy factor (E2p * 2 * inv(R^2)).
+- `beam_term::AbstractVector`: per-jet Valencia beam-term precomputed as E2p * (1 - nz^2)^γ.
+- `p`: energy exponent (β for Valencia).
+- `γ::Real`: angular exponent used in the Valencia beam-term.
+- `R::Real`: jet radius parameter (used indirectly via E2p_scaled construction).
+
+Behavior
+- Sets `eereco.nndist`, `eereco.nni`, and `eereco.dijdist` using the provided
+    precomputed arrays. The function avoids repeated pow() and constant multiplications
+    inside the hot O(N²) initialization loop.
+
+This function is Valencia-only and intended to be called from the Valencia entrypoint
+after `E2p_scaled` and `beam_term` have been populated.
+"""
 
 # Forwarder to Val-specialized version
 @inline function get_angular_nearest_neighbours!(eereco,
@@ -680,6 +742,30 @@ end
     dijdist[i] = dijdist_i
 end
 
+"""
+        update_nn_no_cross_arrays_precomputed!(nndist, nni, nx, ny, nz, E2p_scaled, beam_term, dijdist, i, N, ...)
+
+Update nearest-neighbour information for slot `i` without attempting cross-updates
+using precomputed per-jet derived arrays.
+
+Arguments
+- `nndist, nni, dijdist::AbstractVector`: arrays representing current nearest-neighbour
+    distances, indices, and dij distances respectively.
+- `nx, ny, nz::AbstractVector`: direction cosine arrays.
+- `E2p_scaled::AbstractVector`: per-jet E2p pre-multiplied by 2 * inv(R^2).
+- `beam_term::AbstractVector`: precomputed beam-term per jet.
+- `i::Integer`: index of the slot to update.
+- `N::Integer`: current number of active slots.
+- additional params: `dij_factor`, `β`, `γ`, `R` (kept for compatibility/signature parity).
+
+Behavior
+- Scans other active slots to find the nearest neighbour for slot `i` using
+    `valencia_distance_inv_scaled_arrays` (avoids repeated multiplies), applies the beam-term
+    comparison using `beam_term[i]`, and writes back `nndist[i]`, `nni[i]`, and `dijdist[i]`.
+
+This is a Valencia-only optimized path intended for the hot update loops inside
+the Valencia reconstruction entrypoint.
+"""
 ## Precomputed Valencia no-cross update using E2p_scaled and beam_term
 @inline function update_nn_no_cross_arrays_precomputed!(nndist::AbstractVector, nni::AbstractVector,
                                                        nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
@@ -707,6 +793,31 @@ end
     nni[i] = nni_i
     dijdist[i] = dijdist_i
 end
+
+"""
+        update_nn_no_cross_arrays_precomputed!(nndist, nni, nx, ny, nz, E2p_scaled, beam_term, dijdist, i, N, ...)
+
+Update nearest-neighbour information for slot `i` without attempting cross-updates
+using precomputed per-jet derived arrays.
+
+Arguments
+- `nndist, nni, dijdist::AbstractVector`: arrays representing current nearest-neighbour
+    distances, indices, and dij distances respectively.
+- `nx, ny, nz::AbstractVector`: direction cosine arrays.
+- `E2p_scaled::AbstractVector`: per-jet E2p pre-multiplied by 2 * inv(R^2).
+- `beam_term::AbstractVector`: precomputed beam-term per jet.
+- `i::Integer`: index of the slot to update.
+- `N::Integer`: current number of active slots.
+- additional params: `dij_factor`, `β`, `γ`, `R` (kept for compatibility/signature parity).
+
+Behavior
+- Scans other active slots to find the nearest neighbour for slot `i` using
+    `valencia_distance_inv_scaled_arrays` (avoids repeated multiplies), applies the beam-term
+    comparison using `beam_term[i]`, and writes back `nndist[i]`, `nni[i]`, and `dijdist[i]`.
+
+This is a Valencia-only optimized path intended for the hot update loops inside
+the Valencia reconstruction entrypoint.
+"""
 
 @inline function update_nn_cross_arrays!(nndist::AbstractVector, nni::AbstractVector,
                                         nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
@@ -863,6 +974,30 @@ end
     dijdist[i] = dijdist_i
 end
 
+"""
+        update_nn_cross_arrays_precomputed!(nndist, nni, nx, ny, nz, E2p_scaled, beam_term, dijdist, i, N, ...)
+
+Perform a cross-update of nearest-neighbour information for slot `i` using
+precomputed per-jet derived arrays. This both finds the nearest neighbour for
+`i` and updates other slots `j` if `i` becomes their nearest neighbour.
+
+Arguments
+- `nndist, nni, dijdist::AbstractVector`: current nn-distances, nn-indices, dij-distances.
+- `nx, ny, nz::AbstractVector`: direction-cosine arrays.
+- `E2p_scaled::AbstractVector`: per-jet E2p scaled by 2 * inv(R^2).
+- `beam_term::AbstractVector`: per-jet Valencia beam-term.
+- `i::Integer`: index of the slot to cross-update.
+- `N::Integer`: number of active slots.
+
+Behavior
+- For each other slot `j`, computes the Valencia pair metric using the precomputed
+    scaled energies; if `i` provides a better neighbor for `j` the function updates
+    `nndist[j]`, `nni[j]`, and `dijdist[j]` (with beam-term check). Finally, it
+    computes and writes back the nearest-neighbour info for `i`.
+
+This function is Valencia-only and intended to replace the generic cross-update
+in the hot merge loop to reduce repeated arithmetic and pow() calls.
+"""
 ## Precomputed Valencia cross-update using E2p_scaled and beam_term
 @inline function update_nn_cross_arrays_precomputed!(nndist::AbstractVector, nni::AbstractVector,
                                                     nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
@@ -914,6 +1049,31 @@ end
     nni[i] = nni_i
     dijdist[i] = dijdist_i
 end
+
+"""
+        update_nn_cross_arrays_precomputed!(nndist, nni, nx, ny, nz, E2p_scaled, beam_term, dijdist, i, N, ...)
+
+Perform a cross-update of nearest-neighbour information for slot `i` using
+precomputed per-jet derived arrays. This both finds the nearest neighbour for
+`i` and updates other slots `j` if `i` becomes their nearest neighbour.
+
+Arguments
+- `nndist, nni, dijdist::AbstractVector`: current nn-distances, nn-indices, dij-distances.
+- `nx, ny, nz::AbstractVector`: direction-cosine arrays.
+- `E2p_scaled::AbstractVector`: per-jet E2p scaled by 2 * inv(R^2).
+- `beam_term::AbstractVector`: per-jet Valencia beam-term.
+- `i::Integer`: index of the slot to cross-update.
+- `N::Integer`: number of active slots.
+
+Behavior
+- For each other slot `j`, computes the Valencia pair metric using the precomputed
+    scaled energies; if `i` provides a better neighbor for `j` the function updates
+    `nndist[j]`, `nni[j]`, and `dijdist[j]` (with beam-term check). Finally, it
+    computes and writes back the nearest-neighbour info for `i`.
+
+This function is Valencia-only and intended to replace the generic cross-update
+in the hot merge loop to reduce repeated arithmetic and pow() calls.
+"""
 
 Base.@propagate_inbounds @inline function fill_reco_array!(eereco, particles, R2, p)
     @inbounds for i in eachindex(particles)
