@@ -22,6 +22,8 @@ struct EEJet <: FourMomentum
     _cluster_hist_index::Int
 end
 
+ # Compatibility constructor was moved below the EERecoJet type definition
+
 """
     EEJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
 
@@ -109,3 +111,4 @@ mutable struct EERecoJet
     nz::Float64
     E2p::Float64
 end
+ 
