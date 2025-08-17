@@ -27,123 +27,9 @@ Base.@propagate_inbounds @inline function angular_distance(eereco, i, j)
     end
 end
 
-"""
-    valencia_distance(eereco, i, j, R) -> Float64
-
-Calculate the Valencia distance between two jets `i` and `j` as
-``min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos(θ_{ij})) / R²``.
-
-# Arguments
-- `eereco`: The array of `EERecoJet` objects.
-- `i`: The first jet.
-- `j`: The second jet.
-- `R`: The jet radius parameter.
-
-# Returns
-- `Float64`: The Valencia distance between `i` and `j`.
-"""
-Base.@propagate_inbounds @inline function valencia_distance_inv(eereco, i, j, invR2)
-    if hasproperty(eereco, :nx)
-        nx = eereco.nx; ny = eereco.ny; nz = eereco.nz; E2p = eereco.E2p
-        angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
-        # Valencia dij : min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos θ) * invR2
-        min(E2p[i], E2p[j]) * 2 * angular_dist * invR2
-    else
-        # Fallback for Array-of-structs
-        angular_dist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
-        min(eereco[i].E2p, eereco[j].E2p) * 2 * angular_dist * invR2
-    end
-end
-
-Base.@propagate_inbounds @inline function valencia_distance(eereco, i, j, R)
-    return valencia_distance_inv(eereco, i, j, inv(R * R))
-end
-
-# Array-based helpers: operate directly on field vectors from StructArray to avoid
-# repeated eereco[i] indexing which can be slower.
+# Array-based angular distance helper (operates on direction-cosine arrays)
 Base.@propagate_inbounds @inline function angular_distance_arrays(nx, ny, nz, i, j)
     @muladd 1.0 - nx[i] * nx[j] - ny[i] * ny[j] - nz[i] * nz[j]
-end
-
-Base.@propagate_inbounds @inline function valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-    angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
-    min(E2p[i], E2p[j]) * 2 * angular_dist * invR2
-end
-
-"""
-        valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j) -> Float64
-
-Compute the Valencia pairwise metric using a pre-multiplied energy factor.
-
-Arguments
-- `E2p_scaled::AbstractVector`: precomputed per-jet values equal to E2p * (2 * invR2).
-- `nx, ny, nz::AbstractVector`: direction cosine arrays for jets.
-- `i, j::Integer`: indices of the two jets to compare.
-
-Returns
-- `Float64`: the Valencia dij metric computed as min(E2p_scaled[i], E2p_scaled[j]) * (1 - cos θ_{ij}).
-
-Notes
-- This helper assumes `E2p_scaled` already includes the factor `2 * inv(R^2)`, so the
-    function avoids multiplying by those constants inside hot inner loops.
-"""
-# Scaled variant: accepts pre-multiplied E2p_scaled = E2p * (2 * invR2)
-Base.@propagate_inbounds @inline function valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
-    angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
-    min(E2p_scaled[i], E2p_scaled[j]) * angular_dist
-end
-
-"""
-    valencia_beam_distance(eereco, i, γ, β) -> Float64
-
-Calculate the Valencia beam distance for jet `i` using the FastJet ValenciaPlugin
-definition: ``d_iB = E_i^{2β} * (sin θ_i)^{2γ}``, where ``cos θ_i = nz``
-for unit direction cosines. Since ``sin^2 θ = 1 - nz^2``, we implement
-``d_iB = E_i^{2β} * (1 - nz^2)^γ``.
-
-# Arguments
-- `eereco`: The array of `EERecoJet` objects.
-- `i`: The jet index.
-- `γ`: The angular exponent parameter used in the Valencia beam distance.
-- `β`: The energy exponent (same as `p` in our implementation).
-
-# Returns
-- `Float64`: The Valencia beam distance for jet `i`.
-"""
-Base.@propagate_inbounds @inline function valencia_beam_distance(eereco, i, γ, β)
-    if hasproperty(eereco, :nz)
-        nzv = eereco.nz; E2pv = eereco.E2p
-        nz_i = nzv[i]
-        sin2 = 1 - nz_i * nz_i
-        E2p = E2pv[i]
-    else
-        nz_i = eereco[i].nz
-        sin2 = 1 - nz_i * nz_i
-        E2p = eereco[i].E2p
-    end
-    # Fast-paths for common γ values to avoid pow in hot loop
-    if γ == 1.0
-        return E2p * sin2
-    elseif γ == 2.0
-        return E2p * (sin2 * sin2)
-    else
-        return E2p * sin2^γ
-    end
-end
-
-# Array-based helper for Valencia beam distance to avoid StructArray getindex in hot loops
-Base.@propagate_inbounds @inline function valencia_beam_distance_arrays(E2p, nz, i, γ, β)
-    nz_i = nz[i]
-    sin2 = 1 - nz_i * nz_i
-    E2p_i = E2p[i]
-    # Fast-paths for common γ values to avoid pow in hot loop
-    if γ == 1.0
-        return E2p_i * sin2
-    elseif γ == 2.0
-        return E2p_i * (sin2 * sin2)
-    else
-        return E2p_i * sin2^γ
-    end
 end
 
 """
@@ -176,78 +62,9 @@ end
     @inbounds min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[i].nndist
 end
 
-"""
-    dij_dist(eereco, i, j, dij_factor, ::Val{JetAlgorithm.Valencia}, R)
-
-Valencia dij distance uses the full Valencia metric, including the 2*(1-cosθ)/R² factor.
-"""
-@inline function dij_dist(eereco, i, j, dij_factor, ::Val{JetAlgorithm.Valencia}, R)
-    j == 0 && return large_dij
-    @inbounds valencia_distance(eereco, i, j, R)
-end
-
 # Fallback if a non-Algorithm token is passed
 @inline function dij_dist(eereco, i, j, dij_factor, algorithm, R = 4.0)
     throw(ArgumentError("Algorithm $algorithm not supported for dij_dist"))
-end
-
-function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ = 1.0, R = 4.0)
-    # Get the initial nearest neighbours for each jet
-    N = length(eereco)
-    # For Valencia, nearest-neighbour must be chosen on the full dij metric (FastJet NNH behaviour)
-        @inbounds for i in 1:N
-            local_nndist_i = Inf
-            local_nni_i = i
-            eereco.nndist[i] = local_nndist_i
-            eereco.nni[i] = local_nni_i
-        end
-    # Nearest neighbour search
-    @inbounds for i in 1:N
-        @inbounds for j in (i + 1):N
-            # Metric used to pick the nearest neighbour
-            if algorithm == JetAlgorithm.Valencia
-                # Use array helpers to avoid repeated StructArray getindex
-                this_metric = valencia_distance_inv_arrays(eereco.E2p, eereco.nx, eereco.ny, eereco.nz, i, j, inv(R * R))
-            else
-                this_metric = angular_distance_arrays(eereco.nx, eereco.ny, eereco.nz, i, j)
-            end
-
-            # Using these ternary operators is faster than the if-else block
-            better_nndist_i = this_metric < eereco[i].nndist
-            eereco.nndist[i] = better_nndist_i ? this_metric : eereco.nndist[i]
-            eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
-            better_nndist_j = this_metric < eereco[j].nndist
-            eereco.nndist[j] = better_nndist_j ? this_metric : eereco.nndist[j]
-            eereco.nni[j] = better_nndist_j ? i : eereco.nni[j]
-        end
-    end
-    # Nearest neighbour dij distance
-    @inbounds for i in 1:N
-        if algorithm == JetAlgorithm.Valencia
-            eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, R)
-        else
-            eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, R)
-        end
-    end
-    # For the EEKt algorithm, we need to check the beam distance as well
-    # (This is structured to only check for EEKt once)
-    if algorithm == JetAlgorithm.EEKt
-        @inbounds for i in 1:N
-            beam_closer = eereco[i].E2p < eereco[i].dijdist
-            eereco.dijdist[i] = beam_closer ? eereco[i].E2p : eereco.dijdist[i]
-            eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
-        end
-    elseif algorithm == JetAlgorithm.Valencia
-        # Use array-based helper to avoid StructArray property checks and
-        # reduce per-iteration overhead in the hot loop.
-        E2p = eereco.E2p; nz = eereco.nz
-        @inbounds for i in 1:N
-            valencia_beam_dist = valencia_beam_distance_arrays(E2p, nz, i, γ, p)
-            beam_closer = valencia_beam_dist < eereco.dijdist[i]
-            eereco.dijdist[i] = beam_closer ? valencia_beam_dist : eereco.dijdist[i]
-            eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
-        end
-    end
 end
 
 # Val-specialized nearest neighbour search (removes runtime branches in hot loops)
@@ -304,130 +121,6 @@ end
     end
 end
 
-@inline function get_angular_nearest_neighbours!(eereco, ::Val{JetAlgorithm.Valencia},
-                                                 dij_factor, p, γ = 1.0, R = 4.0)
-    # Fallback Val-specialised implementation kept for non-precomputed use.
-    # The Valencia entrypoint uses a precomputed path (see _ee_genkt_algorithm_valencia)
-    N = length(eereco)
-    E2p = eereco.E2p; nx = eereco.nx; ny = eereco.ny; nz = eereco.nz
-    nndist = eereco.nndist; nni = eereco.nni
-    invR2 = inv(R * R)
-        @inbounds for i in 1:N
-            nndist[i] = Inf
-            nni[i] = i
-    end
-    @inbounds for i in 1:N
-        local_nndist_i = nndist[i]
-        local_nni_i = nni[i]
-        @inbounds for j in (i + 1):N
-            this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-            if this_metric < local_nndist_i
-                local_nndist_i = this_metric
-                local_nni_i = j
-            end
-            if this_metric < nndist[j]
-                nndist[j] = this_metric
-                nni[j] = i
-            end
-        end
-        nndist[i] = local_nndist_i
-        nni[i] = local_nni_i
-    end
-    @inbounds for i in 1:N
-        eereco.dijdist[i] = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, nni[i], invR2)
-    end
-    @inbounds for i in 1:N
-        valencia_beam_dist = valencia_beam_distance(eereco, i, γ, p)
-        beam_closer = valencia_beam_dist < eereco[i].dijdist
-        eereco.dijdist[i] = beam_closer ? valencia_beam_dist : eereco.dijdist[i]
-        eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
-    end
-end
-
-"""
-        get_angular_nearest_neighbours_valencia_precomputed!(eereco, E2p_scaled, beam_term, p, γ, R)
-
-Initialize nearest-neighbour data for a Valencia clustering using precomputed
-per-jet derived arrays.
-
-Arguments
-- `eereco::StructArray{EERecoJet}`: the SoA of reconstruction slots to initialize.
-- `E2p_scaled::AbstractVector`: per-jet pre-multiplied energy factor (E2p * 2 * inv(R^2)).
-- `beam_term::AbstractVector`: per-jet Valencia beam-term precomputed as E2p * (1 - nz^2)^γ.
-- `p`: energy exponent (β for Valencia).
-- `γ::Real`: angular exponent used in the Valencia beam-term.
-- `R::Real`: jet radius parameter (used indirectly via E2p_scaled construction).
-
-Behavior
-- Sets `eereco.nndist`, `eereco.nni`, and `eereco.dijdist` using the provided
-    precomputed arrays. The function avoids repeated pow() and constant multiplications
-    inside the hot O(N²) initialization loop.
-
-This function is Valencia-only and intended to be called from the Valencia entrypoint
-after `E2p_scaled` and `beam_term` have been populated.
-"""
-## Precomputed Valencia nearest-neighbour initializer using precomputed arrays
-Base.@propagate_inbounds @inline function get_angular_nearest_neighbours_valencia_precomputed!(eereco,
-                                                                                              E2p_scaled::AbstractVector,
-                                                                                              beam_term::AbstractVector,
-                                                                                              p, γ = 1.0, R = 4.0)
-    N = length(eereco)
-    nx = eereco.nx; ny = eereco.ny; nz = eereco.nz
-    nndist = eereco.nndist; nni = eereco.nni
-    @inbounds for i in 1:N
-        nndist[i] = Inf
-        nni[i] = i
-    end
-    @inbounds for i in 1:N
-        local_nndist_i = nndist[i]
-        local_nni_i = nni[i]
-        @inbounds for j in (i + 1):N
-            this_metric = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
-            if this_metric < local_nndist_i
-                local_nndist_i = this_metric
-                local_nni_i = j
-            end
-            if this_metric < nndist[j]
-                nndist[j] = this_metric
-                nni[j] = i
-            end
-        end
-        nndist[i] = local_nndist_i
-        nni[i] = local_nni_i
-    end
-    @inbounds for i in 1:N
-        eereco.dijdist[i] = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, nni[i])
-    end
-    @inbounds for i in 1:N
-        beam_closer = beam_term[i] < eereco.dijdist[i]
-        eereco.dijdist[i] = beam_closer ? beam_term[i] : eereco.dijdist[i]
-        eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
-    end
-end
-
-"""
-        get_angular_nearest_neighbours_valencia_precomputed!(eereco, E2p_scaled, beam_term, p, γ, R)
-
-Initialize nearest-neighbour data for a Valencia clustering using precomputed
-per-jet derived arrays.
-
-Arguments
-- `eereco::StructArray{EERecoJet}`: the SoA of reconstruction slots to initialize.
-- `E2p_scaled::AbstractVector`: per-jet pre-multiplied energy factor (E2p * 2 * inv(R^2)).
-- `beam_term::AbstractVector`: per-jet Valencia beam-term precomputed as E2p * (1 - nz^2)^γ.
-- `p`: energy exponent (β for Valencia).
-- `γ::Real`: angular exponent used in the Valencia beam-term.
-- `R::Real`: jet radius parameter (used indirectly via E2p_scaled construction).
-
-Behavior
-- Sets `eereco.nndist`, `eereco.nni`, and `eereco.dijdist` using the provided
-    precomputed arrays. The function avoids repeated pow() and constant multiplications
-    inside the hot O(N²) initialization loop.
-
-This function is Valencia-only and intended to be called from the Valencia entrypoint
-after `E2p_scaled` and `beam_term` have been populated.
-"""
-
 # Forwarder to Val-specialized version
 @inline function get_angular_nearest_neighbours!(eereco,
                                                  algorithm::JetAlgorithm.Algorithm,
@@ -444,7 +137,7 @@ end
 
 # Val-specialized no-cross update
 @inline function update_nn_no_cross!(eereco, i, N, ::Val{JetAlgorithm.Durham}, dij_factor,
-                                     β = 1.0, γ = 1.0, R = 4.0)
+                                     _β = 1.0, _γ = 1.0, R = 4.0)
     nndist = eereco.nndist; nni = eereco.nni
     nx = eereco.nx; ny = eereco.ny; nz = eereco.nz
     nndist[i] = large_distance
@@ -470,7 +163,7 @@ end
 end
 
 @inline function update_nn_no_cross!(eereco, i, N, ::Val{JetAlgorithm.EEKt}, dij_factor,
-                                     β = 1.0, γ = 1.0, R = 4.0)
+                                     _β = 1.0, _γ = 1.0, R = 4.0)
     nndist = eereco.nndist; nni = eereco.nni
     nx = eereco.nx; ny = eereco.ny; nz = eereco.nz
     E2p = eereco.E2p
@@ -498,36 +191,6 @@ end
     eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
 end
 
-@inline function update_nn_no_cross!(eereco, i, N, ::Val{JetAlgorithm.Valencia},
-                                     dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    nndist = eereco.nndist; nni = eereco.nni
-    nx = eereco.nx; ny = eereco.ny; nz = eereco.nz
-    E2p = eereco.E2p
-    E2p_i = E2p[i]
-    nndist[i] = Inf
-    nni[i] = i
-    invR2 = inv(R * R)
-    @inbounds for j in 1:(i-1)
-        this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-        better_nndist_i = this_metric < nndist[i]
-        nndist[i] = better_nndist_i ? this_metric : nndist[i]
-        nni[i] = better_nndist_i ? j : nni[i]
-    end
-    @inbounds for j in (i+1):N
-        this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-        better_nndist_i = this_metric < nndist[i]
-        nndist[i] = better_nndist_i ? this_metric : nndist[i]
-        nni[i] = better_nndist_i ? j : nni[i]
-    end
-    eereco.dijdist[i] = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, nni[i], invR2)
-    valencia_beam_dist = valencia_beam_distance(eereco, i, γ, β)
-    beam_close = valencia_beam_dist < eereco.dijdist[i]
-    eereco.dijdist[i] = beam_close ? valencia_beam_dist : eereco.dijdist[i]
-    eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
-end
-
-# (Forwarding handled earlier; avoid duplicate definition)
-
 @inline function update_nn_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm,
                                   dij_factor, β = 1.0, γ = 1.0, R = 4.0)
     # Forward to Val-specialized implementations to avoid runtime branches
@@ -536,7 +199,7 @@ end
 
 # Val-specialized cross update
 @inline function update_nn_cross!(eereco, i, N, ::Val{JetAlgorithm.Durham}, dij_factor,
-                                  β = 1.0, γ = 1.0, R = 4.0)
+                                  _β = 1.0, _γ = 1.0, R = 4.0)
     nndist = eereco.nndist; nni = eereco.nni
     nx = eereco.nx; ny = eereco.ny; nz = eereco.nz
     nndist[i] = large_distance
@@ -566,7 +229,7 @@ end
 end
 
 @inline function update_nn_cross!(eereco, i, N, ::Val{JetAlgorithm.EEKt}, dij_factor,
-                                  β = 1.0, γ = 1.0, R = 4.0)
+                                  _β = 1.0, _γ = 1.0, R = 4.0)
     nndist = eereco.nndist; nni = eereco.nni
     nx = eereco.nx; ny = eereco.ny; nz = eereco.nz
     E2p = eereco.E2p
@@ -603,40 +266,6 @@ end
     nni[i] = beam_close ? 0 : nni[i]
 end
 
-@inline function update_nn_cross!(eereco, i, N, ::Val{JetAlgorithm.Valencia}, dij_factor,
-                                  β = 1.0, γ = 1.0, R = 4.0)
-    nndist = eereco.nndist; nni = eereco.nni
-    nx = eereco.nx; ny = eereco.ny; nz = eereco.nz
-    E2p = eereco.E2p
-    nndist[i] = Inf
-    nni[i] = i
-    invR2 = inv(R * R)
-    @inbounds for j in 1:N
-        if j != i
-            this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-            better_nndist_i = this_metric < nndist[i]
-            nndist[i] = better_nndist_i ? this_metric : nndist[i]
-            nni[i] = better_nndist_i ? j : nni[i]
-            if this_metric < nndist[j]
-                nndist[j] = this_metric
-                nni[j] = i
-                # Use the already-computed metric for dij (Valencia uses full dij here)
-                eereco.dijdist[j] = this_metric
-                valencia_beam_dist = valencia_beam_distance_arrays(E2p, nz, j, γ, β)
-                if valencia_beam_dist < eereco.dijdist[j]
-                    eereco.dijdist[j] = valencia_beam_dist
-                    nni[j] = 0
-                end
-            end
-        end
-    end
-    eereco.dijdist[i] = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, nni[i], invR2)
-    valencia_beam_dist = valencia_beam_distance_arrays(E2p, nz, i, γ, β)
-    beam_close = valencia_beam_dist < eereco.dijdist[i]
-    eereco.dijdist[i] = beam_close ? valencia_beam_dist : eereco.dijdist[i]
-    nni[i] = beam_close ? 0 : nni[i]
-end
-
 function ee_check_consistency(clusterseq, eereco, N)
     # Check the consistency of the reconstruction state
     for i in 1:N
@@ -670,7 +299,7 @@ end
                                            nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
                                            E2p::AbstractVector, dijdist::AbstractVector,
                                            i::Integer, N::Integer, ::Val{JetAlgorithm.Durham},
-                                           dij_factor, β = 1.0, γ = 1.0, R = 4.0)
+                                           dij_factor, _β = 1.0, _γ = 1.0, R = 4.0)
     nndist[i] = large_distance
     nni[i] = i
     @inbounds for j in 1:N
@@ -692,7 +321,7 @@ end
                                            nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
                                            E2p::AbstractVector, dijdist::AbstractVector,
                                            i::Integer, N::Integer, ::Val{JetAlgorithm.EEKt},
-                                           dij_factor, β = 1.0, γ = 1.0, R = 4.0)
+                                           dij_factor, _β = 1.0, _γ = 1.0, R = 4.0)
     nndist[i] = large_distance
     nni[i] = i
     E2p_i = E2p[i]
@@ -712,113 +341,6 @@ end
     nni[i] = beam_close ? 0 : nni[i]
 end
 
-@inline function update_nn_no_cross_arrays!(nndist::AbstractVector, nni::AbstractVector,
-                                           nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
-                                           E2p::AbstractVector, dijdist::AbstractVector,
-                                           i::Integer, N::Integer, ::Val{JetAlgorithm.Valencia},
-                                           dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    # Precomputed variant lives in a separate function; keep this fallback here.
-    invR2 = inv(R * R)
-    nndist_i = Inf
-    nni_i = i
-    @inbounds for j in 1:N
-        if j != i
-            this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-            if this_metric < nndist_i
-                nndist_i = this_metric
-                nni_i = j
-            end
-        end
-    end
-    # compute dijdist and beam check using locals then write back once
-    dijdist_i = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, nni_i, invR2)
-    valencia_beam_dist = valencia_beam_distance_arrays(E2p, nz, i, γ, β)
-    if valencia_beam_dist < dijdist_i
-        dijdist_i = valencia_beam_dist
-        nni_i = 0
-    end
-    nndist[i] = nndist_i
-    nni[i] = nni_i
-    dijdist[i] = dijdist_i
-end
-
-"""
-        update_nn_no_cross_arrays_precomputed!(nndist, nni, nx, ny, nz, E2p_scaled, beam_term, dijdist, i, N, ...)
-
-Update nearest-neighbour information for slot `i` without attempting cross-updates
-using precomputed per-jet derived arrays.
-
-Arguments
-- `nndist, nni, dijdist::AbstractVector`: arrays representing current nearest-neighbour
-    distances, indices, and dij distances respectively.
-- `nx, ny, nz::AbstractVector`: direction cosine arrays.
-- `E2p_scaled::AbstractVector`: per-jet E2p pre-multiplied by 2 * inv(R^2).
-- `beam_term::AbstractVector`: precomputed beam-term per jet.
-- `i::Integer`: index of the slot to update.
-- `N::Integer`: current number of active slots.
-- additional params: `dij_factor`, `β`, `γ`, `R` (kept for compatibility/signature parity).
-
-Behavior
-- Scans other active slots to find the nearest neighbour for slot `i` using
-    `valencia_distance_inv_scaled_arrays` (avoids repeated multiplies), applies the beam-term
-    comparison using `beam_term[i]`, and writes back `nndist[i]`, `nni[i]`, and `dijdist[i]`.
-
-This is a Valencia-only optimized path intended for the hot update loops inside
-the Valencia reconstruction entrypoint.
-"""
-## Precomputed Valencia no-cross update using E2p_scaled and beam_term
-@inline function update_nn_no_cross_arrays_precomputed!(nndist::AbstractVector, nni::AbstractVector,
-                                                       nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
-                                                       E2p_scaled::AbstractVector, beam_term::AbstractVector,
-                                                       dijdist::AbstractVector,
-                                                       i::Integer, N::Integer,
-                                                       dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    nndist_i = Inf
-    nni_i = i
-    @inbounds for j in 1:N
-        if j != i
-            this_metric = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
-            if this_metric < nndist_i
-                nndist_i = this_metric
-                nni_i = j
-            end
-        end
-    end
-    dijdist_i = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, nni_i)
-    if beam_term[i] < dijdist_i
-        dijdist_i = beam_term[i]
-        nni_i = 0
-    end
-    nndist[i] = nndist_i
-    nni[i] = nni_i
-    dijdist[i] = dijdist_i
-end
-
-"""
-        update_nn_no_cross_arrays_precomputed!(nndist, nni, nx, ny, nz, E2p_scaled, beam_term, dijdist, i, N, ...)
-
-Update nearest-neighbour information for slot `i` without attempting cross-updates
-using precomputed per-jet derived arrays.
-
-Arguments
-- `nndist, nni, dijdist::AbstractVector`: arrays representing current nearest-neighbour
-    distances, indices, and dij distances respectively.
-- `nx, ny, nz::AbstractVector`: direction cosine arrays.
-- `E2p_scaled::AbstractVector`: per-jet E2p pre-multiplied by 2 * inv(R^2).
-- `beam_term::AbstractVector`: precomputed beam-term per jet.
-- `i::Integer`: index of the slot to update.
-- `N::Integer`: current number of active slots.
-- additional params: `dij_factor`, `β`, `γ`, `R` (kept for compatibility/signature parity).
-
-Behavior
-- Scans other active slots to find the nearest neighbour for slot `i` using
-    `valencia_distance_inv_scaled_arrays` (avoids repeated multiplies), applies the beam-term
-    comparison using `beam_term[i]`, and writes back `nndist[i]`, `nni[i]`, and `dijdist[i]`.
-
-This is a Valencia-only optimized path intended for the hot update loops inside
-the Valencia reconstruction entrypoint.
-"""
-
 @inline function update_nn_cross_arrays!(nndist::AbstractVector, nni::AbstractVector,
                                         nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
                                         E2p::AbstractVector, dijdist::AbstractVector,
@@ -831,7 +353,7 @@ end
                                         nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
                                         E2p::AbstractVector, dijdist::AbstractVector,
                                         i::Integer, N::Integer, ::Val{JetAlgorithm.Durham},
-                                        dij_factor, β = 1.0, γ = 1.0, R = 4.0)
+                                        dij_factor, _β = 1.0, _γ = 1.0, R = 4.0)
     nndist[i] = large_distance
     nni[i] = i
     E2p_i = E2p[i]
@@ -869,7 +391,7 @@ end
                                         nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
                                         E2p::AbstractVector, dijdist::AbstractVector,
                                         i::Integer, N::Integer, ::Val{JetAlgorithm.EEKt},
-                                        dij_factor, β = 1.0, γ = 1.0, R = 4.0)
+                                        dij_factor, _β = 1.0, _γ = 1.0, R = 4.0)
     E2p_i = E2p[i]
     nndist[i] = large_distance
     nni[i] = i
@@ -915,165 +437,6 @@ end
     dijdist[i] = beam_close ? E2p_i : dijdist[i]
     nni[i] = beam_close ? 0 : nni[i]
 end
-
-@inline function update_nn_cross_arrays!(nndist::AbstractVector, nni::AbstractVector,
-                                        nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
-                                        E2p::AbstractVector, dijdist::AbstractVector,
-                                        i::Integer, N::Integer, ::Val{JetAlgorithm.Valencia},
-                                        dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    # Operate on locals for slot i to reduce setindex traffic; updates to other
-    # slots (j) still write directly since they modify different indices.
-    # Precomputed variant fallback uses the non-precomputed helpers; there is
-    # a separate precomputed cross-update below.
-    invR2 = inv(R * R)
-    nndist_i = Inf
-    nni_i = i
-    @inbounds for j in 1:(i-1)
-        this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-        if this_metric < nndist_i
-            nndist_i = this_metric
-            nni_i = j
-        end
-        if this_metric < nndist[j]
-            nndist[j] = this_metric
-            nni[j] = i
-            dijdist[j] = this_metric
-            valencia_beam_dist = valencia_beam_distance_arrays(E2p, nz, j, γ, β)
-            if valencia_beam_dist < dijdist[j]
-                dijdist[j] = valencia_beam_dist
-                nni[j] = 0
-            end
-        end
-    end
-    @inbounds for j in (i+1):N
-        this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-        if this_metric < nndist_i
-            nndist_i = this_metric
-            nni_i = j
-        end
-        if this_metric < nndist[j]
-            nndist[j] = this_metric
-            nni[j] = i
-            dijdist[j] = this_metric
-            valencia_beam_dist = valencia_beam_distance_arrays(E2p, nz, j, γ, β)
-            if valencia_beam_dist < dijdist[j]
-                dijdist[j] = valencia_beam_dist
-                nni[j] = 0
-            end
-        end
-    end
-    # Finalize slot i
-    dijdist_i = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, nni_i, invR2)
-    valencia_beam_dist = valencia_beam_distance_arrays(E2p, nz, i, γ, β)
-    if valencia_beam_dist < dijdist_i
-        dijdist_i = valencia_beam_dist
-        nni_i = 0
-    end
-    nndist[i] = nndist_i
-    nni[i] = nni_i
-    dijdist[i] = dijdist_i
-end
-
-"""
-        update_nn_cross_arrays_precomputed!(nndist, nni, nx, ny, nz, E2p_scaled, beam_term, dijdist, i, N, ...)
-
-Perform a cross-update of nearest-neighbour information for slot `i` using
-precomputed per-jet derived arrays. This both finds the nearest neighbour for
-`i` and updates other slots `j` if `i` becomes their nearest neighbour.
-
-Arguments
-- `nndist, nni, dijdist::AbstractVector`: current nn-distances, nn-indices, dij-distances.
-- `nx, ny, nz::AbstractVector`: direction-cosine arrays.
-- `E2p_scaled::AbstractVector`: per-jet E2p scaled by 2 * inv(R^2).
-- `beam_term::AbstractVector`: per-jet Valencia beam-term.
-- `i::Integer`: index of the slot to cross-update.
-- `N::Integer`: number of active slots.
-
-Behavior
-- For each other slot `j`, computes the Valencia pair metric using the precomputed
-    scaled energies; if `i` provides a better neighbor for `j` the function updates
-    `nndist[j]`, `nni[j]`, and `dijdist[j]` (with beam-term check). Finally, it
-    computes and writes back the nearest-neighbour info for `i`.
-
-This function is Valencia-only and intended to replace the generic cross-update
-in the hot merge loop to reduce repeated arithmetic and pow() calls.
-"""
-## Precomputed Valencia cross-update using E2p_scaled and beam_term
-@inline function update_nn_cross_arrays_precomputed!(nndist::AbstractVector, nni::AbstractVector,
-                                                    nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
-                                                    E2p_scaled::AbstractVector, beam_term::AbstractVector,
-                                                    dijdist::AbstractVector,
-                                                    i::Integer, N::Integer,
-                                                    dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    nndist_i = Inf
-    nni_i = i
-    @inbounds for j in 1:(i-1)
-        this_metric = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
-        if this_metric < nndist_i
-            nndist_i = this_metric
-            nni_i = j
-        end
-        if this_metric < nndist[j]
-            nndist[j] = this_metric
-            nni[j] = i
-            dijdist[j] = this_metric
-            if beam_term[j] < dijdist[j]
-                dijdist[j] = beam_term[j]
-                nni[j] = 0
-            end
-        end
-    end
-    @inbounds for j in (i+1):N
-        this_metric = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
-        if this_metric < nndist_i
-            nndist_i = this_metric
-            nni_i = j
-        end
-        if this_metric < nndist[j]
-            nndist[j] = this_metric
-            nni[j] = i
-            dijdist[j] = this_metric
-            if beam_term[j] < dijdist[j]
-                dijdist[j] = beam_term[j]
-                nni[j] = 0
-            end
-        end
-    end
-    # Finalize slot i
-    dijdist_i = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, nni_i)
-    if beam_term[i] < dijdist_i
-        dijdist_i = beam_term[i]
-        nni_i = 0
-    end
-    nndist[i] = nndist_i
-    nni[i] = nni_i
-    dijdist[i] = dijdist_i
-end
-
-"""
-        update_nn_cross_arrays_precomputed!(nndist, nni, nx, ny, nz, E2p_scaled, beam_term, dijdist, i, N, ...)
-
-Perform a cross-update of nearest-neighbour information for slot `i` using
-precomputed per-jet derived arrays. This both finds the nearest neighbour for
-`i` and updates other slots `j` if `i` becomes their nearest neighbour.
-
-Arguments
-- `nndist, nni, dijdist::AbstractVector`: current nn-distances, nn-indices, dij-distances.
-- `nx, ny, nz::AbstractVector`: direction-cosine arrays.
-- `E2p_scaled::AbstractVector`: per-jet E2p scaled by 2 * inv(R^2).
-- `beam_term::AbstractVector`: per-jet Valencia beam-term.
-- `i::Integer`: index of the slot to cross-update.
-- `N::Integer`: number of active slots.
-
-Behavior
-- For each other slot `j`, computes the Valencia pair metric using the precomputed
-    scaled energies; if `i` provides a better neighbor for `j` the function updates
-    `nndist[j]`, `nni[j]`, and `dijdist[j]` (with beam-term check). Finally, it
-    computes and writes back the nearest-neighbour info for `i`.
-
-This function is Valencia-only and intended to replace the generic cross-update
-in the hot merge loop to reduce repeated arithmetic and pow() calls.
-"""
 
 Base.@propagate_inbounds @inline function fill_reco_array!(eereco, particles, R2, p)
     @inbounds for i in eachindex(particles)
@@ -1167,17 +530,44 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
                             p::Union{Real, Nothing} = nothing, R = 4.0, recombine = addjets,
                             preprocess = nothing, γ::Real = 1.0,
                             β::Union{Real, Nothing} = nothing) where {T}
-
-    # For Valencia, if β is provided, overwrite p
-    if algorithm == JetAlgorithm.Valencia && β !== nothing
-        p = β
+    # (β override for Valencia handled inside _ee_genkt_algorithm_valencia)
+    if algorithm == JetAlgorithm.Valencia
+        # Apply β override if provided, then obtain validated power
+        local_p = β === nothing ? p : β
+        local_p = get_algorithm_power(p = local_p, algorithm = algorithm)
+        return _ee_genkt_algorithm_valencia(particles = begin
+                                                 if isnothing(preprocess)
+                                                     if T == EEJet
+                                                         recombination_particles = copy(particles)
+                                                         sizehint!(recombination_particles, length(particles) * 2)
+                                                         recombination_particles
+                                                     else
+                                                         recombination_particles = EEJet[]
+                                                         sizehint!(recombination_particles, length(particles) * 2)
+                                                         for (i, particle) in enumerate(particles)
+                                                             push!(recombination_particles, EEJet(particle; cluster_hist_index = i))
+                                                         end
+                                                         recombination_particles
+                                                     end
+                                                 else
+                                                     recombination_particles = EEJet[]
+                                                     sizehint!(recombination_particles, length(particles) * 2)
+                                                     for (i, particle) in enumerate(particles)
+                                                         push!(recombination_particles,
+                                                               preprocess(particle, EEJet; cluster_hist_index = i))
+                                                     end
+                                                     recombination_particles
+                                                 end
+                                             end,
+                                             algorithm = algorithm, p = local_p, R = R,
+                                             recombine = recombine, γ = γ, beta = β)
     end
 
-    # Check for consistency algorithm power
+    # Check for consistency algorithm power (non-Valencia path)
     p = get_algorithm_power(p = p, algorithm = algorithm)
 
-    # Integer p if possible, i.e. if not running Valencia
-    if algorithm != JetAlgorithm.Valencia
+    # Cast p to Int where possible for algorithms that benefit (Durham/EEKt)
+    if algorithm == JetAlgorithm.Durham || algorithm == JetAlgorithm.EEKt
         p = (round(p) == p) ? Int(p) : p
     end
 
@@ -1242,9 +632,6 @@ function _ee_genkt_algorithm_durham(; particles::AbstractVector{EEJet},
     N::Int = length(particles)
 
     R2 = R^2
-    if algorithm == JetAlgorithm.Valencia && beta !== nothing
-        p = beta
-    end
 
     # Durham dij factor
     dij_factor = 2.0
@@ -1329,186 +716,7 @@ function _ee_genkt_algorithm_durham(; particles::AbstractVector{EEJet},
 end
 
 ################################################################################
-# Valencia-specialised implementation
 ################################################################################
-function _ee_genkt_algorithm_valencia(; particles::AbstractVector{EEJet},
-                                      algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
-                                      recombine = addjets, γ::Real = 1.0,
-                                      beta::Union{Real, Nothing} = nothing)
-    # Bounds
-    N::Int = length(particles)
-
-    R2 = R^2
-    # Valencia uses p as β when passed through
-    if algorithm == JetAlgorithm.Valencia && beta !== nothing
-        p = beta
-    end
-
-    # Constant factor for the Valencia dij metric
-    dij_factor = 1.0
-
-    # For optimised reconstruction generate an SoA containing the necessary
-    # jet information and populate it accordingly
-    eereco = StructArray{EERecoJet}(undef, N)
-
-    fill_reco_array!(eereco, particles, R2, p)
-
-    # Setup the initial history and get the total energy
-    history, Qtot = initial_history(particles)
-
-    clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Plain, particles, history,
-                                 Qtot)
-
-    # Run over initial pairs of jets to find nearest neighbours (precomputed path)
-    # prepare precomputed arrays below before calling the initialized helper
-    
-
-    # Alias StructArray fields into local vectors to avoid allocations from
-    # copying while still avoiding repeated StructArray field lookups in
-    # hot loops. These locals point directly at the underlying vectors, so
-    # no explicit writeback is required at the end.
-    indexv = eereco.index
-    nni_v = eereco.nni
-    nndist_v = eereco.nndist
-    dijdist_v = eereco.dijdist
-    nxv = eereco.nx
-    nyv = eereco.ny
-    nzv = eereco.nz
-    E2pv = eereco.E2p
-
-    # Precompute scaled E2p and beam_term for Valencia to avoid repeated work
-    invR2 = inv(R * R)
-    factor = 2 * invR2
-    E2p_scaled = similar(E2pv)
-    beam_term = similar(E2pv)
-    @inbounds for k in 1:N
-        E2p_scaled[k] = E2pv[k] * factor
-        nz_k = nzv[k]
-        sin2 = 1.0 - nz_k * nz_k
-        if γ == 1.0
-            beam_term[k] = E2pv[k] * sin2
-        elseif γ == 2.0
-            beam_term[k] = E2pv[k] * (sin2 * sin2)
-        else
-            beam_term[k] = E2pv[k] * sin2^γ
-        end
-    end
-
-    # Now run NN init using precomputed helpers
-    get_angular_nearest_neighbours_valencia_precomputed!(eereco, E2p_scaled, beam_term, p, γ, R)
-
-    # Now we can start the main loop
-    iter = 0
-    while N != 0
-        iter += 1
-
-    dij_min, ijetA = fast_findmin(dijdist_v, N)
-    ijetB = nni_v[ijetA]
-
-        # Now we check if there is a "beam" merge possibility
-            if ijetB == 0
-            # Shouldn't happen for Valencia (beam handled via valencia_beam checks)
-            ijetB = ijetA
-                add_step_to_history!(clusterseq,
-                                     clusterseq.jets[indexv[ijetA]]._cluster_hist_index,
-                                     BeamJet, Invalid, dij_min)
-        elseif N == 1
-            ijetB = ijetA
-            add_step_to_history!(clusterseq,
-                                 clusterseq.jets[indexv[ijetA]]._cluster_hist_index,
-                                 BeamJet, Invalid, dij_min)
-        else
-            if ijetB < ijetA
-                ijetA, ijetB = ijetB, ijetA
-            end
-
-            jetA = clusterseq.jets[indexv[ijetA]]
-            jetB = clusterseq.jets[indexv[ijetB]]
-
-            merged_jet = recombine(jetA, jetB;
-                                   cluster_hist_index = length(clusterseq.history) + 1)
-
-            push!(clusterseq.jets, merged_jet)
-            newjet_k = length(clusterseq.jets)
-            add_step_to_history!(clusterseq,
-                     minmax(cluster_hist_index(jetA),
-                         cluster_hist_index(jetB))...,
-                     newjet_k, dij_min)
-
-            # Insert merged jet into our local SoA (avoid writing StructArray)
-            indexv[ijetA] = newjet_k
-            nni_v[ijetA] = 0
-            nndist_v[ijetA] = R2
-            nxv[ijetA] = nx(merged_jet)
-            nyv[ijetA] = ny(merged_jet)
-            nzv[ijetA] = nz(merged_jet)
-            # Compute E2p like insert_new_jet! would
-            E = energy(merged_jet)
-            if p isa Int
-                if p == 1
-                    E2pv[ijetA] = E * E
-                else
-                    E2 = E * E
-                    E2pv[ijetA] = E2^p
-                end
-            else
-                E2pv[ijetA] = E^(2p)
-            end
-            # Recompute precomputed derived arrays for the merged slot
-            E2p_scaled[ijetA] = E2pv[ijetA] * factor
-            nz_k = nzv[ijetA]
-            sin2_k = 1.0 - nz_k * nz_k
-            if γ == 1.0
-                beam_term[ijetA] = E2pv[ijetA] * sin2_k
-            elseif γ == 2.0
-                beam_term[ijetA] = E2pv[ijetA] * (sin2_k * sin2_k)
-            else
-                beam_term[ijetA] = E2pv[ijetA] * sin2_k^γ
-            end
-        end
-
-        if ijetB != N
-            # Local copy from slot N -> slot ijetB (avoid StructArray ops)
-            indexv[ijetB] = indexv[N]
-            nni_v[ijetB] = nni_v[N]
-            nndist_v[ijetB] = nndist_v[N]
-            dijdist_v[ijetB] = dijdist_v[N]
-            nxv[ijetB] = nxv[N]
-            nyv[ijetB] = nyv[N]
-            nzv[ijetB] = nzv[N]
-            E2pv[ijetB] = E2pv[N]
-            # Also copy precomputed derived arrays
-            E2p_scaled[ijetB] = E2p_scaled[N]
-            beam_term[ijetB] = beam_term[N]
-        end
-
-        N -= 1
-
-    # Update nearest neighbours step
-    @inbounds for i in 1:N
-            if (ijetB != N + 1) && (nni_v[i] == N + 1)
-                nni_v[i] = ijetB
-            else
-                if (nni_v[i] == ijetA) || (nni_v[i] == ijetB) || (nni_v[i] > N)
-                    update_nn_no_cross_arrays_precomputed!(nndist_v, nni_v, nxv, nyv, nzv,
-                                                           E2p_scaled, beam_term, dijdist_v,
-                                                           i, N, dij_factor, p, γ, R)
-                end
-            end
-        end
-
-        if ijetA != ijetB
-            update_nn_cross_arrays_precomputed!(nndist_v, nni_v, nxv, nyv, nzv,
-                                                E2p_scaled, beam_term, dijdist_v,
-                                                ijetA, N, dij_factor, p, γ, R)
-        end
-    end
-
-    # Locals alias the StructArray fields directly, so there is no separate
-    # writeback step required here.
-
-    clusterseq
-end
 
 """
     _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
@@ -1544,17 +752,14 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
     # Bounds
     N::Int = length(particles)
 
-    # If Valencia requested, forward to the Valencia-specialised path
+    # Forward Valencia directly to specialised implementation (tests call this internal API)
     if algorithm == JetAlgorithm.Valencia
         return _ee_genkt_algorithm_valencia(particles = particles, algorithm = algorithm,
-                                            p = p, R = R, recombine = recombine,
-                                            γ = γ, beta = beta)
+                                            p = (beta === nothing ? p : beta), R = R,
+                                            recombine = recombine, γ = γ, beta = beta)
     end
 
     R2 = R^2
-    if algorithm == JetAlgorithm.Valencia && beta !== nothing
-        p = beta
-    end
 
     # Constant factor for the dij metric and the beam distance function
     if algorithm == JetAlgorithm.Durham
