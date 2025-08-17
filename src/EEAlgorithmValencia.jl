@@ -10,13 +10,17 @@ Calculate the Valencia dij metric (scaled by `invR2`) between slots `i` and
 """
 Base.@propagate_inbounds @inline function valencia_distance_inv(eereco, i, j, invR2)
     if hasproperty(eereco, :nx)
-        nx = eereco.nx; ny = eereco.ny; nz = eereco.nz; E2p = eereco.E2p
+        nx = eereco.nx
+        ny = eereco.ny
+        nz = eereco.nz
+        E2p = eereco.E2p
         angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
         # Valencia dij : min(E_i^{2\u03b2}, E_j^{2\u03b2}) * 2 * (1 - cos \u03b8) * invR2
         min(E2p[i], E2p[j]) * 2 * angular_dist * invR2
     else
         # Fallback for Array-of-structs
-        angular_dist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny - eereco[i].nz * eereco[j].nz
+        angular_dist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
+                       eereco[i].nz * eereco[j].nz
         min(eereco[i].E2p, eereco[j].E2p) * 2 * angular_dist * invR2
     end
 end
@@ -49,7 +53,8 @@ end
 Array-based variant of `valencia_distance_inv` that works directly on raw
 vectors (useful for the precomputed helpers/fast paths).
 """
-Base.@propagate_inbounds @inline function valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
+Base.@propagate_inbounds @inline function valencia_distance_inv_arrays(E2p, nx, ny, nz, i,
+                                                                       j, invR2)
     angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
     min(E2p[i], E2p[j]) * 2 * angular_dist * invR2
 end
@@ -62,7 +67,9 @@ Compute the Valencia distance using a pre-scaled E2p vector (`E2p_scaled`),
 avoiding repeated multiplication by the R-dependent factor. Intended for
 performance-sensitive precomputed loops.
 """
-Base.@propagate_inbounds @inline function valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
+Base.@propagate_inbounds @inline function valencia_distance_inv_scaled_arrays(E2p_scaled,
+                                                                              nx, ny, nz, i,
+                                                                              j)
     angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
     min(E2p_scaled[i], E2p_scaled[j]) * angular_dist
 end
@@ -75,7 +82,8 @@ Compute the Valencia beam-distance term for slot `i` given angular exponent
 """
 Base.@propagate_inbounds @inline function valencia_beam_distance(eereco, i, γ, β)
     if hasproperty(eereco, :nz)
-        nzv = eereco.nz; E2pv = eereco.E2p
+        nzv = eereco.nz
+        E2pv = eereco.E2p
         nz_i = nzv[i]
         sin2 = 1 - nz_i * nz_i
         E2p = E2pv[i]
@@ -120,12 +128,17 @@ precomputed scaled energy vector `E2p_scaled` and `beam_term`. This avoids
 repeated per-pair scaling inside tight loops.
 """
 Base.@propagate_inbounds @inline function get_angular_nearest_neighbours_valencia_precomputed!(eereco,
-                                                                                              E2p_scaled::AbstractVector,
-                                                                                              beam_term::AbstractVector,
-                                                                                              p, γ = 1.0, R = 4.0)
+                                                                                               E2p_scaled::AbstractVector,
+                                                                                               beam_term::AbstractVector,
+                                                                                               p,
+                                                                                               γ = 1.0,
+                                                                                               R = 4.0)
     N = length(eereco)
-    nx = eereco.nx; ny = eereco.ny; nz = eereco.nz
-    nndist = eereco.nndist; nni = eereco.nni
+    nx = eereco.nx
+    ny = eereco.ny
+    nz = eereco.nz
+    nndist = eereco.nndist
+    nni = eereco.nni
     @inbounds for i in 1:N
         nndist[i] = Inf
         nni[i] = i
@@ -148,7 +161,8 @@ Base.@propagate_inbounds @inline function get_angular_nearest_neighbours_valenci
         nni[i] = local_nni_i
     end
     @inbounds for i in 1:N
-        eereco.dijdist[i] = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, nni[i])
+        eereco.dijdist[i] = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i,
+                                                                nni[i])
     end
     @inbounds for i in 1:N
         beam_closer = beam_term[i] < eereco.dijdist[i]
@@ -163,12 +177,17 @@ end
 Precomputed Valencia no-cross nearest-neighbour update. Uses `E2p_scaled`
 and `beam_term` arrays to compute distances without per-pair scaling.
 """
-@inline function update_nn_no_cross_arrays_precomputed!(nndist::AbstractVector, nni::AbstractVector,
-                                                       nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
-                                                       E2p_scaled::AbstractVector, beam_term::AbstractVector,
-                                                       dijdist::AbstractVector,
-                                                       i::Integer, N::Integer,
-                                                       dij_factor, β = 1.0, γ = 1.0, R = 4.0)
+@inline function update_nn_no_cross_arrays_precomputed!(nndist::AbstractVector,
+                                                        nni::AbstractVector,
+                                                        nx::AbstractVector,
+                                                        ny::AbstractVector,
+                                                        nz::AbstractVector,
+                                                        E2p_scaled::AbstractVector,
+                                                        beam_term::AbstractVector,
+                                                        dijdist::AbstractVector,
+                                                        i::Integer, N::Integer,
+                                                        dij_factor, β = 1.0, γ = 1.0,
+                                                        R = 4.0)
     nndist_i = Inf
     nni_i = i
     @inbounds for j in 1:N
@@ -196,15 +215,18 @@ end
 Precomputed Valencia cross-update variant: updates neighbour data for slot
 `i` and any affected neighbours using `E2p_scaled` and `beam_term`.
 """
-@inline function update_nn_cross_arrays_precomputed!(nndist::AbstractVector, nni::AbstractVector,
-                                                    nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
-                                                    E2p_scaled::AbstractVector, beam_term::AbstractVector,
-                                                    dijdist::AbstractVector,
-                                                    i::Integer, N::Integer,
-                                                    dij_factor, β = 1.0, γ = 1.0, R = 4.0)
+@inline function update_nn_cross_arrays_precomputed!(nndist::AbstractVector,
+                                                     nni::AbstractVector,
+                                                     nx::AbstractVector, ny::AbstractVector,
+                                                     nz::AbstractVector,
+                                                     E2p_scaled::AbstractVector,
+                                                     beam_term::AbstractVector,
+                                                     dijdist::AbstractVector,
+                                                     i::Integer, N::Integer,
+                                                     dij_factor, β = 1.0, γ = 1.0, R = 4.0)
     nndist_i = Inf
     nni_i = i
-    @inbounds for j in 1:(i-1)
+    @inbounds for j in 1:(i - 1)
         this_metric = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
         if this_metric < nndist_i
             nndist_i = this_metric
@@ -220,7 +242,7 @@ Precomputed Valencia cross-update variant: updates neighbour data for slot
             end
         end
     end
-    @inbounds for j in (i+1):N
+    @inbounds for j in (i + 1):N
         this_metric = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
         if this_metric < nndist_i
             nndist_i = this_metric
@@ -293,7 +315,8 @@ function _ee_genkt_algorithm_valencia(; particles::AbstractVector{EEJet},
             beam_term[k] = E2pv[k] * sin2^γ
         end
     end
-    get_angular_nearest_neighbours_valencia_precomputed!(eereco, E2p_scaled, beam_term, p, γ, R)
+    get_angular_nearest_neighbours_valencia_precomputed!(eereco, E2p_scaled, beam_term, p,
+                                                         γ, R)
     iter = 0
     while N != 0
         iter += 1
@@ -320,9 +343,9 @@ function _ee_genkt_algorithm_valencia(; particles::AbstractVector{EEJet},
             push!(clusterseq.jets, merged_jet)
             newjet_k = length(clusterseq.jets)
             add_step_to_history!(clusterseq,
-                     minmax(cluster_hist_index(jetA),
-                         cluster_hist_index(jetB))...,
-                     newjet_k, dij_min)
+                                 minmax(cluster_hist_index(jetA),
+                                        cluster_hist_index(jetB))...,
+                                 newjet_k, dij_min)
             indexv[ijetA] = newjet_k
             nni_v[ijetA] = 0
             nndist_v[ijetA] = R2
