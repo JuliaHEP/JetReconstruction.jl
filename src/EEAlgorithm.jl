@@ -27,7 +27,15 @@ Base.@propagate_inbounds @inline function angular_distance(eereco, i, j)
     end
 end
 
-# Array-based angular distance helper (operates on direction-cosine arrays)
+"""
+    angular_distance_arrays(nx, ny, nz, i, j) -> Float64
+
+Compute the angular distance (1 - cos θ) between entries `i` and `j` using
+direction-cosine arrays `nx`, `ny`, `nz`.
+
+# Returns
+- `Float64`: angular distance.
+"""
 Base.@propagate_inbounds @inline function angular_distance_arrays(nx, ny, nz, i, j)
     @muladd 1.0 - nx[i] * nx[j] - ny[i] * ny[j] - nz[i] * nz[j]
 end
@@ -67,7 +75,13 @@ end
     throw(ArgumentError("Algorithm $algorithm not supported for dij_dist"))
 end
 
-# Val-specialized nearest neighbour search (removes runtime branches in hot loops)
+"""
+    get_angular_nearest_neighbours!(eereco, ::Val{JetAlgorithm.Durham}, dij_factor, p, γ=1.0, R=4.0)
+
+Compute initial nearest-neighbour distances for the Durham algorithm and fill
+`eereco.nndist`, `eereco.nni` and `eereco.dijdist` accordingly. This variant
+is specialised for the Durham metric and operates on the StructArray layout.
+"""
 @inline function get_angular_nearest_neighbours!(eereco, ::Val{JetAlgorithm.Durham},
                                                  dij_factor, p, γ = 1.0, R = 4.0)
     N = length(eereco)
@@ -96,6 +110,13 @@ end
     end
 end
 
+"""
+    get_angular_nearest_neighbours!(eereco, ::Val{JetAlgorithm.EEKt}, dij_factor, p, γ=1.0, R=4.0)
+
+Compute initial nearest-neighbour distances for the EEKt algorithm and fill
+`eereco.nndist`, `eereco.nni` and `eereco.dijdist`. Performs beam-distance
+checks appropriate for EEKt.
+"""
 @inline function get_angular_nearest_neighbours!(eereco, ::Val{JetAlgorithm.EEKt},
                                                  dij_factor, p, γ = 1.0, R = 4.0)
     N = length(eereco)
@@ -121,14 +142,26 @@ end
     end
 end
 
-# Forwarder to Val-specialized version
+"""
+    get_angular_nearest_neighbours!(eereco, algorithm::JetAlgorithm.Algorithm, dij_factor, p, γ=1.0, R=4.0)
+
+Forwarding wrapper that dispatches to the `Val{...}` specialised
+`get_angular_nearest_neighbours!` implementation to avoid branches in tight
+loops.
+"""
 @inline function get_angular_nearest_neighbours!(eereco,
                                                  algorithm::JetAlgorithm.Algorithm,
                                                  dij_factor, p, γ = 1.0, R = 4.0)
     return get_angular_nearest_neighbours!(eereco, Val(algorithm), dij_factor, p, γ, R)
 end
 
-# Update the nearest neighbour for jet i, w.r.t. all other active jets
+"""
+    update_nn_no_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm, dij_factor, β=1.0, γ=1.0, R=4.0)
+
+Update nearest-neighbour information for slot `i` (no-cross variant) by
+forwarding to algorithm-specific `Val{...}` specialisations. This wrapper
+avoids runtime branching in the hot inner loop.
+"""
 @inline function update_nn_no_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm,
                                      dij_factor, β = 1.0, γ = 1.0, R = 4.0)
     # Forward to Val-specialized implementations to avoid runtime branches
@@ -136,6 +169,13 @@ end
 end
 
 # Val-specialized no-cross update
+"""
+    update_nn_no_cross!(eereco, i, N, ::Val{JetAlgorithm.Durham}, dij_factor, _β=1.0, _γ=1.0, R=4.0)
+
+Durham-specialised update of the nearest neighbour for slot `i` (no-cross
+variant). Updates `nndist`, `nni` and the inline `dijdist` for slot `i` using
+direction-cosine arrays for performance.
+"""
 @inline function update_nn_no_cross!(eereco, i, N, ::Val{JetAlgorithm.Durham}, dij_factor,
                                      _β = 1.0, _γ = 1.0, R = 4.0)
     nndist = eereco.nndist; nni = eereco.nni
@@ -162,6 +202,13 @@ end
     eereco.dijdist[i] = minE2p * dij_factor * nndist[i]
 end
 
+"""
+    update_nn_no_cross!(eereco, i, N, ::Val{JetAlgorithm.EEKt}, dij_factor, _β=1.0, _γ=1.0, R=4.0)
+
+EEKt-specialised update of the nearest neighbour for slot `i` (no-cross
+variant). Also applies the EEKt beam-distance check and updates `nni` when a
+beam is closer than the dij distance.
+"""
 @inline function update_nn_no_cross!(eereco, i, N, ::Val{JetAlgorithm.EEKt}, dij_factor,
                                      _β = 1.0, _γ = 1.0, R = 4.0)
     nndist = eereco.nndist; nni = eereco.nni
@@ -191,13 +238,25 @@ end
     eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
 end
 
+"""
+    update_nn_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm, dij_factor, β=1.0, γ=1.0, R=4.0)
+
+Forwarding wrapper for the cross-update variant. Dispatches to the
+`Val{...}`-specialised `update_nn_cross!` to remove runtime branches.
+"""
 @inline function update_nn_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm,
                                   dij_factor, β = 1.0, γ = 1.0, R = 4.0)
     # Forward to Val-specialized implementations to avoid runtime branches
     return update_nn_cross!(eereco, i, N, Val(algorithm), dij_factor, β, γ, R)
 end
 
-# Val-specialized cross update
+"""
+    update_nn_cross!(eereco, i, N, ::Val{JetAlgorithm.Durham}, dij_factor, _β=1.0, _γ=1.0, R=4.0)
+
+Durham-specialised cross-update: updates nearest-neighbour information for
+slot `i` and propagates any changes to other slots when `i` becomes their new
+nearest neighbour. Computes inline dij updates to avoid function-call overhead.
+"""
 @inline function update_nn_cross!(eereco, i, N, ::Val{JetAlgorithm.Durham}, dij_factor,
                                   _β = 1.0, _γ = 1.0, R = 4.0)
     nndist = eereco.nndist; nni = eereco.nni
@@ -228,6 +287,13 @@ end
     eereco.dijdist[i] = minE2p_i * dij_factor * nndist[i]
 end
 
+"""
+    update_nn_cross!(eereco, i, N, ::Val{JetAlgorithm.EEKt}, dij_factor, _β=1.0, _γ=1.0, R=4.0)
+
+EEKt-specialised cross-update. Updates `nndist`, `nni` and `dijdist` for
+both the updated slot and any affected neighbours, performing beam checks
+where required.
+"""
 @inline function update_nn_cross!(eereco, i, N, ::Val{JetAlgorithm.EEKt}, dij_factor,
                                   _β = 1.0, _γ = 1.0, R = 4.0)
     nndist = eereco.nndist; nni = eereco.nni
@@ -266,6 +332,13 @@ end
     nni[i] = beam_close ? 0 : nni[i]
 end
 
+"""
+    ee_check_consistency(clusterseq, eereco, N)
+
+Run an internal consistency check over the reconstruction state. Emits
+`@error` logs for invalid nearest-neighbour indices or malformed history
+entries. Intended for debugging; inexpensive checks only.
+"""
 function ee_check_consistency(clusterseq, eereco, N)
     # Check the consistency of the reconstruction state
     for i in 1:N
