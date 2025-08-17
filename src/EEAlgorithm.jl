@@ -215,9 +215,12 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ = 
             eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
         end
     elseif algorithm == JetAlgorithm.Valencia
+        # Use array-based helper to avoid StructArray property checks and
+        # reduce per-iteration overhead in the hot loop.
+        E2p = eereco.E2p; nz = eereco.nz
         @inbounds for i in 1:N
-            valencia_beam_dist = valencia_beam_distance(eereco, i, γ, p)
-            beam_closer = valencia_beam_dist < eereco[i].dijdist
+            valencia_beam_dist = valencia_beam_distance_arrays(E2p, nz, i, γ, p)
+            beam_closer = valencia_beam_dist < eereco.dijdist[i]
             eereco.dijdist[i] = beam_closer ? valencia_beam_dist : eereco.dijdist[i]
             eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
         end
@@ -605,22 +608,29 @@ end
                                            E2p::AbstractVector, dijdist::AbstractVector,
                                            i::Integer, N::Integer, ::Val{JetAlgorithm.Valencia},
                                            dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    nndist[i] = Inf
-    nni[i] = i
+    # Use locals for hot per-slot values to reduce repeated setindex! traffic
     invR2 = inv(R * R)
+    nndist_i = Inf
+    nni_i = i
     @inbounds for j in 1:N
         if j != i
             this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-            better_nndist_i = this_metric < nndist[i]
-            nndist[i] = better_nndist_i ? this_metric : nndist[i]
-            nni[i] = better_nndist_i ? j : nni[i]
+            if this_metric < nndist_i
+                nndist_i = this_metric
+                nni_i = j
+            end
         end
     end
-    dijdist[i] = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, nni[i], invR2)
+    # compute dijdist and beam check using locals then write back once
+    dijdist_i = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, nni_i, invR2)
     valencia_beam_dist = valencia_beam_distance_arrays(E2p, nz, i, γ, β)
-    beam_close = valencia_beam_dist < dijdist[i]
-    dijdist[i] = beam_close ? valencia_beam_dist : dijdist[i]
-    nni[i] = beam_close ? 0 : nni[i]
+    if valencia_beam_dist < dijdist_i
+        dijdist_i = valencia_beam_dist
+        nni_i = 0
+    end
+    nndist[i] = nndist_i
+    nni[i] = nni_i
+    dijdist[i] = dijdist_i
 end
 
 @inline function update_nn_cross_arrays!(nndist::AbstractVector, nni::AbstractVector,
@@ -725,14 +735,17 @@ end
                                         E2p::AbstractVector, dijdist::AbstractVector,
                                         i::Integer, N::Integer, ::Val{JetAlgorithm.Valencia},
                                         dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    nndist[i] = Inf
-    nni[i] = i
+    # Operate on locals for slot i to reduce setindex traffic; updates to other
+    # slots (j) still write directly since they modify different indices.
     invR2 = inv(R * R)
+    nndist_i = Inf
+    nni_i = i
     @inbounds for j in 1:(i-1)
         this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-        better_nndist_i = this_metric < nndist[i]
-        nndist[i] = better_nndist_i ? this_metric : nndist[i]
-        nni[i] = better_nndist_i ? j : nni[i]
+        if this_metric < nndist_i
+            nndist_i = this_metric
+            nni_i = j
+        end
         if this_metric < nndist[j]
             nndist[j] = this_metric
             nni[j] = i
@@ -746,9 +759,10 @@ end
     end
     @inbounds for j in (i+1):N
         this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-        better_nndist_i = this_metric < nndist[i]
-        nndist[i] = better_nndist_i ? this_metric : nndist[i]
-        nni[i] = better_nndist_i ? j : nni[i]
+        if this_metric < nndist_i
+            nndist_i = this_metric
+            nni_i = j
+        end
         if this_metric < nndist[j]
             nndist[j] = this_metric
             nni[j] = i
@@ -760,11 +774,16 @@ end
             end
         end
     end
-    dijdist[i] = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, nni[i], invR2)
+    # Finalize slot i
+    dijdist_i = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, nni_i, invR2)
     valencia_beam_dist = valencia_beam_distance_arrays(E2p, nz, i, γ, β)
-    beam_close = valencia_beam_dist < dijdist[i]
-    dijdist[i] = beam_close ? valencia_beam_dist : dijdist[i]
-    nni[i] = beam_close ? 0 : nni[i]
+    if valencia_beam_dist < dijdist_i
+        dijdist_i = valencia_beam_dist
+        nni_i = 0
+    end
+    nndist[i] = nndist_i
+    nni[i] = nni_i
+    dijdist[i] = dijdist_i
 end
 
 Base.@propagate_inbounds @inline function fill_reco_array!(eereco, particles, R2, p)
@@ -960,11 +979,11 @@ function _ee_genkt_algorithm_durham(; particles::AbstractVector{EEJet},
 
     # Main loop
     iter = 0
-    while N != 0
+    @inbounds while N != 0
         iter += 1
 
-        dij_min, ijetA = fast_findmin(dijdist, N)
-        ijetB = nni[ijetA]
+    dij_min, ijetA = fast_findmin(dijdist, N)
+    ijetB = nni[ijetA]
 
         if ijetB == 0
             ijetB = ijetA
@@ -1055,38 +1074,46 @@ function _ee_genkt_algorithm_valencia(; particles::AbstractVector{EEJet},
     # Call Valencia-specialised nearest-neighbour search once
     get_angular_nearest_neighbours!(eereco, Val(JetAlgorithm.Valencia), dij_factor, p, γ, R)
 
-    # Alias StructArray fields to local vectors to avoid repeated getindex
-    index = eereco.index; nni = eereco.nni; nndist = eereco.nndist
-    dijdist = eereco.dijdist; nx = eereco.nx; ny = eereco.ny; nz = eereco.nz
-    E2p = eereco.E2p
+    # Alias StructArray fields into local vectors to avoid allocations from
+    # copying while still avoiding repeated StructArray field lookups in
+    # hot loops. These locals point directly at the underlying vectors, so
+    # no explicit writeback is required at the end.
+    indexv = eereco.index
+    nni_v = eereco.nni
+    nndist_v = eereco.nndist
+    dijdist_v = eereco.dijdist
+    nxv = eereco.nx
+    nyv = eereco.ny
+    nzv = eereco.nz
+    E2pv = eereco.E2p
 
     # Now we can start the main loop
     iter = 0
     while N != 0
         iter += 1
 
-        dij_min, ijetA = fast_findmin(dijdist, N)
-        ijetB = nni[ijetA]
+    dij_min, ijetA = fast_findmin(dijdist_v, N)
+    ijetB = nni_v[ijetA]
 
         # Now we check if there is a "beam" merge possibility
-        if ijetB == 0
+            if ijetB == 0
             # Shouldn't happen for Valencia (beam handled via valencia_beam checks)
             ijetB = ijetA
-            add_step_to_history!(clusterseq,
-                                 clusterseq.jets[index[ijetA]]._cluster_hist_index,
-                                 BeamJet, Invalid, dij_min)
+                add_step_to_history!(clusterseq,
+                                     clusterseq.jets[indexv[ijetA]]._cluster_hist_index,
+                                     BeamJet, Invalid, dij_min)
         elseif N == 1
             ijetB = ijetA
             add_step_to_history!(clusterseq,
-                                 clusterseq.jets[eereco[ijetA].index]._cluster_hist_index,
+                                 clusterseq.jets[indexv[ijetA]]._cluster_hist_index,
                                  BeamJet, Invalid, dij_min)
         else
             if ijetB < ijetA
                 ijetA, ijetB = ijetB, ijetA
             end
 
-            jetA = clusterseq.jets[index[ijetA]]
-            jetB = clusterseq.jets[index[ijetB]]
+            jetA = clusterseq.jets[indexv[ijetA]]
+            jetB = clusterseq.jets[indexv[ijetB]]
 
             merged_jet = recombine(jetA, jetB;
                                    cluster_hist_index = length(clusterseq.history) + 1)
@@ -1098,32 +1125,61 @@ function _ee_genkt_algorithm_valencia(; particles::AbstractVector{EEJet},
                          cluster_hist_index(jetB))...,
                      newjet_k, dij_min)
 
-            insert_new_jet!(eereco, ijetA, newjet_k, R2, merged_jet, p)
+            # Insert merged jet into our local SoA (avoid writing StructArray)
+            indexv[ijetA] = newjet_k
+            nni_v[ijetA] = 0
+            nndist_v[ijetA] = R2
+            nxv[ijetA] = nx(merged_jet)
+            nyv[ijetA] = ny(merged_jet)
+            nzv[ijetA] = nz(merged_jet)
+            # Compute E2p like insert_new_jet! would
+            E = energy(merged_jet)
+            if p isa Int
+                if p == 1
+                    E2pv[ijetA] = E * E
+                else
+                    E2 = E * E
+                    E2pv[ijetA] = E2^p
+                end
+            else
+                E2pv[ijetA] = E^(2p)
+            end
         end
 
         if ijetB != N
-            copy_to_slot!(eereco, N, ijetB)
+            # Local copy from slot N -> slot ijetB (avoid StructArray ops)
+            indexv[ijetB] = indexv[N]
+            nni_v[ijetB] = nni_v[N]
+            nndist_v[ijetB] = nndist_v[N]
+            dijdist_v[ijetB] = dijdist_v[N]
+            nxv[ijetB] = nxv[N]
+            nyv[ijetB] = nyv[N]
+            nzv[ijetB] = nzv[N]
+            E2pv[ijetB] = E2pv[N]
         end
 
         N -= 1
 
-        # Update nearest neighbours step
-        for i in 1:N
-            if (ijetB != N + 1) && (nni[i] == N + 1)
-                nni[i] = ijetB
+    # Update nearest neighbours step
+    @inbounds for i in 1:N
+            if (ijetB != N + 1) && (nni_v[i] == N + 1)
+                nni_v[i] = ijetB
             else
-                if (nni[i] == ijetA) || (nni[i] == ijetB) || (nni[i] > N)
-                    update_nn_no_cross_arrays!(nndist, nni, nx, ny, nz, E2p, dijdist,
+                if (nni_v[i] == ijetA) || (nni_v[i] == ijetB) || (nni_v[i] > N)
+                    update_nn_no_cross_arrays!(nndist_v, nni_v, nxv, nyv, nzv, E2pv, dijdist_v,
                                                i, N, Val(JetAlgorithm.Valencia), dij_factor, p, γ, R)
                 end
             end
         end
 
         if ijetA != ijetB
-            update_nn_cross_arrays!(nndist, nni, nx, ny, nz, E2p, dijdist,
+            update_nn_cross_arrays!(nndist_v, nni_v, nxv, nyv, nzv, E2pv, dijdist_v,
                                     ijetA, N, Val(JetAlgorithm.Valencia), dij_factor, p, γ, R)
         end
     end
+
+    # Locals alias the StructArray fields directly, so there is no separate
+    # writeback step required here.
 
     clusterseq
 end
