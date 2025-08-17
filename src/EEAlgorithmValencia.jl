@@ -2,7 +2,12 @@
 # Valencia-specialised helpers and implementation
 ################################################################################
 
-# Valencia distance helpers
+"""
+    valencia_distance_inv(eereco, i, j, invR2) -> Float64
+
+Calculate the Valencia dij metric (scaled by `invR2`) between slots `i` and
+`j` in a StructArray `eereco`. Uses E2p and direction cosines from `eereco`.
+"""
 Base.@propagate_inbounds @inline function valencia_distance_inv(eereco, i, j, invR2)
     if hasproperty(eereco, :nx)
         nx = eereco.nx; ny = eereco.ny; nz = eereco.nz; E2p = eereco.E2p
@@ -19,30 +24,55 @@ end
 """
     dij_dist(eereco, i, j, dij_factor, ::Val{JetAlgorithm.Valencia}, R)
 
-Valencia dij distance uses the full Valencia metric, including the 2*(1-cosθ)/R² factor.
+Valencia-specialised `dij_dist` which computes the Valencia dij metric for
+slots `i` and `j`. Returns a large sentinel distance for beam index `j==0`.
 """
 @inline function dij_dist(eereco, i, j, dij_factor, ::Val{JetAlgorithm.Valencia}, R)
     j == 0 && return large_dij
     @inbounds valencia_distance(eereco, i, j, R)
 end
 
+"""
+    valencia_distance(eereco, i, j, R) -> Float64
+
+Compute the Valencia dij metric between `i` and `j` using explicit `R` and
+delegating to `valencia_distance_inv` with the appropriate scaling.
+"""
 Base.@propagate_inbounds @inline function valencia_distance(eereco, i, j, R)
     return valencia_distance_inv(eereco, i, j, inv(R * R))
 end
 
 # Array-based helpers
+"""
+    valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2) -> Float64
+
+Array-based variant of `valencia_distance_inv` that works directly on raw
+vectors (useful for the precomputed helpers/fast paths).
+"""
 Base.@propagate_inbounds @inline function valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
     angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
     min(E2p[i], E2p[j]) * 2 * angular_dist * invR2
 end
 
 # Scaled variant
+"""
+    valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j) -> Float64
+
+Compute the Valencia distance using a pre-scaled E2p vector (`E2p_scaled`),
+avoiding repeated multiplication by the R-dependent factor. Intended for
+performance-sensitive precomputed loops.
+"""
 Base.@propagate_inbounds @inline function valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
     angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
     min(E2p_scaled[i], E2p_scaled[j]) * angular_dist
 end
 
-# Beam distance helpers
+"""
+    valencia_beam_distance(eereco, i, γ, β) -> Float64
+
+Compute the Valencia beam-distance term for slot `i` given angular exponent
+`γ` and (unused) `β`. Uses direction cosine `nz` and E2p value.
+"""
 Base.@propagate_inbounds @inline function valencia_beam_distance(eereco, i, γ, β)
     if hasproperty(eereco, :nz)
         nzv = eereco.nz; E2pv = eereco.E2p
@@ -63,6 +93,12 @@ Base.@propagate_inbounds @inline function valencia_beam_distance(eereco, i, γ, 
     end
 end
 
+"""
+    valencia_beam_distance_arrays(E2p, nz, i, γ, β) -> Float64
+
+Array-based variant of `valencia_beam_distance` that operates on raw `E2p`
+and `nz` vectors.
+"""
 Base.@propagate_inbounds @inline function valencia_beam_distance_arrays(E2p, nz, i, γ, β)
     nz_i = nz[i]
     sin2 = 1 - nz_i * nz_i
@@ -76,7 +112,13 @@ Base.@propagate_inbounds @inline function valencia_beam_distance_arrays(E2p, nz,
     end
 end
 
-## Precomputed Valencia nearest-neighbour initializer using precomputed arrays
+"""
+    get_angular_nearest_neighbours_valencia_precomputed!(eereco, E2p_scaled, beam_term, p, γ=1.0, R=4.0)
+
+Initialize nearest-neighbour arrays for the Valencia algorithm using
+precomputed scaled energy vector `E2p_scaled` and `beam_term`. This avoids
+repeated per-pair scaling inside tight loops.
+"""
 Base.@propagate_inbounds @inline function get_angular_nearest_neighbours_valencia_precomputed!(eereco,
                                                                                               E2p_scaled::AbstractVector,
                                                                                               beam_term::AbstractVector,
@@ -115,7 +157,12 @@ Base.@propagate_inbounds @inline function get_angular_nearest_neighbours_valenci
     end
 end
 
-## Precomputed Valencia no-cross update using E2p_scaled and beam_term
+"""
+    update_nn_no_cross_arrays_precomputed!(nndist, nni, nx, ny, nz, E2p_scaled, beam_term, dijdist, i, N, dij_factor, β=1.0, γ=1.0, R=4.0)
+
+Precomputed Valencia no-cross nearest-neighbour update. Uses `E2p_scaled`
+and `beam_term` arrays to compute distances without per-pair scaling.
+"""
 @inline function update_nn_no_cross_arrays_precomputed!(nndist::AbstractVector, nni::AbstractVector,
                                                        nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
                                                        E2p_scaled::AbstractVector, beam_term::AbstractVector,
@@ -143,7 +190,12 @@ end
     dijdist[i] = dijdist_i
 end
 
-## Precomputed Valencia cross-update using E2p_scaled and beam_term
+"""
+    update_nn_cross_arrays_precomputed!(nndist, nni, nx, ny, nz, E2p_scaled, beam_term, dijdist, i, N, dij_factor, β=1.0, γ=1.0, R=4.0)
+
+Precomputed Valencia cross-update variant: updates neighbour data for slot
+`i` and any affected neighbours using `E2p_scaled` and `beam_term`.
+"""
 @inline function update_nn_cross_arrays_precomputed!(nndist::AbstractVector, nni::AbstractVector,
                                                     nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
                                                     E2p_scaled::AbstractVector, beam_term::AbstractVector,
@@ -195,7 +247,13 @@ end
     dijdist[i] = dijdist_i
 end
 
-# Valencia-specialised implementation of the main algorithm
+"""
+    _ee_genkt_algorithm_valencia(; particles::AbstractVector{EEJet}, algorithm::JetAlgorithm.Algorithm, p::Real, R=4.0, recombine=addjets, γ::Real=1.0, beta::Union{Real, Nothing}=nothing)
+
+Valencia-specialised implementation of the e+e- gen-kT clustering algorithm.
+This implementation precomputes scaled energy and beam-term arrays to speed up
+nearest-neighbour computations for the Valencia metric.
+"""
 function _ee_genkt_algorithm_valencia(; particles::AbstractVector{EEJet},
                                       algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
                                       recombine = addjets, γ::Real = 1.0,
