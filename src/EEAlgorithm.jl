@@ -70,6 +70,12 @@ Base.@propagate_inbounds @inline function valencia_distance_inv_arrays(E2p, nx, 
     min(E2p[i], E2p[j]) * 2 * angular_dist * invR2
 end
 
+# Scaled variant: accepts pre-multiplied E2p_scaled = E2p * (2 * invR2)
+Base.@propagate_inbounds @inline function valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
+    angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
+    min(E2p_scaled[i], E2p_scaled[j]) * angular_dist
+end
+
 """
     valencia_beam_distance(eereco, i, γ, β) -> Float64
 
@@ -283,13 +289,15 @@ end
 
 @inline function get_angular_nearest_neighbours!(eereco, ::Val{JetAlgorithm.Valencia},
                                                  dij_factor, p, γ = 1.0, R = 4.0)
+    # Fallback Val-specialised implementation kept for non-precomputed use.
+    # The Valencia entrypoint uses a precomputed path (see _ee_genkt_algorithm_valencia)
     N = length(eereco)
     E2p = eereco.E2p; nx = eereco.nx; ny = eereco.ny; nz = eereco.nz
     nndist = eereco.nndist; nni = eereco.nni
     invR2 = inv(R * R)
-    @inbounds for i in 1:N
-        nndist[i] = Inf
-        nni[i] = i
+        @inbounds for i in 1:N
+            nndist[i] = Inf
+            nni[i] = i
     end
     @inbounds for i in 1:N
         local_nndist_i = nndist[i]
@@ -315,6 +323,45 @@ end
         valencia_beam_dist = valencia_beam_distance(eereco, i, γ, p)
         beam_closer = valencia_beam_dist < eereco[i].dijdist
         eereco.dijdist[i] = beam_closer ? valencia_beam_dist : eereco.dijdist[i]
+        eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
+    end
+end
+
+## Precomputed Valencia nearest-neighbour initializer using precomputed arrays
+Base.@propagate_inbounds @inline function get_angular_nearest_neighbours_valencia_precomputed!(eereco,
+                                                                                              E2p_scaled::AbstractVector,
+                                                                                              beam_term::AbstractVector,
+                                                                                              p, γ = 1.0, R = 4.0)
+    N = length(eereco)
+    nx = eereco.nx; ny = eereco.ny; nz = eereco.nz
+    nndist = eereco.nndist; nni = eereco.nni
+    @inbounds for i in 1:N
+        nndist[i] = Inf
+        nni[i] = i
+    end
+    @inbounds for i in 1:N
+        local_nndist_i = nndist[i]
+        local_nni_i = nni[i]
+        @inbounds for j in (i + 1):N
+            this_metric = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
+            if this_metric < local_nndist_i
+                local_nndist_i = this_metric
+                local_nni_i = j
+            end
+            if this_metric < nndist[j]
+                nndist[j] = this_metric
+                nni[j] = i
+            end
+        end
+        nndist[i] = local_nndist_i
+        nni[i] = local_nni_i
+    end
+    @inbounds for i in 1:N
+        eereco.dijdist[i] = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, nni[i])
+    end
+    @inbounds for i in 1:N
+        beam_closer = beam_term[i] < eereco.dijdist[i]
+        eereco.dijdist[i] = beam_closer ? beam_term[i] : eereco.dijdist[i]
         eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
     end
 end
@@ -608,7 +655,7 @@ end
                                            E2p::AbstractVector, dijdist::AbstractVector,
                                            i::Integer, N::Integer, ::Val{JetAlgorithm.Valencia},
                                            dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    # Use locals for hot per-slot values to reduce repeated setindex! traffic
+    # Precomputed variant lives in a separate function; keep this fallback here.
     invR2 = inv(R * R)
     nndist_i = Inf
     nni_i = i
@@ -626,6 +673,34 @@ end
     valencia_beam_dist = valencia_beam_distance_arrays(E2p, nz, i, γ, β)
     if valencia_beam_dist < dijdist_i
         dijdist_i = valencia_beam_dist
+        nni_i = 0
+    end
+    nndist[i] = nndist_i
+    nni[i] = nni_i
+    dijdist[i] = dijdist_i
+end
+
+## Precomputed Valencia no-cross update using E2p_scaled and beam_term
+@inline function update_nn_no_cross_arrays_precomputed!(nndist::AbstractVector, nni::AbstractVector,
+                                                       nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
+                                                       E2p_scaled::AbstractVector, beam_term::AbstractVector,
+                                                       dijdist::AbstractVector,
+                                                       i::Integer, N::Integer,
+                                                       dij_factor, β = 1.0, γ = 1.0, R = 4.0)
+    nndist_i = Inf
+    nni_i = i
+    @inbounds for j in 1:N
+        if j != i
+            this_metric = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
+            if this_metric < nndist_i
+                nndist_i = this_metric
+                nni_i = j
+            end
+        end
+    end
+    dijdist_i = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, nni_i)
+    if beam_term[i] < dijdist_i
+        dijdist_i = beam_term[i]
         nni_i = 0
     end
     nndist[i] = nndist_i
@@ -737,6 +812,8 @@ end
                                         dij_factor, β = 1.0, γ = 1.0, R = 4.0)
     # Operate on locals for slot i to reduce setindex traffic; updates to other
     # slots (j) still write directly since they modify different indices.
+    # Precomputed variant fallback uses the non-precomputed helpers; there is
+    # a separate precomputed cross-update below.
     invR2 = inv(R * R)
     nndist_i = Inf
     nni_i = i
@@ -779,6 +856,58 @@ end
     valencia_beam_dist = valencia_beam_distance_arrays(E2p, nz, i, γ, β)
     if valencia_beam_dist < dijdist_i
         dijdist_i = valencia_beam_dist
+        nni_i = 0
+    end
+    nndist[i] = nndist_i
+    nni[i] = nni_i
+    dijdist[i] = dijdist_i
+end
+
+## Precomputed Valencia cross-update using E2p_scaled and beam_term
+@inline function update_nn_cross_arrays_precomputed!(nndist::AbstractVector, nni::AbstractVector,
+                                                    nx::AbstractVector, ny::AbstractVector, nz::AbstractVector,
+                                                    E2p_scaled::AbstractVector, beam_term::AbstractVector,
+                                                    dijdist::AbstractVector,
+                                                    i::Integer, N::Integer,
+                                                    dij_factor, β = 1.0, γ = 1.0, R = 4.0)
+    nndist_i = Inf
+    nni_i = i
+    @inbounds for j in 1:(i-1)
+        this_metric = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
+        if this_metric < nndist_i
+            nndist_i = this_metric
+            nni_i = j
+        end
+        if this_metric < nndist[j]
+            nndist[j] = this_metric
+            nni[j] = i
+            dijdist[j] = this_metric
+            if beam_term[j] < dijdist[j]
+                dijdist[j] = beam_term[j]
+                nni[j] = 0
+            end
+        end
+    end
+    @inbounds for j in (i+1):N
+        this_metric = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j)
+        if this_metric < nndist_i
+            nndist_i = this_metric
+            nni_i = j
+        end
+        if this_metric < nndist[j]
+            nndist[j] = this_metric
+            nni[j] = i
+            dijdist[j] = this_metric
+            if beam_term[j] < dijdist[j]
+                dijdist[j] = beam_term[j]
+                nni[j] = 0
+            end
+        end
+    end
+    # Finalize slot i
+    dijdist_i = valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, nni_i)
+    if beam_term[i] < dijdist_i
+        dijdist_i = beam_term[i]
         nni_i = 0
     end
     nndist[i] = nndist_i
@@ -1070,9 +1199,9 @@ function _ee_genkt_algorithm_valencia(; particles::AbstractVector{EEJet},
     clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Plain, particles, history,
                                  Qtot)
 
-    # Run over initial pairs of jets to find nearest neighbours
-    # Call Valencia-specialised nearest-neighbour search once
-    get_angular_nearest_neighbours!(eereco, Val(JetAlgorithm.Valencia), dij_factor, p, γ, R)
+    # Run over initial pairs of jets to find nearest neighbours (precomputed path)
+    # prepare precomputed arrays below before calling the initialized helper
+    
 
     # Alias StructArray fields into local vectors to avoid allocations from
     # copying while still avoiding repeated StructArray field lookups in
@@ -1086,6 +1215,27 @@ function _ee_genkt_algorithm_valencia(; particles::AbstractVector{EEJet},
     nyv = eereco.ny
     nzv = eereco.nz
     E2pv = eereco.E2p
+
+    # Precompute scaled E2p and beam_term for Valencia to avoid repeated work
+    invR2 = inv(R * R)
+    factor = 2 * invR2
+    E2p_scaled = similar(E2pv)
+    beam_term = similar(E2pv)
+    @inbounds for k in 1:N
+        E2p_scaled[k] = E2pv[k] * factor
+        nz_k = nzv[k]
+        sin2 = 1.0 - nz_k * nz_k
+        if γ == 1.0
+            beam_term[k] = E2pv[k] * sin2
+        elseif γ == 2.0
+            beam_term[k] = E2pv[k] * (sin2 * sin2)
+        else
+            beam_term[k] = E2pv[k] * sin2^γ
+        end
+    end
+
+    # Now run NN init using precomputed helpers
+    get_angular_nearest_neighbours_valencia_precomputed!(eereco, E2p_scaled, beam_term, p, γ, R)
 
     # Now we can start the main loop
     iter = 0
@@ -1144,6 +1294,17 @@ function _ee_genkt_algorithm_valencia(; particles::AbstractVector{EEJet},
             else
                 E2pv[ijetA] = E^(2p)
             end
+            # Recompute precomputed derived arrays for the merged slot
+            E2p_scaled[ijetA] = E2pv[ijetA] * factor
+            nz_k = nzv[ijetA]
+            sin2_k = 1.0 - nz_k * nz_k
+            if γ == 1.0
+                beam_term[ijetA] = E2pv[ijetA] * sin2_k
+            elseif γ == 2.0
+                beam_term[ijetA] = E2pv[ijetA] * (sin2_k * sin2_k)
+            else
+                beam_term[ijetA] = E2pv[ijetA] * sin2_k^γ
+            end
         end
 
         if ijetB != N
@@ -1156,6 +1317,9 @@ function _ee_genkt_algorithm_valencia(; particles::AbstractVector{EEJet},
             nyv[ijetB] = nyv[N]
             nzv[ijetB] = nzv[N]
             E2pv[ijetB] = E2pv[N]
+            # Also copy precomputed derived arrays
+            E2p_scaled[ijetB] = E2p_scaled[N]
+            beam_term[ijetB] = beam_term[N]
         end
 
         N -= 1
@@ -1166,15 +1330,17 @@ function _ee_genkt_algorithm_valencia(; particles::AbstractVector{EEJet},
                 nni_v[i] = ijetB
             else
                 if (nni_v[i] == ijetA) || (nni_v[i] == ijetB) || (nni_v[i] > N)
-                    update_nn_no_cross_arrays!(nndist_v, nni_v, nxv, nyv, nzv, E2pv, dijdist_v,
-                                               i, N, Val(JetAlgorithm.Valencia), dij_factor, p, γ, R)
+                    update_nn_no_cross_arrays_precomputed!(nndist_v, nni_v, nxv, nyv, nzv,
+                                                           E2p_scaled, beam_term, dijdist_v,
+                                                           i, N, dij_factor, p, γ, R)
                 end
             end
         end
 
         if ijetA != ijetB
-            update_nn_cross_arrays!(nndist_v, nni_v, nxv, nyv, nzv, E2pv, dijdist_v,
-                                    ijetA, N, Val(JetAlgorithm.Valencia), dij_factor, p, γ, R)
+            update_nn_cross_arrays_precomputed!(nndist_v, nni_v, nxv, nyv, nzv,
+                                                E2p_scaled, beam_term, dijdist_v,
+                                                ijetA, N, dij_factor, p, γ, R)
         end
     end
 
