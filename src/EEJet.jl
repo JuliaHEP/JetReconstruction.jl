@@ -22,7 +22,7 @@ struct EEJet <: FourMomentum
     _cluster_hist_index::Int
 end
 
-g"""
+"""
     EEJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
 
 Constructs an `EEJet` object from the given momentum components, energy, and
