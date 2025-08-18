@@ -9,20 +9,14 @@ Calculate the Valencia dij metric (scaled by `invR2`) between slots `i` and
 `j` in a StructArray `eereco`. Uses E2p and direction cosines from `eereco`.
 """
 Base.@propagate_inbounds @inline function valencia_distance_inv(eereco, i, j, invR2)
-    if hasproperty(eereco, :nx)
-        nx = eereco.nx
-        ny = eereco.ny
-        nz = eereco.nz
-        E2p = eereco.E2p
-        angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
-        # Valencia dij : min(E_i^{2\u03b2}, E_j^{2\u03b2}) * 2 * (1 - cos \u03b8) * invR2
-        min(E2p[i], E2p[j]) * 2 * angular_dist * invR2
-    else
-        # Fallback for Array-of-structs
-        angular_dist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
-                       eereco[i].nz * eereco[j].nz
-        min(eereco[i].E2p, eereco[j].E2p) * 2 * angular_dist * invR2
-    end
+    # Assume SoA layout
+    nx = eereco.nx
+    ny = eereco.ny
+    nz = eereco.nz
+    E2p = eereco.E2p
+    angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
+    # Valencia dij : min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos θ) * invR2
+    min(E2p[i], E2p[j]) * 2 * angular_dist * invR2
 end
 
 """
@@ -81,17 +75,11 @@ Compute the Valencia beam-distance term for slot `i` given angular exponent
 `γ` and (unused) `β`. Uses direction cosine `nz` and E2p value.
 """
 Base.@propagate_inbounds @inline function valencia_beam_distance(eereco, i, γ, β)
-    if hasproperty(eereco, :nz)
-        nzv = eereco.nz
-        E2pv = eereco.E2p
-        nz_i = nzv[i]
-        sin2 = 1 - nz_i * nz_i
-        E2p = E2pv[i]
-    else
-        nz_i = eereco[i].nz
-        sin2 = 1 - nz_i * nz_i
-        E2p = eereco[i].E2p
-    end
+    nzv = eereco.nz
+    E2pv = eereco.E2p
+    nz_i = nzv[i]
+    sin2 = 1 - nz_i * nz_i
+    E2p = E2pv[i]
     if γ == 1.0
         return E2p * sin2
     elseif γ == 2.0
