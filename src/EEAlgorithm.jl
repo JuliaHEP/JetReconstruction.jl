@@ -17,17 +17,9 @@ Calculate the angular distance between two jets `i` and `j` using the formula
 - `Float64`: The angular distance between `i` and `j`, which is ``1 -
   cos\theta``.
 """
-Base.@propagate_inbounds @inline function angular_distance(eereco, i, j)
-    if hasproperty(eereco, :nx)
-        nx = eereco.nx
-        ny = eereco.ny
-        nz = eereco.nz
-        @muladd 1.0 - nx[i] * nx[j] - ny[i] * ny[j] - nz[i] * nz[j]
-    else
-        # Fallback for Array-of-structs (AoS)
-        @muladd 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
-                eereco[i].nz * eereco[j].nz
-    end
+@inline function angular_distance(eereco, i, j)
+    @inbounds @muladd 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
+                      eereco[i].nz * eereco[j].nz
 end
 
 """
@@ -87,34 +79,35 @@ is specialised for the Durham metric and operates on the StructArray layout.
 """
 @inline function get_angular_nearest_neighbours!(eereco, ::Val{JetAlgorithm.Durham},
                                                  dij_factor, p, γ = 1.0, R = 4.0)
+    # Get the initial nearest neighbours for each jet
     N = length(eereco)
-    nx = eereco.nx
-    ny = eereco.ny
-    nz = eereco.nz
-    nndist = eereco.nndist
-    nni = eereco.nni
+    # this_dist_vector = Vector{Float64}(undef, N)
+    # Nearest neighbour geometric distance
     @inbounds for i in 1:N
-        local_nndist_i = large_distance
-        local_nni_i = i
-        @inbounds for j in 1:N
-            if j != i
-                this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-                better_nndist_i = this_metric < local_nndist_i
-                local_nndist_i = better_nndist_i ? this_metric : local_nndist_i
-                local_nni_i = better_nndist_i ? j : local_nni_i
-                better_nndist_j = this_metric < nndist[j]
-                nndist[j] = better_nndist_j ? this_metric : nndist[j]
-                nni[j] = better_nndist_j ? i : nni[j]
-            end
+        # TODO: Replace the 'j' loop with a vectorised operation over the appropriate array elements?
+        # this_dist_vector .= 1.0 .- eereco.nx[i:N] .* eereco[i + 1:end].nx .-
+        #     eereco[i].ny .* eereco[i + 1:end].ny .- eereco[i].nz .* eereco[i + 1:end].nz
+        # The problem here will be avoiding allocations for the array outputs, which would easily
+        # kill performance
+        @inbounds for j in (i + 1):N
+            this_nndist = angular_distance(eereco, i, j)
+
+            # Using these ternary operators is faster than the if-else block
+            better_nndist_i = this_nndist < eereco[i].nndist
+            eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
+            eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
+            better_nndist_j = this_nndist < eereco[j].nndist
+            eereco.nndist[j] = better_nndist_j ? this_nndist : eereco.nndist[j]
+            eereco.nni[j] = better_nndist_j ? i : eereco.nni[j]
         end
-        nndist[i] = local_nndist_i
-        nni[i] = local_nni_i
     end
-    @inbounds for i in 1:N
-        eereco.dijdist[i] = dij_dist(eereco, i, nni[i], dij_factor,
+    # Nearest neighbour dij distance
+    for i in 1:N
+        eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor,
                                      Val(JetAlgorithm.Durham), R)
     end
 end
+
 
 """
     get_angular_nearest_neighbours!(eereco, ::Val{JetAlgorithm.EEKt}, dij_factor, p, γ=1.0, R=4.0)
@@ -125,26 +118,41 @@ checks appropriate for EEKt.
 """
 @inline function get_angular_nearest_neighbours!(eereco, ::Val{JetAlgorithm.EEKt},
                                                  dij_factor, p, γ = 1.0, R = 4.0)
+    # Get the initial nearest neighbours for each jet
     N = length(eereco)
+    # this_dist_vector = Vector{Float64}(undef, N)
+    # Nearest neighbour geometric distance
     @inbounds for i in 1:N
+        # TODO: Replace the 'j' loop with a vectorised operation over the appropriate array elements?
+        # this_dist_vector .= 1.0 .- eereco.nx[i:N] .* eereco[i + 1:end].nx .-
+        #     eereco[i].ny .* eereco[i + 1:end].ny .- eereco[i].nz .* eereco[i + 1:end].nz
+        # The problem here will be avoiding allocations for the array outputs, which would easily
+        # kill performance
         @inbounds for j in (i + 1):N
-            this_metric = angular_distance(eereco, i, j)
-            better_nndist_i = this_metric < eereco[i].nndist
-            eereco.nndist[i] = better_nndist_i ? this_metric : eereco.nndist[i]
+            this_nndist = angular_distance(eereco, i, j)
+
+            # Using these ternary operators is faster than the if-else block
+            better_nndist_i = this_nndist < eereco[i].nndist
+            eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
-            better_nndist_j = this_metric < eereco[j].nndist
-            eereco.nndist[j] = better_nndist_j ? this_metric : eereco.nndist[j]
+            better_nndist_j = this_nndist < eereco[j].nndist
+            eereco.nndist[j] = better_nndist_j ? this_nndist : eereco.nndist[j]
             eereco.nni[j] = better_nndist_j ? i : eereco.nni[j]
         end
     end
-    @inbounds for i in 1:N
+    # Nearest neighbour dij distance
+    for i in 1:N
         eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor,
                                      Val(JetAlgorithm.EEKt), R)
     end
-    @inbounds for i in 1:N
-        beam_closer = eereco[i].E2p < eereco[i].dijdist
-        eereco.dijdist[i] = beam_closer ? eereco[i].E2p : eereco.dijdist[i]
-        eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
+    # For the EEKt algorithm, we need to check the beam distance as well
+    # (This is structured to only check for EEKt once)
+    if algorithm == JetAlgorithm.EEKt
+        @inbounds for i in 1:N
+            beam_closer = eereco[i].E2p < eereco[i].dijdist
+            eereco.dijdist[i] = beam_closer ? eereco[i].E2p : eereco.dijdist[i]
+            eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
+        end
     end
 end
 
@@ -152,8 +160,7 @@ end
     get_angular_nearest_neighbours!(eereco, algorithm::JetAlgorithm.Algorithm, dij_factor, p, γ=1.0, R=4.0)
 
 Forwarding wrapper that dispatches to the `Val{...}` specialised
-`get_angular_nearest_neighbours!` implementation to avoid branches in tight
-loops.
+`get_angular_nearest_neighbours!` implementation to avoid branches.
 """
 @inline function get_angular_nearest_neighbours!(eereco,
                                                  algorithm::JetAlgorithm.Algorithm,
@@ -184,31 +191,17 @@ direction-cosine arrays for performance.
 """
 @inline function update_nn_no_cross!(eereco, i, N, ::Val{JetAlgorithm.Durham}, dij_factor,
                                      _β = 1.0, _γ = 1.0, R = 4.0)
-    nndist = eereco.nndist
-    nni = eereco.nni
-    nx = eereco.nx
-    ny = eereco.ny
-    nz = eereco.nz
-    nndist[i] = large_distance
-    nni[i] = i
-    @inbounds for j in 1:(i - 1)
-        this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-        better_nndist_i = this_metric < nndist[i]
-        nndist[i] = better_nndist_i ? this_metric : nndist[i]
-        nni[i] = better_nndist_i ? j : nni[i]
+    eereco.nndist[i] = large_distance
+    eereco.nni[i] = i
+    @inbounds for j in 1:N
+        if j != i
+            this_nndist = angular_distance(eereco, i, j)
+            better_nndist_i = this_nndist < eereco[i].nndist
+            eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
+            eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
+        end
     end
-    @inbounds for j in (i + 1):N
-        this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-        better_nndist_i = this_metric < nndist[i]
-        nndist[i] = better_nndist_i ? this_metric : nndist[i]
-        nni[i] = better_nndist_i ? j : nni[i]
-    end
-    # Inline Durham dij computation to avoid function-call overhead
-    E2p = eereco.E2p
-    E2p_i = E2p[i]
-    E2p_nni = E2p[nni[i]]
-    minE2p = E2p_i < E2p_nni ? E2p_i : E2p_nni
-    eereco.dijdist[i] = minE2p * dij_factor * nndist[i]
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor)
 end
 
 """
@@ -220,33 +213,35 @@ beam is closer than the dij distance.
 """
 @inline function update_nn_no_cross!(eereco, i, N, ::Val{JetAlgorithm.EEKt}, dij_factor,
                                      _β = 1.0, _γ = 1.0, R = 4.0)
-    nndist = eereco.nndist
-    nni = eereco.nni
-    nx = eereco.nx
-    ny = eereco.ny
-    nz = eereco.nz
-    E2p = eereco.E2p
-    E2p_i = E2p[i]
-    nndist[i] = large_distance
-    nni[i] = i
-    @inbounds for j in 1:(i - 1)
-        this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-        better_nndist_i = this_metric < nndist[i]
-        nndist[i] = better_nndist_i ? this_metric : nndist[i]
-        nni[i] = better_nndist_i ? j : nni[i]
+    # Update the nearest neighbour for jet i, w.r.t. all other active jets
+    # also doing the cross check for the other jet
+    eereco.nndist[i] = large_distance
+    eereco.nni[i] = i
+    @inbounds for j in 1:N
+        if j != i
+            this_nndist = angular_distance(eereco, i, j)
+            better_nndist_i = this_nndist < eereco[i].nndist
+            eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
+            eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
+            if this_nndist < eereco[j].nndist
+                eereco.nndist[j] = this_nndist
+                eereco.nni[j] = i
+                # j will not be revisited, so update metric distance here
+                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor)
+                if algorithm == JetAlgorithm.EEKt
+                    if eereco[j].E2p < eereco[j].dijdist
+                        eereco.dijdist[j] = eereco[j].E2p
+                        eereco.nni[j] = 0
+                    end
+                end
+            end
+        end
     end
-    @inbounds for j in (i + 1):N
-        this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-        better_nndist_i = this_metric < nndist[i]
-        nndist[i] = better_nndist_i ? this_metric : nndist[i]
-        nni[i] = better_nndist_i ? j : nni[i]
-    end
-    # Inline EEKt dij computation and beam check
-    E2p_nni = E2p[nni[i]]
-    minE2p = E2p_i < E2p_nni ? E2p_i : E2p_nni
-    eereco.dijdist[i] = minE2p * dij_factor * nndist[i]
-    beam_close = E2p_i < eereco.dijdist[i]
-    eereco.dijdist[i] = beam_close ? E2p_i : eereco.dijdist[i]
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor)
+
+    # Need to check beam for EEKt
+    beam_close = eereco[i].E2p < eereco[i].dijdist
+    eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
     eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
 end
 
@@ -271,35 +266,31 @@ nearest neighbour. Computes inline dij updates to avoid function-call overhead.
 """
 @inline function update_nn_cross!(eereco, i, N, ::Val{JetAlgorithm.Durham}, dij_factor,
                                   _β = 1.0, _γ = 1.0, R = 4.0)
-    nndist = eereco.nndist
-    nni = eereco.nni
-    nx = eereco.nx
-    ny = eereco.ny
-    nz = eereco.nz
-    nndist[i] = large_distance
-    nni[i] = i
-    E2p = eereco.E2p
-    E2p_i = E2p[i]
+    # Update the nearest neighbour for jet i, w.r.t. all other active jets
+    # also doing the cross check for the other jet
+    eereco.nndist[i] = large_distance
+    eereco.nni[i] = i
     @inbounds for j in 1:N
         if j != i
-            this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-            better_nndist_i = this_metric < nndist[i]
-            nndist[i] = better_nndist_i ? this_metric : nndist[i]
-            nni[i] = better_nndist_i ? j : nni[i]
-            if this_metric < nndist[j]
-                nndist[j] = this_metric
-                nni[j] = i
-                # Hoist E2p_j and compute new dij once
-                E2p_j = E2p[j]
-                new_dij = (E2p_i < E2p_j ? E2p_i : E2p_j) * dij_factor * this_metric
-                eereco.dijdist[j] = new_dij
+            this_nndist = angular_distance(eereco, i, j)
+            better_nndist_i = this_nndist < eereco[i].nndist
+            eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
+            eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
+            if this_nndist < eereco[j].nndist
+                eereco.nndist[j] = this_nndist
+                eereco.nni[j] = i
+                # j will not be revisited, so update metric distance here
+                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor)
+                if algorithm == JetAlgorithm.EEKt
+                    if eereco[j].E2p < eereco[j].dijdist
+                        eereco.dijdist[j] = eereco[j].E2p
+                        eereco.nni[j] = 0
+                    end
+                end
             end
         end
     end
-    # Inline dij for i
-    E2p_nni = E2p[nni[i]]
-    minE2p_i = E2p_i < E2p_nni ? E2p_i : E2p_nni
-    eereco.dijdist[i] = minE2p_i * dij_factor * nndist[i]
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor)
 end
 
 """
@@ -311,43 +302,36 @@ where required.
 """
 @inline function update_nn_cross!(eereco, i, N, ::Val{JetAlgorithm.EEKt}, dij_factor,
                                   _β = 1.0, _γ = 1.0, R = 4.0)
-    nndist = eereco.nndist
-    nni = eereco.nni
-    nx = eereco.nx
-    ny = eereco.ny
-    nz = eereco.nz
-    E2p = eereco.E2p
-    E2p_i = E2p[i]
-    nndist[i] = large_distance
-    nni[i] = i
+    # Update the nearest neighbour for jet i, w.r.t. all other active jets
+    # also doing the cross check for the other jet
+    eereco.nndist[i] = large_distance
+    eereco.nni[i] = i
     @inbounds for j in 1:N
         if j != i
-            this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-            better_nndist_i = this_metric < nndist[i]
-            nndist[i] = better_nndist_i ? this_metric : nndist[i]
-            nni[i] = better_nndist_i ? j : nni[i]
-            if this_metric < nndist[j]
-                nndist[j] = this_metric
-                nni[j] = i
-                # Hoist E2p_j and compute new dij once, then beam-check
-                E2p_j = E2p[j]
-                new_dij = (E2p_i < E2p_j ? E2p_i : E2p_j) * dij_factor * this_metric
-                if E2p_j < new_dij
-                    eereco.dijdist[j] = E2p_j
-                    nni[j] = 0
-                else
-                    eereco.dijdist[j] = new_dij
+            this_nndist = angular_distance(eereco, i, j)
+            better_nndist_i = this_nndist < eereco[i].nndist
+            eereco.nndist[i] = better_nndist_i ? this_nndist : eereco.nndist[i]
+            eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
+            if this_nndist < eereco[j].nndist
+                eereco.nndist[j] = this_nndist
+                eereco.nni[j] = i
+                # j will not be revisited, so update metric distance here
+                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor)
+                if algorithm == JetAlgorithm.EEKt
+                    if eereco[j].E2p < eereco[j].dijdist
+                        eereco.dijdist[j] = eereco[j].E2p
+                        eereco.nni[j] = 0
+                    end
                 end
             end
         end
     end
-    # Inline dij for i and beam check
-    E2p_nni = E2p[nni[i]]
-    minE2p_i = E2p_i < E2p_nni ? E2p_i : E2p_nni
-    eereco.dijdist[i] = minE2p_i * dij_factor * nndist[i]
-    beam_close = E2p_i < eereco.dijdist[i]
-    eereco.dijdist[i] = beam_close ? E2p_i : eereco.dijdist[i]
-    nni[i] = beam_close ? 0 : nni[i]
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor)
+    
+    # Check beam for EEKt
+    beam_close = eereco[i].E2p < eereco[i].dijdist
+    eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
+    eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
 end
 
 """
@@ -371,7 +355,7 @@ function ee_check_consistency(clusterseq, eereco, N)
             end
         end
     end
-    @debug "Consistency check passed"
+    @debug "Consistency check passed at $msg"
 end
 
 ################################################################################
