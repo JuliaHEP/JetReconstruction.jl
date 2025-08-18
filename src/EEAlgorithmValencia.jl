@@ -2,7 +2,6 @@
 # Valencia-specialised helpers and implementation
 ################################################################################
 
-
 """
     angular_distance_arrays(nx, ny, nz, i, j) -> Float64
 
