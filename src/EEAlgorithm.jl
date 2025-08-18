@@ -23,19 +23,6 @@ Calculate the angular distance between two jets `i` and `j` using the formula
 end
 
 """
-    angular_distance_arrays(nx, ny, nz, i, j) -> Float64
-
-Compute the angular distance (1 - cos θ) between entries `i` and `j` using
-direction-cosine arrays `nx`, `ny`, `nz`.
-
-# Returns
-- `Float64`: angular distance.
-"""
-Base.@propagate_inbounds @inline function angular_distance_arrays(nx, ny, nz, i, j)
-    @muladd 1.0 - nx[i] * nx[j] - ny[i] * ny[j] - nz[i] * nz[j]
-end
-
-"""
     dij_dist(eereco, i, j, dij_factor, algorithm::JetAlgorithm.Algorithm, R = 4.0)
 
 Calculate the dij distance between two e⁺e⁻ jets. This is the public entry point.
@@ -56,11 +43,13 @@ min(E_i^{2p}, E_j^{2p}) * dij_factor * (angular NN metric stored in nndist).
 For EEKt, dij_factor encodes the R-dependent normalization.
 """
 @inline function dij_dist(eereco, i, j, dij_factor, ::Val{JetAlgorithm.Durham}, R = 4.0)
+    # Calculate the dij distance for jet i from jet j
     j == 0 && return large_dij
     @inbounds min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[i].nndist
 end
 
 @inline function dij_dist(eereco, i, j, dij_factor, ::Val{JetAlgorithm.EEKt}, R = 4.0)
+    # Calculate the dij distance for jet i from jet j
     j == 0 && return large_dij
     @inbounds min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[i].nndist
 end
@@ -169,8 +158,7 @@ end
     update_nn_no_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm, dij_factor, β=1.0, γ=1.0, R=4.0)
 
 Update nearest-neighbour information for slot `i` (no-cross variant) by
-forwarding to algorithm-specific `Val{...}` specialisations. This wrapper
-avoids runtime branching in the hot inner loop.
+forwarding to algorithm-specific `Val{...}` specialisations.
 """
 @inline function update_nn_no_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm,
                                      dij_factor, β = 1.0, γ = 1.0, R = 4.0)
@@ -343,173 +331,6 @@ function ee_check_consistency(clusterseq, eereco, N)
     @debug "Consistency check passed"
 end
 
-################################################################################
-# Array-based nearest-neighbour update helpers (operate on raw vectors)
-################################################################################
-
-@inline function update_nn_no_cross_arrays!(nndist::AbstractVector, nni::AbstractVector,
-                                            nx::AbstractVector, ny::AbstractVector,
-                                            nz::AbstractVector,
-                                            E2p::AbstractVector, dijdist::AbstractVector,
-                                            i::Integer, N::Integer,
-                                            algorithm::JetAlgorithm.Algorithm,
-                                            dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    return update_nn_no_cross_arrays!(nndist, nni, nx, ny, nz, E2p, dijdist, i, N,
-                                      Val(algorithm), dij_factor, β, γ, R)
-end
-
-@inline function update_nn_no_cross_arrays!(nndist::AbstractVector, nni::AbstractVector,
-                                            nx::AbstractVector, ny::AbstractVector,
-                                            nz::AbstractVector,
-                                            E2p::AbstractVector, dijdist::AbstractVector,
-                                            i::Integer, N::Integer,
-                                            ::Val{JetAlgorithm.Durham},
-                                            dij_factor, _β = 1.0, _γ = 1.0, R = 4.0)
-    nndist[i] = large_distance
-    nni[i] = i
-    @inbounds for j in 1:N
-        if j != i
-            this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-            better_nndist_i = this_metric < nndist[i]
-            nndist[i] = better_nndist_i ? this_metric : nndist[i]
-            nni[i] = better_nndist_i ? j : nni[i]
-        end
-    end
-    # Inline Durham dij computation
-    E2p_i = E2p[i]
-    E2p_nni = E2p[nni[i]]
-    minE2p = E2p_i < E2p_nni ? E2p_i : E2p_nni
-    dijdist[i] = minE2p * dij_factor * nndist[i]
-end
-
-@inline function update_nn_no_cross_arrays!(nndist::AbstractVector, nni::AbstractVector,
-                                            nx::AbstractVector, ny::AbstractVector,
-                                            nz::AbstractVector,
-                                            E2p::AbstractVector, dijdist::AbstractVector,
-                                            i::Integer, N::Integer,
-                                            ::Val{JetAlgorithm.EEKt},
-                                            dij_factor, _β = 1.0, _γ = 1.0, R = 4.0)
-    nndist[i] = large_distance
-    nni[i] = i
-    E2p_i = E2p[i]
-    @inbounds for j in 1:N
-        if j != i
-            this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-            better_nndist_i = this_metric < nndist[i]
-            nndist[i] = better_nndist_i ? this_metric : nndist[i]
-            nni[i] = better_nndist_i ? j : nni[i]
-        end
-    end
-    E2p_nni = E2p[nni[i]]
-    minE2p = E2p_i < E2p_nni ? E2p_i : E2p_nni
-    dijdist[i] = minE2p * dij_factor * nndist[i]
-    beam_close = E2p_i < dijdist[i]
-    dijdist[i] = beam_close ? E2p_i : dijdist[i]
-    nni[i] = beam_close ? 0 : nni[i]
-end
-
-@inline function update_nn_cross_arrays!(nndist::AbstractVector, nni::AbstractVector,
-                                         nx::AbstractVector, ny::AbstractVector,
-                                         nz::AbstractVector,
-                                         E2p::AbstractVector, dijdist::AbstractVector,
-                                         i::Integer, N::Integer,
-                                         algorithm::JetAlgorithm.Algorithm,
-                                         dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    return update_nn_cross_arrays!(nndist, nni, nx, ny, nz, E2p, dijdist, i, N,
-                                   Val(algorithm), dij_factor, β, γ, R)
-end
-
-@inline function update_nn_cross_arrays!(nndist::AbstractVector, nni::AbstractVector,
-                                         nx::AbstractVector, ny::AbstractVector,
-                                         nz::AbstractVector,
-                                         E2p::AbstractVector, dijdist::AbstractVector,
-                                         i::Integer, N::Integer, ::Val{JetAlgorithm.Durham},
-                                         dij_factor, _β = 1.0, _γ = 1.0, R = 4.0)
-    nndist[i] = large_distance
-    nni[i] = i
-    E2p_i = E2p[i]
-    @inbounds for j in 1:(i - 1)
-        this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-        better_nndist_i = this_metric < nndist[i]
-        nndist[i] = better_nndist_i ? this_metric : nndist[i]
-        nni[i] = better_nndist_i ? j : nni[i]
-        if this_metric < nndist[j]
-            nndist[j] = this_metric
-            nni[j] = i
-            E2p_j = E2p[j]
-            dijdist[j] = (E2p_i < E2p_j ? E2p_i : E2p_j) * dij_factor * this_metric
-        end
-    end
-    @inbounds for j in (i + 1):N
-        this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-        better_nndist_i = this_metric < nndist[i]
-        nndist[i] = better_nndist_i ? this_metric : nndist[i]
-        nni[i] = better_nndist_i ? j : nni[i]
-        if this_metric < nndist[j]
-            nndist[j] = this_metric
-            nni[j] = i
-            E2p_j = E2p[j]
-            minE2p = E2p_i < E2p_j ? E2p_i : E2p_j
-            dijdist[j] = minE2p * dij_factor * this_metric
-        end
-    end
-    E2p_nni = E2p[nni[i]]
-    minE2p_i = E2p_i < E2p_nni ? E2p_i : E2p_nni
-    dijdist[i] = minE2p_i * dij_factor * nndist[i]
-end
-
-@inline function update_nn_cross_arrays!(nndist::AbstractVector, nni::AbstractVector,
-                                         nx::AbstractVector, ny::AbstractVector,
-                                         nz::AbstractVector,
-                                         E2p::AbstractVector, dijdist::AbstractVector,
-                                         i::Integer, N::Integer, ::Val{JetAlgorithm.EEKt},
-                                         dij_factor, _β = 1.0, _γ = 1.0, R = 4.0)
-    E2p_i = E2p[i]
-    nndist[i] = large_distance
-    nni[i] = i
-    @inbounds for j in 1:(i - 1)
-        this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-        better_nndist_i = this_metric < nndist[i]
-        nndist[i] = better_nndist_i ? this_metric : nndist[i]
-        nni[i] = better_nndist_i ? j : nni[i]
-        if this_metric < nndist[j]
-            nndist[j] = this_metric
-            nni[j] = i
-            E2p_j = E2p[j]
-            new_dij = (E2p_i < E2p_j ? E2p_i : E2p_j) * dij_factor * this_metric
-            if E2p_j < new_dij
-                dijdist[j] = E2p_j
-                nni[j] = 0
-            else
-                dijdist[j] = new_dij
-            end
-        end
-    end
-    @inbounds for j in (i + 1):N
-        this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-        better_nndist_i = this_metric < nndist[i]
-        nndist[i] = better_nndist_i ? this_metric : nndist[i]
-        nni[i] = better_nndist_i ? j : nni[i]
-        if this_metric < nndist[j]
-            nndist[j] = this_metric
-            nni[j] = i
-            E2p_j = E2p[j]
-            minE2p = E2p_i < E2p_j ? E2p_i : E2p_j
-            dijdist[j] = minE2p * dij_factor * this_metric
-            if E2p_j < dijdist[j]
-                dijdist[j] = E2p_j
-                nni[j] = 0
-            end
-        end
-    end
-    E2p_nni = E2p[nni[i]]
-    minE2p_i = E2p_i < E2p_nni ? E2p_i : E2p_nni
-    dijdist[i] = minE2p_i * dij_factor * nndist[i]
-    beam_close = E2p_i < dijdist[i]
-    dijdist[i] = beam_close ? E2p_i : dijdist[i]
-    nni[i] = beam_close ? 0 : nni[i]
-end
-
 Base.@propagate_inbounds @inline function fill_reco_array!(eereco, particles, R2, p)
     @inbounds for i in eachindex(particles)
         eereco.index[i] = i
@@ -680,10 +501,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
         end
     end
 
-    # Now call the actual reconstruction method, tuned for our internal EDM
-    # Dispatch once on the algorithm to call a small number of specialised
-    # internal implementations. This avoids per-iteration branching/Val() in
-    # the hot inner loops.
+    # Now call the actual reconstruction method.
     if algorithm == JetAlgorithm.Valencia
         return _ee_genkt_algorithm_valencia(particles = recombination_particles, p = p,
                                             R = R,
@@ -701,7 +519,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
 end
 
 ################################################################################
-# Durham-specialised implementation (optimized inner loops using array helpers)
+# Durham-specialised implementation
 ################################################################################
 function _ee_genkt_algorithm_durham(; particles::AbstractVector{EEJet},
                                     algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
@@ -779,21 +597,19 @@ function _ee_genkt_algorithm_durham(; particles::AbstractVector{EEJet},
         N -= 1
 
         # Update nearest neighbours step using array-based helpers specialised for Durham
-        for i in 1:N
+    for i in 1:N
             if (ijetB != N + 1) && (nni[i] == N + 1)
                 nni[i] = ijetB
             else
                 if (nni[i] == ijetA) || (nni[i] == ijetB) || (nni[i] > N)
-                    update_nn_no_cross_arrays!(nndist, nni, nx, ny, nz, E2p, dijdist,
-                                               i, N, Val(JetAlgorithm.Durham), dij_factor,
-                                               p, γ, R)
+            # use SoA-based updater
+            update_nn_no_cross!(eereco, i, N, Val(JetAlgorithm.Durham), dij_factor, p, γ, R)
                 end
             end
         end
 
         if ijetA != ijetB
-            update_nn_cross_arrays!(nndist, nni, nx, ny, nz, E2p, dijdist,
-                                    ijetA, N, Val(JetAlgorithm.Durham), dij_factor, p, γ, R)
+        update_nn_cross!(eereco, ijetA, N, Val(JetAlgorithm.Durham), dij_factor, p, γ, R)
         end
     end
 
@@ -801,6 +617,7 @@ function _ee_genkt_algorithm_durham(; particles::AbstractVector{EEJet},
 end
 
 ################################################################################
+# EEKt-specialised implementation
 ################################################################################
 
 """
