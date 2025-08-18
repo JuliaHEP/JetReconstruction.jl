@@ -2,6 +2,20 @@
 # Valencia-specialised helpers and implementation
 ################################################################################
 
+
+"""
+    angular_distance_arrays(nx, ny, nz, i, j) -> Float64
+
+Compute the angular distance (1 - cos θ) between entries `i` and `j` using
+direction-cosine arrays `nx`, `ny`, `nz`.
+
+# Returns
+- `Float64`: angular distance.
+"""
+Base.@propagate_inbounds @inline function angular_distance_arrays(nx, ny, nz, i, j)
+    @muladd 1.0 - nx[i] * nx[j] - ny[i] * ny[j] - nz[i] * nz[j]
+end
+
 """
     valencia_distance_inv(eereco, i, j, invR2) -> Float64
 
@@ -58,8 +72,7 @@ end
     valencia_distance_inv_scaled_arrays(E2p_scaled, nx, ny, nz, i, j) -> Float64
 
 Compute the Valencia distance using a pre-scaled E2p vector (`E2p_scaled`),
-avoiding repeated multiplication by the R-dependent factor. Intended for
-performance-sensitive precomputed loops.
+avoiding repeated multiplication by the R-dependent factor.
 """
 Base.@propagate_inbounds @inline function valencia_distance_inv_scaled_arrays(E2p_scaled,
                                                                               nx, ny, nz, i,
@@ -113,7 +126,7 @@ end
 
 Initialize nearest-neighbour arrays for the Valencia algorithm using
 precomputed scaled energy vector `E2p_scaled` and `beam_term`. This avoids
-repeated per-pair scaling inside tight loops.
+repeated per-pair scaling inside loops.
 """
 Base.@propagate_inbounds @inline function get_angular_nearest_neighbours_valencia_precomputed!(eereco,
                                                                                                E2p_scaled::AbstractVector,
