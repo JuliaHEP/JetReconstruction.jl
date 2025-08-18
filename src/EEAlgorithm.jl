@@ -97,7 +97,6 @@ is specialised for the Durham metric and operates on the StructArray layout.
     end
 end
 
-
 """
     get_angular_nearest_neighbours!(eereco, ::Val{JetAlgorithm.EEKt}, dij_factor, p, γ=1.0, R=4.0)
 
@@ -186,7 +185,8 @@ direction-cosine arrays for performance.
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
         end
     end
-    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, Val(JetAlgorithm.Durham), R)
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor,
+                                 Val(JetAlgorithm.Durham), R)
 end
 
 """
@@ -212,12 +212,14 @@ beam is closer than the dij distance.
                 eereco.nndist[j] = this_nndist
                 eereco.nni[j] = i
                 # j will not be revisited, so update metric distance here
-                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor, Val(JetAlgorithm.EEKt), R)
+                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor,
+                                             Val(JetAlgorithm.EEKt), R)
                 # EEKt-specific beam check is handled in the EEKt method only
             end
         end
     end
-    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, Val(JetAlgorithm.EEKt), R)
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor,
+                                 Val(JetAlgorithm.EEKt), R)
 
     # Need to check beam for EEKt
     beam_close = eereco[i].E2p < eereco[i].dijdist
@@ -260,12 +262,14 @@ nearest neighbour. Computes inline dij updates to avoid function-call overhead.
                 eereco.nndist[j] = this_nndist
                 eereco.nni[j] = i
                 # j will not be revisited, so update metric distance here
-                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor, Val(JetAlgorithm.Durham), R)
+                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor,
+                                             Val(JetAlgorithm.Durham), R)
                 # EEKt-specific beam check is handled in the EEKt method only
             end
         end
     end
-    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, Val(JetAlgorithm.Durham), R)
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor,
+                                 Val(JetAlgorithm.Durham), R)
 end
 
 """
@@ -291,7 +295,8 @@ where required.
                 eereco.nndist[j] = this_nndist
                 eereco.nni[j] = i
                 # j will not be revisited, so update metric distance here
-                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor, Val(JetAlgorithm.EEKt), R)
+                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor,
+                                             Val(JetAlgorithm.EEKt), R)
                 if eereco[j].E2p < eereco[j].dijdist
                     eereco.dijdist[j] = eereco[j].E2p
                     eereco.nni[j] = 0
@@ -299,8 +304,9 @@ where required.
             end
         end
     end
-    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, Val(JetAlgorithm.EEKt), R)
-    
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor,
+                                 Val(JetAlgorithm.EEKt), R)
+
     # Check beam for EEKt
     beam_close = eereco[i].E2p < eereco[i].dijdist
     eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
@@ -597,19 +603,21 @@ function _ee_genkt_algorithm_durham(; particles::AbstractVector{EEJet},
         N -= 1
 
         # Update nearest neighbours step using array-based helpers specialised for Durham
-    for i in 1:N
+        for i in 1:N
             if (ijetB != N + 1) && (nni[i] == N + 1)
                 nni[i] = ijetB
             else
                 if (nni[i] == ijetA) || (nni[i] == ijetB) || (nni[i] > N)
-            # use SoA-based updater
-            update_nn_no_cross!(eereco, i, N, Val(JetAlgorithm.Durham), dij_factor, p, γ, R)
+                    # use SoA-based updater
+                    update_nn_no_cross!(eereco, i, N, Val(JetAlgorithm.Durham), dij_factor,
+                                        p, γ, R)
                 end
             end
         end
 
         if ijetA != ijetB
-        update_nn_cross!(eereco, ijetA, N, Val(JetAlgorithm.Durham), dij_factor, p, γ, R)
+            update_nn_cross!(eereco, ijetA, N, Val(JetAlgorithm.Durham), dij_factor, p, γ,
+                             R)
         end
     end
 
