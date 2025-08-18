@@ -145,14 +145,11 @@ checks appropriate for EEKt.
         eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor,
                                      Val(JetAlgorithm.EEKt), R)
     end
-    # For the EEKt algorithm, we need to check the beam distance as well
-    # (This is structured to only check for EEKt once)
-    if algorithm == JetAlgorithm.EEKt
-        @inbounds for i in 1:N
-            beam_closer = eereco[i].E2p < eereco[i].dijdist
-            eereco.dijdist[i] = beam_closer ? eereco[i].E2p : eereco.dijdist[i]
-            eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
-        end
+    # Beam-distance check for EEKt (this variant is EEKt-specific)
+    @inbounds for i in 1:N
+        beam_closer = eereco[i].E2p < eereco[i].dijdist
+        eereco.dijdist[i] = beam_closer ? eereco[i].E2p : eereco.dijdist[i]
+        eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
     end
 end
 
@@ -201,7 +198,7 @@ direction-cosine arrays for performance.
             eereco.nni[i] = better_nndist_i ? j : eereco.nni[i]
         end
     end
-    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor)
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, Val(JetAlgorithm.Durham), R)
 end
 
 """
@@ -227,17 +224,12 @@ beam is closer than the dij distance.
                 eereco.nndist[j] = this_nndist
                 eereco.nni[j] = i
                 # j will not be revisited, so update metric distance here
-                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor)
-                if algorithm == JetAlgorithm.EEKt
-                    if eereco[j].E2p < eereco[j].dijdist
-                        eereco.dijdist[j] = eereco[j].E2p
-                        eereco.nni[j] = 0
-                    end
-                end
+                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor, Val(JetAlgorithm.EEKt), R)
+                # EEKt-specific beam check is handled in the EEKt method only
             end
         end
     end
-    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor)
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, Val(JetAlgorithm.EEKt), R)
 
     # Need to check beam for EEKt
     beam_close = eereco[i].E2p < eereco[i].dijdist
@@ -280,17 +272,12 @@ nearest neighbour. Computes inline dij updates to avoid function-call overhead.
                 eereco.nndist[j] = this_nndist
                 eereco.nni[j] = i
                 # j will not be revisited, so update metric distance here
-                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor)
-                if algorithm == JetAlgorithm.EEKt
-                    if eereco[j].E2p < eereco[j].dijdist
-                        eereco.dijdist[j] = eereco[j].E2p
-                        eereco.nni[j] = 0
-                    end
-                end
+                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor, Val(JetAlgorithm.Durham), R)
+                # EEKt-specific beam check is handled in the EEKt method only
             end
         end
     end
-    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor)
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, Val(JetAlgorithm.Durham), R)
 end
 
 """
@@ -316,17 +303,15 @@ where required.
                 eereco.nndist[j] = this_nndist
                 eereco.nni[j] = i
                 # j will not be revisited, so update metric distance here
-                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor)
-                if algorithm == JetAlgorithm.EEKt
-                    if eereco[j].E2p < eereco[j].dijdist
-                        eereco.dijdist[j] = eereco[j].E2p
-                        eereco.nni[j] = 0
-                    end
+                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor, Val(JetAlgorithm.EEKt), R)
+                if eereco[j].E2p < eereco[j].dijdist
+                    eereco.dijdist[j] = eereco[j].E2p
+                    eereco.nni[j] = 0
                 end
             end
         end
     end
-    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor)
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, Val(JetAlgorithm.EEKt), R)
     
     # Check beam for EEKt
     beam_close = eereco[i].E2p < eereco[i].dijdist
@@ -355,7 +340,7 @@ function ee_check_consistency(clusterseq, eereco, N)
             end
         end
     end
-    @debug "Consistency check passed at $msg"
+    @debug "Consistency check passed"
 end
 
 ################################################################################
