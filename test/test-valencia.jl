@@ -68,8 +68,11 @@ run_reco_test(valencia_exclusive_d500_b1g1)
 # Test dij_dist for Valencia algorithm
 @testset "dij_dist Valencia" begin
     # Minimal eereco with two reco jets; only nx,ny,nz,E2p are used by valencia_distance
-    eereco = EERecoJet[EERecoJet(1, 0, Inf, Inf, 1.0, 0.0, 0.0, 1.0),
-                       EERecoJet(2, 0, Inf, Inf, 0.0, 1.0, 0.0, 2.0)]
+    eereco = StructArray{EERecoJet}(undef, 2)
+    eereco.nx .= [1.0, 0.0]
+    eereco.ny .= [0.0, 1.0]
+    eereco.nz .= [0.0, 0.0]
+    eereco.E2p .= [1.0, 2.0]
     dij = dij_dist(eereco, 1, 2, 1.0, JetAlgorithm.Valencia, 0.8)
     @test dij ≈ valencia_distance(eereco, 1, 2, 0.8)
 end
@@ -77,8 +80,11 @@ end
 # Valencia distance wrapper coverage
 @testset "Valencia distance wrappers" begin
     # Minimal eereco with two reco jets and identical directions so angle=0
-    eereco = EERecoJet[EERecoJet(1, 0, Inf, Inf, 1.0, 0.0, 0.0, 9.0),
-                       EERecoJet(2, 0, Inf, Inf, 1.0, 0.0, 0.0, 4.0)]
+    eereco = StructArray{EERecoJet}(undef, 2)
+    eereco.nx .= [1.0, 1.0]
+    eereco.ny .= [0.0, 0.0]
+    eereco.nz .= [0.0, 0.0]
+    eereco.E2p .= [9.0, 4.0]
     R = 2.0
     invR2 = inv(R * R)
     @test valencia_distance_inv(eereco, 1, 2, invR2) == 0.0
