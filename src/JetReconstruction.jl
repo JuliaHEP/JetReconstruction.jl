@@ -79,7 +79,6 @@ export tiled_jet_reconstruct
 ## E+E- algorithms
 include("EEAlgorithm.jl")
 export ee_genkt_algorithm
-include("EEAlgorithmValencia.jl")
 
 ## SoftKiller
 include("SoftKiller.jl")
