@@ -80,8 +80,7 @@ end
     eereco = EERecoJet[EERecoJet(1, 0, Inf, Inf, 1.0, 0.0, 0.0, 9.0),
                        EERecoJet(2, 0, Inf, Inf, 1.0, 0.0, 0.0, 4.0)]
     R = 2.0
-    invR2 = inv(R * R)
-    @test valencia_distance_inv(eereco, 1, 2, invR2) == 0.0
+    @test valencia_distance(eereco, 1, 2, R) == 0.0
     @test valencia_distance(eereco, 1, 2, R) == 0.0
 end
 
