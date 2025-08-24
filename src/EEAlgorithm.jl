@@ -17,16 +17,30 @@ Calculate the angular distance between two jets `i` and `j` using the formula
 - `Float64`: The angular distance between `i` and `j`, which is ``1 -
   cos\theta``.
 """
-Base.@propagate_inbounds @inline function angular_distance(eereco, i, j)
-    if hasproperty(eereco, :nx)
-        nx = eereco.nx
-        ny = eereco.ny
-        nz = eereco.nz
-        @muladd 1.0 - nx[i] * nx[j] - ny[i] * ny[j] - nz[i] * nz[j]
-    else
-        # Fallback for Array-of-structs (AoS)
-        @muladd 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
-                eereco[i].nz * eereco[j].nz
+@inline function angular_distance(eereco, i, j)
+    @inbounds @muladd 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
+                      eereco[i].nz * eereco[j].nz
+end
+
+"""
+    dij_dist(eereco, i, j, dij_factor, algorithm::JetAlgorithm.Algorithm, R=4.0)
+
+Compute dij distance for (Durham, EEKt, Valencia) using simple conditionals.
+Beam index `j==0` returns a large sentinel. For Valencia we use the full
+Valencia metric (independent of `dij_factor`).
+"""
+@inline function dij_dist(eereco, i, j, dij_factor, algorithm, R=4.0)
+    if !(algorithm isa JetAlgorithm.Algorithm)
+        throw(ArgumentError("algorithm must be a JetAlgorithm.Algorithm"))
+    end
+    j == 0 && return large_dij
+    @inbounds begin
+        if algorithm == JetAlgorithm.Valencia
+            return valencia_distance(eereco, i, j, R)
+        else
+            # Durham & EEKt share same form here (min(E2p_i,E2p_j) * dij_factor * angular_metric)
+            return min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[i].nndist
+        end
     end
 end
 
@@ -45,38 +59,13 @@ Calculate the Valencia distance between two jets `i` and `j` as
 # Returns
 - `Float64`: The Valencia distance between `i` and `j`.
 """
-Base.@propagate_inbounds @inline function valencia_distance_inv(eereco, i, j, invR2)
-    if hasproperty(eereco, :nx)
-        nx = eereco.nx
-        ny = eereco.ny
-        nz = eereco.nz
-        E2p = eereco.E2p
-        angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
-        # Valencia dij : min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos θ) * invR2
-        min(E2p[i], E2p[j]) * 2 * angular_dist * invR2
-    else
-        # Fallback for Array-of-structs
-        angular_dist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
-                       eereco[i].nz * eereco[j].nz
-        min(eereco[i].E2p, eereco[j].E2p) * 2 * angular_dist * invR2
-    end
-end
-
 Base.@propagate_inbounds @inline function valencia_distance(eereco, i, j, R)
-    return valencia_distance_inv(eereco, i, j, inv(R * R))
+    invR2 = inv(R * R)
+    @muladd angular_dist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
+                    eereco[i].nz * eereco[j].nz
+    return min(eereco[i].E2p, eereco[j].E2p) * 2 * angular_dist * invR2
 end
 
-# Array-based helpers: operate directly on field vectors from StructArray to avoid
-# repeated eereco[i] indexing which can be slower.
-Base.@propagate_inbounds @inline function angular_distance_arrays(nx, ny, nz, i, j)
-    @muladd 1.0 - nx[i] * nx[j] - ny[i] * ny[j] - nz[i] * nz[j]
-end
-
-Base.@propagate_inbounds @inline function valencia_distance_inv_arrays(E2p, nx, ny, nz, i,
-                                                                       j, invR2)
-    angular_dist = angular_distance_arrays(nx, ny, nz, i, j)
-    min(E2p[i], E2p[j]) * 2 * angular_dist * invR2
-end
 
 """
     valencia_beam_distance(eereco, i, γ, β) -> Float64
@@ -96,18 +85,9 @@ for unit direction cosines. Since ``sin^2 θ = 1 - nz^2``, we implement
 - `Float64`: The Valencia beam distance for jet `i`.
 """
 Base.@propagate_inbounds @inline function valencia_beam_distance(eereco, i, γ, β)
-    if hasproperty(eereco, :nz)
-        nzv = eereco.nz
-        E2pv = eereco.E2p
-        nz_i = nzv[i]
-        sin2 = 1 - nz_i * nz_i
-        E2p = E2pv[i]
-    else
-        nz_i = eereco[i].nz
-        sin2 = 1 - nz_i * nz_i
-        E2p = eereco[i].E2p
-    end
-    # Fast-paths for common γ values to avoid pow in hot loop
+    nz_i = eereco[i].nz
+    sin2 = 1 - nz_i * nz_i
+    E2p = eereco[i].E2p
     if γ == 1.0
         return E2p * sin2
     elseif γ == 2.0
@@ -117,65 +97,27 @@ Base.@propagate_inbounds @inline function valencia_beam_distance(eereco, i, γ, 
     end
 end
 
-# Array-based helper for Valencia beam distance to avoid StructArray getindex in hot loops
-Base.@propagate_inbounds @inline function valencia_beam_distance_arrays(E2p, nz, i, γ, β)
-    nz_i = nz[i]
-    sin2 = 1 - nz_i * nz_i
-    E2p_i = E2p[i]
-    # Fast-paths for common γ values to avoid pow in hot loop
-    if γ == 1.0
-        return E2p_i * sin2
-    elseif γ == 2.0
-        return E2p_i * (sin2 * sin2)
-    else
-        return E2p_i * sin2^γ
-    end
-end
-
-"""
-    dij_dist(eereco, i, j, dij_factor, algorithm::JetAlgorithm.Algorithm, R=4.0)
-
-Compute dij distance for (Durham, EEKt, Valencia) using simple conditionals.
-Beam index `j==0` returns a large sentinel. For Valencia we use the full
-Valencia metric (independent of `dij_factor`).
-"""
-@inline function dij_dist(eereco, i, j, dij_factor, algorithm::JetAlgorithm.Algorithm, R=4.0)
-    j == 0 && return large_dij
-    @inbounds begin
-        if algorithm == JetAlgorithm.Valencia
-            return valencia_distance(eereco, i, j, R)
-        else
-            # Durham & EEKt share same form here (min(E2p_i,E2p_j) * dij_factor * angular_metric)
-            return min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[i].nndist
-        end
-    end
-end
-
-# Fallback for incorrect algorithm token (maintains previous test behaviour)
-@inline function dij_dist(eereco, i, j, dij_factor, algorithm, R=4.0)
-    throw(ArgumentError("Algorithm $algorithm not supported for dij_dist"))
-end
-
 function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ = 1.0, R = 4.0)
     # Get the initial nearest neighbours for each jet
     N = length(eereco)
-    # For Valencia, nearest-neighbour must be chosen on the full dij metric (FastJet NNH behaviour)
+    # Initialise sentinels so the first comparison always wins
     @inbounds for i in 1:N
-        local_nndist_i = Inf
-        local_nni_i = i
-        eereco.nndist[i] = local_nndist_i
-        eereco.nni[i] = local_nni_i
+        if algorithm == JetAlgorithm.Valencia
+            eereco.nndist[i] = Inf
+        else
+            eereco.nndist[i] = large_distance
+        end
+        eereco.nni[i] = i
     end
     # Nearest neighbour search
     @inbounds for i in 1:N
         @inbounds for j in (i + 1):N
             # Metric used to pick the nearest neighbour
             if algorithm == JetAlgorithm.Valencia
-                # Use array helpers to avoid repeated StructArray getindex
-                this_metric = valencia_distance_inv_arrays(eereco.E2p, eereco.nx, eereco.ny,
-                                                           eereco.nz, i, j, inv(R * R))
+                # Use canonical Valencia distance (StructArray-aware)
+                this_metric = valencia_distance(eereco, i, j, R)
             else
-                this_metric = angular_distance_arrays(eereco.nx, eereco.ny, eereco.nz, i, j)
+                this_metric = angular_distance(eereco, i, j)
             end
 
             # Using these ternary operators is faster than the if-else block
@@ -195,8 +137,8 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ = 
             eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, R)
         end
     end
-    # For the EEKt algorithm, we need to check the beam distance as well
-    # (This is structured to only check for EEKt once)
+    # For the EEKt and Valencia algorithms, we need to check the beam distance as well
+    # (This is structured to check each algorithm's beam distance once)
     if algorithm == JetAlgorithm.EEKt
         @inbounds for i in 1:N
             beam_closer = eereco[i].E2p < eereco[i].dijdist
@@ -213,118 +155,89 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ = 
     end
 end
 
-## Removed Val-specialised get_angular_nearest_neighbours! methods (now unified above)
-
 @inline function update_nn_no_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm,
                                      dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    nndist = eereco.nndist; nni = eereco.nni
-    nx = eereco.nx; ny = eereco.ny; nz = eereco.nz; E2p = eereco.E2p
+    # Valencia metric is unbounded, others use a large finite value
     if algorithm == JetAlgorithm.Valencia
-        invR2 = inv(R * R)
-        nndist[i] = Inf; nni[i] = i
-        @inbounds for j in 1:(i - 1)
-            this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-            better = this_metric < nndist[i]
-            nndist[i] = better ? this_metric : nndist[i]
-            nni[i] = better ? j : nni[i]
-        end
-        @inbounds for j in (i + 1):N
-            this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-            better = this_metric < nndist[i]
-            nndist[i] = better ? this_metric : nndist[i]
-            nni[i] = better ? j : nni[i]
-        end
-        eereco.dijdist[i] = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, nni[i], invR2)
-        val_beam = valencia_beam_distance(eereco, i, γ, β)
-        beam_close = val_beam < eereco.dijdist[i]
-        eecycle = eereco.dijdist
-        eecycle[i] = beam_close ? val_beam : eecycle[i]
-        eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
+        eereco.nndist[i] = Inf
     else
-        # Durham / EEKt share angular metric; EEKt adds beam check
-        nndist[i] = large_distance; nni[i] = i
-        @inbounds for j in 1:(i - 1)
-            this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-            better = this_metric < nndist[i]
-            nndist[i] = better ? this_metric : nndist[i]
-            nni[i] = better ? j : nni[i]
+        eereco.nndist[i] = large_distance
+    end
+    eereco.nni[i] = i
+    # Scan all other jets, update i, and cross-update j
+    @inbounds for j in 1:N
+        if j != i
+            this_metric = algorithm == JetAlgorithm.Valencia ?
+                          valencia_distance(eereco, i, j, R) :
+                          angular_distance(eereco, i, j)
+            better_i = this_metric < eereco[i].nndist
+            eereco.nndist[i] = better_i ? this_metric : eereco.nndist[i]
+            eereco.nni[i] = better_i ? j : eereco.nni[i]
         end
-        @inbounds for j in (i + 1):N
-            this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-            better = this_metric < nndist[i]
-            nndist[i] = better ? this_metric : nndist[i]
-            nni[i] = better ? j : nni[i]
-        end
-        E2p_i = E2p[i]; E2p_nni = E2p[nni[i]]; minE2p = E2p_i < E2p_nni ? E2p_i : E2p_nni
-        eereco.dijdist[i] = minE2p * dij_factor * nndist[i]
-        if algorithm == JetAlgorithm.EEKt
-            beam_close = E2p_i < eereco.dijdist[i]
-            eereco.dijdist[i] = beam_close ? E2p_i : eereco.dijdist[i]
-            eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
-        end
+    end
+    # Set dij for i using unified dispatcher and apply beam checks
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, R)
+    if algorithm == JetAlgorithm.EEKt
+        beam_close = eereco[i].E2p < eereco[i].dijdist
+        eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
+        eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
+    elseif algorithm == JetAlgorithm.Valencia
+        val_beam = valencia_beam_distance(eereco, i, γ, β)
+        beam_close = val_beam < eereco[i].dijdist
+        eereco.dijdist[i] = beam_close ? val_beam : eereco.dijdist[i]
+        eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
     end
 end
 
-# (Forwarding handled earlier; avoid duplicate definition)
-
 @inline function update_nn_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm,
                                   dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    nndist = eereco.nndist; nni = eereco.nni
-    nx = eereco.nx; ny = eereco.ny; nz = eereco.nz; E2p = eereco.E2p
+    # Valencia metric is unbounded, others use a large finite value
     if algorithm == JetAlgorithm.Valencia
-        nndist[i] = Inf; nni[i] = i; invR2 = inv(R * R)
-        @inbounds for j in 1:N
-            if j != i
-                this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-                better = this_metric < nndist[i]
-                nndist[i] = better ? this_metric : nndist[i]
-                nni[i] = better ? j : nni[i]
-                if this_metric < nndist[j]
-                    nndist[j] = this_metric
-                    nni[j] = i
-                    eereco.dijdist[j] = this_metric
-                    val_beam = valencia_beam_distance_arrays(E2p, nz, j, γ, β)
-                    if val_beam < eereco.dijdist[j]
-                        eereco.dijdist[j] = val_beam
-                        nni[j] = 0
-                    end
-                end
-            end
-        end
-        eereco.dijdist[i] = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, nni[i], invR2)
-        val_beam = valencia_beam_distance_arrays(E2p, nz, i, γ, β)
-        beam_close = val_beam < eereco.dijdist[i]
-        eereco.dijdist[i] = beam_close ? val_beam : eereco.dijdist[i]
-        nni[i] = beam_close ? 0 : nni[i]
+        eereco.nndist[i] = Inf
     else
-        nndist[i] = large_distance; nni[i] = i; E2p_i = E2p[i]
-        @inbounds for j in 1:N
-            if j != i
-                this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-                better = this_metric < nndist[i]
-                nndist[i] = better ? this_metric : nndist[i]
-                nni[i] = better ? j : nni[i]
-                if this_metric < nndist[j]
-                    nndist[j] = this_metric
-                    nni[j] = i
-                    E2p_j = E2p[j]
-                    new_dij = (E2p_i < E2p_j ? E2p_i : E2p_j) * dij_factor * this_metric
-                    if algorithm == JetAlgorithm.EEKt && E2p_j < new_dij
-                        eereco.dijdist[j] = E2p_j
-                        nni[j] = 0
-                    else
-                        eereco.dijdist[j] = new_dij
+        eereco.nndist[i] = large_distance
+    end
+    eereco.nni[i] = i
+    # Scan all other jets, update i, and cross-update j
+    @inbounds for j in 1:N
+        if j != i
+            this_metric = algorithm == JetAlgorithm.Valencia ?
+                            valencia_distance(eereco, i, j, R) :
+                            angular_distance(eereco, i, j)
+            better_i = this_metric < eereco[i].nndist
+            eereco.nndist[i] = better_i ? this_metric : eereco.nndist[i]
+            eereco.nni[i] = better_i ? j : eereco.nni[i]
+
+            if this_metric < eereco[j].nndist
+                eereco.nndist[j] = this_metric
+                eereco.nni[j] = i
+                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor, algorithm, R)
+                if algorithm == JetAlgorithm.EEKt
+                    if eereco[j].E2p < eereco[j].dijdist
+                        eereco.dijdist[j] = eereco[j].E2p
+                        eereco.nni[j] = 0
+                    end
+                elseif algorithm == JetAlgorithm.Valencia
+                    val_beam_j = valencia_beam_distance(eereco, j, γ, β)
+                    if val_beam_j < eereco[j].dijdist
+                        eereco.dijdist[j] = val_beam_j
+                        eereco.nni[j] = 0
                     end
                 end
             end
         end
-        E2p_nni = E2p[nni[i]]; minE2p_i = E2p_i < E2p_nni ? E2p_i : E2p_nni
-        eereco.dijdist[i] = minE2p_i * dij_factor * nndist[i]
-        if algorithm == JetAlgorithm.EEKt
-            beam_close = E2p_i < eereco.dijdist[i]
-            eereco.dijdist[i] = beam_close ? E2p_i : eereco.dijdist[i]
-            nni[i] = beam_close ? 0 : nni[i]
-        end
+    end
+    # Set dij for i using unified dispatcher and apply beam checks
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, R)
+    if algorithm == JetAlgorithm.EEKt
+        beam_close = eereco[i].E2p < eereco[i].dijdist
+        eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
+        eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
+    elseif algorithm == JetAlgorithm.Valencia
+        val_beam_i = valencia_beam_distance(eereco, i, γ, β)
+        beam_close = val_beam_i < eereco[i].dijdist
+        eereco.dijdist[i] = beam_close ? val_beam_i : eereco.dijdist[i]
+        eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
     end
 end
 
@@ -343,131 +256,6 @@ function ee_check_consistency(clusterseq, eereco, N)
         end
     end
     @debug "Consistency check passed"
-end
-
-################################################################################
-# Array-based nearest-neighbour update helpers (operate on raw vectors)
-################################################################################
-
-@inline function update_nn_no_cross_arrays!(nndist::AbstractVector, nni::AbstractVector,
-                                            nx::AbstractVector, ny::AbstractVector,
-                                            nz::AbstractVector,
-                                            E2p::AbstractVector, dijdist::AbstractVector,
-                                            i::Integer, N::Integer,
-                                            algorithm::JetAlgorithm.Algorithm,
-                                            dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    if algorithm == JetAlgorithm.Valencia
-        nndist[i] = Inf; nni[i] = i; invR2 = inv(R * R)
-        @inbounds for j in 1:N
-            if j != i
-                this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-                better = this_metric < nndist[i]
-                nndist[i] = better ? this_metric : nndist[i]
-                nni[i] = better ? j : nni[i]
-            end
-        end
-        dijdist[i] = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, nni[i], invR2)
-        val_beam = valencia_beam_distance_arrays(E2p, nz, i, γ, β)
-        beam_close = val_beam < dijdist[i]
-        dijdist[i] = beam_close ? val_beam : dijdist[i]
-        nni[i] = beam_close ? 0 : nni[i]
-    else
-        nndist[i] = large_distance; nni[i] = i; E2p_i = E2p[i]
-        @inbounds for j in 1:N
-            if j != i
-                this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-                better = this_metric < nndist[i]
-                nndist[i] = better ? this_metric : nndist[i]
-                nni[i] = better ? j : nni[i]
-            end
-        end
-        E2p_nni = E2p[nni[i]]; minE2p = E2p_i < E2p_nni ? E2p_i : E2p_nni
-        dijdist[i] = minE2p * dij_factor * nndist[i]
-        if algorithm == JetAlgorithm.EEKt
-            beam_close = E2p_i < dijdist[i]
-            dijdist[i] = beam_close ? E2p_i : dijdist[i]
-            nni[i] = beam_close ? 0 : nni[i]
-        end
-    end
-end
-
-@inline function update_nn_cross_arrays!(nndist::AbstractVector, nni::AbstractVector,
-                                         nx::AbstractVector, ny::AbstractVector,
-                                         nz::AbstractVector,
-                                         E2p::AbstractVector, dijdist::AbstractVector,
-                                         i::Integer, N::Integer,
-                                         algorithm::JetAlgorithm.Algorithm,
-                                         dij_factor, β = 1.0, γ = 1.0, R = 4.0)
-    if algorithm == JetAlgorithm.Valencia
-        nndist[i] = Inf; nni[i] = i; invR2 = inv(R * R)
-        @inbounds for j in 1:(i - 1)
-            this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-            better = this_metric < nndist[i]
-            nndist[i] = better ? this_metric : nndist[i]
-            nni[i] = better ? j : nni[i]
-            if this_metric < nndist[j]
-                nndist[j] = this_metric; nni[j] = i; dijdist[j] = this_metric
-                val_beam = valencia_beam_distance_arrays(E2p, nz, j, γ, β)
-                if val_beam < dijdist[j]; dijdist[j] = val_beam; nni[j] = 0; end
-            end
-        end
-        @inbounds for j in (i + 1):N
-            this_metric = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, j, invR2)
-            better = this_metric < nndist[i]
-            nndist[i] = better ? this_metric : nndist[i]
-            nni[i] = better ? j : nni[i]
-            if this_metric < nndist[j]
-                nndist[j] = this_metric; nni[j] = i; dijdist[j] = this_metric
-                val_beam = valencia_beam_distance_arrays(E2p, nz, j, γ, β)
-                if val_beam < dijdist[j]; dijdist[j] = val_beam; nni[j] = 0; end
-            end
-        end
-        dijdist[i] = valencia_distance_inv_arrays(E2p, nx, ny, nz, i, nni[i], invR2)
-        val_beam = valencia_beam_distance_arrays(E2p, nz, i, γ, β)
-        beam_close = val_beam < dijdist[i]
-        dijdist[i] = beam_close ? val_beam : dijdist[i]
-        nni[i] = beam_close ? 0 : nni[i]
-    else
-        nndist[i] = large_distance; nni[i] = i; E2p_i = E2p[i]
-        @inbounds for j in 1:(i - 1)
-            this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-            better = this_metric < nndist[i]
-            nndist[i] = better ? this_metric : nndist[i]
-            nni[i] = better ? j : nni[i]
-            if this_metric < nndist[j]
-                nndist[j] = this_metric; nni[j] = i
-                E2p_j = E2p[j]
-                new_dij = (E2p_i < E2p_j ? E2p_i : E2p_j) * dij_factor * this_metric
-                if algorithm == JetAlgorithm.EEKt && E2p_j < new_dij
-                    dijdist[j] = E2p_j; nni[j] = 0
-                else
-                    dijdist[j] = new_dij
-                end
-            end
-        end
-        @inbounds for j in (i + 1):N
-            this_metric = angular_distance_arrays(nx, ny, nz, i, j)
-            better = this_metric < nndist[i]
-            nndist[i] = better ? this_metric : nndist[i]
-            nni[i] = better ? j : nni[i]
-            if this_metric < nndist[j]
-                nndist[j] = this_metric; nni[j] = i
-                E2p_j = E2p[j]
-                minE2p = E2p_i < E2p_j ? E2p_i : E2p_j
-                dijdist[j] = minE2p * dij_factor * this_metric
-                if algorithm == JetAlgorithm.EEKt && E2p_j < dijdist[j]
-                    dijdist[j] = E2p_j; nni[j] = 0
-                end
-            end
-        end
-        E2p_nni = E2p[nni[i]]; minE2p_i = E2p_i < E2p_nni ? E2p_i : E2p_nni
-        dijdist[i] = minE2p_i * dij_factor * nndist[i]
-        if algorithm == JetAlgorithm.EEKt
-            beam_close = E2p_i < dijdist[i]
-            dijdist[i] = beam_close ? E2p_i : dijdist[i]
-            nni[i] = beam_close ? 0 : nni[i]
-        end
-    end
 end
 
 Base.@propagate_inbounds @inline function fill_reco_array!(eereco, particles, R2, p)
@@ -611,8 +399,6 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
     return _ee_genkt_algorithm(particles = recombination_particles, p = p, R = R,
                                algorithm = algorithm, recombine = recombine, γ = γ)
 end
-
-## Removed Durham/Valencia specialised implementations; unified below.
 
 """
     _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
