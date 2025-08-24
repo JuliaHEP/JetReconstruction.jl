@@ -316,7 +316,7 @@ end
 """
     ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
                        p::Union{Real, Nothing} = nothing, R = 4.0, recombine = addjets,
-                       preprocess = nothing, γ::Real = 1.0) where {T}
+                       preprocess = nothing, γ::Real = 1.0, β::Union{Real, Nothing} = nothing) where {T}
 
 Run an e+e- reconstruction algorithm on a set of initial particles.
 
@@ -332,6 +332,8 @@ Run an e+e- reconstruction algorithm on a set of initial particles.
 - `recombine`: The recombination scheme to use.
 - `preprocess`: Preprocessing function for input particles.
 - `γ::Real = 1.0`: The angular exponent parameter for Valencia algorithm. Ignored for other algorithms.
+- `β::Union{Real, Nothing} = nothing`: Optional alias for the Valencia energy exponent; if provided for
+    Valencia it overrides `p`.
 
 # Returns
 - The result of the jet clustering as a `ClusterSequence` object.
@@ -344,7 +346,7 @@ itself, and call the actual reconstruction method `_ee_genkt_algorithm!`.
 
 If the algorithm is Durham, `R` is nominally set to 4.
 If the algorithm is EEkt, power `p` must be specified.
-If the algorithm is Valencia, both `p` (β) and `γ` should be specified.
+If the algorithm is Valencia, you can provide `p` (β) and `γ`, or pass `β` explicitly to override `p`.
 """
 function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
                             p::Union{Real, Nothing} = nothing, R = 4.0, recombine = addjets,
@@ -401,9 +403,10 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
 end
 
 """
-    _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
+    _ee_genkt_algorithm(particles::AbstractVector{EEJet};
                         algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
-                        recombine = addjets, γ::Real = 1.0)
+                        recombine = addjets, γ::Real = 1.0,
+                        beta::Union{Real, Nothing} = nothing)
 
 This function is the internal implementation of the e+e- jet clustering
 algorithm. It takes a vector of `EEJet` `particles` representing the input
@@ -413,7 +416,7 @@ Users of the package should use the `ee_genkt_algorithm` function as their
 entry point to this jet reconstruction.
 
 # Arguments
-- `particles::AbstractVector{EEJet}`: A vector of `EEJet` particles used
+ - `particles::AbstractVector{EEJet}`: A vector of `EEJet` particles used
   as input for jet reconstruction. This vector must supply the correct
   `cluster_hist_index` values and will be *mutated* as part of the returned
   `ClusterSequence`.
@@ -422,6 +425,9 @@ entry point to this jet reconstruction.
   is raised.
 - `R = 4.0`: The jet radius parameter.
 - `recombine = addjets`: The recombination function used to merge two jets.
+ - `γ::Real = 1.0`: Angular exponent for the Valencia beam metric (ignored for other algorithms).
+ - `beta::Union{Real, Nothing} = nothing`: Optional alias for the Valencia energy exponent (β).
+     When provided with `algorithm == JetAlgorithm.Valencia`, it overrides `p`.
 
 # Returns
 - `clusterseq`: The resulting `ClusterSequence` object representing the
