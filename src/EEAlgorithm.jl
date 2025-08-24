@@ -29,7 +29,7 @@ Compute dij distance for (Durham, EEKt, Valencia) using simple conditionals.
 Beam index `j==0` returns a large sentinel. For Valencia we use the full
 Valencia metric (independent of `dij_factor`).
 """
-@inline function dij_dist(eereco, i, j, dij_factor, algorithm, R=4.0)
+@inline function dij_dist(eereco, i, j, dij_factor, algorithm, R = 4.0)
     if !(algorithm isa JetAlgorithm.Algorithm)
         throw(ArgumentError("algorithm must be a JetAlgorithm.Algorithm"))
     end
@@ -62,10 +62,9 @@ Calculate the Valencia distance between two jets `i` and `j` as
 Base.@propagate_inbounds @inline function valencia_distance(eereco, i, j, R)
     invR2 = inv(R * R)
     @muladd angular_dist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
-                    eereco[i].nz * eereco[j].nz
+                           eereco[i].nz * eereco[j].nz
     return min(eereco[i].E2p, eereco[j].E2p) * 2 * angular_dist * invR2
 end
-
 
 """
     valencia_beam_distance(eereco, i, γ, β) -> Float64
@@ -202,8 +201,8 @@ end
     @inbounds for j in 1:N
         if j != i
             this_metric = algorithm == JetAlgorithm.Valencia ?
-                            valencia_distance(eereco, i, j, R) :
-                            angular_distance(eereco, i, j)
+                          valencia_distance(eereco, i, j, R) :
+                          angular_distance(eereco, i, j)
             better_i = this_metric < eereco[i].nndist
             eereco.nndist[i] = better_i ? this_metric : eereco.nndist[i]
             eereco.nni[i] = better_i ? j : eereco.nni[i]
