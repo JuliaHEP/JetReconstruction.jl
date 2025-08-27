@@ -26,6 +26,7 @@ JetVisualisation = "Makie"
 [compat]
 Accessors = "0.1.36"
 Aqua = "0.8"
+ArgParse = "1.1"
 CodecZlib = "0.7"
 CodecZstd = "0.8"
 EDM4hep = "0.4.0"
@@ -44,9 +45,10 @@ julia = "1.9"
 
 [extras]
 Aqua = "4c88cf16-eb10-579e-8560-4a9242c79595"
+ArgParse = "c7e460c6-2fb9-53a9-8c5b-16f535851c63"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
 Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 
 [targets]
-test = ["Aqua", "Test", "JSON", "Random"]
+test = ["Aqua", "ArgParse", "Test", "JSON", "Random"]
