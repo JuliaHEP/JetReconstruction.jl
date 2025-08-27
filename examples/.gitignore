@@ -3,7 +3,7 @@
 *.png
 *.mp4
 # Ignore profiling outputs
-profile/*
+**/profile/
 # Playground for development scripts and notebooks
 playground/*
 # Ignore outputs from tests

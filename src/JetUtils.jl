@@ -67,8 +67,7 @@ Function to calculate the distance in the y-ϕ plane between two jets `jet1` and
 """
 function deltaR(jet1::T, jet2::T) where {T <: FourMomentum}
     δy = rapidity(jet1) - rapidity(jet2)
-    δϕ = phi(jet1) - phi(jet2)
-    δϕ = abs(δϕ) > π ? 2π - abs(δϕ) : δϕ
+    δϕ = delta_phi(jet1, jet2)
 
     return sqrt(δy^2 + δϕ^2)
 end
@@ -84,10 +83,25 @@ Function to calculate the distance in the η-ϕ plane between two jets `jet1` an
 """
 function deltar(jet1::T, jet2::T) where {T <: FourMomentum}
     δη = eta(jet1) - eta(jet2)
+    δϕ = delta_phi(jet1, jet2)
+
+    return sqrt(δη^2 + δϕ^2)
+end
+
+"""
+    delta_phi(jet1::T, jet2::T) where {T <: FourMomentum}
+
+Computes the difference in azimuthal angle φ between two jets,
+wrapped into the range [-π, π].
+
+# Returns
+- `δφ` as a Float64 in radians.
+"""
+function delta_phi(jet1::T, jet2::T) where {T <: FourMomentum}
     δϕ = phi(jet1) - phi(jet2)
     δϕ = abs(δϕ) > π ? 2π - abs(δϕ) : δϕ
 
-    return sqrt(δη^2 + δϕ^2)
+    return δϕ
 end
 
 """

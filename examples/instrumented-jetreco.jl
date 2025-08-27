@@ -7,11 +7,9 @@ Options are available to profile the code (flamegraphs and allocations).
 """
 
 using FlameGraphs: FlameGraphs
-using ProfileSVG: ProfileSVG
 
 using ArgParse
 using Profile
-using Colors
 using StatProfilerHTML
 using Logging
 using JSON
@@ -54,25 +52,6 @@ function profile_code(events::Vector{Vector{T}}, profile, nsamples; R = 0.4, p =
     mkpath(profile_dir)
     println("""Generating HTML flame graph at $(joinpath(profile_dir, "index.html"))""")
     statprofilehtml(path = profile_dir)
-    fcolor = FlameGraphs.FlameColors(reverse(colormap("Blues", 15))[1:5],
-                                     colorant"slategray4",
-                                     colorant"gray95",
-                                     reverse(colormap("Reds", 15))[1:5],
-                                     reverse(sequential_palette(39, 10; s = 38, b = 2))[1:5])
-    profile_svg_path = joinpath("profile", profile, "profsvg.svg")
-    ProfileSVG.save(fcolor,
-                    profile_svg_path,
-                    combine = true,
-                    timeunit = :ms,
-                    font = "Arial, Helvetica, sans-serif")
-    println("Flame graph from ProfileSVG.jl at file://",
-            abspath(profile_svg_path),
-            "\n",
-            """
-            \tRed tint:          Runtime dispatch
-            \tBrown/yellow tint: Garbage collection
-            \tBlue tint:         OK
-            """)
 end
 
 """

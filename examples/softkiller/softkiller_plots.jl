@@ -12,28 +12,20 @@ include(joinpath(@__DIR__, "..", "parse-options.jl"))
 function parse_command_line(args)
     s = ArgParseSettings(autofix_names = true)
     @add_arg_table! s begin
-        "--maxevents", "-n"
-        help = "Maximum number of events to read. -1 to read all events from the  file."
+        "--pileup-maxevents", "-n"
+        help = "Maximum number of events to read. -1 to read all events from the pileup events file."
         arg_type = Int
         default = -1
 
-        "--skip", "-s"
-        help = "Number of events to skip at beginning of the file."
+        "--pileup-skip", "-s"
+        help = "Number of events to skip in the pileup events file."
         arg_type = Int
         default = 0
 
-        "--ptmin"
-        help = "Minimum p_t for final inclusive jets (energy unit is the same as the input clusters, usually GeV)"
-        arg_type = Float64
-        default = 5.0
-
-        "--exclusive-dcut"
-        help = "Return all exclusive jets where further merging would have d>d_cut"
-        arg_type = Float64
-
-        "--exclusive-njets"
-        help = "Return all exclusive jets once clusterisation has produced n jets"
+        "--eventno", "-e"
+        help = "Event number to process from the hard scatter events file. If not specified, the first event will be processed."
         arg_type = Int
+        default = 1
 
         "--distance", "-R"
         help = "Distance parameter for jet merging"
@@ -53,19 +45,16 @@ function parse_command_line(args)
         arg_type = RecoStrategy.Strategy
         default = RecoStrategy.Best
 
-        "--dump"
-        help = "Write list of reconstructed jets to a JSON formatted file"
-
         "--grid-size"
         help = "Size of Rectangular grid"
         arg_type = Float64
         default = 0.4
 
-        "--hard-file"
+        "hard-file"
         help = "HepMC3 event file in HepMC3 to read."
         required = true
 
-        "--pileup-file"
+        "pileup-file"
         help = "HepMC3 event file in HepMC3 to read."
         required = true
     end
@@ -150,6 +139,7 @@ function plot_set_up(y::Vector{Float64}, phi::Vector{Float64}, pt::Vector{Float6
            ["Pileup", "Hard Event", "Jet"], "Legend")
 
     save(plot_title * ".png", fig)
+    @info "Plot '$(plot_title)' saved"
 end
 
 function main()
@@ -166,20 +156,17 @@ function main()
 
     # Reading pileup and hard event files
     events = read_final_state_particles(args[:pileup_file], jet_type;
-                                        maxevents = args[:maxevents],
-                                        skipevents = args[:skip])
+                                        maxevents = args[:pileup_maxevents],
+                                        skipevents = args[:pileup_skip])
 
     h_events = read_final_state_particles(args[:hard_file], jet_type;
-                                          maxevents = args[:maxevents],
-                                          skipevents = args[:skip])
+                                          maxevents = args[:eventno],
+                                          skipevents = args[:eventno])
 
     # Set up SoftKiller grid and rapidity range
     rapmax = 5.0
     grid_size = args[:grid_size]
     soft_killer = SoftKiller(rapmax, grid_size)
-
-    algorithm = args[:algorithm]
-    p = args[:power]
 
     # Ensure algorithm and power are consistent
     if isnothing(args[:algorithm]) && isnothing(args[:power])
@@ -205,8 +192,8 @@ function main()
         end
     end
 
-    # Fill hard event jets (from second event in h_events)
-    for pseudo_jet in h_events[2]
+    # Fill hard event jets (only the first event will be read)
+    for pseudo_jet in h_events[1]
         push!(hard_only, pseudo_jet)
         push!(all_jets_sk, pseudo_jet)
         push!(all_jets, pseudo_jet)
@@ -248,6 +235,7 @@ function main()
     pt_threshold = 0.00
     # Apply SoftKiller to all_jets_sk (hard + pileup)
     reduced_event, pt_threshold = softkiller(soft_killer, all_jets_sk)
+    @info "SoftKiller applied: $(length(reduced_event)) clusters remaining from $(length(all_jets_sk)), pt threshold = $pt_threshold"
 
     # Plot all PseudoJets after SoftKiller, before clustering
     y_all_sk, phi_all_sk, pt_all_sk,

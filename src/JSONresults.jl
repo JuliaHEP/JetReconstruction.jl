@@ -16,6 +16,28 @@ struct FinalJet
 end
 
 """
+    FinalJet(jet::T)
+
+Convert a jet of type `T` to a `FinalJet` object. `T` must be a type that
+supports the methods `rapidity`, `phi`, and `pt`.
+"""
+FinalJet(jet::T) where {T} = FinalJet(rapidity(jet), phi(jet), pt(jet))
+
+import Base: isapprox
+
+"""
+    isapprox(fj1::FinalJet, fj2::FinalJet; kwargs...)
+
+Compare two `FinalJet` objects for approximate equality based on their rapidity,
+azimuthal angle, and transverse momentum. `kwargs` are passed to the `isapprox`
+function, e.g., `tol`.
+"""
+function isapprox(fj1::FinalJet, fj2::FinalJet; kwargs...)
+    isapprox(fj1.rap, fj2.rap; kwargs...) && isapprox(fj1.phi, fj2.phi; kwargs...) &&
+        isapprox(fj1.pt, fj2.pt; kwargs...)
+end
+
+"""
     struct FinalJets
 
 A struct with the vector of all jets for a certain jet identifier, used for

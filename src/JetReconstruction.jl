@@ -22,20 +22,31 @@ using SIMD
 
 # Import from LorentzVectorHEP methods for those 4-vector types
 pt2(p::LorentzVector) = LorentzVectorHEP.pt2(p)
+pt(p::LorentzVector) = LorentzVectorHEP.pt(p)
 phi(p::LorentzVector) = LorentzVectorHEP.phi(p)
 rapidity(p::LorentzVector) = LorentzVectorHEP.rapidity(p)
+eta(p::LorentzVector) = LorentzVectorHEP.eta(p)
 px(p::LorentzVector) = LorentzVectorHEP.px(p)
 py(p::LorentzVector) = LorentzVectorHEP.py(p)
 pz(p::LorentzVector) = LorentzVectorHEP.pz(p)
 energy(p::LorentzVector) = LorentzVectorHEP.energy(p)
+mass2(p::LorentzVector) = LorentzVectorHEP.mass2(p)
+mass(p::LorentzVector) = LorentzVectorHEP.mass(p)
 
 pt2(p::LorentzVectorCyl) = LorentzVectorHEP.pt2(p)
+pt(p::LorentzVectorCyl) = LorentzVectorHEP.pt(p)
 phi(p::LorentzVectorCyl) = LorentzVectorHEP.phi(p)
 rapidity(p::LorentzVectorCyl) = LorentzVectorHEP.rapidity(p)
+eta(p::LorentzVectorCyl) = LorentzVectorHEP.eta(p)
 px(p::LorentzVectorCyl) = LorentzVectorHEP.px(p)
 py(p::LorentzVectorCyl) = LorentzVectorHEP.py(p)
 pz(p::LorentzVectorCyl) = LorentzVectorHEP.pz(p)
 energy(p::LorentzVectorCyl) = LorentzVectorHEP.energy(p)
+mass2(p::LorentzVectorCyl) = LorentzVectorHEP.mass2(p)
+mass(p::LorentzVectorCyl) = LorentzVectorHEP.mass(p)
+
+# Some useful constants/limits that are used internally
+const max_allowable_R = 1000.0
 
 # Pseudojet and EEJet types
 include("CommonJetStructs.jl")
@@ -81,6 +92,9 @@ export jet_reconstruct
 ## Substructure modules
 include("Substructure.jl")
 export mass_drop, soft_drop, jet_filtering, jet_trimming
+
+include("LundPlane.jl")
+export generate_lund_emissions
 
 # Simple HepMC3 reader
 include("HepMC3.jl")

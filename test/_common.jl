@@ -139,7 +139,7 @@ function run_reco_test(test::ComparisonTest; testname = nothing)
                         normalised_phi = jet.phi < 0.0 ? jet.phi + 2π : jet.phi
                         @test jet.rap≈fastjet_jets[ievt]["jets"][ijet]["rap"] atol=1e-7
                         @test normalised_phi≈fastjet_jets[ievt]["jets"][ijet]["phi"] atol=1e-7
-                        @test jet.pt≈fastjet_jets[ievt]["jets"][ijet]["pt"] rtol=1e-6
+                        @test jet.pt≈fastjet_jets[ievt]["jets"][ijet]["pt"] rtol=1e-7
                     end
                 end
             end
