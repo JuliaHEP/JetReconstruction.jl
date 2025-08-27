@@ -31,6 +31,9 @@ function main()
     # Utility support tests
     include("test-utils.jl")
 
+    # Check jet selectors to different jet types
+    include("test-jet-selectors.jl")
+
     # Substructure tests
     include("test-substructure.jl")
 

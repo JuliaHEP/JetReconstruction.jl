@@ -73,64 +73,28 @@ function read_final_state_particles(fname, ::Type{T} = PseudoJet; maxevents = -1
 end
 
 """
-    final_jets(jets::Vector{PseudoJet}, ptmin::AbstractFloat=0.0)
+    final_jets(jets::Vector{T}, ptmin::AbstractFloat=0.0)
 
-This function takes a vector of `PseudoJet` objects and a minimum transverse
-momentum `ptmin` as input. It returns a vector of `FinalJet` objects that
-satisfy the transverse momentum condition.
+This function takes a vector of `T` objects, which should be jets, and a minimum
+transverse momentum `ptmin` as input. It returns a vector of `FinalJet` objects
+that satisfy the transverse momentum condition.
 
 # Arguments
-- `jets::Vector{PseudoJet}`: A vector of `PseudoJet` objects representing the
-  input jets.
+- `jets::Vector{T}`: A vector of `T` objects representing the input jets.
 - `ptmin::AbstractFloat=0.0`: The minimum transverse momentum required for a jet
   to be included in the final jets vector.
 
 # Returns
 A vector of `FinalJet` objects that satisfy the transverse momentum condition.
 """
-function final_jets(jets::Vector{PseudoJet}, ptmin::AbstractFloat = 0.0)
+function final_jets(jets::Vector{T}, ptmin::AbstractFloat = 0.0) where {T}
     count = 0
     final_jets = Vector{FinalJet}()
-    sizehint!(final_jets, 6)
+    dcut = ptmin^2
     for jet in jets
-        dcut = ptmin^2
         if pt2(jet) > dcut
             count += 1
-            push!(final_jets, FinalJet(rapidity(jet), phi(jet), sqrt(pt2(jet))))
-        end
-    end
-    final_jets
-end
-
-"""Specialisation for final jets from LorentzVectors (TODO: merge into more general function)"""
-function final_jets(jets::Vector{<:LorentzVector}, ptmin::AbstractFloat = 0.0)
-    count = 0
-    final_jets = Vector{FinalJet}()
-    sizehint!(final_jets, 6)
-    dcut = ptmin^2
-    for jet in jets
-        if LorentzVectorHEP.pt(jet)^2 > dcut
-            count += 1
-            push!(final_jets,
-                  FinalJet(LorentzVectorHEP.rapidity(jet), LorentzVectorHEP.phi(jet),
-                           LorentzVectorHEP.pt(jet)))
-        end
-    end
-    final_jets
-end
-
-"""Specialisation for final jets from LorentzVectorCyl (TODO: merge into more general function)"""
-function final_jets(jets::Vector{<:LorentzVectorCyl}, ptmin::AbstractFloat = 0.0)
-    count = 0
-    final_jets = Vector{FinalJet}()
-    sizehint!(final_jets, 6)
-    dcut = ptmin^2
-    for jet in jets
-        if LorentzVectorHEP.pt(jet)^2 > dcut
-            count += 1
-            push!(final_jets,
-                  FinalJet(LorentzVectorHEP.eta(jet), LorentzVectorHEP.phi(jet),
-                           LorentzVectorHEP.pt(jet)))
+            push!(final_jets, FinalJet(jet))
         end
     end
     final_jets
