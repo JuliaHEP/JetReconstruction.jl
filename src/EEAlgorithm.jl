@@ -30,6 +30,9 @@ Beam index `j==0` returns a large sentinel. For Valencia we use the full
 Valencia metric (independent of `dij_factor`).
 """
 @inline function dij_dist(eereco, i, j, dij_factor, algorithm, invR2)
+    if !(algorithm isa JetAlgorithm.Algorithm)
+        throw(ArgumentError("algorithm must be a JetAlgorithm.Algorithm"))
+    end
     j == 0 && return large_dij
     @inbounds begin
         if algorithm == JetAlgorithm.Valencia
@@ -129,8 +132,7 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, invR2
         if algorithm == JetAlgorithm.Valencia
             eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, invR2)
         else
-            eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm,
-                                         invR2)
+            eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, invR2)
         end
     end
     # For the EEKt and Valencia algorithms, we need to check the beam distance as well
@@ -258,7 +260,7 @@ Base.@propagate_inbounds @inline function fill_reco_array!(eereco, particles, in
     @inbounds for i in eachindex(particles)
         eereco.index[i] = i
         eereco.nni[i] = 0
-        eereco.nndist[i] = inv(invR2) # R^2 as initial sentinel for angular algorithms
+    eereco.nndist[i] = inv(invR2) # R^2 as initial sentinel for angular algorithms
         # eereco.dijdist[i] = UNDEF # Does not need to be initialised
         eereco.nx[i] = nx(particles[i])
         eereco.ny[i] = ny(particles[i])
@@ -269,11 +271,11 @@ Base.@propagate_inbounds @inline function fill_reco_array!(eereco, particles, in
 end
 
 Base.@propagate_inbounds @inline function insert_new_jet!(eereco, i, newjet_k, invR2,
-                                                          merged_jet, p)
+                              merged_jet, p)
     @inbounds begin
         eereco.index[i] = newjet_k
         eereco.nni[i] = 0
-        eereco.nndist[i] = inv(invR2)
+    eereco.nndist[i] = inv(invR2)
         eereco.nx[i] = nx(merged_jet)
         eereco.ny[i] = ny(merged_jet)
         eereco.nz[i] = nz(merged_jet)
@@ -397,8 +399,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
     invR2 = inv(R * R)
     # Now call the unified implementation with conditional logic.
     return _ee_genkt_algorithm(particles = recombination_particles, p = p, R = R,
-                               invR2 = invR2, algorithm = algorithm, recombine = recombine,
-                               γ = γ)
+                               invR2 = invR2, algorithm = algorithm, recombine = recombine, γ = γ)
 end
 
 """
@@ -434,8 +435,7 @@ entry point to this jet reconstruction.
 """
 function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
                              algorithm::JetAlgorithm.Algorithm, p::Real, R::Real,
-                             invR2::Union{Real, Nothing} = nothing, recombine = addjets,
-                             γ::Real = 1.0,
+                             invR2::Union{Real, Nothing} = nothing, recombine = addjets, γ::Real = 1.0,
                              beta::Union{Real, Nothing} = nothing)
     # Bounds
     N::Int = length(particles)
