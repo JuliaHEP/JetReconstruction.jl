@@ -47,8 +47,7 @@ A dictionary that maps algorithm names to their corresponding power values.
 const algorithm2power = Dict(JetAlgorithm.AntiKt => -1,
                              JetAlgorithm.CA => 0,
                              JetAlgorithm.Kt => 1,
-                             JetAlgorithm.Durham => 1,
-                             JetAlgorithm.Valencia => 1)
+                             JetAlgorithm.Durham => 1)
 
 """
     get_algorithm_power(; algorithm::JetAlgorithm.Algorithm, p::Union{Real, Nothing}) -> Real
