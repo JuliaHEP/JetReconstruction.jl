@@ -23,20 +23,17 @@ Calculate the angular distance between two jets `i` and `j` using the formula
 end
 
 """
-    dij_dist(eereco, i, j, dij_factor, algorithm::JetAlgorithm.Algorithm, R=4.0)
+    dij_dist(eereco, i, j, dij_factor, algorithm::JetAlgorithm.Algorithm, invR2)
 
 Compute dij distance for (Durham, EEKt, Valencia) using simple conditionals.
 Beam index `j==0` returns a large sentinel. For Valencia we use the full
 Valencia metric (independent of `dij_factor`).
 """
-@inline function dij_dist(eereco, i, j, dij_factor, algorithm, R = 4.0)
-    if !(algorithm isa JetAlgorithm.Algorithm)
-        throw(ArgumentError("algorithm must be a JetAlgorithm.Algorithm"))
-    end
+@inline function dij_dist(eereco, i, j, dij_factor, algorithm, invR2)
     j == 0 && return large_dij
     @inbounds begin
         if algorithm == JetAlgorithm.Valencia
-            return valencia_distance(eereco, i, j, R)
+            return valencia_distance(eereco, i, j, invR2)
         else
             # Durham & EEKt share same form here (min(E2p_i,E2p_j) * dij_factor * angular_metric)
             return min(eereco[i].E2p, eereco[j].E2p) * dij_factor * eereco[i].nndist
@@ -45,22 +42,21 @@ Valencia metric (independent of `dij_factor`).
 end
 
 """
-    valencia_distance(eereco, i, j, R) -> Float64
+    valencia_distance(eereco, i, j, invR2) -> Float64
 
 Calculate the Valencia distance between two jets `i` and `j` as
-``min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos(θ_{ij})) / R²``.
+``min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos(θ_{ij})) * invR2``.
 
 # Arguments
 - `eereco`: The array of `EERecoJet` objects.
 - `i`: The first jet.
 - `j`: The second jet.
-- `R`: The jet radius parameter.
+- `invR2`: The inverse square of the radius, i.e. ``1 / R^2``.
 
 # Returns
 - `Float64`: The Valencia distance between `i` and `j`.
 """
-Base.@propagate_inbounds @inline function valencia_distance(eereco, i, j, R)
-    invR2 = inv(R * R)
+Base.@propagate_inbounds @inline function valencia_distance(eereco, i, j, invR2)
     @muladd angular_dist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
                            eereco[i].nz * eereco[j].nz
     return min(eereco[i].E2p, eereco[j].E2p) * 2 * angular_dist * invR2
@@ -96,7 +92,7 @@ Base.@propagate_inbounds @inline function valencia_beam_distance(eereco, i, γ, 
     end
 end
 
-function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ = 1.0, R = 4.0)
+function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, invR2, γ = 1.0)
     # Get the initial nearest neighbours for each jet
     N = length(eereco)
     # Initialise sentinels so the first comparison always wins
@@ -114,7 +110,7 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ = 
             # Metric used to pick the nearest neighbour
             if algorithm == JetAlgorithm.Valencia
                 # Use canonical Valencia distance (StructArray-aware)
-                this_metric = valencia_distance(eereco, i, j, R)
+                this_metric = valencia_distance(eereco, i, j, invR2)
             else
                 this_metric = angular_distance(eereco, i, j)
             end
@@ -131,9 +127,9 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ = 
     # Nearest neighbour dij distance
     @inbounds for i in 1:N
         if algorithm == JetAlgorithm.Valencia
-            eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, R)
+            eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, invR2)
         else
-            eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, R)
+            eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, invR2)
         end
     end
     # For the EEKt and Valencia algorithms, we need to check the beam distance as well
@@ -155,7 +151,7 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ = 
 end
 
 @inline function update_nn_no_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm,
-                                     dij_factor, β = 1.0, γ = 1.0, R = 4.0)
+                                     dij_factor, invR2, β = 1.0, γ = 1.0)
     # Valencia metric is unbounded, others use a large finite value
     if algorithm == JetAlgorithm.Valencia
         eereco.nndist[i] = Inf
@@ -167,7 +163,7 @@ end
     @inbounds for j in 1:N
         if j != i
             this_metric = algorithm == JetAlgorithm.Valencia ?
-                          valencia_distance(eereco, i, j, R) :
+                          valencia_distance(eereco, i, j, invR2) :
                           angular_distance(eereco, i, j)
             better_i = this_metric < eereco[i].nndist
             eereco.nndist[i] = better_i ? this_metric : eereco.nndist[i]
@@ -175,7 +171,7 @@ end
         end
     end
     # Set dij for i using unified dispatcher and apply beam checks
-    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, R)
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, invR2)
     if algorithm == JetAlgorithm.EEKt
         beam_close = eereco[i].E2p < eereco[i].dijdist
         eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
@@ -189,7 +185,7 @@ end
 end
 
 @inline function update_nn_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm,
-                                  dij_factor, β = 1.0, γ = 1.0, R = 4.0)
+                                  dij_factor, invR2, β = 1.0, γ = 1.0)
     # Valencia metric is unbounded, others use a large finite value
     if algorithm == JetAlgorithm.Valencia
         eereco.nndist[i] = Inf
@@ -201,7 +197,7 @@ end
     @inbounds for j in 1:N
         if j != i
             this_metric = algorithm == JetAlgorithm.Valencia ?
-                          valencia_distance(eereco, i, j, R) :
+                          valencia_distance(eereco, i, j, invR2) :
                           angular_distance(eereco, i, j)
             better_i = this_metric < eereco[i].nndist
             eereco.nndist[i] = better_i ? this_metric : eereco.nndist[i]
@@ -210,7 +206,7 @@ end
             if this_metric < eereco[j].nndist
                 eereco.nndist[j] = this_metric
                 eereco.nni[j] = i
-                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor, algorithm, R)
+                eereco.dijdist[j] = dij_dist(eereco, j, i, dij_factor, algorithm, invR2)
                 if algorithm == JetAlgorithm.EEKt
                     if eereco[j].E2p < eereco[j].dijdist
                         eereco.dijdist[j] = eereco[j].E2p
@@ -227,7 +223,7 @@ end
         end
     end
     # Set dij for i using unified dispatcher and apply beam checks
-    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, R)
+    eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm, invR2)
     if algorithm == JetAlgorithm.EEKt
         beam_close = eereco[i].E2p < eereco[i].dijdist
         eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
@@ -257,11 +253,11 @@ function ee_check_consistency(clusterseq, eereco, N)
     @debug "Consistency check passed"
 end
 
-Base.@propagate_inbounds @inline function fill_reco_array!(eereco, particles, R2, p)
+Base.@propagate_inbounds @inline function fill_reco_array!(eereco, particles, invR2, p)
     @inbounds for i in eachindex(particles)
         eereco.index[i] = i
         eereco.nni[i] = 0
-        eereco.nndist[i] = R2
+    eereco.nndist[i] = inv(invR2) # R^2 as initial sentinel for angular algorithms
         # eereco.dijdist[i] = UNDEF # Does not need to be initialised
         eereco.nx[i] = nx(particles[i])
         eereco.ny[i] = ny(particles[i])
@@ -271,12 +267,12 @@ Base.@propagate_inbounds @inline function fill_reco_array!(eereco, particles, R2
     end
 end
 
-Base.@propagate_inbounds @inline function insert_new_jet!(eereco, i, newjet_k, R2,
-                                                          merged_jet, p)
+Base.@propagate_inbounds @inline function insert_new_jet!(eereco, i, newjet_k, invR2,
+                              merged_jet, p)
     @inbounds begin
         eereco.index[i] = newjet_k
         eereco.nni[i] = 0
-        eereco.nndist[i] = R2
+    eereco.nndist[i] = inv(invR2)
         eereco.nx[i] = nx(merged_jet)
         eereco.ny[i] = ny(merged_jet)
         eereco.nz[i] = nz(merged_jet)
@@ -396,15 +392,17 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
         end
     end
 
+    # Compute invR2 once and thread it through
+    invR2 = inv(R * R)
     # Now call the unified implementation with conditional logic.
     return _ee_genkt_algorithm(particles = recombination_particles, p = p, R = R,
-                               algorithm = algorithm, recombine = recombine, γ = γ)
+                               invR2 = invR2, algorithm = algorithm, recombine = recombine, γ = γ)
 end
 
 """
     _ee_genkt_algorithm(particles::AbstractVector{EEJet};
-                        algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
-                        recombine = addjets, γ::Real = 1.0,
+                        algorithm::JetAlgorithm.Algorithm, p::Real, R::Real,
+                        invR2::Union{Real, Nothing} = nothing, recombine = addjets, γ::Real = 1.0,
                         beta::Union{Real, Nothing} = nothing)
 
 This function is the internal implementation of the e+e- jet clustering
@@ -433,13 +431,16 @@ entry point to this jet reconstruction.
   reconstructed jets.
 """
 function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
-                             algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
-                             recombine = addjets, γ::Real = 1.0,
+                             algorithm::JetAlgorithm.Algorithm, p::Real, R::Real,
+                             invR2::Union{Real, Nothing} = nothing, recombine = addjets, γ::Real = 1.0,
                              beta::Union{Real, Nothing} = nothing)
     # Bounds
     N::Int = length(particles)
 
-    R2 = R^2
+    # invR2 provided by caller when available; otherwise compute from R once here
+    if invR2 === nothing
+        invR2 = inv(R * R)
+    end
     if algorithm == JetAlgorithm.Valencia && beta !== nothing
         p = beta
     end
@@ -464,7 +465,7 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
     # We need N slots for this array
     eereco = StructArray{EERecoJet}(undef, N)
 
-    fill_reco_array!(eereco, particles, R2, p)
+    fill_reco_array!(eereco, particles, invR2, p)
 
     # Setup the initial history and get the total energy
     history, Qtot = initial_history(particles)
@@ -473,7 +474,7 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
                                  Qtot)
 
     # Run over initial pairs of jets to find nearest neighbours
-    get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, γ, R)
+    get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, invR2, γ)
 
     # Only for debugging purposes...
     # ee_check_consistency(clusterseq, clusterseq_index, N, nndist, nndij, nni, "Start")
@@ -522,7 +523,7 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
                                  newjet_k, dij_min)
 
             # Update the compact arrays, reusing the JetA slot
-            insert_new_jet!(eereco, ijetA, newjet_k, R2, merged_jet, p)
+            insert_new_jet!(eereco, ijetA, newjet_k, invR2, merged_jet, p)
         end
 
         # Squash step - copy the final jet's compact data into the jetB slot
@@ -544,7 +545,7 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
                 # plus "belt and braces" check for an invalid NN (>N)
                 if (eereco[i].nni == ijetA) || (eereco[i].nni == ijetB) ||
                    (eereco[i].nni > N)
-                    update_nn_no_cross!(eereco, i, N, algorithm, dij_factor, p, γ, R)
+                    update_nn_no_cross!(eereco, i, N, algorithm, dij_factor, invR2, p, γ)
                 end
             end
         end
@@ -552,7 +553,7 @@ function _ee_genkt_algorithm(; particles::AbstractVector{EEJet},
         # Finally, we need to update the nearest neighbours for the new jet, checking both ways
         # (But only if there was a new jet!)
         if ijetA != ijetB
-            update_nn_cross!(eereco, ijetA, N, algorithm, dij_factor, p, γ, R)
+            update_nn_cross!(eereco, ijetA, N, algorithm, dij_factor, invR2, p, γ)
         end
 
         # Only for debugging purposes...
