@@ -23,25 +23,18 @@ supports the methods `rapidity`, `phi`, and `pt`.
 """
 FinalJet(jet::T) where {T} = FinalJet(rapidity(jet), phi(jet), pt(jet))
 
-import Base: ==, ≈
-"""
-    ==(fj1::FinalJet, fj2::FinalJet)
-
-Compare two `FinalJet` objects for equality based on their rapidity, azimuthal
-angle, and transverse momentum.
-"""
-function ==(fj1::FinalJet, fj2::FinalJet)
-    (fj1.rap == fj2.rap) && (fj1.phi == fj2.phi) && (fj1.pt == fj2.pt)
-end
+import Base: isapprox
 
 """
-    ≈(fj1::FinalJet, fj2::FinalJet)
+    isapprox(fj1::FinalJet, fj2::FinalJet; kwargs...)
 
 Compare two `FinalJet` objects for approximate equality based on their rapidity,
-azimuthal angle, and transverse momentum.
+azimuthal angle, and transverse momentum. `kwargs` are passed to the `isapprox`
+function, e.g., `tol`.
 """
-function ≈(fj1::FinalJet, fj2::FinalJet; tol = 1e-6)
-    fj1.rap ≈ fj2.rap && fj1.phi ≈ fj2.phi && fj1.pt ≈ fj2.pt
+function isapprox(fj1::FinalJet, fj2::FinalJet; kwargs...)
+    isapprox(fj1.rap, fj2.rap; kwargs...) && isapprox(fj1.phi, fj2.phi; kwargs...) &&
+        isapprox(fj1.pt, fj2.pt; kwargs...)
 end
 
 """
