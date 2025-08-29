@@ -36,3 +36,6 @@ benchmark/*
 **/profile/*
 /statprof/*
 /debug/*
+
+# Compiled packages
+JetReconstructionCompiled
