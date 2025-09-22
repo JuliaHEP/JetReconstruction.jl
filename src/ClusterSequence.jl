@@ -119,7 +119,7 @@ final jets.
 - `history::Vector{HistoryElement}`: The branching history of the cluster
   sequence. Each stage in the history indicates where to look in the jets vector
   to get the physical PseudoJet.
-- `Qtot::Any`: The total energy of the event.
+- `Qtot::Float64`: The total energy of the event.
 """
 struct ClusterSequence{T <: FourMomentum}
     algorithm::JetAlgorithm.Algorithm
@@ -145,11 +145,11 @@ Construct a `ClusterSequence` object.
 - `jets::Vector{T}`: The jets in the cluster sequence, which are of T <: FourMomentum
 - `history::Vector{HistoryElement}`: The branching history of the cluster
   sequence.
-- `Qtot::Any`: The total energy of the event.
+- `Qtot::Float64`: The total energy of the event.
 """
 function ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64,
                          strategy::RecoStrategy.Strategy, jets::Vector{T}, history,
-                         Qtot) where {T <: FourMomentum}
+                         Qtot::Float64) where {T <: FourMomentum}
     ClusterSequence{T}(algorithm, Float64(p), R, strategy, jets, length(jets), history,
                        Qtot)
 end
