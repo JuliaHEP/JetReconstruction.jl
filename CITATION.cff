@@ -30,6 +30,11 @@ identifiers:
 preferred-citation:
   type: article
   title: Polyglot Jet Finding
+  doi: 10.1051/epjconf/202429505017
+  journal: EPJ Web Conf.
+  volume: 295
+  start: "05017"
+  year: 2024
   authors:
     - given-names: Graeme Andrew
       family-names: Stewart
@@ -49,9 +54,6 @@ preferred-citation:
       email: benedikt.hegner@cern.ch
       affiliation: CERN
       orcid: 'https://orcid.org/0009-0009-2020-1620'
-  identifiers:
-    - type: doi
-      value: 10.1051/epjconf/202429505017
 repository-code: 'https://github.com/JuliaHEP/JetReconstruction.jl'
 abstract: Jet reconstruction (reclustering) with Julia
 license: MIT

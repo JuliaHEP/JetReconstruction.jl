@@ -130,13 +130,17 @@ conference proceedings, [arXiv:2309.17309](https://arxiv.org/abs/2309.17309),
 should be cited if you use this package:
 
 ```bibtex
-@misc{stewart2023polyglot,
-      title={Polyglot Jet Finding}, 
-      author={Graeme Andrew Stewart and Philippe Gras and Benedikt Hegner and Atell Krasnopolski},
-      year={2023},
-      eprint={2309.17309},
-      archivePrefix={arXiv},
-      primaryClass={hep-ex}
+@article{Stewart:2023lgt,
+    author = "Stewart, Graeme Andrew and Gras, Philippe and Hegner, Benedikt and Krasnopolski, Atell",
+    title = "{Polyglot Jet Finding}",
+    eprint = "2309.17309",
+    archivePrefix = "arXiv",
+    primaryClass = "hep-ex",
+    doi = "10.1051/epjconf/202429505017",
+    journal = "EPJ Web Conf.",
+    volume = "295",
+    pages = "05017",
+    year = "2024"
 }
 ```
 
