@@ -97,8 +97,9 @@ function sort_jets!(jet_array::Vector{<:LorentzVectorCyl})
 end
 
 function run_reco_test(test::ComparisonTest; testname = nothing)
+    jet_type = JetReconstruction.is_ee(test.algorithm) ? EEJet : PseudoJet
     # Read the input events
-    events = JetReconstruction.read_final_state_particles(test.events_file)
+    events = JetReconstruction.read_final_state_particles(test.events_file, jet_type)
     # Read the fastjet results
     fastjet_jets = read_fastjet_outputs(test.fastjet_outputs)
     sort_jets!(fastjet_jets)
