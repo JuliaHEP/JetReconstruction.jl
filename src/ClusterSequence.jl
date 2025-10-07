@@ -108,10 +108,10 @@ final jets.
 
 # Fields
 - `algorithm::JetAlgorithm.Algorithm`: The algorithm used for clustering.
-- `strategy::RecoStrategy.Strategy`: The strategy used for clustering.
 - `power::Float64`: The power value used for the clustering algorithm (not that
   this value is always stored as a Float64 to be type stable)
 - `R::Float64`: The R parameter used for the clustering algorithm.
+- `strategy::RecoStrategy.Strategy`: The strategy used for clustering.
 - `jets::Vector{T}`: The actual jets in the cluster sequence, which are of type
   `T <: FourMomentum`.
 - `n_initial_jets::Int`: The initial number of particles used for exclusive
