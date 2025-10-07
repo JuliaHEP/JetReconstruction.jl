@@ -108,10 +108,10 @@ final jets.
 
 # Fields
 - `algorithm::JetAlgorithm.Algorithm`: The algorithm used for clustering.
-- `strategy::RecoStrategy.Strategy`: The strategy used for clustering.
 - `power::Float64`: The power value used for the clustering algorithm (not that
   this value is always stored as a Float64 to be type stable)
 - `R::Float64`: The R parameter used for the clustering algorithm.
+- `strategy::RecoStrategy.Strategy`: The strategy used for clustering.
 - `jets::Vector{T}`: The actual jets in the cluster sequence, which are of type
   `T <: FourMomentum`.
 - `n_initial_jets::Int`: The initial number of particles used for exclusive
@@ -119,7 +119,7 @@ final jets.
 - `history::Vector{HistoryElement}`: The branching history of the cluster
   sequence. Each stage in the history indicates where to look in the jets vector
   to get the physical PseudoJet.
-- `Qtot::Any`: The total energy of the event.
+- `Qtot::Float64`: The total energy of the event.
 """
 struct ClusterSequence{T <: FourMomentum}
     algorithm::JetAlgorithm.Algorithm
@@ -133,25 +133,26 @@ struct ClusterSequence{T <: FourMomentum}
 end
 
 """
-    ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64, strategy::RecoStrategy.Strategy, jets::T, history, Qtot) where T <: FourMomentum
+    ClusterSequence(algorithm::JetAlgorithm.Algorithm, p, R,
+                         strategy::RecoStrategy.Strategy, jets::Vector{T}, history,
+                         Qtot) where {T <: FourMomentum}
 
 Construct a `ClusterSequence` object.
 
 # Arguments
 - `algorithm::JetAlgorithm.Algorithm`: The algorithm used for clustering.
-- `p::Real`: The power value used for the clustering algorithm.
-- `R::Float64`: The R parameter used for the clustering algorithm.
+- `p`: The power value used for the clustering algorithm.
+- `R`: The R parameter used for the clustering algorithm.
 - `strategy::RecoStrategy.Strategy`: The strategy used for clustering.
 - `jets::Vector{T}`: The jets in the cluster sequence, which are of T <: FourMomentum
 - `history::Vector{HistoryElement}`: The branching history of the cluster
   sequence.
-- `Qtot::Any`: The total energy of the event.
+- `Qtot`: The total energy of the event.
 """
-function ClusterSequence(algorithm::JetAlgorithm.Algorithm, p::Real, R::Float64,
+function ClusterSequence(algorithm::JetAlgorithm.Algorithm, p, R,
                          strategy::RecoStrategy.Strategy, jets::Vector{T}, history,
                          Qtot) where {T <: FourMomentum}
-    ClusterSequence{T}(algorithm, Float64(p), R, strategy, jets, length(jets), history,
-                       Qtot)
+    ClusterSequence{T}(algorithm, p, R, strategy, jets, length(jets), history, Qtot)
 end
 
 """
