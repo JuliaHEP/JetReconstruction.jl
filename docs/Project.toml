@@ -12,4 +12,4 @@ JetReconstruction = {path = ".."}
 [compat]
 Documenter = "1.4"
 EDM4hep = "0.4"
-Makie = "0.20, 0.21"
+Makie = "0.20, 0.21, 0.22, 0.23, 0.24"
