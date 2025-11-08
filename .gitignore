@@ -28,7 +28,7 @@ Manifest.toml
 
 # Test data files and benchmarking
 jetsavetest*.dat
-benchmark/*
+tune.json
 
 # Misc files
 .DS_Store
