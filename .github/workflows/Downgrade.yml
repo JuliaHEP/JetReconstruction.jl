@@ -1,0 +1,27 @@
+name: Downgrade compat
+on:
+  push:
+    branches:
+      - main
+    tags: '*'
+  pull_request:
+jobs:
+  test:
+    name: Julia ${{ matrix.version }} - ${{ github.event_name }}
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        version:
+            - 'lts'
+            - '1'
+    steps:
+      - uses: actions/checkout@v5
+      - uses: julia-actions/setup-julia@v2
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/julia-downgrade-compat@v1
+        with:
+          skip: Logging,Random,Statistics,Test
+      - uses: julia-actions/cache@v2
+      - uses: julia-actions/julia-buildpkg@v1
+      - uses: julia-actions/julia-runtest@v1
