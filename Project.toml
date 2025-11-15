@@ -25,7 +25,7 @@ JetVisualisation = "Makie"
 
 [compat]
 Accessors = "0.1.36"
-Aqua = "0.8"
+Aqua = "0.8.14"
 ArgParse = "1.1"
 CodecZlib = "0.7"
 CodecZstd = "0.8"
