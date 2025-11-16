@@ -190,7 +190,7 @@ end
     plain_jet_reconstruct(particles::AbstractVector{T};
                           algorithm::JetAlgorithm.Algorithm,
                           p::Union{Real, Nothing} = nothing, R = 1.0,
-                          recombine = addjets, preprocess = nothing) where {T}
+                          recombine = addjets_escheme, preprocess = preprocess_escheme) where {T}
 
 Perform pp jet reconstruction using the plain algorithm.
 
@@ -208,9 +208,9 @@ for the `GenKt` algorithm.
    reconstruction. Must be specified for GenKt algorithm. Other algorithms will
    ignore this value.
 - `R = 1.0`: The radius parameter used for jet reconstruction.
-- `recombine::Function = addjets`: The recombination function used to combine
+- `recombine::Function = addjets_escheme`: The recombination function used to combine
   particles into a new jet.
-- `preprocess::Function = nothing`: A function to preprocess the input
+- `preprocess::Function = preprocess_escheme`: A function to preprocess the input
   particles.
 
 **Note** for the `particles` argument, the 4-vector methods need to exist in the
@@ -232,7 +232,8 @@ jets = plain_jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, p = -0.5
 function plain_jet_reconstruct(particles::AbstractVector{T};
                                algorithm::JetAlgorithm.Algorithm,
                                p::Union{Real, Nothing} = nothing, R = 1.0,
-                               recombine = addjets, preprocess = nothing) where {T}
+                               recombine = addjets_escheme,
+                               preprocess = preprocess_escheme) where {T}
 
     # Get consistent algorithm power
     p = get_algorithm_power(p = p, algorithm = algorithm)
@@ -274,7 +275,7 @@ end
 """
     _plain_jet_reconstruct!(particles::AbstractVector{PseudoJet};
                            algorithm::JetAlgorithm.Algorithm, p::Real, R = 1.0,
-                           recombine = addjets)
+                           recombine = addjets_escheme)
 
 This is the internal implementation of jet reconstruction using the plain
 algorithm. It takes a vector of `PseudoJet` `particles` representing the input
@@ -292,7 +293,7 @@ entry point to this jet reconstruction.
 - `p::Real`: The power to which the transverse momentum (`pt`) of each particle
   is raised.
 - `R = 1.0`: The jet radius parameter.
-- `recombine = addjets`: The recombination scheme to use.
+- `recombine = addjets_escheme`: The recombination scheme to use.
 
 # Returns
 - `clusterseq`: The resulting `ClusterSequence` object representing the
@@ -300,7 +301,7 @@ entry point to this jet reconstruction.
 """
 function _plain_jet_reconstruct!(particles::AbstractVector{PseudoJet};
                                  algorithm::JetAlgorithm.Algorithm, p::Real, R = 1.0,
-                                 recombine = addjets)
+                                 recombine = addjets_escheme)
     # Bounds
     N::Int = length(particles)
     # Parameters

@@ -77,6 +77,18 @@ let
     run_reco_test(test)
 end
 
+# escheme (fixing indices)
+let
+    fastjet_file = joinpath(@__DIR__, "data",
+                            "jet-collections-fastjet-inclusive-AntiKt.json.zst")
+    test = ComparisonTest(events_file_pp, fastjet_file,
+                          JetAlgorithm.AntiKt, RecoStrategy.N2Tiled,
+                          JetReconstruction.algorithm2power[JetAlgorithm.AntiKt],
+                          test_cone_size,
+                          (cs) -> inclusive_jets(cs; ptmin = 5.0), "AntiKt e-scheme",
+                          addjets_escheme, preprocess_escheme)
+    run_reco_test(test; break_history_indices = true)
+end
 # Check that all recombination scheme Enums are defined in RecombinationMethods
 @testset "RecombinationScheme Enum Check" begin
     for scheme in instances(RecombinationScheme.Recombine)

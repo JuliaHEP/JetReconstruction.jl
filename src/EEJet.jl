@@ -1,3 +1,5 @@
+import Accessors
+
 """
     struct EEJet <: FourMomentum
 
@@ -37,6 +39,15 @@ function EEJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::Int = 
     @muladd p2 = px * px + py * py + pz * pz
     inv_p = @fastmath 1.0 / sqrt(p2)
     EEJet(px, py, pz, E, p2, inv_p, cluster_hist_index)
+end
+
+"""
+    EEJet(jet::EEJet; cluster_hist_index::Int = 0)
+
+Construct a PseudoJet from another `EEJet` object and assign given cluster index to it.
+"""
+function EEJet(jet::EEJet; cluster_hist_index::Int = 0)
+    Accessors.@set jet._cluster_hist_index = cluster_hist_index
 end
 
 """

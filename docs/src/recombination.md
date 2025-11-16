@@ -22,8 +22,7 @@ The default for jet merging is simply four momentum addition, that is:
 This is defined as the [`addjets`](@ref) function in the package, which also
 serves as an example of how the recombination functions are written.
 
-In this case, no preprocessing of particles is required and the default value of
-`preprocess = nothing` signals this.
+In this case, the preprocessing [`preprocess_escheme`](@ref) is limited to assigning history index to the jet. Should the jets have the correct history index already, no preprocessing is needed and `preprocess = nothing` can be used.
 
 ### Different Recombination Schemes
 
@@ -66,9 +65,12 @@ The supported values in the enum are:
 | Scheme | Implements |
 |---|---|
 | `EScheme` | Default 4-momentum addition |
+| `ESchemeRaw` | Four-momentum addition without preprocessing history index |
 | `PtScheme` | Massless weighted average of momentum |
 | `Pt2Scheme` | Massless weighted average of momentum squared |
 
+All schemes except for `ESchemeRaw` include the necessary preprocessing to set the
+history index of the input particles.
 (Should other schemes prove to be particularly desired they can be implemented
 on request.)
 
@@ -77,12 +79,11 @@ on request.)
 ### Preprocessing
 
 The user must supply, if needed, a preprocessing function, which accepts an
-input particle and returns the rescaled particle. This function must accept a
-named argument `cluster_hist_index` to pass to the constructor of the resulting
-particle.
+input particle and output type, and returns the rescaled particle. This function must accept a named argument `cluster_hist_index` to pass to the constructor of the resulting
+particle. `EEJet` or `PseudoJet` should be valid output types depending whether ``e^+e^-`` or ``pp`` reconstruction is being performed.
 
 ```julia
-user_preprocess(jet::T; cluster_hist_index) -> T
+user_preprocess(jet::T, ::Type{OutputT}; cluster_hist_index) -> OutputT
 ```
 
 An example of a preprocessing function is [`preprocess_ptscheme`](@ref).

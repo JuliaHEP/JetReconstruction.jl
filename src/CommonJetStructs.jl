@@ -239,6 +239,31 @@ function addjets_ptscheme(jet1::T, jet2::T;
 end
 
 """
+    preprocess_escheme(jet::T, ::Type{OutputT};
+                                cluster_hist_index::Int = 0) -> OutputT where {T <: FourMomentum,
+                                                                               OutputT <: FourMomentum}
+
+Jet preprocessor for the E-scheme, simply copying the four-momentum and assigning the cluster
+history index.
+"""
+function preprocess_escheme(jet::T, ::Type{OutputT};
+                            cluster_hist_index::Int = 0) where {T,
+                                                                OutputT <: FourMomentum}
+    OutputT(jet; cluster_hist_index = cluster_hist_index)
+end
+
+"""
+    preprocess_escheme(jet::T; cluster_hist_index::Int = 0) -> T where {T <: FourMomentum}
+
+Jet preprocessor for the E-scheme, simply copying the four-momentum and assigning the cluster
+history index.
+"""
+function preprocess_escheme(jet::T;
+                            cluster_hist_index::Int = 0) where {T <: FourMomentum}
+    preprocess_escheme(jet, T; cluster_hist_index = cluster_hist_index)
+end
+
+"""
     preprocess_ptscheme(jet::T, ::Type{OutputT};
                              cluster_hist_index::Int = 0) -> OutputT where {T <: FourMomentum,
                                                                             OutputT <: FourMomentum}

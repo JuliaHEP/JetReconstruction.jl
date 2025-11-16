@@ -121,7 +121,7 @@ are supported directly in the package.
 These schemes map to both a `recombine` and a `preprocess` function, which are
 used in the main reconstruction algorithm.
 """
-@enumx T=Recombine RecombinationScheme EScheme PtScheme Pt2Scheme
+@enumx T=Recombine RecombinationScheme ESchemeRaw EScheme PtScheme Pt2Scheme
 const AllRecombinationSchemes = [String(Symbol(x))
                                  for x in instances(RecombinationScheme.Recombine)]
 
@@ -129,7 +129,9 @@ const AllRecombinationSchemes = [String(Symbol(x))
 # separately, but it is manageable. There is a test in the CI that
 # checks that all the enums are defined in the dictionary.
 const RecombinationMethods = Dict(RecombinationScheme.EScheme => (recombine = addjets_escheme,
-                                                                  preprocess = nothing),
+                                                                  preprocess = preprocess_escheme),
+                                  RecombinationScheme.ESchemeRaw => (recombine = addjets_escheme,
+                                                                     preprocess = nothing),
                                   RecombinationScheme.PtScheme => (recombine = addjets_ptscheme,
                                                                    preprocess = preprocess_ptscheme),
                                   RecombinationScheme.Pt2Scheme => (recombine = addjets_pt2scheme,
