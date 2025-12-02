@@ -4,9 +4,15 @@
 # https://docs.github.com/github/administering-a-repository/configuration-options-for-dependency-updates
 
 version: 2
+enable-beta-ecosystems: true
 updates:
   # Keep dependencies for GitHub Actions up-to-date
   - package-ecosystem: 'github-actions'
     directory: '/'
     schedule:
       interval: 'weekly'
+  # Keep Julia packages up-to-date
+  - package-ecosystem: "julia"
+    directory: "/"
+    schedule:
+      interval: "weekly"
