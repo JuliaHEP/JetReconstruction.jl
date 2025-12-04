@@ -9,7 +9,8 @@ const events_file_ee = joinpath(@__DIR__, "..", "test", "data", "events.eeH.hepm
 const pp_events = JetReconstruction.read_final_state_particles(events_file_pp, PseudoJet)
 const ee_events = JetReconstruction.read_final_state_particles(events_file_ee, EEJet)
 
-function jet_reconstruct_harness(events; algorithm, strategy, distance, power = nothing,
+function jet_reconstruct_harness(events; algorithm, strategy, distance = nothing,
+                                 power = nothing,
                                  recombine = RecombinationMethods[RecombinationScheme.EScheme],
                                  ptmin::Real = 5.0, dcut = nothing, njets = nothing,)
     for event in events
@@ -47,13 +48,23 @@ end
 ## ee events
 let ee_group = SUITE["ee"] = BenchmarkGroup(["ee"])
     for alg in [JetAlgorithm.Durham]
+        ee_group["$alg"] = @benchmarkable jet_reconstruct_harness($ee_events;
+                                                                  algorithm = $alg,
+                                                                  strategy = $RecoStrategy.Best,
+                                                                  ptmin = 5.0) evals=1 samples=32
+    end
+    for alg in [JetAlgorithm.EEKt]
         alg_group = SUITE["ee"]["$alg"] = BenchmarkGroup(["$alg"])
         for distance in [0.4, 1.0, 1.5]
-            alg_group["$distance"] = @benchmarkable jet_reconstruct_harness($ee_events;
-                                                                            algorithm = $alg,
-                                                                            strategy = $RecoStrategy.Best,
-                                                                            distance = $distance,
-                                                                            ptmin = 5.0) evals=1 samples=32
+            distance_group = alg_group["$distance"] = BenchmarkGroup(["$distance"])
+            for power in [-1.0, 0.0, 1.0]
+                distance_group["$power"] = @benchmarkable jet_reconstruct_harness($ee_events;
+                                                                                  algorithm = $alg,
+                                                                                  strategy = $RecoStrategy.Best,
+                                                                                  distance = $distance,
+                                                                                  power = $power,
+                                                                                  ptmin = 5.0) evals=1 samples=32
+            end
         end
     end
 end
