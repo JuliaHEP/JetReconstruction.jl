@@ -22,7 +22,10 @@ The default for jet merging is simply four momentum addition, that is:
 This is defined as the [`addjets`](@ref) function in the package, which also
 serves as an example of how the recombination functions are written.
 
-In this case, the preprocessing [`preprocess_escheme`](@ref) is limited to assigning history index to the jet. Should the jets have the correct history index already, no preprocessing is needed and `preprocess = nothing` can be used.
+In this case, the preprocessing [`preprocess_escheme`](@ref) is limited to
+assigning the correct history index to the jet. (Should the jets have the
+correct history index already, no preprocessing is needed and `preprocess =
+nothing` can be used - please use with care.)
 
 ### Different Recombination Schemes
 
@@ -69,18 +72,20 @@ The supported values in the enum are:
 | `PtScheme` | Massless weighted average of momentum |
 | `Pt2Scheme` | Massless weighted average of momentum squared |
 
-All schemes except for `ESchemeRaw` include the necessary preprocessing to set the
-history index of the input particles.
-(Should other schemes prove to be particularly desired they can be implemented
-on request.)
+All schemes except for `ESchemeRaw` include the necessary preprocessing to set
+the history index of the input particles. (Should other schemes prove to be
+particularly desired they can be implemented on request.)
 
 ## User Defined Recombination
 
 ### Preprocessing
 
 The user must supply, if needed, a preprocessing function, which accepts an
-input particle and output type, and returns the rescaled particle. This function must accept a named argument `cluster_hist_index` to pass to the constructor of the resulting
-particle. `EEJet` or `PseudoJet` should be valid output types depending whether ``e^+e^-`` or ``pp`` reconstruction is being performed.
+input particle and output type, and returns the rescaled particle. This
+function must accept a named argument, `cluster_hist_index`, to pass to the
+constructor of the resulting particle. `EEJet` or `PseudoJet` should be valid
+output types depending whether ``e^+e^-`` or ``pp`` reconstruction is being
+performed.
 
 ```julia
 user_preprocess(jet::T, ::Type{OutputT}; cluster_hist_index) -> OutputT

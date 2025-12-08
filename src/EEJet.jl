@@ -51,6 +51,35 @@ function EEJet(jet::EEJet; cluster_hist_index::Int = 0)
 end
 
 """
+    EEJet(;pt::Real, rap::Real, phi::Real, m::Real = 0, cluster_hist_index::Int = 0)
+
+Construct an EEJet from `(pt, y, ϕ, m)` with the cluster index
+`cluster_hist_index`. This is not recommended, as the performance is quite
+poor, but is included for completeness and to allow support for PtScheme and
+Pt2Scheme.
+
+# Details
+
+If the (default) value of `cluster_hist_index=0` is used, the PseudoJet cannot be
+used in a reconstruction sequence.
+"""
+function EEJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
+                   cluster_hist_index::Int = 0)
+    phi = phi < 0 ? phi + 2π : phi
+    phi = phi > 2π ? phi - 2π : phi
+    ptm = (m == 0) ? pt : sqrt(pt^2 + m^2)
+    exprap = exp(rap)
+    pminus = ptm / exprap
+    pplus = ptm * exprap
+    px = pt * cos(phi)
+    py = pt * sin(phi)
+    pz = @fastmath (pplus - pminus) / 2
+    E = @fastmath (pplus + pminus) / 2
+
+    EEJet(px, py, pz, E; cluster_hist_index)
+end
+
+"""
     EEJet(jet::LorentzVector; cluster_hist_index::Int = 0)
 
 Construct a EEJet from a `LorentzVector` object with optional cluster index.
