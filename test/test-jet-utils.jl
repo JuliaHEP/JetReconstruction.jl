@@ -49,10 +49,10 @@ eej2 = EEJet(-1.0, 3.2, -1.2, 39.0)
     @test JetReconstruction.energy(pj1_alt) ≈ JetReconstruction.energy(pj1)
 
     pj1_ptyetaphi = PseudoJet(; pt = JetReconstruction.pt(pj1),
-                               rap = JetReconstruction.rapidity(pj1),
-                               phi = JetReconstruction.phi(pj1),
-                               m = JetReconstruction.mass(pj1),
-                               cluster_hist_index = 7)
+                              rap = JetReconstruction.rapidity(pj1),
+                              phi = JetReconstruction.phi(pj1),
+                              m = JetReconstruction.mass(pj1),
+                              cluster_hist_index = 7)
     @test JetReconstruction.px(pj1_ptyetaphi) ≈ JetReconstruction.px(pj1)
     @test JetReconstruction.py(pj1_ptyetaphi) ≈ JetReconstruction.py(pj1)
     @test JetReconstruction.pz(pj1_ptyetaphi) ≈ JetReconstruction.pz(pj1)
@@ -63,12 +63,12 @@ eej2 = EEJet(-1.0, 3.2, -1.2, 39.0)
     @test JetReconstruction.py(eej1_alt) ≈ JetReconstruction.py(eej1)
     @test JetReconstruction.pz(eej1_alt) ≈ JetReconstruction.pz(eej1)
     @test JetReconstruction.energy(eej1_alt) ≈ JetReconstruction.energy(eej1)
-    
+
     eej1_ptyetaphi = EEJet(; pt = JetReconstruction.pt(eej1),
-                             rap = JetReconstruction.rapidity(eej1),
-                             phi = JetReconstruction.phi(eej1),
-                             m = JetReconstruction.mass(eej1),
-                             cluster_hist_index = 7)
+                           rap = JetReconstruction.rapidity(eej1),
+                           phi = JetReconstruction.phi(eej1),
+                           m = JetReconstruction.mass(eej1),
+                           cluster_hist_index = 7)
     @test JetReconstruction.px(eej1_ptyetaphi) ≈ JetReconstruction.px(eej1)
     @test JetReconstruction.py(eej1_ptyetaphi) ≈ JetReconstruction.py(eej1)
     @test JetReconstruction.pz(eej1_ptyetaphi) ≈ JetReconstruction.pz(eej1)
