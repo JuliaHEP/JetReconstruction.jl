@@ -1,7 +1,7 @@
 """
     jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algorithm,
                          p::Union{Real, Nothing} = nothing, R = 1.0,
-                         recombine = addjets, preprocess = nothing,
+                         recombine = addjets_eschene, preprocess = preprocess_escheme,
                          strategy::RecoStrategy.Strategy = RecoStrategy.Best)
 
 Reconstructs jets from a collection of particles using a specified algorithm and
@@ -15,8 +15,8 @@ strategy.
   measure for generalised k_T algorithms (GenKt, EEKt). Other algorithms will
   ignore this value.
 - `R = 1.0`: The jet radius parameter.
-- `recombine = addjets`: The recombination scheme used for combining particles.
-- `preprocess = nothing`: The function to preprocess the particles before
+- `recombine = addjets_escheme`: The recombination scheme used for combining particles.
+- `preprocess = preprocess_escheme`: The function to preprocess the particles before
   reconstruction (e.g., for massless schemes). `nothing` means the particles are
   not preprocessed.
 - `strategy::RecoStrategy.Strategy = RecoStrategy.Best`: The jet reconstruction
@@ -46,13 +46,17 @@ indices are set automatically internally.
     
 ## `recombine` argument
 The `recombine` argument is the function used to merge pairs of particles. The
-default is `addjets`, which uses 4-momenta addition (a.k.a. the E-scheme).
+default is `addjets_escheme`, which uses 4-momenta addition (a.k.a. the E-scheme).
 
 ## `preprocess` argument
 The `preprocess` argument is a function that will be called for all original
-input particles and which returns a new particle, usually matching a
-non-standard recombination scheme, e.g., massless particles for ``p_T`` or
-``p_T^2`` recombination. `nothing` means no preprocessing is done.
+input particles and which returns a new particle. The default E-scheme preprocessing
+copies the particles as-is, only ensuring that the history index is set correctly.
+In case the input particles already have correct history indices, no preprocessing is needed
+and `nothing` can be used for this argument. 
+Additionally, a non-standard preprocessing function matching
+non-standard recombination scheme can be given, e.g., massless particles for ``p_T`` or
+``p_T^2`` recombination.
 
 # Example
 ```julia
@@ -60,13 +64,15 @@ jet_reconstruct(particles; algorithm = JetAlgorithm.AntiKt, R = 0.4)
 jet_reconstruct(particles; algorithm = JetAlgorithm.Kt, R = 1.0)
 jet_reconstruct(particles; algorithm = JetAlgorithm.Durham)
 jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, p = 0.5, R = 1.0)
+jet_reconstruct(particles; algorithm = JetAlgorithm.AntiKt, R = 1.0, preprocess = nothing, 
+                recombine = addjets_escheme)
 jet_reconstruct(particles; algorithm = JetAlgorithm.AntiKt, R = 1.0, preprocess = preprocess_ptscheme, 
                 recombine = addjets_ptscheme)
 ```
 """
 function jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algorithm,
                          p::Union{Real, Nothing} = nothing, R = 1.0,
-                         recombine = addjets, preprocess = nothing,
+                         recombine = addjets_escheme, preprocess = preprocess_escheme,
                          strategy::RecoStrategy.Strategy = RecoStrategy.Best)
     if is_pp(algorithm)
         # We assume a pp reconstruction

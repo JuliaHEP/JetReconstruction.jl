@@ -96,10 +96,17 @@ function sort_jets!(jet_array::Vector{<:LorentzVectorCyl})
     sort!(jet_array, by = jet_pt, rev = true)
 end
 
-function run_reco_test(test::ComparisonTest; testname = nothing)
+function run_reco_test(test::ComparisonTest; testname = nothing,
+                       break_history_indices = false)
     jet_type = JetReconstruction.is_ee(test.algorithm) ? EEJet : PseudoJet
     # Read the input events
     events = JetReconstruction.read_final_state_particles(test.events_file, jet_type)
+    # mess around with indices if requested
+    if break_history_indices
+        for event in events
+            event = [jet_type(jet; cluster_hist_index = 0) for jet in event]
+        end
+    end
     # Read the fastjet results
     fastjet_jets = read_fastjet_outputs(test.fastjet_outputs)
     sort_jets!(fastjet_jets)

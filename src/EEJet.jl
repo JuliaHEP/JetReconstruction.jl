@@ -1,3 +1,5 @@
+import Accessors
+
 """
     struct EEJet <: FourMomentum
 
@@ -37,6 +39,44 @@ function EEJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::Int = 
     @muladd p2 = px * px + py * py + pz * pz
     inv_p = @fastmath 1.0 / sqrt(p2)
     EEJet(px, py, pz, E, p2, inv_p, cluster_hist_index)
+end
+
+"""
+    EEJet(jet::EEJet; cluster_hist_index::Int = 0)
+
+Construct a PseudoJet from another `EEJet` object and assign given cluster index to it.
+"""
+function EEJet(jet::EEJet; cluster_hist_index::Int = 0)
+    Accessors.@set jet._cluster_hist_index = cluster_hist_index
+end
+
+"""
+    EEJet(;pt::Real, rap::Real, phi::Real, m::Real = 0, cluster_hist_index::Int = 0)
+
+Construct an EEJet from `(pt, y, ϕ, m)` with the cluster index
+`cluster_hist_index`. This is not recommended, as the performance is quite
+poor, but is included for completeness and to allow support for PtScheme and
+Pt2Scheme.
+
+# Details
+
+If the (default) value of `cluster_hist_index=0` is used, the PseudoJet cannot be
+used in a reconstruction sequence.
+"""
+function EEJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
+               cluster_hist_index::Int = 0)
+    phi = phi < 0 ? phi + 2π : phi
+    phi = phi > 2π ? phi - 2π : phi
+    ptm = (m == 0) ? pt : sqrt(pt^2 + m^2)
+    exprap = exp(rap)
+    pminus = ptm / exprap
+    pplus = ptm * exprap
+    px = pt * cos(phi)
+    py = pt * sin(phi)
+    pz = @fastmath (pplus - pminus) / 2
+    E = @fastmath (pplus + pminus) / 2
+
+    EEJet(px, py, pz, E; cluster_hist_index)
 end
 
 """

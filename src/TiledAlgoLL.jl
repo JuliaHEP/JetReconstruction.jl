@@ -289,7 +289,7 @@ end
     tiled_jet_reconstruct(particles::AbstractVector{T};
                           algorithm::JetAlgorithm.Algorithm,
                           p::Union{Real, Nothing} = nothing, R = 1.0,
-                          recombine = addjets, preprocess = nothing) where {T}
+                          recombine = addjets_escheme, preprocess = preprocess_escheme) where {T}
 
 Main jet reconstruction algorithm entry point for reconstructing jets using the
 tiled strategy for generic jet type T.
@@ -307,9 +307,9 @@ If both are given they must be consistent or an exception is thrown.
 - `p::Union{Real, Nothing} = nothing`: The power value used for jet reconstruction.
   Must be specified for GenKt algorithm. Other algorithms will ignore this value.
 - `R = 1.0`: The jet radius parameter for the jet reconstruction algorithm.
-- `recombine::Function = addjets`: The recombination function used to combine
+- `recombine::Function = addjets_escheme`: The recombination function used to combine
   particles into a new jet.
-- `preprocess::Function = nothing`: A function to preprocess the input particles.
+- `preprocess::Function = preprocess_escheme`: A function to preprocess the input particles.
 
 ## Returns
 - `ClusterSequence`: The resulting `ClusterSequence` object representing the
@@ -324,7 +324,8 @@ tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; algorithm = JetAlgori
 function tiled_jet_reconstruct(particles::AbstractVector{T};
                                algorithm::JetAlgorithm.Algorithm,
                                p::Union{Real, Nothing} = nothing, R = 1.0,
-                               recombine = addjets, preprocess = nothing) where {T}
+                               recombine = addjets_escheme,
+                               preprocess = preprocess_escheme) where {T}
 
     # Get consistent algorithm power
     p = get_algorithm_power(p = p, algorithm = algorithm)
@@ -362,7 +363,7 @@ end
 """
     _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
                            algorithm::JetAlgorithm.Algorithm,
-                           p::Real, R = 1.0, recombine = addjets)
+                           p::Real, R = 1.0, recombine = addjets_escheme)
 
 Main jet internal reconstruction algorithm entry point for reconstructing jets
 once preprocessing of data types are done. The algorithm parameter must be
@@ -377,7 +378,7 @@ consistent with the power parameter.
 - `p::Real`: The power parameter for the jet reconstruction algorithm, thus
   switching between different algorithms.
 - `R = 1.0`: The jet radius parameter for the jet reconstruction algorithm.
-- `recombine::Function = addjets`: The recombination function used for combining
+- `recombine::Function = addjets_escheme`: The recombination function used for combining
   pseudojets.
 
 ## Returns
@@ -391,7 +392,7 @@ _tiled_jet_reconstruct!(particles::Vector{PseudoJet}; algorithm = JetAlgorithm.K
 """
 function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
                                  algorithm::JetAlgorithm.Algorithm,
-                                 p::Real, R = 1.0, recombine = addjets)
+                                 p::Real, R = 1.0, recombine = addjets_escheme)
     # Bounds
     N::Int = length(particles)
 

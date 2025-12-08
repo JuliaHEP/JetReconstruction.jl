@@ -30,6 +30,7 @@ function jet_process(events::Vector{Vector{T}};
                      dcut = nothing,
                      njets = nothing,
                      strategy::RecoStrategy.Strategy,
+                     recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
                      dump::Union{String, Nothing} = nothing) where {T <:
                                                                     JetReconstruction.FourMomentum}
 
@@ -54,8 +55,8 @@ function jet_process(events::Vector{Vector{T}};
     # Now run over each event
     for (ievt, event) in enumerate(events)
         # Run the jet reconstruction
-        cluster_seq = jet_reconstruct(event, R = distance, p = p, algorithm = algorithm,
-                                      strategy = strategy)
+        cluster_seq = jet_reconstruct(event; R = distance, p = p, algorithm = algorithm,
+                                      strategy = strategy, recombine...)
         # Now select jets, with inclusive or exclusive parameters
         if !isnothing(njets)
             selectedjets = exclusive_jets(cluster_seq; njets = njets)
@@ -128,6 +129,11 @@ function parse_command_line(args)
         arg_type = RecoStrategy.Strategy
         default = RecoStrategy.Best
 
+        "--recombine"
+        help = """Recombination scheme to use for jet reconstruction: $(join(JetReconstruction.AllRecombinationSchemes, ", "))"""
+        arg_type = RecombinationScheme.Recombine
+        default = RecombinationScheme.EScheme
+
         "--dump"
         help = "Write list of reconstructed jets to a JSON formatted file"
 
@@ -160,6 +166,7 @@ function main()
                 strategy = args[:strategy],
                 ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
                 njets = args[:exclusive_njets],
+                recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
                 dump = args[:dump])
     nothing
 end

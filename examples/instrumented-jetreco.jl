@@ -23,7 +23,8 @@ include(joinpath(@__DIR__, "parse-options.jl"))
 """
     profile_code(events::Vector{Vector{T}}, profile_subdir, nsamples; R = 0.4, p = -1,
                       algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                      strategy = RecoStrategy.N2Tiled) where {T <:
+                      strategy = RecoStrategy.N2Tiled,
+                      recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw]) where {T <:
                                                               JetReconstruction.FourMomentum}
 
 Profile the jet reconstruction code using the `@profile` macro and generate a
@@ -32,8 +33,8 @@ flamegraph which is saved to the `profile/profile_subdir` directory.
 function profile_code(events::Vector{Vector{T}}, profile, nsamples; R = 0.4, p = -1,
                       algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
                       strategy = RecoStrategy.N2Tiled,
-                      recombine = RecombinationMethods[RecombinationScheme.EScheme]) where {T <:
-                                                                                            JetReconstruction.FourMomentum}
+                      recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw]) where {T <:
+                                                                                               JetReconstruction.FourMomentum}
     Profile.init(n = 5 * 10^6, delay = 0.00001)
     function profile_events(events)
         for evt in events
@@ -58,7 +59,7 @@ end
     allocation_stats(events::Vector{Vector{T}}; algorithm::JetAlgorithm.Algorithm,
                           distance::Real = 0.4, p::Union{Real, Nothing} = nothing,
                           strategy::RecoStrategy.Strategy,
-                          recombine = RecombinationMethods[RecombinationScheme.EScheme],
+                          recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw],
                           ptmin::Real = 5.0) where {T <: JetReconstruction.FourMomentum}
 Take a memory allocation profile of the jet reconstruction code, printing the
 output.
@@ -66,7 +67,7 @@ output.
 function allocation_stats(events::Vector{Vector{T}}; algorithm::JetAlgorithm.Algorithm,
                           distance::Real = 0.4, p::Union{Real, Nothing} = nothing,
                           strategy::RecoStrategy.Strategy,
-                          recombine = RecombinationMethods[RecombinationScheme.EScheme],
+                          recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw],
                           ptmin::Real = 5.0) where {T <: JetReconstruction.FourMomentum}
     println("Memory allocation statistics:")
     @timev for event in events
@@ -106,7 +107,7 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
                             distance::Real = 0.4,
                             p::Union{Real, Nothing} = nothing,
                             strategy::RecoStrategy.Strategy,
-                            recombine = RecombinationMethods[RecombinationScheme.EScheme],
+                            recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw],
                             ptmin::Real = 5.0,
                             dcut = nothing,
                             njets = nothing,
@@ -256,7 +257,7 @@ function parse_command_line(args)
         "--recombine"
         help = """Recombination scheme to use for jet reconstruction: $(join(JetReconstruction.AllRecombinationSchemes, ", "))"""
         arg_type = RecombinationScheme.Recombine
-        default = RecombinationScheme.EScheme
+        default = RecombinationScheme.ESchemeRaw
 
         "--nsamples", "-m"
         help = "Number of measurement points to acquire."

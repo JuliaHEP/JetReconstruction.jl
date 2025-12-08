@@ -192,8 +192,8 @@ end
 
 """
     ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
-                       p::Union{Real, Nothing} = nothing, R = 4.0, recombine = addjets,
-                       preprocess = nothing) where {T}
+                       p::Union{Real, Nothing} = nothing, R = 4.0, recombine = addjets_escheme,
+                       preprocess = preprocess_escheme) where {T}
 
 Run an e+e- reconstruction algorithm on a set of initial particles.
 
@@ -205,8 +205,8 @@ Run an e+e- reconstruction algorithm on a set of initial particles.
   `EEKt`` algorithm.
 - `R = 4.0`: The jet radius parameter. Not required and ignored for the `Durham`
   algorithm.
-- `recombine = addjets`: The recombination scheme to use.
-- `preprocess = nothing`: Preprocessing function for input particles.
+- `recombine = addjets_escheme`: The recombination scheme to use.
+- `preprocess = preprocess_escheme`: Preprocessing function for input particles.
 
 # Returns
 - The result of the jet clustering as a `ClusterSequence` object.
@@ -221,8 +221,9 @@ If the algorithm is Durham, `R` is nominally set to 4. If the algorithm is EEkt,
 power `p` must also be specified.
 """
 function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
-                            p::Union{Real, Nothing} = nothing, R = 4.0, recombine = addjets,
-                            preprocess = nothing) where {T}
+                            p::Union{Real, Nothing} = nothing, R = 4.0,
+                            recombine = addjets_escheme,
+                            preprocess = preprocess_escheme) where {T}
 
     # Check for consistency algorithm power
     p = get_algorithm_power(p = p, algorithm = algorithm)
@@ -270,7 +271,7 @@ end
 """
     _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
                         algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
-                        recombine = addjets)
+                        recombine = addjets_escheme)
 
 This function is the internal implementation of the e+e- jet clustering
 algorithm. It takes a vector of `EEJet` `particles` representing the input
@@ -288,7 +289,7 @@ entry point to this jet reconstruction.
 - `p::Real`: The power to which the transverse momentum (`pt`) of each particle
   is raised.
 - `R = 4.0`: The jet radius parameter.
-- `recombine = addjets`: The recombination function used to merge two jets.
+- `recombine = addjets_escheme`: The recombination function used to merge two jets.
 
 # Returns
 - `clusterseq`: The resulting `ClusterSequence` object representing the
@@ -296,7 +297,7 @@ entry point to this jet reconstruction.
 """
 function _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
                               algorithm::JetAlgorithm.Algorithm, p::Real, R::Real = 4.0,
-                              recombine = addjets)
+                              recombine = addjets_escheme)
     # Bounds
     N::Int = length(particles)
 

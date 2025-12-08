@@ -109,19 +109,9 @@ function main()
     reduced_event, pt_threshold = softkiller(soft_killer, all_jets_sk)
     @info "SoftKiller applied: $(length(reduced_event)) clusters remaining from $(length(all_jets_sk)), pt threshold = $pt_threshold"
 
-    # Workaround for cluster_hist_indedx not being correct after SoftKiller filtering
-    fixed_reduced_event = PseudoJet[]
-    sizehint!(fixed_reduced_event, length(reduced_event))
-    for i in eachindex(reduced_event)
-        push!(fixed_reduced_event,
-              PseudoJet(reduced_event[i].px, reduced_event[i].py, reduced_event[i].pz,
-                        reduced_event[i].E, i,
-                        reduced_event[i]._pt2, reduced_event[i]._inv_pt2,
-                        reduced_event[i]._rap, reduced_event[i]._phi))
-    end
-    cs = jet_reconstruct(fixed_reduced_event; algorithm = args[:algorithm],
+    cs = jet_reconstruct(reduced_event; algorithm = args[:algorithm],
                          R = args[:distance], p = args[:power],
-                         strategy = args[:strategy])
+                         strategy = args[:strategy], preprocess = nothing)
     @info "Reconstructed softkiller filtered clusters with algorithm $(args[:algorithm]), radius $(args[:distance]) and strategy $(args[:strategy])"
 end
 

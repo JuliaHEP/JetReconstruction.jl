@@ -173,7 +173,15 @@ function softkiller(sk::SoftKiller, event::Vector{PseudoJet})
 
     pt2cut = median(max_pt2)
 
-    reduced_event = filter(jet -> pt2(jet) >= pt2cut, event)
+    reduced_event = Vector{PseudoJet}()
+    sizehint!(reduced_event, length(event))
+    hist_index = 1
+    for jet in event
+        if pt2(jet) >= pt2cut
+            push!(reduced_event, PseudoJet(jet; cluster_hist_index = hist_index))
+            hist_index += 1
+        end
+    end
 
     pt_threshold = sqrt(pt2cut)
 

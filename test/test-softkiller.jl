@@ -60,10 +60,10 @@ end
     phis = rand(rng, N) .* (2π)
 
     # Helper function to create a PseudoJet from pt, eta, and phi
-    function make_pj(pt, rap, phi)
-        return PseudoJet(pt = pt, rap = rap, phi = phi, m = 0.0)
+    function make_pj(pt, rap, phi; index = 0)
+        return PseudoJet(pt = pt, rap = rap, phi = phi, m = 0.0, cluster_hist_index = index)
     end
-    event = [make_pj(pts[i], raps[i], phis[i]) for i in 1:N]
+    event = [make_pj(pts[i], raps[i], phis[i]; index = i) for i in 1:N]
 
     reduced, threshold = softkiller(sk, event)
 
@@ -71,12 +71,18 @@ end
     @test threshold < maximum(pts)
     @test length(reduced) < N
 
-    # Check that only jets with pt > threshold remain
+    for (i, pj) in enumerate(reduced)
+        @test pj._cluster_hist_index == i
+    end
+
+    # Check that all jets above the threshold are kept
+    accepted_counter = 0
     for (pj, pt) in zip(event, pts)
-        if pt > threshold
-            @test pj in reduced
-        else
-            @test pj ∉ reduced
+        if pt >= threshold
+            accepted_counter += 1
+            @test PseudoJet(pj; cluster_hist_index = accepted_counter) in reduced
         end
     end
+    # and no other jets were kept
+    @test accepted_counter == length(reduced)
 end

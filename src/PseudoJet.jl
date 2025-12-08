@@ -3,6 +3,8 @@
 #
 # Some of the implementation is taken from LorentzVectorHEP.jl, by Jerry Ling
 
+import Accessors
+
 """
     struct PseudoJet <: FourMomentum
 
@@ -102,6 +104,15 @@ function PseudoJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
     E = @fastmath (pplus + pminus) / 2
 
     PseudoJet(px, py, pz, E, cluster_hist_index, pt * pt, 1 / (pt * pt), rap, phi)
+end
+
+"""
+    PseudoJet(jet::PseudoJet; cluster_hist_index::Int = 0)
+
+Construct a PseudoJet from another `PseudoJet` object and assign given cluster index to it.
+"""
+function PseudoJet(jet::PseudoJet; cluster_hist_index::Int = 0)
+    Accessors.@set jet._cluster_hist_index = cluster_hist_index
 end
 
 """
