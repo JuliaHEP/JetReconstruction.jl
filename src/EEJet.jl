@@ -64,7 +64,7 @@ If the (default) value of `cluster_hist_index=0` is used, the PseudoJet cannot b
 used in a reconstruction sequence.
 """
 function EEJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
-                   cluster_hist_index::Int = 0)
+               cluster_hist_index::Int = 0)
     phi = phi < 0 ? phi + 2π : phi
     phi = phi > 2π ? phi - 2π : phi
     ptm = (m == 0) ? pt : sqrt(pt^2 + m^2)
