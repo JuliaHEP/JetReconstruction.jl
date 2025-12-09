@@ -31,6 +31,7 @@ Profile the jet reconstruction code using the `@profile` macro and generate a
 flamegraph which is saved to the `profile/profile_subdir` directory.
 """
 function profile_code(events::Vector{Vector{T}}, profile, nsamples; R = 0.4, p = -1,
+                      γ::Union{Real, Nothing} = nothing,
                       algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
                       strategy = RecoStrategy.N2Tiled,
                       recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw]) where {T <:
@@ -38,7 +39,7 @@ function profile_code(events::Vector{Vector{T}}, profile, nsamples; R = 0.4, p =
     Profile.init(n = 5 * 10^6, delay = 0.00001)
     function profile_events(events)
         for evt in events
-            jet_reconstruct(evt; R = R, p = p, algorithm = algorithm,
+            jet_reconstruct(evt; R = R, p = p, γ = γ, algorithm = algorithm,
                             strategy = strategy, recombine...)
         end
     end
@@ -58,6 +59,7 @@ end
 """
     allocation_stats(events::Vector{Vector{T}}; algorithm::JetAlgorithm.Algorithm,
                           distance::Real = 0.4, p::Union{Real, Nothing} = nothing,
+                          γ::Union{Real, Nothing} = nothing,
                           strategy::RecoStrategy.Strategy,
                           recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw],
                           ptmin::Real = 5.0) where {T <: JetReconstruction.FourMomentum}
@@ -66,12 +68,13 @@ output.
 """
 function allocation_stats(events::Vector{Vector{T}}; algorithm::JetAlgorithm.Algorithm,
                           distance::Real = 0.4, p::Union{Real, Nothing} = nothing,
+                          γ::Union{Real, Nothing} = nothing,
                           strategy::RecoStrategy.Strategy,
                           recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw],
                           ptmin::Real = 5.0) where {T <: JetReconstruction.FourMomentum}
     println("Memory allocation statistics:")
     @timev for event in events
-        _ = inclusive_jets(jet_reconstruct(event; R = distance, p = p,
+        _ = inclusive_jets(jet_reconstruct(event; R = distance, p = p, γ = γ,
                                            algorithm = algorithm,
                                            strategy = strategy, recombine...),
                            ptmin = ptmin)
@@ -84,6 +87,7 @@ end
                             algorithm::JetAlgorithm.Algorithm,
                             distance::Real = 0.4,
                             p::Union{Real, Nothing} = nothing,
+                            γ::Union{Real, Nothing} = nothing,
                             ptmin::Real = 5.0,
                             dcut = nothing,
                             njets = nothing,
@@ -106,6 +110,7 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
                             algorithm::JetAlgorithm.Algorithm,
                             distance::Real = 0.4,
                             p::Union{Real, Nothing} = nothing,
+                            γ::Union{Real, Nothing} = nothing,
                             strategy::RecoStrategy.Strategy,
                             recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw],
                             ptmin::Real = 5.0,
@@ -136,7 +141,7 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
         gcoff && GC.enable(false)
         t_start = time_ns()
         for (ievt, event) in enumerate(events)
-            cs = jet_reconstruct(event; R = distance, p = p, algorithm = algorithm,
+            cs = jet_reconstruct(event; R = distance, p = p, γ = γ, algorithm = algorithm,
                                  strategy = strategy, recombine...)
             if !isnothing(njets)
                 selectedjets = exclusive_jets(cs; njets = njets)
@@ -249,6 +254,10 @@ function parse_command_line(args)
         help = """Power value for jet reconstruction"""
         arg_type = Float64
 
+        "--gamma"
+        help = """Gamma, γ, only for Valencia algorithm)"""
+        arg_type = Float64
+
         "--strategy", "-S"
         help = """Strategy for the algorithm, valid values: $(join(JetReconstruction.AllJetRecoStrategies, ", "))"""
         arg_type = RecoStrategy.Strategy
@@ -328,18 +337,18 @@ function main()
     # Major switch between modes of running 
     if args[:alloc]
         allocation_stats(events; distance = args[:distance],
-                         p = args[:power], algorithm = args[:algorithm],
+                         p = args[:power], γ = args[:gamma], algorithm = args[:algorithm],
                          strategy = args[:strategy],
                          recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
                          ptmin = args[:ptmin])
     elseif !isnothing(args[:profile])
         profile_code(events, args[:profile], args[:nsamples];
-                     R = args[:distance], p = args[:power],
+                     R = args[:distance], p = args[:power], γ = args[:gamma],
                      algorithm = args[:algorithm], strategy = args[:strategy],
                      recombine = JetReconstruction.RecombinationMethods[args[:recombine]])
     else
         benchmark_jet_reco(events, distance = args[:distance], algorithm = args[:algorithm],
-                           p = args[:power],
+                           p = args[:power], γ = args[:gamma],
                            strategy = args[:strategy],
                            recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
                            ptmin = args[:ptmin], dcut = args[:exclusive_dcut],

@@ -22,8 +22,8 @@ strategy.
 - `strategy::RecoStrategy.Strategy = RecoStrategy.Best`: The jet reconstruction
    strategy to use. `RecoStrategy.Best` makes a dynamic decision based on the
    number of starting particles.
-- `γ::Real = 1.0`: The angular exponent parameter for Valencia algorithm. Ignored
-  by other algorithms.
+- `γ::Union{Real, Nothing} = nothing`: The angular exponent parameter for
+   Valencia algorithm. Ignored by other algorithms.
 
 Note that `p` must be specified for `GenKt` and `EEKt` algorithms,
 other algorithms will ignore its value.

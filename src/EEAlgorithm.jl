@@ -315,7 +315,7 @@ end
 """
     ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
                        p::Union{Real, Nothing} = nothing, R = 4.0, 
-                       γ::Real = 1.0, β::Union{Real, Nothing} = nothing,
+                       γ::Union{Real, Nothing} = 1.0, β::Union{Real, Nothing} = nothing,
                        recombine = addjets_escheme,
                        preprocess = preprocess_escheme) where {T}
 
@@ -330,7 +330,7 @@ Run an e+e- reconstruction algorithm on a set of initial particles.
   Other algorithms will ignore this value.
 - `R = 4.0`: The jet radius parameter. Not required / ignored for the Durham
   algorithm.
-- `γ::Real = 1.0`: The angular exponent parameter for Valencia algorithm. Ignored for other algorithms.
+- `γ::Union{Real, Nothing} = 1.0`: The angular exponent parameter for Valencia algorithm. Ignored for other algorithms.
 - `β::Union{Real, Nothing} = nothing`: Optional alias for the Valencia energy exponent; if provided for
     Valencia it overrides `p`.
 - `recombine = addjets_escheme`: The recombination scheme to use.
@@ -351,8 +351,8 @@ If the algorithm is Valencia, you can provide `p` (β) and `γ`, or pass `β` ex
 """
 function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
                             p::Union{Real, Nothing} = nothing, R = 4.0,
-                            γ::Real = 1.0,
-                            β::Union{Real, Nothing} = nothing
+                            γ::Union{Real, Nothing} = 1.0,
+                            β::Union{Real, Nothing} = nothing,
                             recombine = addjets_escheme,
                             preprocess = preprocess_escheme) where {T}
 
@@ -442,9 +442,9 @@ entry point to this jet reconstruction.
 """
 function _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
                               algorithm::JetAlgorithm.Algorithm, p::Real, R::Real = 4.0,
-                              invR2::Union{Real, Nothing} = nothing,
-                              γ::Real = 1.0,
-                              beta::Union{Real, Nothing} = nothing
+                              invR2::Real = 1/(16.0),
+                              γ::Union{Real, Nothing} = 1.0,
+                              beta::Union{Real, Nothing} = nothing,
                               recombine = addjets_escheme)
 
     # Bounds
