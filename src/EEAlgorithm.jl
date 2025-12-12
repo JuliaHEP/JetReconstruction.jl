@@ -403,7 +403,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
     # Compute invR2 once and thread it through
     invR2 = inv(R * R)
     # Now call the unified implementation with conditional logic.
-    return _ee_genkt_algorithm(recombination_particles; p = p, R = R,
+    return _ee_genkt_algorithm!(recombination_particles; p = p, R = R,
                                invR2 = invR2, algorithm = algorithm, recombine = recombine,
                                γ = γ)
 end
@@ -412,7 +412,6 @@ end
     _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
                         algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
                         invR2::Union{Real, Nothing} = nothing, γ::Real = 1.0,
-                        beta::Union{Real, Nothing} = nothing
                         recombine = addjets_escheme)
 
 This function is the internal implementation of the e+e- jet clustering
@@ -431,9 +430,8 @@ entry point to this jet reconstruction.
 - `p::Real`: The power to which the transverse momentum (`pt`) of each particle
   is raised.
 - `R = 4.0`: The jet radius parameter.
+- `invR2::Real = 1/(16.0)`: The inverse square of the radius, i.e. ``1 / R^2``.
 - `γ::Real = 1.0`: Angular exponent for the Valencia beam metric (ignored for other algorithms).
-- `beta::Union{Real, Nothing} = nothing`: Optional alias for the Valencia energy exponent (β).
-    When provided with `algorithm == JetAlgorithm.Valencia`, it overrides `p`.
 - `recombine = addjets_escheme`: The recombination function used to merge two jets.
 
 # Returns
@@ -444,19 +442,11 @@ function _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
                               algorithm::JetAlgorithm.Algorithm, p::Real, R::Real = 4.0,
                               invR2::Real = 1/(16.0),
                               γ::Union{Real, Nothing} = 1.0,
-                              beta::Union{Real, Nothing} = nothing,
                               recombine = addjets_escheme)
 
     # Bounds
     N::Int = length(particles)
 
-    # invR2 provided by caller when available; otherwise compute from R once here
-    if invR2 === nothing
-        invR2 = inv(R * R)
-    end
-    if algorithm == JetAlgorithm.Valencia && beta !== nothing
-        p = beta
-    end
 
     # Constant factor for the dij metric and the beam distance function
     if algorithm == JetAlgorithm.Durham

@@ -96,8 +96,10 @@ end
 @testset "_ee_genkt_algorithm Valencia dij_factor" begin
     # Ensure cluster_hist_index(i) == i for initial jets
     jets = [EEJet(1.0, 0.0, 0.0, 1.0; cluster_hist_index = 1)]
-    cs = JetReconstruction._ee_genkt_algorithm(particles = jets,
+    R = 0.8
+    invR2 = 1.0 / (R * R)
+    cs = JetReconstruction._ee_genkt_algorithm!(jets;
                                                algorithm = JetAlgorithm.Valencia, p = 1.2,
-                                               R = 0.8, γ = 1.2)
+                                               R = R, invR2 = invR2, γ = 1.2)
     @test cs isa JetReconstruction.ClusterSequence
 end
