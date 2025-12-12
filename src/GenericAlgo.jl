@@ -1,6 +1,7 @@
 """
     jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algorithm,
-                         p::Union{Real, Nothing} = nothing, R = 1.0, γ::Real = 1.0,
+                         p::Union{Real, Nothing} = nothing, R = 1.0, 
+                         γ::Union{Real, Nothing} = nothing,
                          recombine = addjets_eschene, preprocess = preprocess_escheme,
                          strategy::RecoStrategy.Strategy = RecoStrategy.Best)
 
@@ -15,6 +16,8 @@ strategy.
   measure for generalised k_T algorithms (GenKt, EEKt). Other algorithms will
   ignore this value.
 - `R = 1.0`: The jet radius parameter.
+- `γ::Union{Real, Nothing} = nothing`: The angular exponent parameter for
+   Valencia algorithm. Ignored by other algorithms.
 - `recombine = addjets_escheme`: The recombination scheme used for combining particles.
 - `preprocess = preprocess_escheme`: The function to preprocess the particles before
   reconstruction (e.g., for massless schemes). `nothing` means the particles are
@@ -22,8 +25,6 @@ strategy.
 - `strategy::RecoStrategy.Strategy = RecoStrategy.Best`: The jet reconstruction
    strategy to use. `RecoStrategy.Best` makes a dynamic decision based on the
    number of starting particles.
-- `γ::Union{Real, Nothing} = nothing`: The angular exponent parameter for
-   Valencia algorithm. Ignored by other algorithms.
 
 Note that `p` must be specified for `GenKt` and `EEKt` algorithms,
 other algorithms will ignore its value.

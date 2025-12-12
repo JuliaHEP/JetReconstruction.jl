@@ -344,7 +344,7 @@ itself, and call the actual reconstruction method `_ee_genkt_algorithm!`.
 
 If the algorithm is Durham, `R` is nominally set to 4.
 If the algorithm is EEkt, power `p` must be specified.
-If the algorithm is Valencia, you can provide `p` (β) and `γ`, or pass `β` explicitly to override `p`.
+If the algorithm is Valencia, you can provide `p` and `γ`, or pass `β` explicitly to override `p`.
 """
 function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
                             p::Union{Real, Nothing} = nothing, R = 4.0,
@@ -419,7 +419,7 @@ Users of the package should use the `ee_genkt_algorithm` function as their
 entry point to this jet reconstruction.
 
 # Arguments
- - `particles::AbstractVector{EEJet}`: A vector of `EEJet` particles used
+- `particles::AbstractVector{EEJet}`: A vector of `EEJet` particles used
   as input for jet reconstruction. This vector must supply the correct
   `cluster_hist_index` values and will be *mutated* as part of the returned
   `ClusterSequence`.
