@@ -73,10 +73,3 @@ end
     @test eereco.dijdist[2] == 2.71
     @test eereco.E2p[2] == 7.0
 end
-
-@testset "dij_dist fallback error (non-Algorithm)" begin
-    eereco = StructArray{EERecoJet}(undef, 1)
-    eereco.nndist[1] = 0.0
-    eereco.E2p[1] = 1.0
-    @test_throws ArgumentError dij_dist(eereco, 1, 0, 1.0, :Foo, 1.0)
-end

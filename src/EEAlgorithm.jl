@@ -30,9 +30,6 @@ Beam index `j==0` returns a large sentinel. For Valencia we use the full
 Valencia metric (independent of `dij_factor`).
 """
 @inline function dij_dist(eereco, i, j, dij_factor, algorithm, invR2)
-    if !(algorithm isa JetAlgorithm.Algorithm)
-        throw(ArgumentError("algorithm must be a JetAlgorithm.Algorithm"))
-    end
     j == 0 && return large_dij
     @inbounds begin
         if algorithm == JetAlgorithm.Valencia
