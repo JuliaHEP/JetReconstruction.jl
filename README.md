@@ -41,6 +41,7 @@ cs = jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.Anti
   - `JetAlgorithm.GenKt` generalised $k_\text{T}$ (which also requires specification of `p`)
   - `JetAlgorithm.Durham` the $e^+e-$ $k_\text{T}$ algorithm, also known as the Durham algorithm
   - `JetAlgorithm.EEKt` the $e^+e-$ generalised $k_\text{T}$ algorithm (which also requires specification of `p`)
+  - `JetAlgorithm.Valencia` the Valencia $e^+e-$ pile-up resistant algorithm (which also requires specification of `p` (γ) and β)
 - `R` - the cone size parameter; no particles more geometrically distance than `R` will be merged (default 1.0; note this parameter is ignored for the Durham algorithm)
 
 The object returned is a `ClusterSequence`, which internally tracks all merge steps.
@@ -65,7 +66,7 @@ sorted_jets = sort!(inclusive_jets(cs::ClusterSequence; ptmin=5.0), by=JetRecons
 
 #### Strategy
 
-Three strategies are available for the different algorithms:
+Three strategies are available for the different algorithms, but only make a difference for $`pp`$ events:
 
 | Strategy Name | Notes | Interface |
 |---|---|---|
@@ -73,7 +74,7 @@ Three strategies are available for the different algorithms:
 | `RecoStrategy.N2Plain` | Global matching of particles at each interaction (works well for low $N$) | `plain_jet_reconstruct` |
 | `RecoStrategy.N2Tiled` | Use tiles of radius $R$ to limit search space (works well for higher $N$) | `tiled_jet_reconstruct` |
 
-Generally one can use the `jet_reconstruct` interface, shown above, as the *Best* strategy safely as the overhead is extremely low. That interface supports a `strategy` option to switch to a different option.
+Generally one can use the `jet_reconstruct` interface, shown above, as the *Best* strategy safely as the overhead is utterly negligible. That interface supports a `strategy` option to switch to a different option.
 
 Another option, if one wishes to use a specific strategy, is to call that strategy's interface directly, e.g.,
 
@@ -98,6 +99,7 @@ julia --project jetreco.jl --algorithm=Durham ../test/data/events.eeH.hepmc3.zst
 ...
 julia --project jetreco.jl --maxevents=10 --strategy=N2Plain --algorithm=Kt --exclusive-njets=3 ../test/data/events.pp13TeV.hepmc3.zst
 ...
+julia --project ./jetreco.jl --algorithm=Valencia --gamma=1.2 --beta=1.2 -R 0.8 ../test/data/events.eeH.hepmc3.zst
 ```
 
 There are options to explicitly set the algorithm (use `--help` to see these).
@@ -124,7 +126,6 @@ The plotting code is a package extension and will load if the one of the `Makie`
 modules is loaded in the environment.
 
 ## Reference
-
 
 The current recommended reference for JetReconstruction.jl is:
 

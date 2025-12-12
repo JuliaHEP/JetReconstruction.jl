@@ -13,7 +13,9 @@ Julia.
 
 The algorithms include anti-``{k}_\text{T}``, Cambridge/Aachen, inclusive
 ``k_\text{T}``, generalised ``k_\text{T}`` for ``pp`` events; and the Durham
-algorithm and generalised ``k_\text{T}`` for ``e^+e^-``.
+algorithm and generalised ``k_\text{T}`` for ``e^+e^-``. The Valencia algorithm
+for ``e^+e^-``, based on [1404.4294](https://arxiv.org/abs/1404.4294) is also
+supported.
 
 ## Reconstruction Interface
 
@@ -35,6 +37,10 @@ Types](@ref)) to reconstruct and the algorithm is given explicitly.
 
 For the case of generalised ``k_T`` (for ``pp`` and ``e^+e^-``) both the
 algorithm (`GenKt`, `EEKt`) and `p` are needed.
+
+For the Valencia algorithm, as well as `R`, the β (equivevent to the existing
+power p of the algorithm) and γ (angular exponent parameter used in the beam
+distance) are needed.
 
 The `R` value determines the cone size; in the case of the Durham algorithm the
 `R` value is ignored.
@@ -112,7 +118,6 @@ both parents are missing (the only case when a jet has one parent is when it
 undergoes a *beam merge* step).
 
 ## References
-
 
 The current recommended reference for JetReconstruction.jl is:
 
