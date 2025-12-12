@@ -73,10 +73,10 @@ jet_reconstruct(particles; algorithm = JetAlgorithm.AntiKt, R = 1.0, preprocess 
 ```
 """
 function jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algorithm,
-                         p::Union{Real, Nothing} = nothing, R = 1.0, γ::Union{Real, Nothing} = nothing,
+                         p::Union{Real, Nothing} = nothing, R = 1.0,
+                         γ::Union{Real, Nothing} = nothing,
                          recombine = addjets_escheme, preprocess = preprocess_escheme,
                          strategy::RecoStrategy.Strategy = RecoStrategy.Best)
-
     if is_pp(algorithm)
         # We assume a pp reconstruction
         if strategy == RecoStrategy.Best
@@ -97,10 +97,10 @@ function jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algo
 
     # Now call the chosen algorithm, passing through the other parameters
     if is_ee(algorithm)
-        alg(particles; algorithm = algorithm, p = p, R = R, γ = γ, 
+        alg(particles; algorithm = algorithm, p = p, R = R, γ = γ,
             recombine = recombine, preprocess = preprocess)
     else
-        alg(particles; algorithm = algorithm, p = p, R = R, 
+        alg(particles; algorithm = algorithm, p = p, R = R,
             recombine = recombine, preprocess = preprocess)
     end
 end

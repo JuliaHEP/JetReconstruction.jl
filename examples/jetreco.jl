@@ -122,7 +122,7 @@ function parse_command_line(args)
         help = """Algorithm to use for jet reconstruction: $(join(JetReconstruction.AllJetRecoAlgorithms, ", "))"""
         arg_type = JetAlgorithm.Algorithm
 
-        "--power", "-p"
+        "--power", "--beta", "-p"
         help = """Power value for jet reconstruction (a.k.a. β for Valencia algorithm)"""
         arg_type = Float64
 

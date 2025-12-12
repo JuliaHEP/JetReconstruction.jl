@@ -99,7 +99,7 @@ end
     R = 0.8
     invR2 = 1.0 / (R * R)
     cs = JetReconstruction._ee_genkt_algorithm!(jets;
-                                               algorithm = JetAlgorithm.Valencia, p = 1.2,
-                                               R = R, invR2 = invR2, γ = 1.2)
+                                                algorithm = JetAlgorithm.Valencia, p = 1.2,
+                                                R = R, invR2 = invR2, γ = 1.2)
     @test cs isa JetReconstruction.ClusterSequence
 end

@@ -401,8 +401,8 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
     invR2 = inv(R * R)
     # Now call the unified implementation with conditional logic.
     return _ee_genkt_algorithm!(recombination_particles; p = p, R = R,
-                               invR2 = invR2, algorithm = algorithm, recombine = recombine,
-                               γ = γ)
+                                invR2 = invR2, algorithm = algorithm, recombine = recombine,
+                                γ = γ)
 end
 
 """
@@ -437,13 +437,12 @@ entry point to this jet reconstruction.
 """
 function _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
                               algorithm::JetAlgorithm.Algorithm, p::Real, R::Real = 4.0,
-                              invR2::Real = 1/(16.0),
+                              invR2::Real = 1 / (16.0),
                               γ::Union{Real, Nothing} = 1.0,
                               recombine = addjets_escheme)
 
     # Bounds
     N::Int = length(particles)
-
 
     # Constant factor for the dij metric and the beam distance function
     if algorithm == JetAlgorithm.Durham
