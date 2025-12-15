@@ -119,26 +119,39 @@ undergoes a *beam merge* step).
 
 ## References
 
-The current recommended reference for JetReconstruction.jl is:
+Although it has been developed further since the CHEP2023 conference, the CHEP
+conference proceedings,
+[10.1051/epjconf/202429505017](https://doi.org/10.1051/epjconf/202429505017),
+should be cited if you use this package:
 
 ```bibtex
 @article{refId0,
-  author = {{Stewart, Graeme Andrew} and {Ganguly, Sanmay} and {Ghosh, Sattwamo} and {Gras, Philippe} and {Krasnopolski, Atell}},
-  title = {Fast Jet Finding in Julia},
-  DOI= "10.1051/epjconf/202533701067",
-  url= "https://doi.org/10.1051/epjconf/202533701067",
-  journal = {EPJ Web Conf.},
-  year = 2025,
-  volume = 337,
-  pages = "01067",
+    author = {{Stewart, Graeme Andrew} and {Gras, Philippe} and {Hegner, Benedikt} and {Krasnopolski, Atell}},
+    doi = {10.1051/epjconf/202429505017},
+    journal = {EPJ Web of Conf.},
+    pages = {05017},
+    title = {Polyglot Jet Finding},
+    url = {https://doi.org/10.1051/epjconf/202429505017},
+    volume = 295,
+    year = 2024,
+    eprint={2309.17309},
+    archivePrefix={arXiv},
+    primaryClass={hep-ex}
 }
 ```
 
-Also available as [arXiv:2503.08146](https://arxiv.org/abs/2503.08146).
+The original paper on [arXiv](https://arxiv.org/abs/2309.17309) is:
 
-### Other Articles
-
-- CHEP2023, *Polyglot Jet Finding*: [arXiv:2309.17309](https://arxiv.org/abs/2309.17309), [10.1051/epjconf/202429505017](https://doi.org/10.1051/epjconf)
+```bibtex
+@misc{stewart2023polyglot,
+      title={Polyglot Jet Finding}, 
+      author={Graeme Andrew Stewart and Philippe Gras and Benedikt Hegner and Atell Krasnopolski},
+      year={2023},
+      eprint={2309.17309},
+      archivePrefix={arXiv},
+      primaryClass={hep-ex}
+}
+```
 
 ## Community
 
