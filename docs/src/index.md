@@ -134,6 +134,13 @@ Also available as [arXiv:2503.08146](https://arxiv.org/abs/2503.08146).
 
 - CHEP2023, *Polyglot Jet Finding*: [arXiv:2309.17309](https://arxiv.org/abs/2309.17309), [10.1051/epjconf/202429505017](https://doi.org/10.1051/epjconf)
 
+## Community
+
+We welcome contributions to the project (see [Contributing to
+JetReconstruction](@ref)). Please follow our [Code of
+Conduct](https://github.com/JuliaHEP/JetReconstruction.jl/blob/main/CODE_OF_CONDUCT.md),
+thanks!
+
 ## Authors and Copyright
 
 Code in this package is authored by:
