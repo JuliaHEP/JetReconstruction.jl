@@ -32,11 +32,15 @@ There are a few points to bear in mind for development listed below.
 
 ### Develop against `main`
 
-Do your development against the head of the `main` branch so that your code will
-work with all the other features that are in development at the moment. If
-`main` is targetting a breaking change release, e.g., `v0.X+1.0` where `v0.X` is
-the current version there may be a case for targetting the `release-0.X` branch
-if your PR is a bug fix. Please discuss this with the maintainers.
+Do your development against the head of the `main` branch so that your code
+will work with all the other features that are in development at the moment. If
+`main` is targetting a breaking change release, e.g., `vX+1.0.0` where `vX.Y.Z`
+is the current version, there may be a case for targetting the `release-X`
+branch if your PR is a bug fix. Please discuss this with the maintainers.
+
+(For pre-v1 releases, we follow the Julia convention that `v0.Y+1.0` is a
+breaking change w.r.t. `v0.Y.Z` and the release branch is `release-0.Y` in this
+case.)
 
 If it takes a while to develop or implement review changes, rebase against
 `main` as needed.
@@ -45,8 +49,8 @@ If it takes a while to develop or implement review changes, rebase against
 
 - **Document all public functions and types** using Julia docstrings that will
   be useful to users.
-    - Add docstrings for internal functions too (unless these are trivial) with
-      a focus on helping fellow developers.
+  - Add docstrings for internal functions too (unless these are trivial) with
+    a focus on helping fellow developers.
 - Update or add relevant sections in the documentation under `docs/src/` as needed.
 - Provide clear explanations and usage examples where appropriate.
 
