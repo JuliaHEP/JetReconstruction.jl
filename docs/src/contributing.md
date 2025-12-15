@@ -38,8 +38,8 @@ will work with all the other features that are in development at the moment. If
 is the current version, there may be a case for targetting the `release-X`
 branch if your PR is a bug fix. Please discuss this with the maintainers.
 
-(For pre-v1 releases, we follow the Julia convention that `v0.X+1.0` is a
-breaking change w.r.t. `v0.X.Y` and the release branch is `release-0.X` in this
+(For pre-v1 releases, we follow the Julia convention that `v0.Y+1.0` is a
+breaking change w.r.t. `v0.Y.Z` and the release branch is `release-0.Y` in this
 case.)
 
 If it takes a while to develop or implement review changes, rebase against
