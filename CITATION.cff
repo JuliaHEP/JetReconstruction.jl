@@ -29,31 +29,36 @@ identifiers:
     description: Zenodo
 preferred-citation:
   type: article
-  title: Polyglot Jet Finding
-  doi: 10.1051/epjconf/202429505017
+  title: Fast Jet Finding in Julia
+  doi: 10.1051/epjconf/202533701067
   journal: EPJ Web Conf.
-  volume: 295
-  start: "05017"
-  year: 2024
+  volume: 337
+  start: "01067"
+  year: 2025
   authors:
     - given-names: Graeme Andrew
       family-names: Stewart
       email: graeme.andrew.stewart@cern.ch
-      affiliation: CERN
+      affiliation: CERN, Switzerland
       orcid: 'https://orcid.org/0000-0003-0182-7088'
+    - given-names: Sanmay
+      family-names: Ganguly
+      email: Sanmay.Ganguly@cern.ch
+      affiliation: Indian Institute of Technology, Kanpur, India
+    - given-names: Sattwamo
+      family-names: Ghosh
+      email: sg21ms204@iiserkol.ac.in
+      affiliation: Indian Institute of Science Education and Research, Kanpur, India
     - given-names: Atell
       family-names: Krasnopolski
       email: delta_atell@protonmail.com
+      affiliation: Julius-Maximilians-Universität Würzburg, Würzburg, Germany
       orcid: 'https://orcid.org/0009-0009-9336-0219'
     - given-names: Philippe
       family-names: Gras
       email: philippe.gras@cern.ch
+      affiliation: IRFU, CEA, Université Paris-Saclay, France
       orcid: 'https://orcid.org/0000-0002-3932-5967'
-    - given-names: Benedikt
-      family-names: Hegner
-      email: benedikt.hegner@cern.ch
-      affiliation: CERN
-      orcid: 'https://orcid.org/0009-0009-2020-1620'
 repository-code: 'https://github.com/JuliaHEP/JetReconstruction.jl'
 abstract: Jet reconstruction (reclustering) with Julia
 license: MIT
