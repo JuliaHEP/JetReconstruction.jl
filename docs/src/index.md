@@ -148,9 +148,10 @@ The original paper on [arXiv](https://arxiv.org/abs/2309.17309) is:
 
 ## Community
 
-We welcome [contributions](./contributing/) to the project. Please follow our
-[Code of
-Conduct](https://github.com/JuliaHEP/JetReconstruction.jl/blob/main/CODE_OF_CONDUCT.md), thanks!
+We welcome contributions to the project (see [Contributing to
+JetReconstruction](@ref)). Please follow our [Code of
+Conduct](https://github.com/JuliaHEP/JetReconstruction.jl/blob/main/CODE_OF_CONDUCT.md),
+thanks!
 
 ## Authors and Copyright
 
