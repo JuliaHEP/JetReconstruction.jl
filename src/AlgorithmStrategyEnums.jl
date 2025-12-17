@@ -37,7 +37,7 @@ const AllJetRecoAlgorithms = [String(Symbol(x)) for x in instances(JetAlgorithm.
 A constant array that contains the jet algorithms for which power is variable.
 
 """
-const varpower_algorithms = [JetAlgorithm.GenKt, JetAlgorithm.EEKt, JetAlgorithm.Valencia]
+const varpower_algorithms = (JetAlgorithm.GenKt, JetAlgorithm.EEKt, JetAlgorithm.Valencia)
 
 """
     algorithm2power

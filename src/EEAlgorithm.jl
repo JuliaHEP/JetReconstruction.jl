@@ -32,7 +32,7 @@ Valencia metric (independent of `dij_factor`).
 @inline function dij_dist(eereco, i, j, dij_factor, algorithm, invR2)
     j == 0 && return large_dij
     @inbounds begin
-        if algorithm == JetAlgorithm.Valencia
+        if algorithm === JetAlgorithm.Valencia
             return valencia_distance(eereco, i, j, invR2)
         else
             # Durham & EEKt share same form here (min(E2p_i,E2p_j) * dij_factor * angular_metric)
@@ -97,7 +97,7 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, invR2
     N = length(eereco)
     # Initialise sentinels so the first comparison always wins
     @inbounds for i in 1:N
-        if algorithm == JetAlgorithm.Valencia
+        if algorithm === JetAlgorithm.Valencia
             eereco.nndist[i] = Inf
         else
             eereco.nndist[i] = large_distance
@@ -108,7 +108,7 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, invR2
     @inbounds for i in 1:N
         @inbounds for j in (i + 1):N
             # Metric used to pick the nearest neighbour
-            if algorithm == JetAlgorithm.Valencia
+            if algorithm === JetAlgorithm.Valencia
                 # Use canonical Valencia distance (StructArray-aware)
                 this_metric = valencia_distance(eereco, i, j, invR2)
             else
@@ -126,7 +126,7 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, invR2
     end
     # Nearest neighbour dij distance
     @inbounds for i in 1:N
-        if algorithm == JetAlgorithm.Valencia
+        if algorithm === JetAlgorithm.Valencia
             eereco.dijdist[i] = valencia_distance(eereco, i, eereco[i].nni, invR2)
         else
             eereco.dijdist[i] = dij_dist(eereco, i, eereco[i].nni, dij_factor, algorithm,
@@ -141,7 +141,7 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, invR2
             eereco.dijdist[i] = beam_closer ? eereco[i].E2p : eereco.dijdist[i]
             eereco.nni[i] = beam_closer ? 0 : eereco.nni[i]
         end
-    elseif algorithm == JetAlgorithm.Valencia
+    elseif algorithm === JetAlgorithm.Valencia
         @inbounds for i in 1:N
             valencia_beam_dist = valencia_beam_distance(eereco, i, γ, p)
             beam_closer = valencia_beam_dist < eereco[i].dijdist
@@ -154,7 +154,7 @@ end
 @inline function update_nn_no_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm,
                                      dij_factor, invR2, β = 1.0, γ = 1.0)
     # Valencia metric is unbounded, others use a large finite value
-    if algorithm == JetAlgorithm.Valencia
+    if algorithm === JetAlgorithm.Valencia
         eereco.nndist[i] = Inf
     else
         eereco.nndist[i] = large_distance
@@ -163,7 +163,7 @@ end
     # Scan all other jets, update i, and cross-update j
     @inbounds for j in 1:N
         if j != i
-            this_metric = algorithm == JetAlgorithm.Valencia ?
+            this_metric = algorithm === JetAlgorithm.Valencia ?
                           valencia_distance(eereco, i, j, invR2) :
                           angular_distance(eereco, i, j)
             better_i = this_metric < eereco[i].nndist
@@ -177,7 +177,7 @@ end
         beam_close = eereco[i].E2p < eereco[i].dijdist
         eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
         eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
-    elseif algorithm == JetAlgorithm.Valencia
+    elseif algorithm === JetAlgorithm.Valencia
         val_beam = valencia_beam_distance(eereco, i, γ, β)
         beam_close = val_beam < eereco[i].dijdist
         eereco.dijdist[i] = beam_close ? val_beam : eereco.dijdist[i]
@@ -188,7 +188,7 @@ end
 @inline function update_nn_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm,
                                   dij_factor, invR2, β = 1.0, γ = 1.0)
     # Valencia metric is unbounded, others use a large finite value
-    if algorithm == JetAlgorithm.Valencia
+    if algorithm === JetAlgorithm.Valencia
         eereco.nndist[i] = Inf
     else
         eereco.nndist[i] = large_distance
@@ -197,7 +197,7 @@ end
     # Scan all other jets, update i, and cross-update j
     @inbounds for j in 1:N
         if j != i
-            this_metric = algorithm == JetAlgorithm.Valencia ?
+            this_metric = algorithm === JetAlgorithm.Valencia ?
                           valencia_distance(eereco, i, j, invR2) :
                           angular_distance(eereco, i, j)
             better_i = this_metric < eereco[i].nndist
@@ -213,7 +213,7 @@ end
                         eereco.dijdist[j] = eereco[j].E2p
                         eereco.nni[j] = 0
                     end
-                elseif algorithm == JetAlgorithm.Valencia
+                elseif algorithm === JetAlgorithm.Valencia
                     val_beam_j = valencia_beam_distance(eereco, j, γ, β)
                     if val_beam_j < eereco[j].dijdist
                         eereco.dijdist[j] = val_beam_j
@@ -229,7 +229,7 @@ end
         beam_close = eereco[i].E2p < eereco[i].dijdist
         eereco.dijdist[i] = beam_close ? eereco[i].E2p : eereco.dijdist[i]
         eereco.nni[i] = beam_close ? 0 : eereco.nni[i]
-    elseif algorithm == JetAlgorithm.Valencia
+    elseif algorithm === JetAlgorithm.Valencia
         val_beam_i = valencia_beam_distance(eereco, i, γ, β)
         beam_close = val_beam_i < eereco[i].dijdist
         eereco.dijdist[i] = beam_close ? val_beam_i : eereco.dijdist[i]
@@ -354,7 +354,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
                             preprocess = preprocess_escheme) where {T}
 
     # For Valencia, if β is provided, overwrite p
-    if algorithm == JetAlgorithm.Valencia && β !== nothing
+    if algorithm === JetAlgorithm.Valencia && β !== nothing
         p = β
     end
 
@@ -453,7 +453,7 @@ function _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
         else
             dij_factor = 1 / (3 + cos(R))
         end
-    elseif algorithm == JetAlgorithm.Valencia
+    elseif algorithm === JetAlgorithm.Valencia
         dij_factor = 1.0
     else
         throw(ArgumentError("Algorithm $algorithm not supported for e+e-"))
