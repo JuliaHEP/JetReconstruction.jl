@@ -332,7 +332,7 @@ function exclusive_jets(clusterseq::ClusterSequence{U},
         throw(ArgumentError("Algorithm $(clusterseq.algorithm) requires power >= 0 for exclusive jets (power=$(clusterseq.power))"))
     elseif clusterseq.algorithm ∉
            (JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.Durham, JetAlgorithm.GenKt,
-            JetAlgorithm.EEKt)
+            JetAlgorithm.EEKt, JetAlgorithm.Valencia)
         throw(ArgumentError("Algorithm used is not suitable for exclusive jets ($(clusterseq.algorithm))"))
     end
 
@@ -395,7 +395,7 @@ function n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
         throw(ArgumentError("Algorithm $(clusterseq.algorithm) requires power >= 0 for exclusive jets(power=$(clusterseq.power))"))
     elseif clusterseq.algorithm ∉
            (JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.Durham, JetAlgorithm.GenKt,
-            JetAlgorithm.EEKt)
+            JetAlgorithm.EEKt, JetAlgorithm.Valencia)
         throw(ArgumentError("Algorithm used is not suitable for exclusive jets ($(clusterseq.algorithm))"))
     end
 

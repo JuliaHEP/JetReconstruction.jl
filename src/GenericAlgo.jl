@@ -1,6 +1,7 @@
 """
     jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algorithm,
-                         p::Union{Real, Nothing} = nothing, R = 1.0,
+                         p::Union{Real, Nothing} = nothing, R = 1.0, 
+                         γ::Union{Real, Nothing} = nothing,
                          recombine = addjets_eschene, preprocess = preprocess_escheme,
                          strategy::RecoStrategy.Strategy = RecoStrategy.Best)
 
@@ -15,6 +16,8 @@ strategy.
   measure for generalised k_T algorithms (GenKt, EEKt). Other algorithms will
   ignore this value.
 - `R = 1.0`: The jet radius parameter.
+- `γ::Union{Real, Nothing} = nothing`: The angular exponent parameter for
+   Valencia algorithm. Ignored by other algorithms.
 - `recombine = addjets_escheme`: The recombination scheme used for combining particles.
 - `preprocess = preprocess_escheme`: The function to preprocess the particles before
   reconstruction (e.g., for massless schemes). `nothing` means the particles are
@@ -72,6 +75,7 @@ jet_reconstruct(particles; algorithm = JetAlgorithm.AntiKt, R = 1.0, preprocess 
 """
 function jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algorithm,
                          p::Union{Real, Nothing} = nothing, R = 1.0,
+                         γ::Union{Real, Nothing} = nothing,
                          recombine = addjets_escheme, preprocess = preprocess_escheme,
                          strategy::RecoStrategy.Strategy = RecoStrategy.Best)
     if is_pp(algorithm)
@@ -93,6 +97,11 @@ function jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algo
     end
 
     # Now call the chosen algorithm, passing through the other parameters
-    alg(particles; p = p, algorithm = algorithm, R = R, recombine = recombine,
-        preprocess = preprocess)
+    if is_ee(algorithm)
+        alg(particles; algorithm = algorithm, p = p, R = R, γ = γ,
+            recombine = recombine, preprocess = preprocess)
+    else
+        alg(particles; algorithm = algorithm, p = p, R = R,
+            recombine = recombine, preprocess = preprocess)
+    end
 end

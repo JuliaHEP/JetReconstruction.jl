@@ -9,12 +9,13 @@ const events_file_ee = joinpath(@__DIR__, "..", "test", "data", "events.eeH.hepm
 const pp_events = JetReconstruction.read_final_state_particles(events_file_pp, PseudoJet)
 const ee_events = JetReconstruction.read_final_state_particles(events_file_ee, EEJet)
 
-function jet_reconstruct_harness(events; algorithm, strategy, distance = nothing,
-                                 power = nothing,
+function jet_reconstruct_harness(events; algorithm, strategy = RecoStrategy.Best,
+                                 distance = nothing,
+                                 power = nothing, γ = nothing,
                                  recombine = RecombinationMethods[RecombinationScheme.EScheme],
                                  ptmin::Real = 5.0, dcut = nothing, njets = nothing,)
     for event in events
-        cs = jet_reconstruct(event; R = distance, p = power, algorithm = algorithm,
+        cs = jet_reconstruct(event; R = distance, p = power, γ = γ, algorithm = algorithm,
                              strategy = strategy, recombine...)
         if !isnothing(njets)
             finaljets = exclusive_jets(cs; njets = njets)
@@ -50,7 +51,6 @@ let ee_group = SUITE["ee"] = BenchmarkGroup(["ee"])
     for alg in [JetAlgorithm.Durham]
         ee_group["$alg"] = @benchmarkable jet_reconstruct_harness($ee_events;
                                                                   algorithm = $alg,
-                                                                  strategy = $RecoStrategy.Best,
                                                                   ptmin = 5.0) evals=1 samples=32
     end
     for alg in [JetAlgorithm.EEKt]
@@ -60,10 +60,26 @@ let ee_group = SUITE["ee"] = BenchmarkGroup(["ee"])
             for power in [-1.0, 0.0, 1.0]
                 distance_group["$power"] = @benchmarkable jet_reconstruct_harness($ee_events;
                                                                                   algorithm = $alg,
-                                                                                  strategy = $RecoStrategy.Best,
                                                                                   distance = $distance,
                                                                                   power = $power,
                                                                                   ptmin = 5.0) evals=1 samples=32
+            end
+        end
+    end
+    for alg in [JetAlgorithm.Valencia]
+        alg_group = SUITE["ee"]["$alg"] = BenchmarkGroup(["$alg"])
+        for distance in [1.0]
+            distance_group = alg_group["$distance"] = BenchmarkGroup(["$distance"])
+            for β in [1.2]
+                power_group = distance_group["$β"] = BenchmarkGroup(["$β"])
+                for γ in [1.2]
+                    power_group["$γ"] = @benchmarkable jet_reconstruct_harness($ee_events;
+                                                                               algorithm = $alg,
+                                                                               distance = $distance,
+                                                                               power = $β,
+                                                                               γ = $γ,
+                                                                               ptmin = 5.0) evals=1 samples=32
+                end
             end
         end
     end

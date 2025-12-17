@@ -14,5 +14,6 @@ Generally one can use the `jet_reconstruct` interface, shown above, as the
 *Best* strategy safely as the overhead is extremely low. That interface supports
 a `strategy` option to switch to a different option.
 
-For ``e^+e^-`` algorithms particle densities are low, so the only implementation
-is of the same type as `N2Plain`.
+For ``e^+e^-`` algorithms particle densities are low, so the only
+implementation for these algorithms is effectively of the same type as
+`N2Plain`.
