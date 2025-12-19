@@ -15,6 +15,7 @@ examples in this package for more information.
 """
 module JetReconstruction
 
+using LorentzVectorBase
 using LorentzVectorHEP
 using MuladdMacro
 using StructArrays

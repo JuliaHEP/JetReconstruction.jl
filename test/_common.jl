@@ -7,6 +7,7 @@ const JETRECO_TEST_COMMON = true
 
 using JetReconstruction
 using Logging
+using LorentzVectorBase
 using LorentzVectorHEP
 using JSON
 using Test

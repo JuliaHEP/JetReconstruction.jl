@@ -83,6 +83,10 @@ end
     EEJet(jet::LorentzVector; cluster_hist_index::Int = 0)
 
 Construct a EEJet from a `LorentzVector` object with optional cluster index.
+
+The `cluster_hist_index` is optional, but needed if the `jet` is part of a
+reconstruction sequence. If not provided, it defaults to `0` as an "invalid"
+value.
 """
 function EEJet(jet::LorentzVector; cluster_hist_index::Int = 0)
     EEJet(jet.x, jet.y, jet.z, jet.t; cluster_hist_index = cluster_hist_index)
@@ -112,7 +116,8 @@ end
 """
     p2(eej::EEJet)
 
-Return the squared momentum of the `EEJet` object `eej`.
+Return the squared momentum of the `EEJet` object `eej`. This accessor uses the
+pre-calculated value that the struct has.
 """
 p2(eej::EEJet) = eej._p2
 
