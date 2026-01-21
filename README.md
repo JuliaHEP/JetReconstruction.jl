@@ -127,24 +127,27 @@ modules is loaded in the environment.
 
 ## Reference
 
-Although it has been developed further since the CHEP2023 conference, the CHEP
-conference proceedings, [arXiv:2309.17309](https://arxiv.org/abs/2309.17309),
-should be cited if you use this package:
+
+The current recommended reference for JetReconstruction.jl is:
 
 ```bibtex
-@article{Stewart:2023lgt,
-    author = "Stewart, Graeme Andrew and Gras, Philippe and Hegner, Benedikt and Krasnopolski, Atell",
-    title = "{Polyglot Jet Finding}",
-    eprint = "2309.17309",
-    archivePrefix = "arXiv",
-    primaryClass = "hep-ex",
-    doi = "10.1051/epjconf/202429505017",
-    journal = "EPJ Web Conf.",
-    volume = "295",
-    pages = "05017",
-    year = "2024"
+@article{refId0,
+  author = {{Stewart, Graeme Andrew} and {Ganguly, Sanmay} and {Ghosh, Sattwamo} and {Gras, Philippe} and {Krasnopolski, Atell}},
+  title = {Fast Jet Finding in Julia},
+  DOI= "10.1051/epjconf/202533701067",
+  url= "https://doi.org/10.1051/epjconf/202533701067",
+  journal = {EPJ Web Conf.},
+  year = 2025,
+  volume = 337,
+  pages = "01067",
 }
 ```
+
+Also available as [arXiv:2503.08146](https://arxiv.org/abs/2503.08146).
+
+### Other Articles
+
+- CHEP2023, *Polyglot Jet Finding*: [arXiv:2309.17309](https://arxiv.org/abs/2309.17309), [10.1051/epjconf/202429505017](https://doi.org/10.1051/epjconf)
 
 ## Copyright
 
