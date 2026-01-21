@@ -13,7 +13,9 @@ Julia.
 
 The algorithms include anti-``{k}_\text{T}``, Cambridge/Aachen, inclusive
 ``k_\text{T}``, generalised ``k_\text{T}`` for ``pp`` events; and the Durham
-algorithm and generalised ``k_\text{T}`` for ``e^+e^-``.
+algorithm and generalised ``k_\text{T}`` for ``e^+e^-``. The Valencia algorithm
+for ``e^+e^-``, based on [1404.4294](https://arxiv.org/abs/1404.4294) is also
+supported.
 
 ## Reconstruction Interface
 
@@ -36,6 +38,10 @@ Types](@ref)) to reconstruct and the algorithm is given explicitly.
 For the case of generalised ``k_T`` (for ``pp`` and ``e^+e^-``) both the
 algorithm (`GenKt`, `EEKt`) and `p` are needed.
 
+For the Valencia algorithm, as well as `R`, the β (equivevent to the existing
+power p of the algorithm) and γ (angular exponent parameter used in the beam
+distance) are needed.
+
 The `R` value determines the cone size; in the case of the Durham algorithm the
 `R` value is ignored.
 
@@ -56,6 +62,7 @@ Each known algorithm is referenced using a `JetAlgorithm` scoped enum value.
 | generalised ``k_\text{T}`` | `JetAlgorithm.GenKt` | For $pp$, value of `p` must also be specified |
 | ``e^+e-`` ``k_\text{T}`` / Durham | `JetAlgorithm.Durham` | `R` value ignored and can be omitted |
 | generalised ``e^+e-`` ``k_\text{T}`` | `JetAlgorithm.EEKt` | For ``e^+e^-``, value of `p` must also be specified |
+| Valencia | `JetAlgorithm.Valencia` | For ``e^+e^-``, values of `p` (β) and `γ` must be specified |
 
 ### Strategy
 
@@ -112,27 +119,39 @@ undergoes a *beam merge* step).
 
 ## References
 
-
-The current recommended reference for JetReconstruction.jl is:
+Although it has been developed further since the CHEP2023 conference, the CHEP
+conference proceedings,
+[10.1051/epjconf/202429505017](https://doi.org/10.1051/epjconf/202429505017),
+should be cited if you use this package:
 
 ```bibtex
 @article{refId0,
-  author = {{Stewart, Graeme Andrew} and {Ganguly, Sanmay} and {Ghosh, Sattwamo} and {Gras, Philippe} and {Krasnopolski, Atell}},
-  title = {Fast Jet Finding in Julia},
-  DOI= "10.1051/epjconf/202533701067",
-  url= "https://doi.org/10.1051/epjconf/202533701067",
-  journal = {EPJ Web Conf.},
-  year = 2025,
-  volume = 337,
-  pages = "01067",
+    author = {{Stewart, Graeme Andrew} and {Gras, Philippe} and {Hegner, Benedikt} and {Krasnopolski, Atell}},
+    doi = {10.1051/epjconf/202429505017},
+    journal = {EPJ Web of Conf.},
+    pages = {05017},
+    title = {Polyglot Jet Finding},
+    url = {https://doi.org/10.1051/epjconf/202429505017},
+    volume = 295,
+    year = 2024,
+    eprint={2309.17309},
+    archivePrefix={arXiv},
+    primaryClass={hep-ex}
 }
 ```
 
-Also available as [arXiv:2503.08146](https://arxiv.org/abs/2503.08146).
+The original paper on [arXiv](https://arxiv.org/abs/2309.17309) is:
 
-### Other Articles
-
-- CHEP2023, *Polyglot Jet Finding*: [arXiv:2309.17309](https://arxiv.org/abs/2309.17309), [10.1051/epjconf/202429505017](https://doi.org/10.1051/epjconf)
+```bibtex
+@misc{stewart2023polyglot,
+      title={Polyglot Jet Finding}, 
+      author={Graeme Andrew Stewart and Philippe Gras and Benedikt Hegner and Atell Krasnopolski},
+      year={2023},
+      eprint={2309.17309},
+      archivePrefix={arXiv},
+      primaryClass={hep-ex}
+}
+```
 
 ## Community
 
