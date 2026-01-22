@@ -95,22 +95,30 @@ end
 """
     EEJet(jet::Any; cluster_hist_index::Int = 0)
 
-Construct a EEJet from a generic object `jet` with the given cluster index.
-This functions also for `LorentzVectorCyl` objects.
+Construct an EEJet from a generic object `jet` with the given cluster index.
+These generic jets must implement the LorentzVectorBase interface from
+`LorentzVectorBase.jl`.
 
 # Details
 
-This function is used to convert a generic object `jet` into an `EEJet`, for
-this to work the object must have the methods `px`, `py`, `pz`, and `energy`
-defined, which are used to extract the four-momentum components of the object.
+This function is used to convert a generic object `jet` into a `EEJet`.
+These generic jets should implement the LorentzVectorBase interface: the
+`LorentzVectorBase.{px,py,pz,energy}()` methods will be called to retrieve
+the four momentum components.
 
 The `cluster_hist_index` is optional, but needed if the `jet` is part of a
 reconstruction sequence. If not provided, it defaults to `0` as an "invalid"
 value.
 """
 function EEJet(jet::Any; cluster_hist_index::Int = 0)
-    EEJet(px(jet), py(jet), pz(jet), energy(jet);
-          cluster_hist_index = cluster_hist_index)
+    # Check that the interface is implemented
+    if hasmethod(LorentzVectorBase.coordinate_system, (typeof(jet),))
+        return EEJet(LorentzVectorBase.px(jet), LorentzVectorBase.py(jet),
+                     LorentzVectorBase.pz(jet), LorentzVectorBase.energy(jet);
+                     cluster_hist_index = cluster_hist_index)
+    else
+        throw(ArgumentError("EEJet cannot be constructed from object of type '$(typeof(jet))'"))
+    end
 end
 
 """

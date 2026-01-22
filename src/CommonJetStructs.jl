@@ -20,7 +20,6 @@ LorentzVectorBase.py(v::FourMomentum) = v.py
 LorentzVectorBase.pz(v::FourMomentum) = v.pz
 LorentzVectorBase.E(v::FourMomentum) = v.E
 
-
 # Define here all common functions that can be used for all jet types <: FourMomentum
 """
     px(j::FourMomentum)
@@ -157,7 +156,6 @@ Compute the cosine of the angle between the momentum vector of `jet` and the z-a
 - The cosine of the angle between the jet and the z-axis.
 """
 CosTheta(j::FourMomentum) = LorentzVectorBase.cos_theta(j)
-
 
 """
     eta(jet::T) where {T <: FourMomentum}
