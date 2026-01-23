@@ -23,6 +23,8 @@ pj_beam = PseudoJet(0.0, 0.0, 5.0, 5.0)
 
     @test LorentzVectorBase.mass(pj) ≈ JetReconstruction.mass(pj)
     @test LorentzVectorBase.mass2(pj) ≈ JetReconstruction.mass2(pj)
+    @test LorentzVectorBase.spatial_magnitude2(pj) ≈ JetReconstruction.p2(pj)
+    @test LorentzVectorBase.cos_theta(pj) ≈ JetReconstruction.CosTheta(pj)
 
     # This isn't really a test of the output, but rather that the object
     # can be printed without error
@@ -48,6 +50,8 @@ eej_beam = EEJet(0.0, 0.0, 5.0, 5.0)
 
     @test LorentzVectorBase.mass(eej) ≈ JetReconstruction.mass(eej)
     @test LorentzVectorBase.mass2(eej) ≈ JetReconstruction.mass2(eej)
+    @test LorentzVectorBase.spatial_magnitude2(eej) ≈ JetReconstruction.p2(eej)
+    @test LorentzVectorBase.cos_theta(eej) ≈ JetReconstruction.CosTheta(eej)
 
     # This isn't really a test of the output, but rather that the object
     # can be printed without error
