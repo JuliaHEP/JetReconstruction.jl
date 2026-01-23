@@ -49,7 +49,7 @@ mass(p::LorentzVectorCyl) = LorentzVectorHEP.mass(p)
 const max_allowable_R = 1000.0
 
 # Pseudojet and EEJet types
-include("CommonJetStructs.jl")
+include("CommonJet.jl")
 include("PseudoJet.jl")
 include("EEJet.jl")
 include("JetUtils.jl")
