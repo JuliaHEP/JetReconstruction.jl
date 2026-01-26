@@ -1,7 +1,7 @@
 name = "JetReconstruction"
 uuid = "44e8cb2c-dfab-4825-9c70-d4808a591196"
-authors = ["Atell Krasnopolski <delta_atell@protonmail.com>", "Graeme A Stewart <graeme.andrew.stewart@cern.ch", "Philippe Gras <philippe.gras@cern.ch>"]
 version = "1.0.0-dev"
+authors = ["Atell Krasnopolski <delta_atell@protonmail.com>", "Graeme A Stewart <graeme.andrew.stewart@cern.ch", "Philippe Gras <philippe.gras@cern.ch>"]
 
 [deps]
 Accessors = "7d9f7c33-5ae7-4f3b-8dc6-eff91059b697"
@@ -10,6 +10,7 @@ CodecZstd = "6b39b394-51ab-5f42-8807-6242bab2b4c2"
 EnumX = "4e289a0a-7415-4d19-859d-a7e5c4648b56"
 Logging = "56ddb016-857b-54e1-b83d-db4d58db5568"
 LoopVectorization = "bdcacae8-1622-11e9-2a5c-532679323890"
+LorentzVectorBase = "592a752d-6533-4762-a71b-738712ea30ec"
 LorentzVectorHEP = "f612022c-142a-473f-8cfd-a09cf3793c6c"
 MuladdMacro = "46d2c3a1-f734-5fdb-9937-b9b9aeba4221"
 Statistics = "10745b16-79ce-11e8-11f9-7d13ad32a3b2"
@@ -34,6 +35,7 @@ EnumX = "1.0.4"
 JSON = "0.21, 1.2"
 Logging = "1.10"
 LoopVectorization = "0.12.170"
+LorentzVectorBase = "0.1.0"
 LorentzVectorHEP = "0.1.6"
 Makie = "0.20, 0.21, 0.22, 0.23, 0.24"
 MuladdMacro = "0.2.4"

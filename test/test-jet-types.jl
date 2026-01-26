@@ -21,6 +21,11 @@ pj_beam = PseudoJet(0.0, 0.0, 5.0, 5.0)
           JetReconstruction._MaxRap + JetReconstruction.pz(pj_beam)
     @test JetReconstruction.eta(pj_beam) ≈ JetReconstruction._MaxRap
 
+    @test LorentzVectorBase.mass(pj) ≈ JetReconstruction.mass(pj)
+    @test LorentzVectorBase.mass2(pj) ≈ JetReconstruction.mass2(pj)
+    @test LorentzVectorBase.spatial_magnitude2(pj) ≈ JetReconstruction.p2(pj)
+    @test LorentzVectorBase.cos_theta(pj) ≈ JetReconstruction.CosTheta(pj)
+
     # This isn't really a test of the output, but rather that the object
     # can be printed without error
     @test string(pj) == "PseudoJet(px: 1.0 py: 2.0 pz: 3.0 E: 10.0 cluster_hist_index: 7)"
@@ -42,6 +47,11 @@ eej_beam = EEJet(0.0, 0.0, 5.0, 5.0)
 
     @test JetReconstruction.rapidity(eej_beam) ≈
           JetReconstruction._MaxRap + JetReconstruction.pz(eej_beam)
+
+    @test LorentzVectorBase.mass(eej) ≈ JetReconstruction.mass(eej)
+    @test LorentzVectorBase.mass2(eej) ≈ JetReconstruction.mass2(eej)
+    @test LorentzVectorBase.spatial_magnitude2(eej) ≈ JetReconstruction.p2(eej)
+    @test LorentzVectorBase.cos_theta(eej) ≈ JetReconstruction.CosTheta(eej)
 
     # This isn't really a test of the output, but rather that the object
     # can be printed without error

@@ -4,8 +4,21 @@
 Interface for composite types that includes fields px, py, py, and E
 that represents the components of a four-momentum vector. All concrete
 jets that are used in the package are subtypes of this type.
+
+These types are also added as LorentzVectorBase `PxPyPzE` coordinate systems.
 """
 abstract type FourMomentum end
+
+"""
+    LorentzVectorBase.coordinate_system(::FourMomentum)
+
+All of this package's FourMomentum types are `PxPyPzE` coordinate systems.
+"""
+LorentzVectorBase.coordinate_system(::FourMomentum) = LorentzVectorBase.PxPyPzE()
+LorentzVectorBase.px(v::FourMomentum) = v.px
+LorentzVectorBase.py(v::FourMomentum) = v.py
+LorentzVectorBase.pz(v::FourMomentum) = v.pz
+LorentzVectorBase.E(v::FourMomentum) = v.E
 
 # Define here all common functions that can be used for all jet types <: FourMomentum
 """
@@ -50,21 +63,28 @@ cluster_hist_index(j::FourMomentum) = j._cluster_hist_index
 
 Return the squared momentum of the four-momentum vector of `j`.
 """
-p2(j::FourMomentum) = j.px^2 + j.py^2 + j.pz^2
+p2(j::FourMomentum) = LorentzVectorBase.spatial_magnitude2(j)
 
 """
     p(j::FourMomentum)
 
 Return the momentum of the four-momentum vector of `j`.
 """
-p(j::FourMomentum) = sqrt(p2(j))
+p(j::FourMomentum) = LorentzVectorBase.spatial_magnitude(j)
+
+"""
+    mag(j::FourMomentum)
+
+Return the spatial magnitude (alias for `p()`).
+"""
+const mag = p
 
 """
     pt2(j::FourMomentum)
 
 Return the squared transverse momentum of the four-momentum vector of `j`.
 """
-pt2(j::FourMomentum) = j.px^2 + j.py^2
+pt2(j::FourMomentum) = LorentzVectorBase.transverse_momentum2(j)
 
 """Alias for `pt2` function"""
 const kt2 = pt2
@@ -73,14 +93,14 @@ const kt2 = pt2
     pt(j::FourMomentum)
 Return the momentum of the four-momentum vector of `j`.
 """
-pt(j::FourMomentum) = sqrt(pt2(j))
+pt(j::FourMomentum) = LorentzVectorBase.transverse_momentum(j)
 
 """
     mass2(j::FourMomentum)
 
 Return the invariant mass squared of the four-momentum vector `j`.
 """
-mass2(j::FourMomentum) = energy(j)^2 - p2(j)
+mass2(j::FourMomentum) = LorentzVectorBase.mass2(j)
 
 """Alias for `mass2` function"""
 const m2 = mass2
@@ -91,7 +111,7 @@ const m2 = mass2
 Return the invariant mass of a four momentum `j`. By convention if ``m^2 < 0``,
 then ``-sqrt{(-m^2)}`` is returned.
 """
-mass(j::FourMomentum) = m2(j) < 0.0 ? -sqrt(-m2(j)) : sqrt(m2(j))
+mass(j::FourMomentum) = LorentzVectorBase.mass(j)
 
 """Alias for `mass` function"""
 const m = mass
@@ -101,12 +121,9 @@ const m = mass
 
 Return the azimuthal angle, ϕ, of the four momentum `j` in the range [0, 2π).
 """
-phi(j::FourMomentum) = begin
-    phi = pt2(j) == 0.0 ? 0.0 : atan(j.py, j.px)
-    if phi < 0.0
-        phi += 2π
-    end
-    phi
+function phi(j::FourMomentum)
+    phi = LorentzVectorBase.phi(j)
+    return phi < 0.0 ? phi + 2π : phi
 end
 
 # Alternative name for [0, 2π) range
@@ -120,34 +137,15 @@ const _MaxRap = 1e5
     rapidity(j::FourMomentum)
 
 Return the rapidity of the four momentum `j`.
+
+In this package, for numerical stability, we clamp the rapidity, but in a way
+that allows for predictability, based on pz.
 """
 function rapidity(j::FourMomentum)
-    if energy(j) == abs(pz(j)) && iszero(pt2(j))
-        MaxRapHere = _MaxRap + abs(pz(j))
-        rapidity = (pz(j) >= 0.0) ? MaxRapHere : -MaxRapHere
-    else
-        # get the rapidity in a way that's modestly insensitive to roundoff
-        # error when things pz,E are large (actually the best we can do without
-        # explicit knowledge of mass)
-        effective_m2 = max(0.0, m2(j)) # force non tachyonic mass
-        E_plus_pz = energy(j) + abs(pz(j)) # the safer of p+, p-
-        rapidity = 0.5 * log((pt2(j) + effective_m2) / (E_plus_pz * E_plus_pz))
-        if pz(j) > 0
-            rapidity = -rapidity
-        end
-    end
-    rapidity
+    rap = LorentzVectorBase.rapidity(j)
+    MaxRapHere = _MaxRap + abs(pz(j))
+    return clamp(rap, -MaxRapHere, MaxRapHere)
 end
-
-"""
-    mag(jet::T) where {T <: FourMomentum}
-
-Return the magnitude of the momentum of a jet, `|p|`.
-
-# Returns
-The magnitude of the jet.
-"""
-mag(jet::T) where {T <: FourMomentum} = sqrt(muladd(jet.px, jet.px, jet.py^2) + jet.pz^2)
 
 """
     CosTheta(jet::T) where {T <: FourMomentum}
@@ -157,29 +155,18 @@ Compute the cosine of the angle between the momentum vector of `jet` and the z-a
 # Returns
 - The cosine of the angle between the jet and the z-axis.
 """
-@inline function CosTheta(jet::T) where {T <: FourMomentum}
-    fZ = jet.pz
-    ptot = mag(jet)
-    return ifelse(ptot == 0.0, 1.0, fZ / ptot)
-end
+CosTheta(j::FourMomentum) = LorentzVectorBase.cos_theta(j)
 
 """
     eta(jet::T) where {T <: FourMomentum}
 
-Compute the pseudorapidity (η) of a jet.
-
-# Returns
-- The pseudorapidity (η) of the jet.
+Returns the pseudorapidity (η or eta) of a jet. For this package we
+clamp the return value to our package's `_MaxRap`.
 """
-function eta(jet::T) where {T <: FourMomentum}
-    cosTheta = CosTheta(jet)
-    (cosTheta^2 < 1.0) && return -0.5 * log((1.0 - cosTheta) / (1.0 + cosTheta))
-    fZ = jet.pz
-    iszero(fZ) && return 0.0
-    # Warning("PseudoRapidity","transverse momentum = 0! return +/- 10e10");
-    fZ > 0.0 ? _MaxRap : -_MaxRap
+function eta(j::FourMomentum)
+    eta = LorentzVectorBase.eta(j)
+    clamp(eta, -_MaxRap, _MaxRap)
 end
-
 """
     const η = eta
 
