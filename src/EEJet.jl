@@ -89,7 +89,7 @@ reconstruction sequence. If not provided, it defaults to `0` as an "invalid"
 value.
 """
 function EEJet(jet::LorentzVector; cluster_hist_index::Int = 0)
-    EEJet(jet.x, jet.y, jet.z, jet.t; cluster_hist_index = cluster_hist_index)
+    EEJet(jet.x, jet.y, jet.z, jet.t; cluster_hist_index)
 end
 
 """
@@ -115,7 +115,7 @@ function EEJet(jet::Any; cluster_hist_index::Int = 0)
     if hasmethod(LorentzVectorBase.coordinate_system, (typeof(jet),))
         return EEJet(LorentzVectorBase.px(jet), LorentzVectorBase.py(jet),
                      LorentzVectorBase.pz(jet), LorentzVectorBase.energy(jet);
-                     cluster_hist_index = cluster_hist_index)
+                     cluster_hist_index)
     else
         throw(ArgumentError("EEJet cannot be constructed from object of type '$(typeof(jet))'"))
     end

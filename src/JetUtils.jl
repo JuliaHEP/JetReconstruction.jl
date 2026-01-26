@@ -16,7 +16,7 @@ function PseudoJet(eej::EEJet; cluster_hist_index::Int = 0)
     cluster_hist_index = cluster_hist_index == 0 ? eej._cluster_hist_index :
                          cluster_hist_index
     PseudoJet(px(eej), py(eej), pz(eej), energy(eej);
-              cluster_hist_index = cluster_hist_index)
+              cluster_hist_index)
 end
 
 """
@@ -33,7 +33,7 @@ function EEJet(jet::PseudoJet; cluster_hist_index::Int = 0)
     cluster_hist_index = cluster_hist_index == 0 ? jet._cluster_hist_index :
                          cluster_hist_index
     EEJet(px(jet), py(jet), pz(jet), energy(jet);
-          cluster_hist_index = cluster_hist_index)
+          cluster_hist_index)
 end
 
 # Functions to convert jets to types from other packages

@@ -121,7 +121,7 @@ end
 Construct a PseudoJet from a `LorentzVector` object with the cluster index.
 """
 function PseudoJet(jet::LorentzVector; cluster_hist_index::Int = 0)
-    PseudoJet(jet.x, jet.y, jet.z, jet.t; cluster_hist_index = cluster_hist_index)
+    PseudoJet(jet.x, jet.y, jet.z, jet.t; cluster_hist_index)
 end
 
 """
@@ -131,7 +131,7 @@ Construct a PseudoJet from a `LorentzVectorCyl` object with the given cluster in
 """
 function PseudoJet(jet::LorentzVectorCyl; cluster_hist_index::Int = 0)
     PseudoJet(; pt = pt(jet), rap = rapidity(jet), phi = phi(jet), m = mass(jet),
-              cluster_hist_index = cluster_hist_index)
+              cluster_hist_index)
 end
 
 """
@@ -157,7 +157,7 @@ function PseudoJet(jet::Any; cluster_hist_index::Int = 0)
     if hasmethod(LorentzVectorBase.coordinate_system, (typeof(jet),))
         return PseudoJet(LorentzVectorBase.px(jet), LorentzVectorBase.py(jet),
                          LorentzVectorBase.pz(jet), LorentzVectorBase.energy(jet);
-                         cluster_hist_index = cluster_hist_index)
+                         cluster_hist_index)
     else
         throw(ArgumentError("PseudoJet cannot be constructed from object of type '$(typeof(jet))'"))
     end
