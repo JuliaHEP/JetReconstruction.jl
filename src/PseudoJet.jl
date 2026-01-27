@@ -211,4 +211,4 @@ Return the scalar transverse momentum (pt) of a PseudoJet. This accessor uses
 the precalculated value that the struct has.
 """
 pt(p::PseudoJet) = sqrt(p._pt2)
-LorentzVectorBase.pt(p::PseudoJet) = p._pt
+LorentzVectorBase.pt(p::PseudoJet) = sqrt(p._pt2)
