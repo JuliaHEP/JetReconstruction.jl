@@ -20,7 +20,6 @@ caching of the more expensive calculations for rapidity and azimuthal angle.
 - `E::Float64`: The energy component of the momentum.
 - `_cluster_hist_index::Int`: The index of the cluster history.
 - `_pt2::Float64`: The squared transverse momentum.
-- `_inv_pt2::Float64`: The inverse squared transverse momentum.
 - `_rap::Float64`: The rapidity.
 - `_phi::Float64`: The azimuthal angle.
 
@@ -32,7 +31,6 @@ struct PseudoJet <: FourMomentum
     E::Float64
     _cluster_hist_index::Int
     _pt2::Float64
-    _inv_pt2::Float64
     _rap::Float64
     _phi::Float64
 end
@@ -50,7 +48,6 @@ used in a reconstruction sequence.
 """
 function PseudoJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::Int = 0)
     @muladd pt2 = px * px + py * py
-    inv_pt2 = @fastmath 1.0 / pt2
     phi = pt2 == 0.0 ? 0.0 : atan(py, px)
     phi = phi < 0.0 ? phi + 2π : phi
     if E == abs(pz) && iszero(pt2)
@@ -70,7 +67,7 @@ function PseudoJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::In
         rap = 0.5 * log((pt2 + effective_m2) / (E_plus_pz * E_plus_pz))
         rap = pz > 0.0 ? -rap : rap
     end
-    PseudoJet(px, py, pz, E, cluster_hist_index, pt2, inv_pt2, rap, phi)
+    PseudoJet(px, py, pz, E, cluster_hist_index, pt2, rap, phi)
 end
 
 """
@@ -103,7 +100,7 @@ function PseudoJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
     pz = @fastmath (pplus - pminus) / 2
     E = @fastmath (pplus + pminus) / 2
 
-    PseudoJet(px, py, pz, E, cluster_hist_index, pt * pt, 1 / (pt * pt), rap, phi)
+    PseudoJet(px, py, pz, E, cluster_hist_index, pt^2, rap, phi)
 end
 
 """
