@@ -180,6 +180,9 @@ isvalid(j::PseudoJet) = !(j === invalid_pseudojet)
 
 Return the azimuthal angle, ϕ, of a `PseudoJet` object `p` in the range
 [0, 2π). This accessor uses the pre-calculated value that the struct has.
+
+Note that the range [0, 2π) differs from the convention in LorentzVectorBase,
+which is [-π, π].
 """
 phi(p::PseudoJet) = p._phi
 
@@ -190,6 +193,7 @@ Return the rapidity of a `PseudoJet` object. This accessor uses the
 pre-calculated value that the struct has.
 """
 rapidity(p::PseudoJet) = p._rap
+LorentzVectorBase.rapidity(p::PseudoJet) = p._rap
 
 """
     pt2(p::PseudoJet)
@@ -198,6 +202,7 @@ Return the squared transverse momentum of a `PseudoJet`. This accessor uses the
 pre-calculated value that the struct has.
 """
 pt2(p::PseudoJet) = p._pt2
+LorentzVectorBase.pt2(p::PseudoJet) = p._pt2
 
 """
     pt(p::PseudoJet)
@@ -206,3 +211,4 @@ Return the scalar transverse momentum (pt) of a PseudoJet. This accessor uses
 the precalculated value that the struct has.
 """
 pt(p::PseudoJet) = sqrt(p._pt2)
+LorentzVectorBase.pt(p::PseudoJet) = p._pt
