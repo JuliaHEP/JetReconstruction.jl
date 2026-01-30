@@ -26,6 +26,11 @@ pj_beam = PseudoJet(0.0, 0.0, 5.0, 5.0)
     @test LorentzVectorBase.spatial_magnitude2(pj) ≈ JetReconstruction.p2(pj)
     @test LorentzVectorBase.cos_theta(pj) ≈ JetReconstruction.CosTheta(pj)
 
+    # These accessors should compare exactly as they use cached values
+    @test LorentzVectorBase.rapidity(pj) == JetReconstruction.rapidity(pj)
+    @test LorentzVectorBase.pt2(pj) == JetReconstruction.pt2(pj)
+    @test LorentzVectorBase.pt(pj) == JetReconstruction.pt(pj)
+
     # This isn't really a test of the output, but rather that the object
     # can be printed without error
     @test string(pj) == "PseudoJet(px: 1.0 py: 2.0 pz: 3.0 E: 10.0 cluster_hist_index: 7)"

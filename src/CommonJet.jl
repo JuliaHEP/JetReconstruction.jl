@@ -120,6 +120,9 @@ const m = mass
     phi(j::FourMomentum)
 
 Return the azimuthal angle, ϕ, of the four momentum `j` in the range [0, 2π).
+
+Note that the range [0, 2π) differs from the convention in LorentzVectorBase,
+which is [-π, π].
 """
 function phi(j::FourMomentum)
     phi = LorentzVectorBase.phi(j)

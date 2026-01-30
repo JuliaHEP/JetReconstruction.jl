@@ -128,6 +128,7 @@ Return the squared momentum of the `EEJet` object `eej`. This accessor uses the
 pre-calculated value that the struct has.
 """
 p2(eej::EEJet) = eej._p2
+LorentzVectorBase.spatial_magnitude2(eej::EEJet) = eej._p2
 
 """
     nx(eej::EEJet)
