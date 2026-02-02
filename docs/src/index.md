@@ -152,10 +152,11 @@ thanks!
 
 Code in this package is authored by:
 
-- Atell Krasnopolski <delta_atell@protonmail.com>
 - Graeme A Stewart <graeme.andrew.stewart@desy.de>
+- Atell Krasnopolski <delta_atell@protonmail.com>
 - Philippe Gras <philippe.gras@cern.ch>
+- Mateusz Fila <mateusz.jakub.fila@cern.ch>
 
-and is Copyright 2022-2025 The Authors, CERN.
+and is Copyright 2022-2026 The Authors, CERN.
 
 The code is under the MIT License.
