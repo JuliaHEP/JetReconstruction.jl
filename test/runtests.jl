@@ -9,6 +9,7 @@ function main()
     # Basic tests for the Jet types
     include("test-jet-types.jl")
     include("test-jet-constructors.jl")
+    include("test-edm4hep.jl")
 
     # Jet utilities tests
     include("test-jet-utils.jl")
