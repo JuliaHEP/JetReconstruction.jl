@@ -38,9 +38,11 @@ JetReconstruction.energy(recoparticle::ReconstructedParticle) = recoparticle.ene
 
 Construct an EEJet from a ReconstructedParticle.
 """
-function JetReconstruction.EEJet(recoparticle::ReconstructedParticle)
+function JetReconstruction.EEJet(recoparticle::ReconstructedParticle;
+                                 cluster_hist_index::Int = 0)
     EEJet(JetReconstruction.px(recoparticle), JetReconstruction.py(recoparticle),
-          JetReconstruction.pz(recoparticle), JetReconstruction.energy(recoparticle))
+          JetReconstruction.pz(recoparticle), JetReconstruction.energy(recoparticle);
+          cluster_hist_index)
 end
 
 """
@@ -48,9 +50,11 @@ end
 
 Construct an PseudoJet from a ReconstructedParticle.
 """
-function JetReconstruction.PseudoJet(recoparticle::ReconstructedParticle)
+function JetReconstruction.PseudoJet(recoparticle::ReconstructedParticle;
+                                     cluster_hist_index::Int = 0)
     PseudoJet(JetReconstruction.px(recoparticle), JetReconstruction.py(recoparticle),
-              JetReconstruction.pz(recoparticle), JetReconstruction.energy(recoparticle))
+              JetReconstruction.pz(recoparticle), JetReconstruction.energy(recoparticle);
+              cluster_hist_index)
 end
 
 end
