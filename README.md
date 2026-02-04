@@ -127,7 +127,6 @@ modules is loaded in the environment.
 
 ## Reference
 
-
 The current recommended reference for JetReconstruction.jl is:
 
 ```bibtex
@@ -151,7 +150,8 @@ Also available as [arXiv:2503.08146](https://arxiv.org/abs/2503.08146).
 
 ## Copyright
 
-Code in this package is Copyright 2022-2025 Graeme A Stewart, Philippe Gras, Atell Krasnopolski, CERN.
+Code in this package is Copyright 2022-2026 Graeme A Stewart, Philippe Gras,
+Atell Krasnopolski, Mateusz Fila, CERN.
 
 The code is under the MIT License.
 
