@@ -8,7 +8,9 @@ returns them ordered by descending `pt²`.
 Returns:
 - `(j1, j2)` where `j1` is the harder subjet.
 """
-function decluster(jet::T, clusterseq::ClusterSequence{T}) where {T <: FourMomentum}
+function decluster(jet::J,
+                   clusterseq::ClusterSequence{T, J}) where {T <: Real, J <:
+                                                                        FourMomentum{T}}
     j1, j2 = parent_jets(jet, clusterseq)
 
     # Ensure both subjets exist
@@ -38,7 +40,9 @@ Returns:
   - `psi`: azimuthal angle between branches
   - `kappa`: z * ΔR
 """
-function generate_lund_emissions(jet::PseudoJet, cs::ClusterSequence{PseudoJet})
+function generate_lund_emissions(jet::J,
+                                 cs::ClusterSequence{T, J}) where {T <: Real,
+                                                                   J <: FourMomentum{T}}
 
     # Recluster the input jet using Cambridge/Aachen with large R
     reconstructed_cluster_seq = recluster(jet, cs; algorithm = JetAlgorithm.CA,
