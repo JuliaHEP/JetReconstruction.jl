@@ -14,13 +14,13 @@ The `EEJet` struct is a 4-momentum object used for the e+e jet reconstruction ro
 - `_p2::Float64`: The squared momentum of the jet.
 - `_inv_p::Float64`: The inverse momentum of the jet.
 """
-struct EEJet <: FourMomentum
-    px::Float64
-    py::Float64
-    pz::Float64
-    E::Float64
-    _p2::Float64
-    _inv_p::Float64
+struct EEJet{T} <: FourMomentum{T}
+    px::T
+    py::T
+    pz::T
+    E::T
+    _p2::T
+    _inv_p::T
     _cluster_hist_index::Int
 end
 

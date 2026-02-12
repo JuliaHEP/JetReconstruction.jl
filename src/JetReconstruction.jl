@@ -91,11 +91,11 @@ include("GenericAlgo.jl")
 export jet_reconstruct
 
 ## Substructure modules
-include("Substructure.jl")
-export mass_drop, soft_drop, jet_filtering, jet_trimming
+# include("Substructure.jl")
+# export mass_drop, soft_drop, jet_filtering, jet_trimming
 
-include("LundPlane.jl")
-export generate_lund_emissions
+# include("LundPlane.jl")
+# export generate_lund_emissions
 
 # Simple HepMC3 reader
 include("HepMC3.jl")

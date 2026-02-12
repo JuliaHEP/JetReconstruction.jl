@@ -7,7 +7,7 @@ jets that are used in the package are subtypes of this type.
 
 These types are also added as LorentzVectorBase `PxPyPzE` coordinate systems.
 """
-abstract type FourMomentum end
+abstract type FourMomentum{T <: Real} end
 
 """
     LorentzVectorBase.coordinate_system(::FourMomentum)
@@ -203,10 +203,15 @@ specified cluster history index.
 
 This method is also known as the `E_scheme` in Fastjet.
 """
-function addjets(jet1::T, jet2::T; cluster_hist_index::Int = 0) where {T <: FourMomentum}
+function addjets(jet1::T, jet2::T; cluster_hist_index::Int = 0) where {T}
     T(px(jet1) + px(jet2), py(jet1) + py(jet2), pz(jet1) + pz(jet2),
       energy(jet1) + energy(jet2), cluster_hist_index = cluster_hist_index)
 end
+
+# function addjets(jet1{U}::T, jet2{U}::T; cluster_hist_index::Int = 0) where {T <: FourMomentum, U <: Real}
+#     T{U}(px(jet1) + px(jet2), py(jet1) + py(jet2), pz(jet1) + pz(jet2),
+#       energy(jet1) + energy(jet2), cluster_hist_index = cluster_hist_index)
+# end
 
 """
     const addjets_escheme = addjets

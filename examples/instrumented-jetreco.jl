@@ -306,9 +306,9 @@ function main()
 
     # Try to read events into the correct type!
     if JetReconstruction.is_ee(args[:algorithm])
-        jet_type = EEJet
+        jet_type = EEJet{Float64}
     else
-        jet_type = PseudoJet
+        jet_type = PseudoJet{Float64}
     end
     events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file], jet_type;
                                                                   maxevents = args[:maxevents],

@@ -321,17 +321,17 @@ tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; algorithm = JetAlgori
 tiled_jet_reconstruct(particles::Vector{LorentzVectorHEP}; algorithm = JetAlgorithm.AntiKt, R = 0.4)
 ```
 """
-function tiled_jet_reconstruct(particles::AbstractVector{T};
+function tiled_jet_reconstruct(particles::AbstractVector{J};
                                algorithm::JetAlgorithm.Algorithm,
                                p::Union{Real, Nothing} = nothing, R = 1.0,
                                recombine = addjets_escheme,
-                               preprocess = preprocess_escheme) where {T}
+                               preprocess = preprocess_escheme) where {J}
 
     # Get consistent algorithm power
     p = get_algorithm_power(p = p, algorithm = algorithm)
 
     if isnothing(preprocess)
-        if T == PseudoJet
+        if J == PseudoJet
             # If we don't have a preprocessor, we just need to copy to our own
             # PseudoJet objects
             recombination_particles = copy(particles)
@@ -339,7 +339,8 @@ function tiled_jet_reconstruct(particles::AbstractVector{T};
         else
             # We assume a constructor for PseudoJet that can ingest the appropriate
             # type of particle
-            recombination_particles = PseudoJet[]
+            pj1 = PseudoJet(particles[1]; cluster_hist_index = 1)
+            recombination_particles = Vector{typeof(pj1)}(undef, 0)
             sizehint!(recombination_particles, length(particles) * 2)
             for (i, particle) in enumerate(particles)
                 push!(recombination_particles, PseudoJet(particle; cluster_hist_index = i))
@@ -348,7 +349,8 @@ function tiled_jet_reconstruct(particles::AbstractVector{T};
     else
         # We have a preprocessor function that we need to call to modify the
         # input particles
-        recombination_particles = PseudoJet[]
+        pj1 = PseudoJet(particles[1]; cluster_hist_index = 1)
+        recombination_particles = Vector{typeof(pj1)}(undef, 0)
         sizehint!(recombination_particles, length(particles) * 2)
         for (i, particle) in enumerate(particles)
             push!(recombination_particles,
@@ -390,9 +392,9 @@ consistent with the power parameter.
 _tiled_jet_reconstruct!(particles::Vector{PseudoJet}; algorithm = JetAlgorithm.Kt, p = 1, R = 0.4)
 ```
 """
-function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
+function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet{T}};
                                  algorithm::JetAlgorithm.Algorithm,
-                                 p::Real, R = 1.0, recombine = addjets_escheme)
+                                 p::Real, R = 1.0, recombine = addjets_escheme) where {T <: Real}
     # Bounds
     N::Int = length(particles)
 

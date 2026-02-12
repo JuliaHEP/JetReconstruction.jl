@@ -24,15 +24,15 @@ caching of the more expensive calculations for rapidity and azimuthal angle.
 - `_phi::Float64`: The azimuthal angle.
 
 """
-struct PseudoJet <: FourMomentum
-    px::Float64
-    py::Float64
-    pz::Float64
-    E::Float64
+struct PseudoJet{T <: Real}  <: FourMomentum{T}
+    px::T
+    py::T
+    pz::T
+    E::T
     _cluster_hist_index::Int
-    _pt2::Float64
-    _rap::Float64
-    _phi::Float64
+    _pt2::T
+    _rap::T
+    _phi::T
 end
 
 """
@@ -46,7 +46,7 @@ Construct a PseudoJet from a four momentum `(px, py, pz, E)`` with cluster index
 If the (default) value of `cluster_hist_index=0` is used, the PseudoJet cannot be
 used in a reconstruction sequence.
 """
-function PseudoJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::Int = 0)
+function PseudoJet(px::T, py::T, pz::T, E::T; cluster_hist_index::Integer = 0) where {T <: Real}
     @muladd pt2 = px * px + py * py
     phi = pt2 == 0.0 ? 0.0 : atan(py, px)
     phi = phi < 0.0 ? phi + 2π : phi
@@ -67,7 +67,24 @@ function PseudoJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::In
         rap = 0.5 * log((pt2 + effective_m2) / (E_plus_pz * E_plus_pz))
         rap = pz > 0.0 ? -rap : rap
     end
-    PseudoJet(px, py, pz, E, cluster_hist_index, pt2, rap, phi)
+    PseudoJet{T}(px, py, pz, E, cluster_hist_index, pt2, rap, phi)
+end
+
+"""
+    PseudoJet(px::Tpx, py::Tpy, pz::Tpz, E::TE; cluster_hist_index::Int = 0)
+
+Constructor to use if it happens that input numerical types are mixed. Then
+the `PseudoJet` is constructed with the promoted type.
+"""
+function PseudoJet(px::Tpx, py::Tpy, pz::Tpz, E::TE; cluster_hist_index::Int = 0) where {Tpx, Tpy, Tpz, TE}
+    PseudoJet(promote(px, py, pz, E)...; cluster_hist_index)
+end
+
+"""
+Constructor for explicit parameter type
+"""
+function PseudoJet{T}(px, py, pz, E; cluster_hist_index::Integer = 0) where {T <: Real}
+    PseudoJet(T(px), T(py), T(pz), T(E); cluster_hist_index)
 end
 
 """
@@ -87,7 +104,7 @@ Construct a PseudoJet from `(pt, y, ϕ, m)` with the cluster index
 If the (default) value of `cluster_hist_index=0` is used, the PseudoJet cannot be
 used in a reconstruction sequence.
 """
-function PseudoJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
+function PseudoJet(; pt, rap, phi, m = 0,
                    cluster_hist_index::Int = 0)
     phi = phi < 0 ? phi + 2π : phi
     phi = phi > 2π ? phi - 2π : phi
@@ -99,6 +116,8 @@ function PseudoJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
     py = pt * sin(phi)
     pz = @fastmath (pplus - pminus) / 2
     E = @fastmath (pplus + pminus) / 2
+
+    (px, py, pz, E, pt, rap, phi) = promote(px, py, pz, E, pt, rap, phi)
 
     PseudoJet(px, py, pz, E, cluster_hist_index, pt^2, rap, phi)
 end

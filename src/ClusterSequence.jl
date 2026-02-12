@@ -121,12 +121,12 @@ final jets.
   to get the physical PseudoJet.
 - `Qtot::Float64`: The total energy of the event.
 """
-struct ClusterSequence{T <: FourMomentum}
+struct ClusterSequence{T <: Real, J <: FourMomentum{T}}
     algorithm::JetAlgorithm.Algorithm
     power::Float64
     R::Float64
     strategy::RecoStrategy.Strategy
-    jets::Vector{T}
+    jets::Vector{J}
     n_initial_jets::Int
     history::Vector{HistoryElement}
     Qtot::Float64
@@ -150,9 +150,9 @@ Construct a `ClusterSequence` object.
 - `Qtot`: The total energy of the event.
 """
 function ClusterSequence(algorithm::JetAlgorithm.Algorithm, p, R,
-                         strategy::RecoStrategy.Strategy, jets::Vector{T}, history,
-                         Qtot) where {T <: FourMomentum}
-    ClusterSequence{T}(algorithm, p, R, strategy, jets, length(jets), history, Qtot)
+                         strategy::RecoStrategy.Strategy, jets::Vector{J}, history,
+                         Qtot) where {T <: Real, J <: FourMomentum{T}}
+    ClusterSequence{T, J}(algorithm, p, R, strategy, jets, length(jets), history, Qtot)
 end
 
 """

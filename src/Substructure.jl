@@ -134,7 +134,7 @@ Filters a jet to retain only the hardest subjets based on a specified radius and
 # Returns:
 - `PseudoJet`: Filtered jet composed of the hardest subjets.
 """
-function jet_filtering(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; radius::Real,
+function jet_filtering(jet::PseudoJet{T}, clusterseq::ClusterSequence{PseudoJet{T}}; radius::Real,
                        hardest_jets::Integer)
     new_clusterseq = recluster(jet, clusterseq; R = radius, algorithm = JetAlgorithm.CA)
     reclustered = sort!(inclusive_jets(new_clusterseq, PseudoJet), by = pt2, rev = true)
