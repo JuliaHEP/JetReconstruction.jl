@@ -394,7 +394,8 @@ _tiled_jet_reconstruct!(particles::Vector{PseudoJet}; algorithm = JetAlgorithm.K
 """
 function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet{T}};
                                  algorithm::JetAlgorithm.Algorithm,
-                                 p::Real, R = 1.0, recombine = addjets_escheme) where {T <: Real}
+                                 p::Real, R = 1.0,
+                                 recombine = addjets_escheme) where {T <: Real}
     # Bounds
     N::Int = length(particles)
 

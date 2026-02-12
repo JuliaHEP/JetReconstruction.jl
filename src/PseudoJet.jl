@@ -24,7 +24,7 @@ caching of the more expensive calculations for rapidity and azimuthal angle.
 - `_phi::Float64`: The azimuthal angle.
 
 """
-struct PseudoJet{T <: Real}  <: FourMomentum{T}
+struct PseudoJet{T <: Real} <: FourMomentum{T}
     px::T
     py::T
     pz::T
@@ -46,7 +46,8 @@ Construct a PseudoJet from a four momentum `(px, py, pz, E)`` with cluster index
 If the (default) value of `cluster_hist_index=0` is used, the PseudoJet cannot be
 used in a reconstruction sequence.
 """
-function PseudoJet(px::T, py::T, pz::T, E::T; cluster_hist_index::Integer = 0) where {T <: Real}
+function PseudoJet(px::T, py::T, pz::T, E::T;
+                   cluster_hist_index::Integer = 0) where {T <: Real}
     @muladd pt2 = px * px + py * py
     phi = pt2 == 0.0 ? 0.0 : atan(py, px)
     phi = phi < 0.0 ? phi + 2π : phi
@@ -76,7 +77,8 @@ end
 Constructor to use if it happens that input numerical types are mixed. Then
 the `PseudoJet` is constructed with the promoted type.
 """
-function PseudoJet(px::Tpx, py::Tpy, pz::Tpz, E::TE; cluster_hist_index::Int = 0) where {Tpx, Tpy, Tpz, TE}
+function PseudoJet(px::Tpx, py::Tpy, pz::Tpz, E::TE;
+                   cluster_hist_index::Int = 0) where {Tpx, Tpy, Tpz, TE}
     PseudoJet(promote(px, py, pz, E)...; cluster_hist_index)
 end
 

@@ -47,7 +47,8 @@ end
 Constructor to use if it happens that input numerical types are mixed. Then
 the `PseudoJet` is constructed with the promoted type.
 """
-function EEJet(px::Tpx, py::Tpy, pz::Tpz, E::TE; cluster_hist_index::Int = 0) where {Tpx, Tpy, Tpz, TE}
+function EEJet(px::Tpx, py::Tpy, pz::Tpz, E::TE;
+               cluster_hist_index::Int = 0) where {Tpx, Tpy, Tpz, TE}
     EEJet(promote(px, py, pz, E)...; cluster_hist_index)
 end
 

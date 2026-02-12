@@ -41,8 +41,10 @@ pj_beam = PseudoJet(0.0, 0.0, 5.0, 5.0)
 
     # This isn't really a test of the output, but rather that the object
     # can be printed without error
-    @test string(pj) == "PseudoJet{Float64}(px: 1.0 py: 2.0 pz: 3.0 E: 10.0 cluster_hist_index: 7)"
-    @test string(pj32) == "PseudoJet{Float32}(px: 1.0 py: 2.0 pz: 3.0 E: 10.0 cluster_hist_index: 7)"
+    @test string(pj) ==
+          "PseudoJet{Float64}(px: 1.0 py: 2.0 pz: 3.0 E: 10.0 cluster_hist_index: 7)"
+    @test string(pj32) ==
+          "PseudoJet{Float32}(px: 1.0 py: 2.0 pz: 3.0 E: 10.0 cluster_hist_index: 7)"
 end
 
 eej = EEJet(1.0, 2.0, 3.0, 10.0; cluster_hist_index = 7)
@@ -75,7 +77,8 @@ eej_beam = EEJet(0.0, 0.0, 5.0, 5.0)
 
     # This isn't really a test of the output, but rather that the object
     # can be printed without error
-    @test string(eej) == "EEJet{Float64}(px: 1.0 py: 2.0 pz: 3.0 E: 10.0 cluster_hist_index: 7)"
+    @test string(eej) ==
+          "EEJet{Float64}(px: 1.0 py: 2.0 pz: 3.0 E: 10.0 cluster_hist_index: 7)"
 end
 
 eej_pseudojet = EEJet(pj)

@@ -16,7 +16,9 @@ Reclusters the constituents of a given jet `jet` with a different clustering alg
 - `ClusterSequence`: The new cluster sequence.
 """
 function recluster(jet::PseudoJet{T}, clusterseq::ClusterSequence{T, J}; R = 1.0,
-                   algorithm::JetAlgorithm.Algorithm = JetAlgorithm.CA) where {T <: Real, J <: PseudoJet{T}}
+                   algorithm::JetAlgorithm.Algorithm = JetAlgorithm.CA) where {T <: Real,
+                                                                               J <:
+                                                                               PseudoJet{T}}
     cons = constituents(jet, clusterseq)
     new_clusterseq = jet_reconstruct(cons; p = nothing, R = R, algorithm = algorithm,
                                      strategy = RecoStrategy.Best)
@@ -163,7 +165,9 @@ Trims a jet by removing subjets with transverse momentum below a specified fract
 - `PseudoJet`: Trimmed jet composed of retained subjets.
 """
 function jet_trimming(jet::PseudoJet{T}, clusterseq::ClusterSequence{T, J}; radius::Real,
-                      fraction::Real, recluster_method::JetAlgorithm.Algorithm) where {T <: Real, J <: PseudoJet{T}}
+                      fraction::Real,
+                      recluster_method::JetAlgorithm.Algorithm) where {T <: Real,
+                                                                       J <: PseudoJet{T}}
     frac2 = fraction^2
 
     new_clusterseq = recluster(jet, clusterseq; R = radius, algorithm = recluster_method)

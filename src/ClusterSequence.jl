@@ -80,7 +80,8 @@ Create an initial history for the given particles.
 - `history`: An array of `HistoryElement` objects.
 - `Qtot`: The total energy in the event.
 """
-function initial_history(particles::A) where {T <: Real, J <: FourMomentum{T}, A <: AbstractVector{J}}
+function initial_history(particles::A) where {T <: Real, J <: FourMomentum{T},
+                                              A <: AbstractVector{J}}
     # reserve sufficient space for everything
     history = Vector{HistoryElement{T}}(undef, length(particles))
     sizehint!(history, 2 * length(particles))
@@ -322,7 +323,8 @@ exclusive_jets(clusterseq, PseudoJet, njets = 3)
 """
 function exclusive_jets(clusterseq::ClusterSequence{T, J},
                         ::Type{R} = LorentzVector{Float64};
-                        dcut = nothing, njets = nothing,) where {T <: Real, J <: FourMomentum{T}, R}
+                        dcut = nothing,
+                        njets = nothing,) where {T <: Real, J <: FourMomentum{T}, R}
     if isnothing(dcut) && isnothing(njets)
         throw(ArgumentError("Must pass either a dcut or an njets value"))
     end
@@ -610,7 +612,8 @@ An array of jet objects (which are of the same type as the input jet)
 copied from the constituents of the given jet, with reset cluster history
 indexes.
 """
-function constituents(jet::J, cs::ClusterSequence{T, J}) where {T <: Real, J <: FourMomentum{T}}
+function constituents(jet::J,
+                      cs::ClusterSequence{T, J}) where {T <: Real, J <: FourMomentum{T}}
     constituent_idxs = constituent_indexes(jet, cs)
     constituents = Vector{J}()
     sizehint!(constituents, length(constituent_idxs))
@@ -638,7 +641,9 @@ given jet.
 
 An vector of indices representing the original constituents of the given jet.
 """
-function constituent_indexes(jet::J, cs::ClusterSequence{T, J}) where {T <: Real, J <: FourMomentum{T}}
+function constituent_indexes(jet::J,
+                             cs::ClusterSequence{T, J}) where {T <: Real,
+                                                               J <: FourMomentum{T}}
     get_all_ancestors(jet._cluster_hist_index, cs)
 end
 
@@ -657,8 +662,11 @@ A tuple of two elements, each of which is either the parent jet object or
 """
 function parent_jets(jet::J,
                      cs::ClusterSequence{T, J})::Tuple{Union{Nothing, J},
-                                                    Union{Nothing, J}} where {T <:
-                                                                              Real, J <: FourMomentum{T}}
+                                                       Union{Nothing, J}} where {T <:
+                                                                                 Real,
+                                                                                 J <:
+                                                                                 FourMomentum{T}
+                                                                                 }
     hist_idx = jet._cluster_hist_index
     jet_history = cs.history[hist_idx]
 
