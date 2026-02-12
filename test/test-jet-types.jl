@@ -67,6 +67,12 @@ eej_beam = EEJet(0.0, 0.0, 5.0, 5.0)
     @test LorentzVectorBase.spatial_magnitude2(eej) ≈ JetReconstruction.p2(eej)
     @test LorentzVectorBase.cos_theta(eej) ≈ JetReconstruction.CosTheta(eej)
 
+    # Test different constructor scenarios
+    @test typeof(EEJet(1.0, 2.0, 3.0, 10.0)) == EEJet{Float64}
+    @test typeof(EEJet{Float32}(1.0, 2.0, 3.0, 10.0)) == EEJet{Float32}
+    @test typeof(EEJet(1.0f0, 2.0f0, 3.0f0, 10.0f0)) == EEJet{Float32}
+    @test typeof(EEJet{Float64}(1.0f0, 2.0f0, 3.0f0, 10.0f0)) == EEJet{Float64}
+
     # This isn't really a test of the output, but rather that the object
     # can be printed without error
     @test string(eej) == "EEJet{Float64}(px: 1.0 py: 2.0 pz: 3.0 E: 10.0 cluster_hist_index: 7)"
