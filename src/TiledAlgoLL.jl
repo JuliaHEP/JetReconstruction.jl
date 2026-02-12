@@ -338,9 +338,10 @@ function tiled_jet_reconstruct(particles::AbstractVector{J};
             sizehint!(recombination_particles, length(particles) * 2)
         else
             # We assume a constructor for PseudoJet that can ingest the appropriate
-            # type of particle
-            pj1 = PseudoJet(particles[1]; cluster_hist_index = 1)
-            recombination_particles = Vector{typeof(pj1)}(undef, 0)
+            # type of particle; note we have a bit of a hack here to get the correct
+            # parameterised type for the vector, but doing a "test" conversion of the
+            # first input particle
+            recombination_particles = Vector{typeof(PseudoJet(particles[1]))}(undef, 0)
             sizehint!(recombination_particles, length(particles) * 2)
             for (i, particle) in enumerate(particles)
                 push!(recombination_particles, PseudoJet(particle; cluster_hist_index = i))
@@ -349,8 +350,7 @@ function tiled_jet_reconstruct(particles::AbstractVector{J};
     else
         # We have a preprocessor function that we need to call to modify the
         # input particles
-        pj1 = PseudoJet(particles[1]; cluster_hist_index = 1)
-        recombination_particles = Vector{typeof(pj1)}(undef, 0)
+        recombination_particles = Vector{typeof(PseudoJet(particles[1]))}(undef, 0)
         sizehint!(recombination_particles, length(particles) * 2)
         for (i, particle) in enumerate(particles)
             push!(recombination_particles,

@@ -249,8 +249,9 @@ function plain_jet_reconstruct(particles::AbstractVector{T};
             sizehint!(recombination_particles, length(particles) * 2)
         else
             # We assume a constructor for PseudoJet that can ingest the appropriate
-            # type of particle
-            recombination_particles = PseudoJet[]
+            # type of particle. N.B. there is a small hack to ensure we get the
+            # correct parameterised type for the PseudoJet vector.
+            recombination_particles = Vector{typeof(PseudoJet(particles[1]))}(undef, 0)
             sizehint!(recombination_particles, length(particles) * 2)
             for (i, particle) in enumerate(particles)
                 push!(recombination_particles, PseudoJet(particle; cluster_hist_index = i))
@@ -259,7 +260,7 @@ function plain_jet_reconstruct(particles::AbstractVector{T};
     else
         # We have a preprocessor function that we need to call to modify the
         # input particles
-        recombination_particles = PseudoJet[]
+        recombination_particles = Vector{typeof(PseudoJet(particles[1]))}(undef, 0)
         sizehint!(recombination_particles, length(particles) * 2)
         for (i, particle) in enumerate(particles)
             push!(recombination_particles,
@@ -299,9 +300,9 @@ entry point to this jet reconstruction.
 - `clusterseq`: The resulting `ClusterSequence` object representing the
   reconstructed jets.
 """
-function _plain_jet_reconstruct!(particles::AbstractVector{PseudoJet};
+function _plain_jet_reconstruct!(particles::AbstractVector{PseudoJet{T}};
                                  algorithm::JetAlgorithm.Algorithm, p::Real, R = 1.0,
-                                 recombine = addjets_escheme)
+                                 recombine = addjets_escheme) where {T <: Real}
     # Bounds
     N::Int = length(particles)
     # Parameters
@@ -310,12 +311,12 @@ function _plain_jet_reconstruct!(particles::AbstractVector{PseudoJet};
     # Optimised compact arrays for determining the next merge step
     # We make sure these arrays are type stable - have seen issues where, depending on the values
     # returned by the methods, they can become unstable and performance degrades
-    kt2_array::Vector{Float64} = pt2.(particles) .^ p
-    phi_array::Vector{Float64} = phi.(particles)
-    rapidity_array::Vector{Float64} = rapidity.(particles)
+    kt2_array::Vector{T} = pt2.(particles) .^ p
+    phi_array::Vector{T} = phi.(particles)
+    rapidity_array::Vector{T} = rapidity.(particles)
     nn::Vector{Int} = Vector(1:N) # nearest neighbours
-    nndist::Vector{Float64} = fill(float(R2), N) # geometric distances to the nearest neighbour
-    nndij::Vector{Float64} = zeros(N) # dij metric distance
+    nndist::Vector{T} = fill(float(R2), N) # geometric distances to the nearest neighbour
+    nndij::Vector{T} = zeros(N) # dij metric distance
 
     # Maps index from the compact array to the clusterseq jet vector
     clusterseq_index::Vector{Int} = collect(1:N)
