@@ -6,15 +6,15 @@ import Accessors
 The `EEJet` struct is a 4-momentum object used for the e+e jet reconstruction routines.
 
 # Fields
-- `px::Float64`: The x-component of the jet momentum.
-- `py::Float64`: The y-component of the jet momentum.
-- `pz::Float64`: The z-component of the jet momentum.
-- `E::Float64`: The energy of the jet.
+- `px::T`: The x-component of the jet momentum.
+- `py::T`: The y-component of the jet momentum.
+- `pz::T`: The z-component of the jet momentum.
+- `E::T`: The energy of the jet.
 - `_cluster_hist_index::Int`: The index of the cluster histogram.
-- `_p2::Float64`: The squared momentum of the jet.
-- `_inv_p::Float64`: The inverse momentum of the jet.
+- `_p2::T`: The squared momentum of the jet.
+- `_inv_p::T`: The inverse momentum of the jet.
 """
-struct EEJet{T} <: FourMomentum{T}
+struct EEJet{T <: Real} <: FourMomentum{T}
     px::T
     py::T
     pz::T
@@ -35,10 +35,27 @@ cluster history index.
 If the default value of `cluster_hist_index=0` is used, the `EEJet` cannot be
 used in a reconstruction sequence.
 """
-function EEJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::Int = 0)
+function EEJet(px::T, py::T, pz::T, E::T; cluster_hist_index::Int = 0) where {T <: Real}
     @muladd p2 = px * px + py * py + pz * pz
     inv_p = @fastmath 1.0 / sqrt(p2)
-    EEJet(px, py, pz, E, p2, inv_p, cluster_hist_index)
+    EEJet{T}(px, py, pz, E, p2, inv_p, cluster_hist_index)
+end
+
+"""
+    PseudoJet(px::Tpx, py::Tpy, pz::Tpz, E::TE; cluster_hist_index::Int = 0)
+
+Constructor to use if it happens that input numerical types are mixed. Then
+the `PseudoJet` is constructed with the promoted type.
+"""
+function EEJet(px::Tpx, py::Tpy, pz::Tpz, E::TE; cluster_hist_index::Int = 0) where {Tpx, Tpy, Tpz, TE}
+    EEJet(promote(px, py, pz, E)...; cluster_hist_index)
+end
+
+"""
+Constructor for explicit parameter type
+"""
+function EEJet{T}(px, py, pz, E; cluster_hist_index::Integer = 0) where {T <: Real}
+    EEJet(T(px), T(py), T(pz), T(E); cluster_hist_index)
 end
 
 """
@@ -63,8 +80,8 @@ Pt2Scheme.
 If the (default) value of `cluster_hist_index=0` is used, the PseudoJet cannot be
 used in a reconstruction sequence.
 """
-function EEJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
-               cluster_hist_index::Int = 0)
+function EEJet(; pt, rap, phi, m = 0,
+               cluster_hist_index = 0)
     phi = phi < 0 ? phi + 2π : phi
     phi = phi > 2π ? phi - 2π : phi
     ptm = (m == 0) ? pt : sqrt(pt^2 + m^2)
@@ -153,13 +170,13 @@ nz(eej::EEJet) = eej.pz * eej._inv_p
 
 # Optimised reconstruction struct for e+e jets
 
-mutable struct EERecoJet
+mutable struct EERecoJet{T}
     index::Int
     nni::Int
-    nndist::Float64
-    dijdist::Float64
-    nx::Float64
-    ny::Float64
-    nz::Float64
-    E2p::Float64
+    nndist::T
+    dijdist::T
+    nx::T
+    ny::T
+    nz::T
+    E2p::T
 end

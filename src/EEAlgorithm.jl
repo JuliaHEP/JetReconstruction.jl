@@ -346,12 +346,12 @@ If the algorithm is Durham, `R` is nominally set to 4.
 If the algorithm is EEkt, power `p` must be specified.
 If the algorithm is Valencia, you can provide `p` and `γ`, or pass `β` explicitly to override `p`.
 """
-function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
+function ee_genkt_algorithm(particles::AbstractVector{J}; algorithm::JetAlgorithm.Algorithm,
                             p::Union{Real, Nothing} = nothing, R = 4.0,
                             γ::Union{Real, Nothing} = 1.0,
                             β::Union{Real, Nothing} = nothing,
                             recombine = addjets_escheme,
-                            preprocess = preprocess_escheme) where {T}
+                            preprocess = preprocess_escheme) where {J}
 
     # For Valencia, if β is provided, overwrite p
     if algorithm === JetAlgorithm.Valencia && β !== nothing
@@ -372,7 +372,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
     end
 
     if isnothing(preprocess)
-        if T == EEJet
+        if J == EEJet
             # If we don't have a preprocessor, we just need to copy to our own
             # EEJet objects
             recombination_particles = copy(particles)
@@ -380,7 +380,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
         else
             # We assume a constructor for EEJet that can ingest the appropriate
             # type of particle
-            recombination_particles = EEJet[]
+            recombination_particles = Vector{typeof(EEJet(particles[1]))}(undef, 0)
             sizehint!(recombination_particles, length(particles) * 2)
             for (i, particle) in enumerate(particles)
                 push!(recombination_particles, EEJet(particle; cluster_hist_index = i))
@@ -389,7 +389,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
     else
         # We have a preprocessor function that we need to call to modify the
         # input particles
-        recombination_particles = EEJet[]
+        recombination_particles = Vector{typeof(EEJet(particles[1]))}(undef, 0)
         sizehint!(recombination_particles, length(particles) * 2)
         for (i, particle) in enumerate(particles)
             push!(recombination_particles,
@@ -435,11 +435,11 @@ entry point to this jet reconstruction.
 - `clusterseq`: The resulting `ClusterSequence` object representing the
   reconstructed jets.
 """
-function _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
+function _ee_genkt_algorithm!(particles::AbstractVector{EEJet{T}};
                               algorithm::JetAlgorithm.Algorithm, p::Real, R::Real = 4.0,
                               invR2::Real = 1 / (16.0),
                               γ::Union{Real, Nothing} = 1.0,
-                              recombine = addjets_escheme)
+                              recombine = addjets_escheme) where {T <: Real}
 
     # Bounds
     N::Int = length(particles)
@@ -462,7 +462,7 @@ function _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
     # For optimised reconstruction generate an SoA containing the necessary
     # jet information and populate it accordingly
     # We need N slots for this array
-    eereco = StructArray{EERecoJet}(undef, N)
+    eereco = StructArray{EERecoJet{T}}(undef, N)
 
     fill_reco_array!(eereco, particles, invR2, p)
 
