@@ -245,11 +245,16 @@ algorithm was used).
 inclusive_jets(clusterseq; ptmin = 10.0)
 ```
 """
-function inclusive_jets(clusterseq::ClusterSequence{U},
-                        ::Type{T} = LorentzVector{Float64};
-                        ptmin = 0.0) where {T, U}
+function inclusive_jets(clusterseq::ClusterSequence{T, J},
+                        ::Type{R} = LorentzVector{Float64};
+                        ptmin = 0.0) where {T <: Real, J <: FourMomentum{T}, R}
     pt2min = ptmin * ptmin
-    jets_local = T[]
+    if isconcretetype(R)
+        RetType = R
+    else
+        RetType = R{T}
+    end
+    jets_local = RetType[]
     # sizehint!(jets_local, length(clusterseq.jets))
     # For inclusive jets with a plugin algorithm, we make no
     # assumptions about anything (relation of dij to momenta,
@@ -261,14 +266,14 @@ function inclusive_jets(clusterseq::ClusterSequence{U},
         jet = clusterseq.jets[iparent_jet]
         if pt2(jet) >= pt2min
             @debug "Added inclusive jet index $iparent_jet"
-            if T == U
+            if J == RetType
                 push!(jets_local, jet)
             elseif T <: LorentzVectorCyl
                 push!(jets_local, lorentzvector_cyl(jet))
             elseif T <: LorentzVector
                 push!(jets_local, lorentzvector(jet))
             else
-                error("Unsupported return type $T for inclusive jets")
+                error("Unsupported return type $R for inclusive jets (cf. ClusterSequence jet type $J)")
             end
         end
     end
@@ -315,9 +320,9 @@ exclusive_jets(clusterseq, dcut = 20.0)
 exclusive_jets(clusterseq, PseudoJet, njets = 3)
 ```
 """
-function exclusive_jets(clusterseq::ClusterSequence{U},
-                        ::Type{T} = LorentzVector{Float64};
-                        dcut = nothing, njets = nothing) where {T, U}
+function exclusive_jets(clusterseq::ClusterSequence{T, J},
+                        ::Type{R} = LorentzVector{Float64};
+                        dcut = nothing, njets = nothing,) where {T <: Real, J <: FourMomentum{T}, R}
     if isnothing(dcut) && isnothing(njets)
         throw(ArgumentError("Must pass either a dcut or an njets value"))
     end
@@ -349,21 +354,26 @@ function exclusive_jets(clusterseq::ClusterSequence{U},
         throw(ErrorException("Cluster sequence is incomplete, exclusive jets unavailable"))
     end
 
-    excl_jets = T[]
+    if isconcretetype(R)
+        RetType = R
+    else
+        RetType = R{T}
+    end
+    excl_jets = RetType[]
     for j in stop_point:length(clusterseq.history)
         @debug "Search $j ($(clusterseq.history[j].parent1) + $(clusterseq.history[j].parent2))"
         for parent in (clusterseq.history[j].parent1, clusterseq.history[j].parent2)
             if (parent < stop_point && parent > 0)
                 @debug "Added exclusive jet index $(clusterseq.history[parent].jetp_index)"
                 jet = clusterseq.jets[clusterseq.history[parent].jetp_index]
-                if T == U
+                if J == R
                     push!(excl_jets, jet)
-                elseif T <: LorentzVectorCyl
+                elseif R <: LorentzVectorCyl
                     push!(excl_jets, lorentzvector_cyl(jet))
-                elseif T <: LorentzVector
+                elseif R <: LorentzVector
                     push!(excl_jets, lorentzvector(jet))
                 else
-                    error("Unsupported return type $T for inclusive jets")
+                    error("Unsupported return type $R for inclusive jets")
                 end
             end
         end
@@ -600,14 +610,14 @@ An array of jet objects (which are of the same type as the input jet)
 copied from the constituents of the given jet, with reset cluster history
 indexes.
 """
-function constituents(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
+function constituents(jet::J, cs::ClusterSequence{T, J}) where {T <: Real, J <: FourMomentum{T}}
     constituent_idxs = constituent_indexes(jet, cs)
-    constituents = Vector{T}()
+    constituents = Vector{J}()
     sizehint!(constituents, length(constituent_idxs))
     new_index = 1
     for idx in constituent_idxs
         push!(constituents,
-              T(px(cs.jets[idx]), py(cs.jets[idx]), pz(cs.jets[idx]),
+              J(px(cs.jets[idx]), py(cs.jets[idx]), pz(cs.jets[idx]),
                 energy(cs.jets[idx]); cluster_hist_index = new_index))
         new_index += 1
     end
@@ -628,7 +638,7 @@ given jet.
 
 An vector of indices representing the original constituents of the given jet.
 """
-function constituent_indexes(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
+function constituent_indexes(jet::J, cs::ClusterSequence{T, J}) where {T <: Real, J <: FourMomentum{T}}
     get_all_ancestors(jet._cluster_hist_index, cs)
 end
 
@@ -645,10 +655,10 @@ Find the parent jets of a given jet in a cluster sequence.
 A tuple of two elements, each of which is either the parent jet object or
 `nothing` (if the jet has no parent).
 """
-function parent_jets(jet::T,
-                     cs::ClusterSequence{T})::Tuple{Union{Nothing, T},
-                                                    Union{Nothing, T}} where {T <:
-                                                                              FourMomentum}
+function parent_jets(jet::J,
+                     cs::ClusterSequence{T, J})::Tuple{Union{Nothing, J},
+                                                    Union{Nothing, J}} where {T <:
+                                                                              Real, J <: FourMomentum{T}}
     hist_idx = jet._cluster_hist_index
     jet_history = cs.history[hist_idx]
 
