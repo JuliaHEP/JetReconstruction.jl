@@ -41,13 +41,13 @@ Fields:
 - `max_dij_so_far`: The largest recombination distance seen so far in the
   clustering history.
 """
-struct HistoryElement
+struct HistoryElement{T <: Real}
     parent1::Int
     parent2::Int
     child::Int
     jetp_index::Int
-    dij::Float64
-    max_dij_so_far::Float64
+    dij::T
+    max_dij_so_far::T
 end
 
 """
@@ -63,9 +63,9 @@ initialising the history with original particles.
 A `HistoryElement` object.
 
 """
-function HistoryElement(jetp_index)
+function HistoryElement{T}(jetp_index) where {T <: Real}
     HistoryElement(NonexistentParent, NonexistentParent, Invalid,
-                   jetp_index, 0.0, 0.0)
+                   jetp_index, zero(T), zero(T))
 end
 
 """
@@ -80,15 +80,15 @@ Create an initial history for the given particles.
 - `history`: An array of `HistoryElement` objects.
 - `Qtot`: The total energy in the event.
 """
-function initial_history(particles)
+function initial_history(particles::A) where {T <: Real, J <: FourMomentum{T}, A <: AbstractVector{J}}
     # reserve sufficient space for everything
-    history = Vector{HistoryElement}(undef, length(particles))
+    history = Vector{HistoryElement{T}}(undef, length(particles))
     sizehint!(history, 2 * length(particles))
 
-    Qtot::Float64 = 0
+    Qtot::T = zero(T)
 
     for i in eachindex(particles)
-        history[i] = HistoryElement(i)
+        history[i] = HistoryElement{T}(i)
 
         # get cross-referencing right from the Jets
         # particles[i]._cluster_hist_index = i
@@ -128,8 +128,8 @@ struct ClusterSequence{T <: Real, J <: FourMomentum{T}}
     strategy::RecoStrategy.Strategy
     jets::Vector{J}
     n_initial_jets::Int
-    history::Vector{HistoryElement}
-    Qtot::Float64
+    history::Vector{HistoryElement{T}}
+    Qtot::T
 end
 
 """
