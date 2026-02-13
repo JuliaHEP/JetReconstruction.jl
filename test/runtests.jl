@@ -15,7 +15,7 @@ function main()
     include("test-jet-utils.jl")
 
     # jet_reconstruct() interface check
-    include("test-jet_reconstruct-interface.jl")
+    include("test-jet-reconstruct-interface.jl")
 
     # New test structure, factorised tests for pp and e+e-
     include("test-pp-reconstruction.jl")
