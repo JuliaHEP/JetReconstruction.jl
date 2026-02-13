@@ -96,7 +96,7 @@ end
 Return the tile index for a given `PseudoJet` `p` in the SoftKiller grid `sk`.
 Returns -1 if the jet is outside the grid bounds.
 """
-function tile_index(sk::SoftKiller, p::PseudoJet)
+function tile_index(sk::SoftKiller, p::PseudoJet{T}) where {T <: Real}
     y_minus_ymin = rapidity(p) - sk._ymin
     if y_minus_ymin < 0
         return -1
@@ -155,7 +155,7 @@ Apply the SoftKiller algorithm to an event (a vector of `PseudoJet`s).
 Returns a tuple `(reduced_event, pt_threshold)`, where `reduced_event` is the filtered
 event and `pt_threshold` is the computed pt threshold.
 """
-function softkiller(sk::SoftKiller, event::Vector{PseudoJet})
+function softkiller(sk::SoftKiller, event::Vector{J}) where {T <: Real, J <: PseudoJet{T}}
     if (sk._ntotal < 2)
         throw("SoftKiller not properly initialized.")
     end
@@ -173,12 +173,12 @@ function softkiller(sk::SoftKiller, event::Vector{PseudoJet})
 
     pt2cut = median(max_pt2)
 
-    reduced_event = Vector{PseudoJet}()
+    reduced_event = Vector{J}()
     sizehint!(reduced_event, length(event))
     hist_index = 1
     for jet in event
         if pt2(jet) >= pt2cut
-            push!(reduced_event, PseudoJet(jet; cluster_hist_index = hist_index))
+            push!(reduced_event, PseudoJet{T}(jet; cluster_hist_index = hist_index))
             hist_index += 1
         end
     end

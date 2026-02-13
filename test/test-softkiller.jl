@@ -26,12 +26,12 @@ end
     sk = SoftKiller(-2.5, 2.5, 0.4, 0.4)
 
     # Test tile_index with a pseudojet within bounds
-    pj1 = PseudoJet(pt = 1.0, rap = 0.0, phi = 0.0, m = 0.0)
+    pj1 = PseudoJet{Float64}(pt = 1.0, rap = 0.0, phi = 0.0, m = 0.0)
     idx = tile_index(sk, pj1)
     @test (1 <= idx) && (idx <= sk._ntotal)
 
     # Test tile_index with a pseudojet beyond bounds
-    pj2 = PseudoJet(pt = 1.0, rap = 10.0, phi = 0.0, m = 0.0)
+    pj2 = PseudoJet{Float64}(pt = 1.0, rap = 10.0, phi = 0.0, m = 0.0)
     idx2 = tile_index(sk, pj2)
     @test idx2 == -1
 
@@ -61,7 +61,8 @@ end
 
     # Helper function to create a PseudoJet from pt, eta, and phi
     function make_pj(pt, rap, phi; index = 0)
-        return PseudoJet(pt = pt, rap = rap, phi = phi, m = 0.0, cluster_hist_index = index)
+        return PseudoJet{Float64}(pt = pt, rap = rap, phi = phi, m = 0.0,
+                                  cluster_hist_index = index)
     end
     event = [make_pj(pts[i], raps[i], phis[i]; index = i) for i in 1:N]
 
@@ -80,7 +81,7 @@ end
     for (pj, pt) in zip(event, pts)
         if pt >= threshold
             accepted_counter += 1
-            @test PseudoJet(pj; cluster_hist_index = accepted_counter) in reduced
+            @test PseudoJet{Float64}(pj; cluster_hist_index = accepted_counter) in reduced
         end
     end
     # and no other jets were kept

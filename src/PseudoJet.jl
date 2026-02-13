@@ -106,8 +106,8 @@ Construct a PseudoJet from `(pt, y, ϕ, m)` with the cluster index
 If the (default) value of `cluster_hist_index=0` is used, the PseudoJet cannot be
 used in a reconstruction sequence.
 """
-function PseudoJet(; pt, rap, phi, m = 0,
-                   cluster_hist_index::Int = 0)
+function PseudoJet{T}(; pt, rap, phi, m = 0,
+                      cluster_hist_index::Int = 0) where {T <: Real}
     phi = phi < 0 ? phi + 2π : phi
     phi = phi > 2π ? phi - 2π : phi
     ptm = (m == 0) ? pt : sqrt(pt^2 + m^2)
@@ -121,7 +121,13 @@ function PseudoJet(; pt, rap, phi, m = 0,
 
     (px, py, pz, E, pt, rap, phi) = promote(px, py, pz, E, pt, rap, phi)
 
-    PseudoJet(px, py, pz, E, cluster_hist_index, pt^2, rap, phi)
+    PseudoJet{T}(px, py, pz, E, cluster_hist_index, pt^2, rap, phi)
+end
+
+function PseudoJet(; pt::T, rap::T, phi::T, m = 0,
+                   cluster_hist_index::Int = 0) where {T <: Real}
+    PseudoJet{T}(pt = pt, rap = rap, phi = phi, m = m,
+                 cluster_hist_index = cluster_hist_index)
 end
 
 """
@@ -129,8 +135,13 @@ end
 
 Construct a PseudoJet from another `PseudoJet` object and assign given cluster index to it.
 """
-function PseudoJet(jet::PseudoJet; cluster_hist_index::Int = 0)
+function PseudoJet{T}(jet::PseudoJet{T}; cluster_hist_index::Int = 0) where {T <: Real}
     Accessors.@set jet._cluster_hist_index = cluster_hist_index
+end
+
+function PseudoJet{O}(jet::PseudoJet{T};
+                      cluster_hist_index::Int = 0) where {T <: Real, O <: Real}
+    PseudoJet{O}(jet.px, jet.py, jet.pz, jet.E; cluster_hist_index)
 end
 
 """

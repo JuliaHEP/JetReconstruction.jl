@@ -250,11 +250,7 @@ function inclusive_jets(clusterseq::ClusterSequence{T, J},
                         ::Type{R} = LorentzVector{Float64};
                         ptmin = 0.0) where {T <: Real, J <: FourMomentum{T}, R}
     pt2min = ptmin * ptmin
-    if isconcretetype(R)
-        RetType = R
-    else
-        RetType = R{T}
-    end
+    RetType = concretize_return_type(R, T)
     jets_local = RetType[]
     # sizehint!(jets_local, length(clusterseq.jets))
     # For inclusive jets with a plugin algorithm, we make no
@@ -269,12 +265,12 @@ function inclusive_jets(clusterseq::ClusterSequence{T, J},
             @debug "Added inclusive jet index $iparent_jet"
             if J == RetType
                 push!(jets_local, jet)
-            elseif T <: LorentzVectorCyl
+            elseif RetType <: LorentzVectorCyl
                 push!(jets_local, lorentzvector_cyl(jet))
-            elseif T <: LorentzVector
+            elseif RetType <: LorentzVector
                 push!(jets_local, lorentzvector(jet))
             else
-                error("Unsupported return type $R for inclusive jets (cf. ClusterSequence jet type $J)")
+                error("Unsupported return type $RetType for inclusive jets (cf. ClusterSequence jet type $J)")
             end
         end
     end
@@ -356,11 +352,7 @@ function exclusive_jets(clusterseq::ClusterSequence{T, J},
         throw(ErrorException("Cluster sequence is incomplete, exclusive jets unavailable"))
     end
 
-    if isconcretetype(R)
-        RetType = R
-    else
-        RetType = R{T}
-    end
+    RetType = concretize_return_type(R, T)
     excl_jets = RetType[]
     for j in stop_point:length(clusterseq.history)
         @debug "Search $j ($(clusterseq.history[j].parent1) + $(clusterseq.history[j].parent2))"
@@ -368,14 +360,14 @@ function exclusive_jets(clusterseq::ClusterSequence{T, J},
             if (parent < stop_point && parent > 0)
                 @debug "Added exclusive jet index $(clusterseq.history[parent].jetp_index)"
                 jet = clusterseq.jets[clusterseq.history[parent].jetp_index]
-                if J == R
+                if J == RetType
                     push!(excl_jets, jet)
-                elseif R <: LorentzVectorCyl
+                elseif RetType <: LorentzVectorCyl
                     push!(excl_jets, lorentzvector_cyl(jet))
-                elseif R <: LorentzVector
+                elseif RetType <: LorentzVector
                     push!(excl_jets, lorentzvector(jet))
                 else
-                    error("Unsupported return type $R for inclusive jets")
+                    error("Unsupported return type $RetType for exclusive jets (cf. ClusterSequence jet type $J)")
                 end
             end
         end

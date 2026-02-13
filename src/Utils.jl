@@ -39,7 +39,7 @@ the particles of a particular event. In particular T can be `PseudoJet` or
 a `LorentzVector` type. Note, if T is not `PseudoJet`, the order of the
 arguments in the constructor must be `(t, x, y, z)`.
 """
-function read_final_state_particles(fname, ::Type{T} = PseudoJet; maxevents = -1,
+function read_final_state_particles(fname, ::Type{T} = PseudoJet{Float64}; maxevents = -1,
                                     skipevents = 0) where {T}
     f = open_with_stream(fname)
     events = Vector{T}[]
@@ -124,4 +124,45 @@ fast_findmin(dij, n) = begin
         dij_min = newmin ? dij[here] : dij_min
     end
     dij_min, best
+end
+
+function concretize_return_type(ReturnType::Type, T::Type{<:Real})
+    # If it's already a DataType, just return it
+    if ReturnType isa DataType
+        return ReturnType
+    end
+
+    # If it's a UnionAll, check how many parameters it needs
+    if ReturnType isa UnionAll
+        num_params = count_typevars(ReturnType)
+
+        if num_params == 1
+            # Apply the single type parameter
+            try
+                return ReturnType{T}
+            catch e
+                if e isa TypeError
+                    error("Cannot parameterize $ReturnType with type $T: $(e.msg)")
+                else
+                    rethrow
+                end
+            end
+            return ReturnType{T}
+        else
+            error("Type $ReturnType requires $num_params type parameters, but only 1 can be inferred")
+        end
+    end
+
+    error("Unexpected type specified: $ReturnType")
+end
+
+# Helper function from before
+function count_typevars(T::UnionAll)
+    count = 0
+    current = T
+    while current isa UnionAll
+        count += 1
+        current = current.body
+    end
+    return count
 end

@@ -14,11 +14,11 @@ additional information to track the jet's position in the tiled structures.
 - `eta::Float64`: The rapidity of the jet.
 - `phi::Float64`: The azimuthal angle of the jet.
 - `kt2::Float64`: The transverse momentum squared of the jet.
-- `NN_dist::Float64`: The distance to the nearest neighbor.
+- `NN_dist::Float64`: The distance to the nearest neighbour.
 - `jets_index::Int`: The index of the jet in the jet array.
 - `tile_index::Int`: The index of the tile in the tile array.
 - `dij_posn::Int`: The position of this jet in the dij compact array.
-- `NN::TiledJet`: The nearest neighbor.
+- `NN::TiledJet`: The nearest neighbour.
 - `previous::TiledJet`: The previous jet.
 - `next::TiledJet`: The next jet.
 """
