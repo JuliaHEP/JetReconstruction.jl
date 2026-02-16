@@ -66,7 +66,7 @@ function mass_drop(jet::PseudoJet{T}, clusterseq::ClusterSequence{T, J}; mu::Rea
             end
 
         else
-            return invalid_pseudojet
+            return zero(PseudoJet{T})
         end
     end
 end
@@ -116,7 +116,7 @@ function soft_drop(jet::PseudoJet{T}, clusterseq::ClusterSequence{T, J}; zcut::R
             end
 
         else
-            return invalid_pseudojet
+            return zero(PseudoJet{T})
         end
     end
 end
@@ -144,7 +144,7 @@ function jet_filtering(jet::PseudoJet{T}, clusterseq::ClusterSequence{T, J}; rad
     n = length(reclustered) <= hardest_jets ? length(reclustered) : hardest_jets
     hard = reclustered[1:n]
 
-    filtered = length(hard) != 0 ? foldl(+, hard) : invalid_pseudojet
+    filtered = length(hard) != 0 ? foldl(+, hard) : zero(PseudoJet{T})
     return filtered
 end
 
@@ -180,6 +180,6 @@ function jet_trimming(jet::PseudoJet{T}, clusterseq::ClusterSequence{T, J}; radi
         end
     end
 
-    trimmed = length(hard) != 0 ? foldl(+, hard) : invalid_pseudojet
+    trimmed = length(hard) != 0 ? foldl(+, hard) : zero(PseudoJet{T})
     return trimmed
 end

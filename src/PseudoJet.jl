@@ -90,10 +90,28 @@ function PseudoJet{T}(px, py, pz, E; cluster_hist_index::Integer = 0) where {T <
 end
 
 """
-    const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
+    const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0; cluster_hist_index = typemin(Int))
 
-Used to mark an invalid result in case the corresponding substructure tagging fails."""
-const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0)
+Used to mark an invalid result in case the corresponding substructure tagging fails.
+
+## Deprecated
+This value will be removed in future. It should not be used directly, instead use the `isvalid()` function.
+"""
+const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0; cluster_hist_index = typemin(Int))
+
+import Base.zero
+"""
+    function zero(::Type{PseudoJet{T}}) where {T <: Real}
+
+Generate an invalid PseudoJet{T}, used to mark an invalid result in case the 
+corresponding substructure tagging fails.
+
+## Note
+For technical reasons the rapidity is set to `_Maxrap`.
+"""
+function zero(::Type{PseudoJet{T}}) where {T <: Real}
+    PseudoJet{T}(0.0, 0.0, 0.0, 0.0, typemin(Int), 0.0, _MaxRap, 0.0)
+end
 
 """
     PseudoJet(;pt::Real, rap::Real, phi::Real, m::Real = 0, cluster_hist_index::Int = 0)
@@ -202,7 +220,7 @@ Primarily to use for checking the validity of outputs of substructure tagging.
 # Returns
 - `Bool`: `true` if the `PseudoJet` object is non-zero (valid), `false` otherwise. 
 """
-isvalid(j::PseudoJet) = !(j === invalid_pseudojet)
+@inline isvalid(j::PseudoJet) = !(cluster_hist_index(j) == typemin(Int))
 
 """
     phi(p::PseudoJet)

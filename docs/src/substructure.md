@@ -17,7 +17,9 @@ tagger = (mu=0.67, y=0.09)
 tagged_jet = mass_drop(jet, clusterseq; tagger...)
 ```
 
-- If the jet is tagged successfully, the function returns the identified subjet. Else it returns the `invalid_pseudojet` object.
+- If the jet is tagged successfully, the function returns the identified
+  subjet. Otherwise it returns an invalid PseudoJet object, which should be
+  tested via `isvalid(jet)`.
 
 ---
 
@@ -42,7 +44,9 @@ tagger = (zcut = 0.1, beta = 2.0, radius = 0.4)
 tagged_jet = soft_drop(jet, clusterseq; tagger...)
 ```
 
-- If the jet is tagged successfully, the function returns the identified subjet. Else it returns the `invalid_pseudojet` object.
+- If the jet is tagged successfully, the function returns the identified subjet.
+  Otherwise it returns an invalid PseudoJet object, which should be
+  tested via `isvalid(jet)`.
 
 ---
 
@@ -80,7 +84,9 @@ trim = (radius=0.3, fraction=0.3, recluster_method=JetAlgorithm.CA)
 trimmed_jet = jet_trimming(jet, clusterseq; trim...)
 ```
 
-- The function returns the trimmed jet if trimming is successful, or the `invalid_pseudojet` object.
+- The function returns the trimmed jet if trimming is successful, 
+  otherwise it returns an invalid PseudoJet object, which should be
+  tested via `isvalid(jet)`.
 
 It is to be noted that the `jet_trimming` function reclusters the constituents of the jet using either `C/A` or `kT ` algorithm, which needs to be specified.
 
