@@ -4,8 +4,11 @@ FlameGraphs = "08572546-2f56-4bcf-ba4e-bab62c3a3f89"
 JSON = "682c06a0-de6a-54ab-a142-c8b1cf79cde6"
 JetReconstruction = "44e8cb2c-dfab-4825-9c70-d4808a591196"
 LorentzVectorHEP = "f612022c-142a-473f-8cfd-a09cf3793c6c"
+Printf = "de0858da-6303-5e67-8744-51eddeeeb8d7"
 Profile = "9abbd945-dff8-562f-b5e8-e1ebf5ef1b79"
 StatProfilerHTML = "a8a75453-ed82-57c9-9e16-4cd1196ecbf5"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
+UnicodePlots = "b8865327-cd53-5732-bb35-84acbb429228"
 
 [sources]
 JetReconstruction = {path = ".."}
