@@ -15,8 +15,13 @@ benchmarkpkg(JetReconstruction)
 Alternatively, the benchmarks can be run directly from the command line with:
 
 ```sh
-julia -t auto --project=benchmark benchmark/runbenchmarks.jl --verbose benchmark_results.json
+julia --project=benchmark benchmark/runbenchmarks.jl --verbose benchmark_results.json
 ```
 
-The `-t auto` flag tells Julia to use all available CPU threads. The runner
-reports the active thread count at startup so results are always self-describing.
+To control how many threads the benchmark process uses, pass `--threads N`.
+This is forwarded via `BenchmarkConfig` to the subprocess that actually runs
+the benchmarks:
+
+```sh
+julia --project=benchmark benchmark/runbenchmarks.jl --threads 4 --verbose benchmark_results.json
+```

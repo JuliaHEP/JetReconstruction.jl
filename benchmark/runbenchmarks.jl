@@ -41,6 +41,11 @@ function parse_command_line(args)
         help = "Enable verbose output, print results to console"
         action = :store_true
 
+        "--threads", "-t"
+        help = "Number of threads for the benchmark process (forwarded via BenchmarkConfig)"
+        arg_type = Int
+        default = 1
+
         "output"
         help = "Write benchmark results to BenchmarkTools.BenchmarkGroup JSON formatted file"
     end
@@ -49,8 +54,11 @@ end
 
 function (@main)(args)
     parsed_args = parse_command_line(args)
-    @info "Julia threads: $(Threads.nthreads()) — use `julia -t N` to change"
-    results = benchmarkpkg(dirname(@__DIR__); resultfile = parsed_args["output"])
+    n_threads = parsed_args["threads"]
+    @info "Benchmark process threads: $(n_threads)"
+    config = PkgBenchmark.BenchmarkConfig(juliaargs = ["-t", string(n_threads)])
+    results = benchmarkpkg(dirname(@__DIR__); config = config,
+                           resultfile = parsed_args["output"])
     if parsed_args["verbose"]
         (display_results ∘ find_trials ∘ PkgBenchmark.benchmarkgroup)(results)
     end
