@@ -5,12 +5,12 @@ using BenchmarkTools
 using PkgBenchmark
 
 """
-    find_trials(group::BenchmarkGroup; path=[])
+    find_trials(group::BenchmarkGroup; path=String[])
 
 Recursively traverse a BenchmarkGroup and return a flat dictionary of all BenchmarkTools.Trial objects found
 with their hierarchical path as the key.
 """
-function find_trials(group::BenchmarkGroup; path = [])
+function find_trials(group::BenchmarkGroup; path = String[])
     leaves = Dict{String, BenchmarkTools.Trial}()
 
     for (k, v) in group
@@ -27,9 +27,9 @@ function find_trials(group::BenchmarkGroup; path = [])
 end
 
 function display_results(flat_results::Dict)
-    for (key, trial) in flat_results
+    for key in sort(collect(keys(flat_results)))
         println("• $key")
-        display(trial)
+        display(flat_results[key])
     end
 end
 
@@ -49,6 +49,7 @@ end
 
 function (@main)(args)
     parsed_args = parse_command_line(args)
+    @info "Julia threads: $(Threads.nthreads()) — use `julia -t N` to change"
     results = benchmarkpkg(dirname(@__DIR__); resultfile = parsed_args["output"])
     if parsed_args["verbose"]
         (display_results ∘ find_trials ∘ PkgBenchmark.benchmarkgroup)(results)
