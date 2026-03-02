@@ -251,6 +251,7 @@ which is basically use @sprintf to limit the precision
 function pprint_trial_stats(sstats)
     " - average time per event " * @sprintf("%.2f", sstats.mean) * " ± " *
     @sprintf("%.2f", sstats.sd) * " μs\n" *
+    " - median time per event " * @sprintf("%.2f", sstats.median) * " μs\n" *
     " - lowest time per event " * @sprintf("%.2f", sstats.min) * " μs"
 end
 
