@@ -146,7 +146,7 @@ Also available as [arXiv:2503.08146](https://arxiv.org/abs/2503.08146).
 
 ### Other Articles
 
-- CHEP2023, *Polyglot Jet Finding*: [arXiv:2309.17309](https://arxiv.org/abs/2309.17309), [10.1051/epjconf/202429505017](https://doi.org/10.1051/epjconf)
+- CHEP2023, *Polyglot Jet Finding*: [arXiv:2309.17309](https://arxiv.org/abs/2309.17309), [doi.org/10.1051/epjconf/202429505017](https://doi.org/10.1051/epjconf/202429505017)
 
 ## Copyright
 
