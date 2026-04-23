@@ -1,18 +1,26 @@
 """
-    abstract type FourMomentum end
+    abstract type FourMomentum{T <: Real}
 
-Interface for composite types that includes fields px, py, py, and E
-that represents the components of a four-momentum vector. All concrete
-jets that are used in the package are subtypes of this type.
+Interface for composite types that includes fields `px`, `py`, `pz`, and `E`
+representing the components of a four-momentum vector. All concrete jets used
+in the package are subtypes of this type.
 
-These types are also added as LorentzVectorBase `PxPyPzE` coordinate systems.
+These types are also added as `LorentzVectorBase` `PxPyPzE` coordinate systems.
 """
 abstract type FourMomentum{T <: Real} end
+
+import Base.eltype
+"""
+    eltype(::FourMomentum{T})
+
+Return the parameterised type, `T` of the four momentum.
+"""
+eltype(::FourMomentum{T}) where {T} = T
 
 """
     LorentzVectorBase.coordinate_system(::FourMomentum)
 
-All of this package's FourMomentum types are `PxPyPzE` coordinate systems.
+All of this package's `FourMomentum` types are `PxPyPzE` coordinate systems.
 """
 LorentzVectorBase.coordinate_system(::FourMomentum) = LorentzVectorBase.PxPyPzE()
 LorentzVectorBase.px(v::FourMomentum) = v.px
@@ -37,6 +45,7 @@ py(j::FourMomentum) = j.py
 
 """
     pz(j::FourMomentum)
+
 Return the z-component of the four-momentum vector of `j`.
 """
 pz(j::FourMomentum) = j.pz
@@ -91,7 +100,8 @@ const kt2 = pt2
 
 """
     pt(j::FourMomentum)
-Return the momentum of the four-momentum vector of `j`.
+
+Return the transverse momentum of the four-momentum vector of `j`.
 """
 pt(j::FourMomentum) = LorentzVectorBase.transverse_momentum(j)
 
@@ -121,7 +131,7 @@ const m = mass
 
 Return the azimuthal angle, ϕ, of the four momentum `j` in the range [0, 2π).
 
-Note that the range [0, 2π) differs from the convention in LorentzVectorBase,
+Note that the range [0, 2π) differs from the convention in `LorentzVectorBase`,
 which is [-π, π].
 """
 function phi(j::FourMomentum)
@@ -151,9 +161,9 @@ function rapidity(j::FourMomentum)
 end
 
 """
-    CosTheta(jet::T) where {T <: FourMomentum}
+    CosTheta(j::FourMomentum)
 
-Compute the cosine of the angle between the momentum vector of `jet` and the z-axis.
+Compute the cosine of the angle between the momentum vector of `j` and the z-axis.
 
 # Returns
 - The cosine of the angle between the jet and the z-axis.
@@ -161,7 +171,7 @@ Compute the cosine of the angle between the momentum vector of `jet` and the z-a
 CosTheta(j::FourMomentum) = LorentzVectorBase.cos_theta(j)
 
 """
-    eta(jet::T) where {T <: FourMomentum}
+    eta(j::FourMomentum)
 
 Returns the pseudorapidity (η or eta) of a jet. For this package we
 clamp the return value to our package's `_MaxRap`.
@@ -181,7 +191,7 @@ import Base.+;
 """
     +(jet1::J, jet2::J) where {T <: Real, J <: FourMomentum{T}}
 
-Adds two four-momentum vectors together, returning a new jet.
+Adds two four-momentum vectors together, returning a new jet of the same type.
 
 # Details
 
@@ -194,9 +204,9 @@ function +(jet1::J, jet2::J) where {T <: Real, J <: FourMomentum{T}}
 end
 
 """
-    addjets(jet1::T, jet2::T; cluster_hist_index::Int) where {T <: FourMomentum}
+    addjets(jet1::J, jet2::J; cluster_hist_index::Int = 0) where {T <: Real, J <: FourMomentum{T}}
 
-Add jets' four momenta together, returning a new jet of type `T` with the
+Add jets' four momenta together, returning a new jet of type `J` with the
 specified cluster history index.
 
 # Details
@@ -206,7 +216,7 @@ This method is also known as the `E_scheme` in Fastjet.
 function addjets(jet1::J, jet2::J;
                  cluster_hist_index::Int = 0) where {T <: Real, J <: FourMomentum{T}}
     J(px(jet1) + px(jet2), py(jet1) + py(jet2), pz(jet1) + pz(jet2),
-      energy(jet1) + energy(jet2), cluster_hist_index = cluster_hist_index)
+      energy(jet1) + energy(jet2); cluster_hist_index = cluster_hist_index)
 end
 
 """
@@ -217,7 +227,7 @@ Alias for the `addjets` function, which is the default jet recombination scheme.
 const addjets_escheme = addjets
 
 """
-    addjets_ptscheme(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+    addjets_ptscheme(jet1::J, jet2::J; cluster_hist_index::Int = 0) where {T <: Real, J <: FourMomentum{T}}
 
 Use the massless ``p_T`` scheme for combining two jets, setting the appropriate
 cluster history index for the new jet.
@@ -231,37 +241,42 @@ function addjets_ptscheme(jet1::J, jet2::J;
 end
 
 """
-    preprocess_escheme(jet::T, ::Type{OutputT};
-                                cluster_hist_index::Int = 0) -> OutputT where {T <: FourMomentum,
-                                                                               OutputT <: FourMomentum}
+    preprocess_escheme(jet::J, ::Type{R};
+                                cluster_hist_index::Int = 0) -> R where {T <: Real,
+                                                                         J,
+                                                                         R <: FourMomentum{T}}
 
 Jet preprocessor for the E-scheme, simply copying the four-momentum and assigning the cluster
-history index.
+history index. Note that `J` can be any type that is convertible to `R`.
 """
 function preprocess_escheme(jet::J, ::Type{R};
-                            cluster_hist_index::Int = 0) where {J,
-                                                                R <: FourMomentum}
+                            cluster_hist_index::Int = 0) where {T <: Real,
+                                                                J,
+                                                                R <: FourMomentum{T}}
     R(jet; cluster_hist_index = cluster_hist_index)
 end
 
 """
-    preprocess_ptscheme(jet::T, ::Type{OutputT};
-                             cluster_hist_index::Int = 0) -> OutputT where {T <: FourMomentum,
-                                                                            OutputT <: FourMomentum}
+    preprocess_ptscheme(jet::J, ::Type{R};
+                             cluster_hist_index::Int = 0) -> R where {T <: Real,
+                                                                      J,
+                                                                      R <: FourMomentum{T}}
 
 Jet preprocessor for the massless ``p_T`` schemes, resetting the energy of the
-jet to be equal to the 3-momentum of the input jet.
+jet to be equal to the 3-momentum of the input jet. Note that `J` can be any
+type that is convertible to `R`.
 """
 function preprocess_ptscheme(jet::J, ::Type{R};
-                             cluster_hist_index::Int = 0) where {J,
-                                                                 R <: FourMomentum}
+                             cluster_hist_index::Int = 0) where {T <: Real,
+                                                                 J,
+                                                                 R <: FourMomentum{T}}
     R(px(jet), py(jet), pz(jet), p(jet); cluster_hist_index = cluster_hist_index)
 end
 
 """
     preprocess_ptscheme(particle::Union{LorentzVector, LorentzVectorCyl},
-                             ::Type{OutputT}= PseudoJet,;
-                             cluster_hist_index::Int = 0) -> OutputT where {OutputT <: FourMomentum}
+                        ::Type{R};
+                        cluster_hist_index::Int = 0) where {T <: Real, R <: FourMomentum{T}}
 
 Jet preprocessor for the massless ``p_T`` schemes, resetting the energy of the
 jet to be equal to the 3-momentum of the input jet (generic particle type).
@@ -274,20 +289,22 @@ This function is used to convert a particle of type `LorentzVector` or
 which will make the accessors uniform.)
 """
 function preprocess_ptscheme(particle::Union{LorentzVector, LorentzVectorCyl},
-                             ::Type{OutputT} = PseudoJet;
-                             cluster_hist_index::Int = 0) where {OutputT <: FourMomentum}
+                             ::Type{R};
+                             cluster_hist_index::Int = 0) where {T <: Real,
+                                                                 R <: FourMomentum{T}}
     OutputT(px(particle), py(particle), pz(particle), mag(particle);
             cluster_hist_index = cluster_hist_index)
 end
 
 """
-    addjets_pt2scheme(jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+    addjets_pt2scheme(jet1::J, jet2::J; cluster_hist_index::Int = 0) where {T <: Real, J <: FourMomentum{T}}
 
 Use the massless ``p_T^2`` scheme for combining two jets, setting the
 appropriate cluster history index for the new jet.
 """
 function addjets_pt2scheme(jet1::J, jet2::J;
-                           cluster_hist_index::Int) where {T <: Real, J <: FourMomentum{T}}
+                           cluster_hist_index::Int = 0) where {T <: Real,
+                                                               J <: FourMomentum{T}}
     scale1 = pt2(jet1)
     scale2 = pt2(jet2)
     _addjets_with_scale(scale1, scale2, jet1, jet2, cluster_hist_index)::J
@@ -301,12 +318,12 @@ Preprocessing for `p_T` and `p_T^2` schemes are identical.
 const preprocess_pt2scheme = preprocess_ptscheme
 
 """
-    _addjets_with_scale(scale1::Real, scale2::Real, jet1::T, jet2::T, cluster_hist_index::Int) where {T <: FourMomentum}
+    _addjets_with_scale(scale1, scale2, jet1::J, jet2::J, cluster_hist_index::Int) where {T <: Real, J <: FourMomentum{T}}
 
 Combine two jets as massless objects using the given scale factors for each jet,
 and return the new jet with the cluster history index set.
 """
-function _addjets_with_scale(scale1::Real, scale2::Real, jet1::J, jet2::J,
+function _addjets_with_scale(scale1, scale2, jet1::J, jet2::J,
                              cluster_hist_index::Int) where {T <: Real, J <:
                                                                         FourMomentum{T}}
     new_pt = pt(jet1) + pt(jet2)

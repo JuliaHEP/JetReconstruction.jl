@@ -6,22 +6,26 @@
 import Accessors
 
 """
-    struct PseudoJet <: FourMomentum
+    struct PseudoJet{T <: Real} <: FourMomentum{T}
 
 The `PseudoJet` struct represents a pseudojet, a four-momentum object used in
-jet reconstruction algorithms. Additional information for the link back into the
-history of the clustering is stored in the `_cluster_hist_index` field. There is
-caching of the more expensive calculations for rapidity and azimuthal angle.
+jet reconstruction algorithms. It is parameterized by the type `T` of its 
+momentum components.
+
+Additional information for the link back into the history of the clustering is 
+stored in the `_cluster_hist_index` field. There is caching of the more 
+expensive calculations for rapidity and azimuthal angle.
 
 # Fields
-- `px::Float64`: The x-component of the momentum.
-- `py::Float64`: The y-component of the momentum.
-- `pz::Float64`: The z-component of the momentum.
-- `E::Float64`: The energy component of the momentum.
-- `_cluster_hist_index::Int`: The index of the cluster history.
-- `_pt2::Float64`: The squared transverse momentum.
-- `_rap::Float64`: The rapidity.
-- `_phi::Float64`: The azimuthal angle.
+- `px::T`: The x-component of the momentum.
+- `py::T`: The y-component of the momentum.
+- `pz::T`: The z-component of the momentum.
+- `E::T`: The energy component of the momentum.
+- `_cluster_hist_index::Int`: The index of the cluster history that corresponds 
+  to this PseudoJet
+- `_pt2::T`: The squared transverse momentum.
+- `_rap::T`: The rapidity.
+- `_phi::T`: The azimuthal angle.
 
 """
 struct PseudoJet{T <: Real} <: FourMomentum{T}
@@ -36,10 +40,10 @@ struct PseudoJet{T <: Real} <: FourMomentum{T}
 end
 
 """
-    PseudoJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::Int = 0)
+    PseudoJet(px::T, py::T, pz::T, E::T; cluster_hist_index::Integer = 0) where {T <: Real}
 
-Construct a PseudoJet from a four momentum `(px, py, pz, E)`` with cluster index
-`cluster_hist_index`.
+Construct a parameterised `PseudoJet{T}` from a four momentum `(px, py, pz, E)`
+with cluster index `cluster_hist_index`.
 
 # Details
 
@@ -72,10 +76,10 @@ function PseudoJet(px::T, py::T, pz::T, E::T;
 end
 
 """
-    PseudoJet(px::Tpx, py::Tpy, pz::Tpz, E::TE; cluster_hist_index::Int = 0)
+    PseudoJet(px, py, pz, E; cluster_hist_index::Int = 0)
 
-Constructor to use if it happens that input numerical types are mixed. Then
-the `PseudoJet` is constructed with the promoted type.
+Constructor for mixed input numerical types. The inputs are promoted to a
+common type `T`, and a `PseudoJet{T}` is returned.
 """
 function PseudoJet(px::Tpx, py::Tpy, pz::Tpz, E::TE;
                    cluster_hist_index::Int = 0) where {Tpx, Tpy, Tpz, TE}
@@ -83,16 +87,19 @@ function PseudoJet(px::Tpx, py::Tpy, pz::Tpz, E::TE;
 end
 
 """
-Constructor for explicit parameter type
+    PseudoJet{T}(px, py, pz, E; cluster_hist_index::Integer = 0) where {T <: Real}
+
+Constructor for explicit parameter type `T`.
 """
 function PseudoJet{T}(px, py, pz, E; cluster_hist_index::Integer = 0) where {T <: Real}
     PseudoJet(T(px), T(py), T(pz), T(E); cluster_hist_index)
 end
 
 """
-    const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0; cluster_hist_index = typemin(Int))
+    const invalid_pseudojet::PseudoJet{Float64}
 
 Used to mark an invalid result in case the corresponding substructure tagging fails.
+This constant uses `Float64` as the default type.
 
 ## Deprecated
 This value will be removed in future. It should not be used directly, instead use the `isvalid()` function.
@@ -101,22 +108,22 @@ const invalid_pseudojet = PseudoJet(0.0, 0.0, 0.0, 0.0; cluster_hist_index = typ
 
 import Base.zero
 """
-    function zero(::Type{PseudoJet{T}}) where {T <: Real}
+    zero(::Type{PseudoJet{T}}) where {T <: Real}
 
-Generate an invalid PseudoJet{T}, used to mark an invalid result in case the 
+Generate an invalid `PseudoJet{T}`, used to mark an invalid result in case the 
 corresponding substructure tagging fails.
 
 ## Note
-For technical reasons the rapidity is set to `_Maxrap`.
+For technical reasons the rapidity is set to `_MaxRap`.
 """
 function zero(::Type{PseudoJet{T}}) where {T <: Real}
     PseudoJet{T}(0.0, 0.0, 0.0, 0.0, typemin(Int), 0.0, _MaxRap, 0.0)
 end
 
 """
-    PseudoJet(;pt::Real, rap::Real, phi::Real, m::Real = 0, cluster_hist_index::Int = 0)
+    PseudoJet{T}(;pt, rap, phi, m = 0, cluster_hist_index::Int = 0) where {T <: Real}
 
-Construct a PseudoJet from `(pt, y, ϕ, m)` with the cluster index
+Construct a `PseudoJet{T}` from `(pt, rap, phi, m)` with the cluster index
 `cluster_hist_index`.
 
 # Details
@@ -149,14 +156,20 @@ function PseudoJet(; pt::T, rap::T, phi::T, m = 0,
 end
 
 """
-    PseudoJet(jet::PseudoJet; cluster_hist_index::Int = 0)
+    PseudoJet{T}(jet::PseudoJet{T}; cluster_hist_index::Int = 0) where {T <: Real}
 
-Construct a PseudoJet from another `PseudoJet` object and assign given cluster index to it.
+Construct a `PseudoJet` from another `PseudoJet` object and assign the given cluster index to it.
 """
 function PseudoJet{T}(jet::PseudoJet{T}; cluster_hist_index::Int = 0) where {T <: Real}
     Accessors.@set jet._cluster_hist_index = cluster_hist_index
 end
 
+"""
+    PseudoJet{O}(jet::PseudoJet{T}; cluster_hist_index::Int = 0) where {T <: Real, O <: Real}
+
+Construct a `PseudoJet{O}` from another `PseudoJet{T}` object and assign given
+cluster index to it. Used to change the underlying type from `T` to `O`.
+"""
 function PseudoJet{O}(jet::PseudoJet{T};
                       cluster_hist_index::Int = 0) where {T <: Real, O <: Real}
     PseudoJet{O}(jet.px, jet.py, jet.pz, jet.E; cluster_hist_index)
@@ -165,16 +178,28 @@ end
 """
     PseudoJet(jet::LorentzVector; cluster_hist_index::Int = 0)
 
-Construct a PseudoJet from a `LorentzVector` object with the cluster index.
+Construct a `PseudoJet` from a `LorentzVector` object with the cluster index.
+The underlying type is inferred from the `LorentzVector` components.
 """
 function PseudoJet(jet::LorentzVector; cluster_hist_index::Int = 0)
     PseudoJet(jet.x, jet.y, jet.z, jet.t; cluster_hist_index)
 end
 
 """
+    PseudoJet{T}(jet::LorentzVector; cluster_hist_index::Int = 0) where {T <: Real}
+
+Construct a `T` parameterised `PseudoJet` from a `LorentzVector` object with
+the cluster index.
+"""
+function PseudoJet{T}(jet::LorentzVector; cluster_hist_index::Int = 0) where {T <: Real}
+    PseudoJet(T(jet.x), T(jet.y), T(jet.z), T(jet.t); cluster_hist_index)
+end
+
+"""
     PseudoJet(jet::LorentzVectorCyl; cluster_hist_index::Int = 0)
 
-Construct a PseudoJet from a `LorentzVectorCyl` object with the given cluster index.
+Construct a `PseudoJet` from a `LorentzVectorCyl` object with the given cluster index.
+The underlying type is inferred from the `LorentzVectorCyl` components.
 """
 function PseudoJet(jet::LorentzVectorCyl; cluster_hist_index::Int = 0)
     PseudoJet(; pt = pt(jet), rap = rapidity(jet), phi = phi(jet), m = mass(jet),
@@ -182,16 +207,27 @@ function PseudoJet(jet::LorentzVectorCyl; cluster_hist_index::Int = 0)
 end
 
 """
+function PseudoJet{T}(jet::LorentzVectorCyl; cluster_hist_index::Int = 0) where {T <: Real}
+
+Construct a `T` parameterised `PseudoJet` from a `LorentzVectorCyl` object with
+the given cluster index.
+"""
+function PseudoJet{T}(jet::LorentzVectorCyl; cluster_hist_index::Int = 0) where {T <: Real}
+    PseudoJet(; pt = T(pt(jet)), rap = T(rapidity(jet)), phi = T(phi(jet)),
+              m = T(mass(jet)),
+              cluster_hist_index)
+end
+
+"""
     PseudoJet(jet::Any; cluster_hist_index::Int = 0)
 
-Construct a PseudoJet from a generic object `jet` with the given cluster index.
-These generic jets must implement the LorentzVectorBase interface from
-`LorentzVectorBase.jl`.
+Construct a `PseudoJet` from a generic object `jet` with the given cluster index.
+The generic jet must implement the `LorentzVectorBase` interface.
 
 # Details
 
 This function is used to convert a generic object `jet` into a `PseudoJet`.
-These generic jets should implement the LorentzVectorBase interface: the
+The generic jet should implement the `LorentzVectorBase` interface: the
 `LorentzVectorBase.{px,py,pz,energy}()` methods will be called to retrieve
 the four momentum components.
 
@@ -210,12 +246,40 @@ function PseudoJet(jet::Any; cluster_hist_index::Int = 0)
     end
 end
 
+"""
+    PseudoJet{T}(jet::Any; cluster_hist_index::Int = 0)
+
+Construct a `PseudoJet{T}` from a generic object `jet` with the given cluster
+index. The generic jet must implement the `LorentzVectorBase` interface.
+
+# Details
+
+This function is used to convert a generic object `jet` into a `PseudoJet`.
+The generic jet should implement the `LorentzVectorBase` interface: the
+`LorentzVectorBase.{px,py,pz,energy}()` methods will be called to retrieve
+the four momentum components.
+
+The `cluster_hist_index` is optional, but needed if the `jet` is part of a
+reconstruction sequence. If not provided, it defaults to `0` as an "invalid"
+value.
+"""
+function PseudoJet{T}(jet::Any; cluster_hist_index::Int = 0) where {T <: Real}
+    # Check that the interface is implemented
+    if hasmethod(LorentzVectorBase.coordinate_system, (typeof(jet),))
+        return PseudoJet(T(LorentzVectorBase.px(jet)), T(LorentzVectorBase.py(jet)),
+                         T(LorentzVectorBase.pz(jet)), T(LorentzVectorBase.energy(jet));
+                         cluster_hist_index)
+    else
+        throw(ArgumentError("PseudoJet cannot be constructed from object of type '$(typeof(jet))'"))
+    end
+end
+
 import Base.isvalid
 """
     isvalid(j::PseudoJet)
 
 Function to check whether a given `PseudoJet` object is non-zero or not.
-Primarily to use for checking the validity of outputs of substructure tagging.
+Primarily used for checking the validity of outputs of substructure tagging.
 
 # Returns
 - `Bool`: `true` if the `PseudoJet` object is non-zero (valid), `false` otherwise. 
@@ -228,7 +292,7 @@ Primarily to use for checking the validity of outputs of substructure tagging.
 Return the azimuthal angle, ϕ, of a `PseudoJet` object `p` in the range
 [0, 2π). This accessor uses the pre-calculated value that the struct has.
 
-Note that the range [0, 2π) differs from the convention in LorentzVectorBase,
+Note that the range [0, 2π) differs from the convention in `LorentzVectorBase`,
 which is [-π, π].
 """
 phi(p::PseudoJet) = p._phi
@@ -254,8 +318,8 @@ LorentzVectorBase.pt2(p::PseudoJet) = p._pt2
 """
     pt(p::PseudoJet)
 
-Return the scalar transverse momentum (pt) of a PseudoJet. This accessor uses
-the precalculated value that the struct has.
+Return the scalar transverse momentum (pt) of a `PseudoJet`. This accessor uses
+the pre-calculated value that the struct has.
 """
 pt(p::PseudoJet) = sqrt(p._pt2)
 LorentzVectorBase.pt(p::PseudoJet) = sqrt(p._pt2)
