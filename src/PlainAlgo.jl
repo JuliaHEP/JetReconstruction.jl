@@ -241,32 +241,7 @@ function plain_jet_reconstruct(particles::AbstractVector{T};
     # Integer p if possible
     p = (round(p) == p) ? Int(p) : p
 
-    if isnothing(preprocess)
-        if T == PseudoJet
-            # If we don't have a preprocessor, we just need to copy to our own
-            # PseudoJet objects
-            recombination_particles = copy(particles)
-            sizehint!(recombination_particles, length(particles) * 2)
-        else
-            # We assume a constructor for PseudoJet that can ingest the appropriate
-            # type of particle. N.B. there is a small hack to ensure we get the
-            # correct parameterised type for the PseudoJet vector.
-            recombination_particles = Vector{typeof(PseudoJet(particles[1]))}(undef, 0)
-            sizehint!(recombination_particles, length(particles) * 2)
-            for (i, particle) in enumerate(particles)
-                push!(recombination_particles, PseudoJet(particle; cluster_hist_index = i))
-            end
-        end
-    else
-        # We have a preprocessor function that we need to call to modify the
-        # input particles
-        recombination_particles = Vector{typeof(PseudoJet(particles[1]))}(undef, 0)
-        sizehint!(recombination_particles, length(particles) * 2)
-        for (i, particle) in enumerate(particles)
-            push!(recombination_particles,
-                  preprocess(particle, PseudoJet; cluster_hist_index = i))
-        end
-    end
+    recombination_particles = construct_reco_jets(particles, PseudoJet, preprocess)
 
     # Now call the actual reconstruction method, tuned for our internal EDM
     _plain_jet_reconstruct!(recombination_particles; algorithm = algorithm, p = p, R = R,
@@ -274,9 +249,9 @@ function plain_jet_reconstruct(particles::AbstractVector{T};
 end
 
 """
-    _plain_jet_reconstruct!(particles::AbstractVector{PseudoJet};
+    _plain_jet_reconstruct!(particles::AbstractVector{PseudoJet{T}};
                            algorithm::JetAlgorithm.Algorithm, p::Real, R = 1.0,
-                           recombine = addjets_escheme)
+                           recombine = addjets_escheme) where {T <: Real}
 
 This is the internal implementation of jet reconstruction using the plain
 algorithm. It takes a vector of `PseudoJet` `particles` representing the input
@@ -286,7 +261,7 @@ Users of the package should use the `plain_jet_reconstruct` function as their
 entry point to this jet reconstruction.
 
 # Arguments
-- `particles::AbstractVector{PseudoJet}`: A vector of `PseudoJet` particles used
+- `particles::AbstractVector{PseudoJet{T}}`: A vector of `PseudoJet` particles used
   as input for jet reconstruction. This vector must supply the correct
   `cluster_hist_index` values and will be *mutated* as part of the returned
   `ClusterSequence`.

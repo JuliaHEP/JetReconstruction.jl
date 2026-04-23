@@ -1,7 +1,7 @@
 using Statistics
 
 """
-    struct SoftKiller
+    struct SoftKiller{T <: Real}
 
 Implements the SoftKiller pileup mitigation algorithm, inspired by the FastJet contrib package.
 
@@ -17,8 +17,8 @@ pt threshold by finding the median of the maximum pt in each tile. Particles wit
 are removed from the event.
 
 # Fields
-- `_ymax::T`: Maximum rapidity of the grid.
 - `_ymin::T`: Minimum rapidity of the grid.
+- `_ymax::T`: Maximum rapidity of the grid.
 - `_requested_drap::T`: Requested grid spacing in rapidity.
 - `_requested_dphi::T`: Requested grid spacing in phi.
 - `_ntotal::Int`: Total number of tiles.
@@ -29,8 +29,6 @@ are removed from the event.
 - `_inverse_dphi::T`: Inverse of phi grid spacing.
 - `_ny::Int`: Number of tiles in rapidity.
 - `_nphi::Int`: Number of tiles in phi.
-
-where `T <: Real``
 
 # Constructors
 - `SoftKiller(rapmin::T, rapmax::T, drap::T, dphi::T)`: 
@@ -79,7 +77,7 @@ struct SoftKiller{T <: Real}
         cell_area = dy * dphi_final
 
         new{T}(rapmin, rapmax, drap, dphi, ntotal, dy, dphi_final, cell_area,
-            inverse_dy, inverse_dphi, ny, nphi)
+               inverse_dy, inverse_dphi, ny, nphi)
     end
 
     """
@@ -93,7 +91,7 @@ struct SoftKiller{T <: Real}
 end
 
 """
-    tile_index(sk::SoftKiller, p::PseudoJet)
+    tile_index(sk::SoftKiller{U}, p::PseudoJet{T}) where {U, T}
 
 Return the tile index for a given `PseudoJet` `p` in the SoftKiller grid `sk`.
 Returns -1 if the jet is outside the grid bounds.
@@ -122,7 +120,7 @@ end
 import Base: show
 
 """
-    show(io::IO, sk::SoftKiller)
+    show(io::IO, sk::SoftKiller{U}) where {U}
 
 Pretty-print the SoftKiller grid configuration.
 """
@@ -151,13 +149,14 @@ function select_ABS_RAP_max(event, absrapmax)
 end
 
 """
-    softkiller(sk::SoftKiller, event::Vector{PseudoJet})
+    softkiller(sk::SoftKiller{U}, event::Vector{J}) where {U, T <: Real, J <: PseudoJet{T}}
 
 Apply the SoftKiller algorithm to an event (a vector of `PseudoJet`s).
 Returns a tuple `(reduced_event, pt_threshold)`, where `reduced_event` is the filtered
 event and `pt_threshold` is the computed pt threshold.
 """
-function softkiller(sk::SoftKiller{U}, event::Vector{J}) where {U, T <: Real, J <: PseudoJet{T}}
+function softkiller(sk::SoftKiller{U},
+                    event::Vector{J}) where {U, T <: Real, J <: PseudoJet{T}}
     if (sk._ntotal < 2)
         throw("SoftKiller not properly initialized.")
     end

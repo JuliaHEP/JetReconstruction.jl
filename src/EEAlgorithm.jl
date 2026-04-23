@@ -3,19 +3,18 @@ const large_distance = 16.0 # = 4^2
 const large_dij = 1.0e6
 
 """
-    angular_distance(eereco, i, j) -> Float64
+    angular_distance(eereco, i, j)
 
 Calculate the angular distance between two jets `i` and `j` using the formula
 ``1 - cos(θ_{ij})``.
 
 # Arguments
 - `eereco`: The array of `EERecoJet` objects.
-- `i`: The first jet.
-- `j`: The second jet.
+- `i`: The first jet index.
+- `j`: The second jet index.
 
 # Returns
-- `Float64`: The angular distance between `i` and `j`, which is ``1 -
-  cos\theta``.
+- The angular distance between `i` and `j`, which is ``1 - cos\theta``.
 """
 @inline function angular_distance(eereco, i, j)
     @inbounds @muladd 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
@@ -42,19 +41,19 @@ Valencia metric (independent of `dij_factor`).
 end
 
 """
-    valencia_distance(eereco, i, j, invR2) -> Float64
+    valencia_distance(eereco, i, j, invR2)
 
 Calculate the Valencia distance between two jets `i` and `j` as
 ``min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos(θ_{ij})) * invR2``.
 
 # Arguments
 - `eereco`: The array of `EERecoJet` objects.
-- `i`: The first jet.
-- `j`: The second jet.
+- `i`: The first jet index.
+- `j`: The second jet index.
 - `invR2`: The inverse square of the radius, i.e. ``1 / R^2``.
 
 # Returns
-- `Float64`: The Valencia distance between `i` and `j`.
+- The Valencia distance between `i` and `j`.
 """
 Base.@propagate_inbounds @inline function valencia_distance(eereco, i, j, invR2)
     @muladd angular_dist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
@@ -63,7 +62,7 @@ Base.@propagate_inbounds @inline function valencia_distance(eereco, i, j, invR2)
 end
 
 """
-    valencia_beam_distance(eereco, i, γ, β) -> Float64
+    valencia_beam_distance(eereco, i, γ, β)
 
 Calculate the Valencia beam distance for jet `i` using the FastJet ValenciaPlugin
 definition: ``d_iB = E_i^{2β} * (sin θ_i)^{2γ}``, where ``cos θ_i = nz``
@@ -77,7 +76,7 @@ for unit direction cosines. Since ``sin^2 θ = 1 - nz^2``, we implement
 - `β`: The energy exponent (same as `p` in our implementation).
 
 # Returns
-- `Float64`: The Valencia beam distance for jet `i`.
+- The Valencia beam distance for jet `i`.
 """
 Base.@propagate_inbounds @inline function valencia_beam_distance(eereco, i, γ, β)
     nz_i = eereco[i].nz
@@ -310,16 +309,16 @@ Base.@propagate_inbounds @inline function copy_to_slot!(eereco, i, j)
 end
 
 """
-    ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
+    ee_genkt_algorithm(particles::AbstractVector{J}; algorithm::JetAlgorithm.Algorithm,
                        p::Union{Real, Nothing} = nothing, R = 4.0, 
                        γ::Union{Real, Nothing} = 1.0, β::Union{Real, Nothing} = nothing,
                        recombine = addjets_escheme,
-                       preprocess = preprocess_escheme) where {T}
+                       preprocess = preprocess_escheme) where {J}
 
 Run an e+e- reconstruction algorithm on a set of initial particles.
 
 # Arguments
-- `particles::AbstractVector{T}`: A vector of particles to be clustered.
+- `particles::AbstractVector{J}`: A vector of particles to be clustered.
 - `algorithm::JetAlgorithm.Algorithm`: The jet algorithm to use.
 - `p::Union{Real, Nothing} = nothing`: The power parameter for the algorithm.
   Must be specified for EEKt algorithm. 
@@ -371,31 +370,7 @@ function ee_genkt_algorithm(particles::AbstractVector{J}; algorithm::JetAlgorith
         R = 4.0
     end
 
-    if isnothing(preprocess)
-        if J == EEJet
-            # If we don't have a preprocessor, we just need to copy to our own
-            # EEJet objects
-            recombination_particles = copy(particles)
-            sizehint!(recombination_particles, length(particles) * 2)
-        else
-            # We assume a constructor for EEJet that can ingest the appropriate
-            # type of particle
-            recombination_particles = Vector{typeof(EEJet(particles[1]))}(undef, 0)
-            sizehint!(recombination_particles, length(particles) * 2)
-            for (i, particle) in enumerate(particles)
-                push!(recombination_particles, EEJet(particle; cluster_hist_index = i))
-            end
-        end
-    else
-        # We have a preprocessor function that we need to call to modify the
-        # input particles
-        recombination_particles = Vector{typeof(EEJet(particles[1]))}(undef, 0)
-        sizehint!(recombination_particles, length(particles) * 2)
-        for (i, particle) in enumerate(particles)
-            push!(recombination_particles,
-                  preprocess(particle, EEJet; cluster_hist_index = i))
-        end
-    end
+    recombination_particles = construct_reco_jets(particles, EEJet, preprocess)
 
     # Compute invR2 once and thread it through
     invR2 = inv(R * R)
@@ -406,30 +381,26 @@ function ee_genkt_algorithm(particles::AbstractVector{J}; algorithm::JetAlgorith
 end
 
 """
-    _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
+    _ee_genkt_algorithm!(particles::AbstractVector{EEJet{T}};
                         algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
-                        invR2::Union{Real, Nothing} = nothing, γ::Real = 1.0,
-                        recombine = addjets_escheme)
+                        invR2::Real = 1/(16.0), γ::Union{Real, Nothing} = 1.0,
+                        recombine = addjets_escheme) where {T <: Real}
 
 This function is the internal implementation of the e+e- jet clustering
-algorithm. It takes a vector of `EEJet` `particles` representing the input
+algorithm. It takes a vector of `EEJet{T}` `particles` representing the input
 particles and reconstructs jets based on the specified parameters.
 
-Users of the package should use the `ee_genkt_algorithm` function as their
-entry point to this jet reconstruction.
-
 # Arguments
-- `particles::AbstractVector{EEJet}`: A vector of `EEJet` particles used
+- `particles::AbstractVector{EEJet{T}}`: A vector of `EEJet{T}` particles used
   as input for jet reconstruction. This vector must supply the correct
-  `cluster_hist_index` values and will be *mutated* as part of the returned
+  `_cluster_hist_index` values and will be *mutated* as part of the returned
   `ClusterSequence`.
 - `algorithm::JetAlgorithm.Algorithm`: The jet reconstruction algorithm to use.
-- `p::Real`: The power to which the transverse momentum (`pt`) of each particle
-  is raised.
-- `R = 4.0`: The jet radius parameter.
-- `invR2::Real = 1/(16.0)`: The inverse square of the radius, i.e. ``1 / R^2``.
-- `γ::Real = 1.0`: Angular exponent for the Valencia beam metric (ignored for other algorithms).
-- `recombine = addjets_escheme`: The recombination function used to merge two jets.
+- `p::Real`: The power value.
+- `R`: The jet radius parameter.
+- `invR2`: The inverse square of the radius, i.e. ``1 / R^2``.
+- `γ`: Angular exponent for the Valencia beam metric (ignored for other algorithms).
+- `recombine`: The recombination function used to merge two jets.
 
 # Returns
 - `clusterseq`: The resulting `ClusterSequence` object representing the
