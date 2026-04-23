@@ -21,6 +21,11 @@ using JetReconstruction
 # Parsing for algorithm and strategy enums
 include(joinpath(@__DIR__, "parse-options.jl"))
 
+# Jet numerical types that we allow to be set on the CLI
+const allow_jet_numtypes = Dict("Float16" => Float16,
+                                "Float32" => Float32,
+                                "Float64" => Float64)
+
 """
     profile_code(events::Vector{Vector{T}}, profile_subdir, nsamples; R = 0.4, p = -1,
                       algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
@@ -205,7 +210,8 @@ function parse_command_line(args)
         default = 0
 
         "--ptmin"
-        help = "Minimum p_t for final inclusive jets (energy unit is the same as the input clusters, usually GeV)"
+        help = """Minimum p_t for final inclusive jets (energy unit is the 
+            same as the input clusters, usually GeV)"""
         arg_type = Float64
         default = 5.0
 
@@ -243,6 +249,10 @@ function parse_command_line(args)
         help = """Recombination scheme to use for jet reconstruction: $(join(JetReconstruction.AllRecombinationSchemes, ", "))"""
         arg_type = RecombinationScheme.Recombine
         default = RecombinationScheme.ESchemeRaw
+
+        "--numtype"
+        help = """Numerical type to use for the reconstruction. Supported values are 
+            $(join(keys(allow_jet_numtypes), ", ")). The default is Float64"""
 
         "--nsamples", "-m"
         help = "Number of measurement points to acquire."
@@ -304,15 +314,26 @@ function main()
         args[:algorithm] = JetAlgorithm.AntiKt
     end
 
+    # Were we passed a (valid) numerical type?
+    Numtype = Float64
+    if !isnothing(args[:numtype])
+        if haskey(allow_jet_numtypes, args[:numtype])
+            Numtype = allow_jet_numtypes[args[:numtype]]
+        else
+            @error "Numerical type argument $(args[:numtype]) is invalid"
+            exit(1)
+        end
+    end
+
     # Try to read events into the correct type!
     if JetReconstruction.is_ee(args[:algorithm])
-        jet_type = EEJet{Float64}
+        Jettype = EEJet{Numtype}
     else
-        jet_type = PseudoJet{Float64}
+        Jettype = PseudoJet{Numtype}
     end
-    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file], jet_type;
-                                                                  maxevents = args[:maxevents],
-                                                                  skipevents = args[:skip])
+    events::Vector{Vector{Jettype}} = read_final_state_particles(args[:file], Jettype;
+                                                                 maxevents = args[:maxevents],
+                                                                 skipevents = args[:skip])
 
     # Major switch between modes of running
     trial_stats = nothing
