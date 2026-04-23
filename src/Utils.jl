@@ -21,22 +21,22 @@ open_with_stream(fname::AbstractString) = begin
 end
 
 """
-    read_final_state_particles(fname, ::Type{T} = PseudoJet; maxevents = -1, skipevents = 0) where {T}
+    read_final_state_particles(fname, ::Type{T} = PseudoJet{Float64}; maxevents = -1, skipevents = 0) where {T}
 
-Reads final state particles from a file and returns them as a vector of type T.
+Reads final state particles from a file and returns them as a vector of type `T`.
 
 # Arguments
 - `fname`: The name of the HepMC3 ASCII file to read particles from. If the file
-  is gzipped, the function will automatically decompress it.
-- `::Type{T}=PseudoJet`: The type of object to construct and return.
-- `maxevents=-1`: The maximum number of events to read. -1 means all events will
+  is gzipped or zstd compressed, the function will automatically decompress it.
+- `::Type{T} = PseudoJet{Float64}`: The type of object to construct and return.
+- `maxevents = -1`: The maximum number of events to read. -1 means all events will
   be read.
-- `skipevents=0`: The number of events to skip before an event is included.
+- `skipevents = 0`: The number of events to skip before an event is included.
 
 # Returns
-A vector of vectors of T objects, where each inner vector represents all
-the particles of a particular event. In particular T can be `PseudoJet` or
-a `LorentzVector` type. Note, if T is not `PseudoJet`, the order of the
+A vector of vectors of `T` objects, where each inner vector represents all
+the particles of a particular event. In particular `T` can be `PseudoJet{U}` or
+a `LorentzVector` type. Note, if `T` is not a `FourMomentum` subtype, the order of the
 arguments in the constructor must be `(t, x, y, z)`.
 """
 function read_final_state_particles(fname, ::Type{T} = PseudoJet{Float64}; maxevents = -1,
@@ -73,7 +73,7 @@ function read_final_state_particles(fname, ::Type{T} = PseudoJet{Float64}; maxev
 end
 
 """
-    final_jets(jets::Vector{T}, ptmin::AbstractFloat=0.0)
+    final_jets(jets::Vector{T}, ptmin::Real = 0.0) where {T}
 
 This function takes a vector of `T` objects, which should be jets, and a minimum
 transverse momentum `ptmin` as input. It returns a vector of `FinalJet` objects
@@ -81,7 +81,7 @@ that satisfy the transverse momentum condition.
 
 # Arguments
 - `jets::Vector{T}`: A vector of `T` objects representing the input jets.
-- `ptmin::AbstractFloat=0.0`: The minimum transverse momentum required for a jet
+- `ptmin::Real = 0.0`: The minimum transverse momentum required for a jet
   to be included in the final jets vector.
 
 # Returns

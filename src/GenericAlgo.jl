@@ -2,7 +2,7 @@
     jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algorithm,
                          p::Union{Real, Nothing} = nothing, R = 1.0, 
                          γ::Union{Real, Nothing} = nothing,
-                         recombine = addjets_eschene, preprocess = preprocess_escheme,
+                         recombine = addjets_escheme, preprocess = preprocess_escheme,
                          strategy::RecoStrategy.Strategy = RecoStrategy.Best)
 
 Reconstructs jets from a collection of particles using a specified algorithm and
@@ -78,6 +78,20 @@ function jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algo
                          γ::Union{Real, Nothing} = nothing,
                          recombine = addjets_escheme, preprocess = preprocess_escheme,
                          strategy::RecoStrategy.Strategy = RecoStrategy.Best)
+
+    # If we have no inputs, do nothing...
+    if length(particles) <= 0
+        @warn "Jet reconstruction called with no input particles"
+        return ClusterSequence(algorithm, isnothing(p) ? 0.0 : Float64(p),
+                               R, strategy, Vector{PseudoJet{Float64}}(undef, 0),
+                               0, Vector{HistoryElement{Float64}}(undef, 0), 0.0)
+    end
+
+    # Can't work with this...
+    if R <= 0.0 || R > 2π
+        throw(ErrorException("Invalid R value: $R"))
+    end
+
     if is_pp(algorithm)
         # We assume a pp reconstruction
         if strategy == RecoStrategy.Best
@@ -88,12 +102,12 @@ function jet_reconstruct(particles::AbstractVector; algorithm::JetAlgorithm.Algo
         elseif strategy == RecoStrategy.N2Tiled
             alg = tiled_jet_reconstruct
         else
-            throw(ErrorException("Invalid strategy: $(strategy)"))
+            throw(ErrorException("Invalid strategy: $strategy"))
         end
     elseif is_ee(algorithm)
         alg = ee_genkt_algorithm
     else
-        throw(ErrorException("Invalid algorithm neither pp nor ee: $(algorithm)"))
+        throw(ErrorException("Invalid algorithm neither pp nor ee: $algorithm"))
     end
 
     # Now call the chosen algorithm, passing through the other parameters
