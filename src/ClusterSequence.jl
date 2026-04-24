@@ -77,7 +77,8 @@ function HistoryElement{T}(jetp_index) where {T <: Real}
 end
 
 """
-    initial_history(particles::AbstractVector{J}) where {T <: Real, J <: FourMomentum{T}}
+    initial_history(particles::AbstractVector{A}) where {T <: Real, J <: FourMomentum{T},
+                                              A <: AbstractVector{J}}
 
 Create an initial history for the given particles.
 
@@ -133,8 +134,8 @@ parameter `T`.
 """
 struct ClusterSequence{T <: Real, J <: FourMomentum{T}}
     algorithm::JetAlgorithm.Algorithm
-    power::Float64
-    R::Float64
+    power::T
+    R::T
     strategy::RecoStrategy.Strategy
     jets::Vector{J}
     n_initial_jets::Int
