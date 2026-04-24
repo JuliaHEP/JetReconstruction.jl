@@ -14,10 +14,10 @@ Compute the distance between points in a 2D space defined by rapidity and phi co
 # Returns
 - `distance::Float64`: The distance between the two points.
 """
-Base.@propagate_inbounds function dist(i, j, rapidity_array, phi_array)
+Base.@propagate_inbounds function dist(i, j, rapidity_array::Vector{T}, phi_array::Vector{T}) where {T <: Real}
     drapidity = rapidity_array[i] - rapidity_array[j]
     dphi = abs(phi_array[i] - phi_array[j])
-    dphi = ifelse(dphi > pi, 2pi - dphi, dphi)
+    dphi = ifelse(dphi > T(pi), T(2pi) - dphi, dphi)
     @muladd drapidity * drapidity + dphi * dphi
 end
 
@@ -38,7 +38,7 @@ neighbor is given by the distance `nndist[i]` applying the lower of the
 # Returns
 - The computed dij value.
 """
-Base.@propagate_inbounds function dij(i, kt2_array, nn, nndist)
+Base.@propagate_inbounds function dij(i, kt2_array::Vector{T}, nn, nndist) where {T <: Real}
     j = nn[i]
     d = nndist[i]
     d * min(kt2_array[i], kt2_array[j])
@@ -65,8 +65,8 @@ respectively, both for particle `i` and the checked particles `[from:to]` (hence
 - `nn`: The array that stores the nearest neighbor indices.
 """
 Base.@propagate_inbounds function upd_nn_crosscheck!(i::Int, from::Int, to::Int,
-                                                     rapidity_array, phi_array, R2, nndist,
-                                                     nn)
+                                                     rapidity_array::Vector{T}, phi_array::Vector{T}, R2::T, nndist,
+                                                     nn) where {T <: Real}
     nndist_min = R2
     nn_min = i
     @inbounds @simd for j in from:to
@@ -106,7 +106,7 @@ respectively, only for particle `i` (hence *nocross*).
 - `nn`: The array that stores the nearest neighbor indices.
 """
 Base.@propagate_inbounds function upd_nn_nocross!(i::Int, from::Int, to::Int,
-                                                  rapidity_array, phi_array, R2, nndist, nn)
+                                                  rapidity_array::Vector{T}, phi_array::Vector{T}, R2::T, nndist, nn) where {T <: Real}
     nndist_min = R2
     nn_min = i
     @inbounds @simd for j in from:(i - 1)
@@ -156,8 +156,8 @@ Finally, it checks if the nearest neighbor of `k` is the total number of
 particles `Nn` and updates it to `j` if necessary.
 
 """
-Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array, rapidity_array,
-                                               phi_array, R2, nndist, nn, nndij)
+Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array::Vector{T}, rapidity_array::Vector{T},
+                                               phi_array::Vector{T}, R2::T, nndist, nn, nndij) where {T <: Real}
     nnk = nn[k] # Nearest neighbour of k
     if nnk == i || nnk == j
         # Our old nearest neighbour is one of the merged particles
@@ -229,11 +229,11 @@ jets = plain_jet_reconstruct(particles; algorithm = JetAlgorithm.Kt, R = 1.0)
 jets = plain_jet_reconstruct(particles; algorithm = JetAlgorithm.GenKt, p = -0.5, R = 0.4)
 ```
 """
-function plain_jet_reconstruct(particles::AbstractVector{T};
+function plain_jet_reconstruct(particles::AbstractVector{P};
                                algorithm::JetAlgorithm.Algorithm,
                                p::Union{Real, Nothing} = nothing, R = 1.0,
                                recombine = addjets_escheme,
-                               preprocess = preprocess_escheme) where {T}
+                               preprocess = preprocess_escheme) where {P}
 
     # Get consistent algorithm power
     p = get_algorithm_power(p = p, algorithm = algorithm)
@@ -280,6 +280,9 @@ function _plain_jet_reconstruct!(particles::AbstractVector{PseudoJet{T}};
                                  recombine = addjets_escheme) where {T <: Real}
     # Bounds
     N::Int = length(particles)
+
+    p = T(p)
+    R = T(R)
     # Parameters
     R2 = R^2
 
