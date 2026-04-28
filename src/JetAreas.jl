@@ -196,10 +196,7 @@ function _postprocess_area(cs::ClusterSequence{PseudoJet},
                                          area_4vectors[parent2];
                                          cluster_hist_index = i,)
         else
-            # codecov: ignore -- invalid history state (parent2 == 0)
-            areas[i] = 0.0
-            area_4vectors[i] = _zero_pseudojet(cluster_hist_index = i)
-            is_pure_ghost[i] = false
+            error("Invalid cluster history at index $i: parent2 = $parent2") # COV_EXCL_LINE
         end
     end
 
