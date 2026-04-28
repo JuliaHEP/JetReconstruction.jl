@@ -19,8 +19,7 @@ Base.@kwdef struct GhostedAreaSpec
     grid_scatter::Float64 = 1.0
     kt_scatter::Float64 = 0.1
     mean_ghost_pt::Float64 = 1.0e-100
-    seed::Union{Nothing,Int} = nothing
-
+    seed::Union{Nothing, Int} = nothing
 end
 
 struct GhostGridSpec
@@ -32,7 +31,7 @@ struct GhostGridSpec
     n_ghosts::Int
 end
 
-function _ghost_grid_spec(spec::GhostedAreaSpec) :: GhostGridSpec
+function _ghost_grid_spec(spec::GhostedAreaSpec)::GhostGridSpec
     spec.repeat == 1 || throw(ArgumentError("jet area repeat > 1 is not implemented yet"))
 
     requested_spacing = sqrt(spec.ghost_area)
@@ -50,30 +49,28 @@ function _ghost_grid_spec(spec::GhostedAreaSpec) :: GhostGridSpec
     return GhostGridSpec(nphi, nrap, dphi, drap, actual_ghost_area, n_ghosts)
 end
 
-_copy_as_pseudojet(jet; cluster_hist_index::Int) = PseudoJet(
-    px(jet),
-    py(jet),
-    pz(jet),
-    E(jet);
-    cluster_hist_index = cluster_hist_index,
-)
+function _copy_as_pseudojet(jet; cluster_hist_index::Int)
+    PseudoJet(px(jet),
+              py(jet),
+              pz(jet),
+              E(jet);
+              cluster_hist_index = cluster_hist_index,)
+end
 
-_zero_pseudojet(; cluster_hist_index::Int = 0) = PseudoJet(
-    0.0,
-    0.0,
-    0.0,
-    0.0;
-    cluster_hist_index = cluster_hist_index,
-)
+function _zero_pseudojet(; cluster_hist_index::Int = 0)
+    PseudoJet(0.0,
+              0.0,
+              0.0,
+              0.0;
+              cluster_hist_index = cluster_hist_index,)
+end
 
 function _scale_as_pseudojet(jet, scale::Real; cluster_hist_index::Int)
-    return PseudoJet(
-        scale * px(jet),
-        scale * py(jet),
-        scale * pz(jet),
-        scale * E(jet);
-        cluster_hist_index = cluster_hist_index,
-    )
+    return PseudoJet(scale * px(jet),
+                     scale * py(jet),
+                     scale * pz(jet),
+                     scale * E(jet);
+                     cluster_hist_index = cluster_hist_index,)
 end
 
 function _make_area_ghosts(spec::GhostedAreaSpec)
@@ -84,7 +81,7 @@ function _make_area_ghosts(spec::GhostedAreaSpec)
     sizehint!(ghosts, grid.n_ghosts)
 
     #FastJet-style FJ3 layout: irap runs from -nrap to nrap - 1.
-    for irap in -grid.nrap:(grid.nrap - 1)
+    for irap in (-grid.nrap):(grid.nrap - 1)
         for iphi in 0:(grid.nphi - 1)
             phi = (iphi + 0.5) * grid.dphi
             phi += grid.dphi * (rand(rng) - 0.5) * spec.grid_scatter
@@ -104,16 +101,12 @@ function _make_area_ghosts(spec::GhostedAreaSpec)
             ghost_pz = 0.5 * (pplus - pminus)
             ghost_e = 0.5 * (pplus + pminus)
 
-            push!(
-                ghosts,
-                PseudoJet(
-                    ghost_px,
-                    ghost_py,
-                    ghost_pz,
-                    ghost_e;
-                    cluster_hist_index = 0,
-                ),
-            )
+            push!(ghosts,
+                  PseudoJet(ghost_px,
+                            ghost_py,
+                            ghost_pz,
+                            ghost_e;
+                            cluster_hist_index = 0,))
         end
     end
 
@@ -136,12 +129,10 @@ struct ClusterSequenceArea
     area_data::JetAreaData
 end
 
-function _postprocess_area(
-    cs::ClusterSequence{PseudoJet},
-    n_hard_particles::Int,
-    ghost_area::Float64;
-    recombine = addjets_escheme,
-)
+function _postprocess_area(cs::ClusterSequence{PseudoJet},
+                           n_hard_particles::Int,
+                           ghost_area::Float64;
+                           recombine = addjets_escheme,)
     n_initial = cs.n_initial_jets
     n_history = length(cs.history)
 
@@ -165,11 +156,9 @@ function _postprocess_area(
             areas[i] = ghost_area
 
             jet_pt = pt(jet)
-            area_4vectors[i] = _scale_as_pseudojet(
-                jet,
-                ghost_area / jet_pt;
-                cluster_hist_index = i,
-            )
+            area_4vectors[i] = _scale_as_pseudojet(jet,
+                                                   ghost_area / jet_pt;
+                                                   cluster_hist_index = i,)
 
             max_ghost_pt2 = max(max_ghost_pt2, pt2(jet))
         else
@@ -203,28 +192,25 @@ function _postprocess_area(
         elseif parent2 > 0
             is_pure_ghost[i] = is_pure_ghost[parent1] && is_pure_ghost[parent2]
             areas[i] = areas[parent1] + areas[parent2]
-            area_4vectors[i] = recombine(
-                area_4vectors[parent1],
-                area_4vectors[parent2];
-                cluster_hist_index = i,
-            )
+            area_4vectors[i] = recombine(area_4vectors[parent1],
+                                         area_4vectors[parent2];
+                                         cluster_hist_index = i,)
         else
+            # codecov: ignore -- invalid history state (parent2 == 0)
             areas[i] = 0.0
             area_4vectors[i] = _zero_pseudojet(cluster_hist_index = i)
             is_pure_ghost[i] = false
         end
     end
 
-    return JetAreaData(
-        ghost_area,
-        n_ghosts,
-        n_hard_particles,
-        areas,
-        area_4vectors,
-        is_pure_ghost,
-        max_ghost_pt2,
-        has_dangerous_particles,
-    )
+    return JetAreaData(ghost_area,
+                       n_ghosts,
+                       n_hard_particles,
+                       areas,
+                       area_4vectors,
+                       is_pure_ghost,
+                       max_ghost_pt2,
+                       has_dangerous_particles)
 end
 
 """
@@ -234,22 +220,18 @@ Cluster particles with explicit ghosts and compute active jet areas.
 
 This currently supports pp-style algorithms only.
 """
-function jet_reconstruct_area(
-    particles;
-    algorithm::JetAlgorithm.Algorithm,
-    R = 1.0,
-    p = nothing,
-    area_spec::GhostedAreaSpec = GhostedAreaSpec(),
-    strategy = RecoStrategy.N2Plain,
-    recombine = addjets_escheme,
-    preprocess = preprocess_escheme,
-)
-    if algorithm ∉ (
-        JetAlgorithm.Kt,
+function jet_reconstruct_area(particles;
+                              algorithm::JetAlgorithm.Algorithm,
+                              R = 1.0,
+                              p = nothing,
+                              area_spec::GhostedAreaSpec = GhostedAreaSpec(),
+                              strategy = RecoStrategy.N2Plain,
+                              recombine = addjets_escheme,
+                              preprocess = preprocess_escheme,)
+    if algorithm ∉ (JetAlgorithm.Kt,
         JetAlgorithm.CA,
         JetAlgorithm.AntiKt,
-        JetAlgorithm.GenKt,
-    )
+        JetAlgorithm.GenKt)
         throw(ArgumentError("jet_reconstruct_area currently supports pp algorithms only"))
     end
     if strategy != RecoStrategy.N2Plain
@@ -260,10 +242,9 @@ function jet_reconstruct_area(
     sizehint!(hard_particles, length(particles))
 
     for (i, particle) in enumerate(particles)
-        hard_particle =
-            isnothing(preprocess) ?
-            _copy_as_pseudojet(particle; cluster_hist_index = i) :
-            preprocess(particle, PseudoJet; cluster_hist_index = i)
+        hard_particle = isnothing(preprocess) ?
+                        _copy_as_pseudojet(particle; cluster_hist_index = i) :
+                        preprocess(particle, PseudoJet; cluster_hist_index = i)
 
         push!(hard_particles, hard_particle)
     end
@@ -273,30 +254,24 @@ function jet_reconstruct_area(
     n_hard_particles = length(hard_particles)
 
     for i in eachindex(ghosts)
-        ghosts[i] = _copy_as_pseudojet(
-            ghosts[i];
-            cluster_hist_index = n_hard_particles + i,
-        )
+        ghosts[i] = _copy_as_pseudojet(ghosts[i];
+                                       cluster_hist_index = n_hard_particles + i,)
     end
 
     particles_with_ghosts = vcat(hard_particles, ghosts)
 
-    cs = jet_reconstruct(
-        particles_with_ghosts;
-        algorithm = algorithm,
-        R = R,
-        p = p,
-        strategy = strategy,
-        recombine = recombine,
-        preprocess = nothing,
-    )
+    cs = jet_reconstruct(particles_with_ghosts;
+                         algorithm = algorithm,
+                         R = R,
+                         p = p,
+                         strategy = strategy,
+                         recombine = recombine,
+                         preprocess = nothing,)
 
-    area_data = _postprocess_area(
-        cs,
-        n_hard_particles,
-        actual_ghost_area;
-        recombine = recombine,
-    )
+    area_data = _postprocess_area(cs,
+                                  n_hard_particles,
+                                  actual_ghost_area;
+                                  recombine = recombine,)
 
     return ClusterSequenceArea(cs, area_data)
 end
@@ -349,12 +324,10 @@ function _convert_area_result_jet(jet::PseudoJet, ::Type{T}) where {T <: Lorentz
     return lorentzvector_cyl(jet)
 end
 
-function inclusive_jets(
-    csa::ClusterSequenceArea,
-    ::Type{T} = PseudoJet;
-    ptmin = 0.0,
-    include_pure_ghosts::Bool = false,
-) where {T}
+function inclusive_jets(csa::ClusterSequenceArea,
+                        ::Type{T} = PseudoJet;
+                        ptmin = 0.0,
+                        include_pure_ghosts::Bool = false,) where {T}
     jets = inclusive_jets(csa.clusterseq, PseudoJet; ptmin = ptmin)
 
     if !include_pure_ghosts
