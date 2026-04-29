@@ -14,7 +14,8 @@ Compute the distance between points in a 2D space defined by rapidity and phi co
 # Returns
 - `distance::Float64`: The distance between the two points.
 """
-Base.@propagate_inbounds function dist(i, j, rapidity_array::Vector{T}, phi_array::Vector{T}) where {T <: Real}
+Base.@propagate_inbounds function dist(i, j, rapidity_array::Vector{T},
+                                       phi_array::Vector{T}) where {T <: Real}
     drapidity = rapidity_array[i] - rapidity_array[j]
     dphi = abs(phi_array[i] - phi_array[j])
     dphi = ifelse(dphi > T(pi), T(2pi) - dphi, dphi)
@@ -38,7 +39,8 @@ neighbor is given by the distance `nndist[i]` applying the lower of the
 # Returns
 - The computed dij value.
 """
-Base.@propagate_inbounds function dij(i, kt2_array::Vector{T}, nn, nndist) where {T <: Real}
+Base.@propagate_inbounds function dij(i, kt2_array::Vector{T}, nn,
+                                      nndist::Vector{T}) where {T <: Real}
     j = nn[i]
     d = nndist[i]
     d * min(kt2_array[i], kt2_array[j])
@@ -65,7 +67,8 @@ respectively, both for particle `i` and the checked particles `[from:to]` (hence
 - `nn`: The array that stores the nearest neighbor indices.
 """
 Base.@propagate_inbounds function upd_nn_crosscheck!(i::Int, from::Int, to::Int,
-                                                     rapidity_array::Vector{T}, phi_array::Vector{T}, R2::T, nndist,
+                                                     rapidity_array::Vector{T},
+                                                     phi_array::Vector{T}, R2::T, nndist,
                                                      nn) where {T <: Real}
     nndist_min = R2
     nn_min = i
@@ -83,8 +86,6 @@ Base.@propagate_inbounds function upd_nn_crosscheck!(i::Int, from::Int, to::Int,
     nndist[i] = nndist_min
     nn[i] = nn_min
 end
-
-# finds new nn for i
 
 """
     upd_nn_nocross!(i, from, to, rapidity_array, phi_array, R2, nndist, nn)
@@ -106,7 +107,10 @@ respectively, only for particle `i` (hence *nocross*).
 - `nn`: The array that stores the nearest neighbor indices.
 """
 Base.@propagate_inbounds function upd_nn_nocross!(i::Int, from::Int, to::Int,
-                                                  rapidity_array::Vector{T}, phi_array::Vector{T}, R2::T, nndist, nn) where {T <: Real}
+                                                  rapidity_array::Vector{T},
+                                                  phi_array::Vector{T}, R2::T,
+                                                  nndist::Vector{T},
+                                                  nn) where {T <: Real}
     nndist_min = R2
     nn_min = i
     @inbounds @simd for j in from:(i - 1)
@@ -156,8 +160,11 @@ Finally, it checks if the nearest neighbor of `k` is the total number of
 particles `Nn` and updates it to `j` if necessary.
 
 """
-Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array::Vector{T}, rapidity_array::Vector{T},
-                                               phi_array::Vector{T}, R2::T, nndist, nn, nndij) where {T <: Real}
+Base.@propagate_inbounds function upd_nn_step!(i, j, k, N, Nn, kt2_array::Vector{T},
+                                               rapidity_array::Vector{T},
+                                               phi_array::Vector{T}, R2::T,
+                                               nndist::Vector{T}, nn,
+                                               nndij::Vector{T}) where {T <: Real}
     nnk = nn[k] # Nearest neighbour of k
     if nnk == i || nnk == j
         # Our old nearest neighbour is one of the merged particles
@@ -281,9 +288,9 @@ function _plain_jet_reconstruct!(particles::AbstractVector{PseudoJet{T}};
     # Bounds
     N::Int = length(particles)
 
+    # Force numerical precision to that of the underlying jets
     p = T(p)
     R = T(R)
-    # Parameters
     R2 = R^2
 
     # Optimised compact arrays for determining the next merge step
