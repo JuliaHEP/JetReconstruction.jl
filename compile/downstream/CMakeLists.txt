@@ -5,7 +5,7 @@ project(
   LANGUAGES C
   VERSION 0.1.0)
 
-find_package(JetReconstruction 0.4.3 REQUIRED)
+find_package(JetReconstruction 1.0.0 REQUIRED)
 
 add_executable(jetreconstruction_test jetreconstruction_test.c)
 target_link_libraries(jetreconstruction_test
