@@ -131,7 +131,6 @@ typedef struct {
   double E;                 /**< The energy component of the momentum. */
   long _cluster_hist_index; /**< The index of the cluster history. */
   double _pt2;              /**< The squared transverse momentum. */
-  double _inv_pt2;          /**< The inverse squared transverse momentum. */
   double _rap;              /**< The rapidity. */
   double _phi;              /**< The azimuthal angle. */
 } jetreconstruction_PseudoJet;

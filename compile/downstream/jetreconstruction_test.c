@@ -9,9 +9,8 @@
 
 void printPseudoJet(const jetreconstruction_PseudoJet *jet) {
   assert(jet != NULL);
-  printf("PseudoJet(%f %f %f %f %ld %f %f %f %f)\n", jet->px, jet->py, jet->pz,
-         jet->E, jet->_cluster_hist_index, jet->_pt2, jet->_inv_pt2, jet->_rap,
-         jet->_phi);
+  printf("PseudoJet(%f %f %f %f %ld %f %f %f)\n", jet->px, jet->py, jet->pz,
+         jet->E, jet->_cluster_hist_index, jet->_pt2, jet->_rap, jet->_phi);
 }
 
 void printHistoryElement(const jetreconstruction_HistoryElement *history) {
@@ -58,14 +57,17 @@ int main(int argc, char *argv[]) {
 #ifdef JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER
   init_julia(0, NULL);
 #endif
-  size_t len = 2;
-  jetreconstruction_PseudoJet particles[2];
+  const size_t len = 2;
+  jetreconstruction_PseudoJet particles[len];
   sc = jetreconstruction_PseudoJet_init(&particles[0], 0.0, 1.0, 2.0, 3.0, 1);
   assert(sc == JETRECONSTRUCTION_STATUSCODE_OK);
+  assert(particles[0]._cluster_hist_index == 1);
   sc = jetreconstruction_PseudoJet_init(&particles[1], 1.0, 2.0, 3.0, 4.0, 2);
   assert(sc == JETRECONSTRUCTION_STATUSCODE_OK);
+  assert(particles[1]._cluster_hist_index == 2);
 
-  jetreconstruction_JetAlgorithm algorithm = JETRECONSTRUCTION_JETALGORITHM_GENKT;
+  jetreconstruction_JetAlgorithm algorithm =
+      JETRECONSTRUCTION_JETALGORITHM_GENKT;
   double R = 3.0;
   double power = 0.5;
   jetreconstruction_RecoStrategy strategy = JETRECONSTRUCTION_RECOSTRATEGY_BEST;
@@ -73,8 +75,8 @@ int main(int argc, char *argv[]) {
       JETRECONCSTRUCTION_RECOMBINATIONSCHEME_ESCHEME;
 
   jetreconstruction_ClusterSequence cluster_seq;
-  sc = jetreconstruction_jet_reconstruct(particles, len, algorithm, power, R, strategy,
-                                         recombination, &cluster_seq);
+  sc = jetreconstruction_jet_reconstruct(particles, len, algorithm, power, R,
+                                         strategy, recombination, &cluster_seq);
   assert(sc == JETRECONSTRUCTION_STATUSCODE_OK);
 
   printClusterSequence(&cluster_seq);
