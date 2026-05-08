@@ -1,6 +1,7 @@
 using PackageCompiler
 import ArgParse
 import JetReconstruction
+import JuliaC
 
 function parse_args(args)
     s = ArgParse.ArgParseSettings()
@@ -16,7 +17,7 @@ function parse_args(args)
         default = joinpath(splitdir(@__DIR__) |> first, "JetReconstructionCompiled")
 
         "--juliac"
-        help = "Use juliac compiler"
+        help = "Use JuliaC.jl for compilation instead of PackageCompiler.jl"
         action = :store_true
     end
 
@@ -50,15 +51,23 @@ function compile_w_packagecompiler(source_dir, output_dir)
 end
 
 function compile_w_juliac(source_dir, output_dir)
-    julia_path = joinpath(Sys.BINDIR, Base.julia_exename())
-    juliac_path = joinpath(Sys.BINDIR, "..", "share", "julia", "juliac", "juliac.jl")
-    jetreconstruction_path = joinpath(source_dir, "src", "JetReconstruction.jl")
-    lib_dir = joinpath(output_dir, "lib")
-    mkpath(lib_dir)
-    output_lib = joinpath(lib_dir, "libjetreconstruction.so")
-    command = "$(julia_path) --project=$(source_dir) $(juliac_path) --experimental --trim=no --compile-ccallable --output-lib $(output_lib) $(jetreconstruction_path)"
-    @info command
-    return @elapsed run(`$(split(command))`)
+    img = JuliaC.ImageRecipe(output_type = "--output-lib",
+                             trim_mode = "no",
+                             file = joinpath(source_dir, "src", "JetReconstruction.jl"),
+                             project = source_dir,
+                             add_ccallables = true,
+                             verbose = false)
+
+    link = JuliaC.LinkRecipe(image_recipe = img,
+                             outname = joinpath(output_dir, "lib", "libjetreconstruction"))
+
+    bun = JuliaC.BundleRecipe(link_recipe = link,
+                              output_dir = nothing)
+    return @elapsed begin
+        JuliaC.compile_products(img)
+        JuliaC.link_products(link)
+        JuliaC.bundle_products(bun)
+    end
 end
 
 function (@main)(args)
@@ -70,10 +79,10 @@ function (@main)(args)
     @info "Creating library in $output_dir"
 
     compilation_time = if parsed_args["juliac"]
-        @info "Using juliac compiler"
+        @info "Using JuliaC.jl"
         compile_w_juliac(source_dir, output_dir)
     else
-        @info "Using PackageCompiler compiler"
+        @info "Using PackageCompiler.jl"
         compile_w_packagecompiler(source_dir, output_dir)
     end
     @info "Compiled in $(compilation_time) seconds"
