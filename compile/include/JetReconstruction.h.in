@@ -91,7 +91,9 @@ typedef enum {
   JETRECONSTRUCTION_JETALGORITHM_EEKT =
       4, /**< The Generalised e+e- kt algorithm. */
   JETRECONSTRUCTION_JETALGORITHM_DURHAM =
-      5 /**< The e+e- kt algorithm, aka Durham. */
+      5, /**< The e+e- kt algorithm, aka Durham. */
+  JETRECONSTRUCTION_JETALGORITHM_VALENCIA =
+      6 /**< The Valencia e+e- algorithm. */
 } jetreconstruction_JetAlgorithm;
 
 /**
@@ -111,9 +113,10 @@ typedef enum {
  * jet reconstruction.
  */
 typedef enum {
-  JETRECONCSTRUCTION_RECOMBINATIONSCHEME_ESCHEME = 0,
-  JETRECONCSTRUCTION_RECOMBINATIONSCHEME_PTSCHEME = 1,
-  JETRECONCSTRUCTION_RECOMBINATIONSCHEME_PT2SCHEME = 2,
+  JETRECONCSTRUCTION_RECOMBINATIONSCHEME_ESCHEMERAW = 0,
+  JETRECONCSTRUCTION_RECOMBINATIONSCHEME_ESCHEME = 1,
+  JETRECONCSTRUCTION_RECOMBINATIONSCHEME_PTSCHEME = 2,
+  JETRECONCSTRUCTION_RECOMBINATIONSCHEME_PT2SCHEME = 3,
 } jetreconstruction_RecombinationScheme;
 
 /**
