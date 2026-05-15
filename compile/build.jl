@@ -40,6 +40,29 @@ function configure_file(template_path::String, output_path::String,
     end
 end
 
+const C_ENUM_SPECS = ((placeholder = "JETRECONSTRUCTION_JETALGORITHM_ENUM",
+                       enum_type = JetReconstruction.JetAlgorithm.Algorithm,
+                       prefix = "JETRECONSTRUCTION_JETALGORITHM"),
+                      (placeholder = "JETRECONSTRUCTION_RECOSTRATEGY_ENUM",
+                       enum_type = JetReconstruction.RecoStrategy.Strategy,
+                       prefix = "JETRECONSTRUCTION_RECOSTRATEGY"),
+                      (placeholder = "JETRECONSTRUCTION_RECOMBINATIONSCHEME_ENUM",
+                       enum_type = JetReconstruction.RecombinationScheme.Recombine,
+                       prefix = "JETRECONSTRUCTION_RECOMBINATIONSCHEME"))
+
+function render_c_enum_entries(enum_type::Type{<:Enum}, prefix::AbstractString)
+    vals = collect(instances(enum_type))
+    join(("  $(prefix)_$(uppercase(String(Symbol(v)))) = $(Int(v))" *
+          (i == lastindex(vals) ? "" : ",")
+          for (i, v) in pairs(vals)),
+         "\n")
+end
+
+function c_enum_replacements()
+    return Dict(spec.placeholder => render_c_enum_entries(spec.enum_type, spec.prefix)
+                for spec in C_ENUM_SPECS)
+end
+
 function compile_w_packagecompiler(source_dir, output_dir)
     return @elapsed PackageCompiler.create_library(source_dir, output_dir;
                                                    lib_name = "jetreconstruction",
@@ -95,7 +118,8 @@ function (@main)(args)
     @info "Copying header files to $includes_output"
     configure_file(joinpath(includes_input, "JetReconstruction.h.in"),
                    joinpath(includes_output, "JetReconstruction.h"),
-                   Dict("JETRECONSTRUCTION_COMPILER" => compiler))
+                   merge(Dict("JETRECONSTRUCTION_COMPILER" => compiler),
+                         c_enum_replacements()))
 
     cmake_input = joinpath(@__DIR__, "cmake", "JetReconstruction")
     cmake_output = joinpath(output_dir, "lib", "cmake", "JetReconstruction")

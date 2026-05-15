@@ -83,17 +83,9 @@ typedef enum {
  * the JetReconstruction.
  */
 typedef enum {
-  JETRECONSTRUCTION_JETALGORITHM_ANTIKT = 0, /**< The Anti-Kt algorithm. */
-  JETRECONSTRUCTION_JETALGORITHM_CA = 1, /**< The Cambridge/Aachen algorithm. */
-  JETRECONSTRUCTION_JETALGORITHM_KT = 2, /**< The Inclusive-Kt algorithm. */
-  JETRECONSTRUCTION_JETALGORITHM_GENKT =
-      3, /**< The Generalised Kt algorithm (with arbitrary power). */
-  JETRECONSTRUCTION_JETALGORITHM_EEKT =
-      4, /**< The Generalised e+e- kt algorithm. */
-  JETRECONSTRUCTION_JETALGORITHM_DURHAM =
-      5, /**< The e+e- kt algorithm, aka Durham. */
-  JETRECONSTRUCTION_JETALGORITHM_VALENCIA =
-      6 /**< The Valencia e+e- algorithm. */
+  /* clang-format off */ 
+@JETRECONSTRUCTION_JETALGORITHM_ENUM@
+  /* clang-format on */
 } jetreconstruction_JetAlgorithm;
 
 /**
@@ -102,9 +94,9 @@ typedef enum {
  * reconstruction.
  */
 typedef enum {
-  JETRECONSTRUCTION_RECOSTRATEGY_BEST = 0,    /**< The best strategy. */
-  JETRECONSTRUCTION_RECOSTRATEGY_N2PLAIN = 1, /**< The plain N2 strategy. */
-  JETRECONSTRUCTION_RECOSTRATEGY_N2TILTED = 2 /**< The tiled N2 strategy. */
+  /* clang-format off */
+@JETRECONSTRUCTION_RECOSTRATEGY_ENUM@
+  /* clang-format on */
 } jetreconstruction_RecoStrategy;
 
 /**
@@ -113,10 +105,9 @@ typedef enum {
  * jet reconstruction.
  */
 typedef enum {
-  JETRECONSTRUCTION_RECOMBINATIONSCHEME_ESCHEMERAW = 0,
-  JETRECONSTRUCTION_RECOMBINATIONSCHEME_ESCHEME = 1,
-  JETRECONSTRUCTION_RECOMBINATIONSCHEME_PTSCHEME = 2,
-  JETRECONSTRUCTION_RECOMBINATIONSCHEME_PT2SCHEME = 3,
+  /* clang-format off */
+@JETRECONSTRUCTION_RECOMBINATIONSCHEME_ENUM@
+  /* clang-format on */
 } jetreconstruction_RecombinationScheme;
 
 /**
