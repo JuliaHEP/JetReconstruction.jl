@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   double R = 3.0;
   double power = 0.0;
   jetreconstruction_RecoStrategy strategy = JETRECONSTRUCTION_RECOSTRATEGY_BEST;
-  jetreconstruction_RecombinationScheme recombination = JETRECONCSTRUCTION_RECOMBINATIONSCHEME_ESCHEME;
+  jetreconstruction_RecombinationScheme recombination = JETRECONSTRUCTION_RECOMBINATIONSCHEME_ESCHEME;
 
   jetreconstruction_ClusterSequence cluster_seq;
   jetreconstruction_StatusCode sc = jetreconstruction_jet_reconstruct(particles, len, algorithm, power, R,
