@@ -6,6 +6,8 @@ using EnumX
 
 Scoped enumeration (using EnumX) representing the different strategies for jet reconstruction.
 
+See [Algorithm Strategy](@ref) page for more details.
+
 ## Fields
 - `Best`: The best strategy.
 - `N2Plain`: The plain N2 strategy.
@@ -15,7 +17,7 @@ Scoped enumeration (using EnumX) representing the different strategies for jet r
 const AllJetRecoStrategies = [String(Symbol(x)) for x in instances(RecoStrategy.Strategy)]
 
 """
-    enum T
+    enum JetAlgorithm
 
 Scoped enumeration (using EnumX) representing different jet algorithms used in the JetReconstruction module.
 
@@ -121,6 +123,14 @@ are supported directly in the package.
 
 These schemes map to both a `recombine` and a `preprocess` function, which are
 used in the main reconstruction algorithm.
+
+See [Jet Recombination](@ref) page for more details.
+
+## Fields
+- `EScheme`: The E-scheme recombination scheme using [`addjets_escheme`](@ref) and [`preprocess_escheme`](@ref) functions.
+- `ESchemeRaw`: The E-scheme recombination scheme using [`addjets_escheme`](@ref) function and no preprocessing.
+- `PtScheme`: The Pt-scheme recombination scheme using [`addjets_ptscheme`](@ref) and [`preprocess_ptscheme`](@ref) functions.
+- `Pt2Scheme`: The Pt2-scheme recombination scheme using [`addjets_pt2scheme`](@ref) and [`preprocess_pt2scheme`](@ref) functions.
 """
 @enumx T=Recombine RecombinationScheme ESchemeRaw EScheme PtScheme Pt2Scheme
 const AllRecombinationSchemes = [String(Symbol(x))
