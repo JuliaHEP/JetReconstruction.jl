@@ -253,40 +253,31 @@ function ee_check_consistency(clusterseq, eereco, N)
     @debug "Consistency check passed"
 end
 
-Base.@propagate_inbounds @inline function fill_reco_array!(eereco::StructVector{EERecoJet{T}}, particles, invR2::T, p::T) where {T <: Real}
+Base.@propagate_inbounds @inline function fill_reco_array!(eereco::StructVector{EERecoJet{T}}, particles, invR2, p) where {T <: Real}
     @inbounds for i in eachindex(particles)
         eereco.index[i] = i
         eereco.nni[i] = zero(T)
-        eereco.nndist[i] = inv(invR2) # R^2 as initial sentinel for angular algorithms
+        eereco.nndist[i] = inv(T(invR2)) # R^2 as initial sentinel for angular algorithms
         # eereco.dijdist[i] = UNDEF # Does not need to be initialised
         eereco.nx[i] = nx(particles[i])
         eereco.ny[i] = ny(particles[i])
         eereco.nz[i] = nz(particles[i])
-        eereco.E2p[i] = energy(particles[i])^(2p)
+        eereco.E2p[i] = energy(particles[i])^T(2p)
         # No precomputed beam factor; compute on demand to preserve previous behaviour
     end
 end
 
-Base.@propagate_inbounds @inline function insert_new_jet!(eereco::StructVector{EERecoJet{T}}, i, newjet_k, invR2::T,
-                                                          merged_jet::J, p::T) where {T <: Real, J <: EEJet{T}}
+Base.@propagate_inbounds @inline function insert_new_jet!(eereco::StructVector{EERecoJet{T}}, i, newjet_k, invR2,
+                                                          merged_jet::J, p) where {T <: Real, J <: EEJet{T}}
     @inbounds begin
         eereco.index[i] = newjet_k
         eereco.nni[i] = zero(T)
-        eereco.nndist[i] = inv(invR2)
+        eereco.nndist[i] = inv(T(invR2))
         eereco.nx[i] = nx(merged_jet)
         eereco.ny[i] = ny(merged_jet)
         eereco.nz[i] = nz(merged_jet)
         E = energy(merged_jet)
-        if p isa Int
-            if p == 1
-                eereco.E2p[i] = E * E
-            else
-                E2 = E * E
-                eereco.E2p[i] = E2^p
-            end
-        else
-            eereco.E2p[i] = E^(2p)
-        end
+        eereco.E2p[i] = E^T(2p)
     end
 end
 
