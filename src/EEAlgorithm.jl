@@ -56,7 +56,7 @@ Calculate the Valencia distance between two jets `i` and `j` as
 - The Valencia distance between `i` and `j`.
 """
 Base.@propagate_inbounds @inline function valencia_distance(eereco::StructVector{EERecoJet{T}}, i, j, invR2::T) where {T <: Real}
-    @muladd angular_dist = one(Float32) - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
+    @muladd angular_dist = one(T) - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
                            eereco[i].nz * eereco[j].nz
     return min(eereco[i].E2p, eereco[j].E2p) * 2 * angular_dist * invR2
 end
