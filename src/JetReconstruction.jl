@@ -19,6 +19,7 @@ using LorentzVectorBase
 using LorentzVectorHEP
 using MuladdMacro
 using StructArrays
+using Random
 
 # Import from LorentzVectorHEP methods for those 4-vector types
 pt2(p::LorentzVector) = LorentzVectorHEP.pt2(p)
@@ -103,6 +104,12 @@ include("HepMC3.jl")
 # utility functions, useful for different primary scripts
 include("Utils.jl")
 export read_final_state_particles, final_jets
+
+## Jet areas
+include("JetAreas.jl")
+export GhostedAreaSpec, JetAreaData, jet_reconstruct_area, area, cluster_sequence,
+       ClusterSequenceArea, area_4vector, area_error, is_pure_ghost, has_explicit_ghosts,
+       total_area, max_ghost_pt2, has_dangerous_particles, n_hard_particles
 
 # Jet visualisation is an extension, see ext/JetVisualisation.jl
 function jetsplot() end
