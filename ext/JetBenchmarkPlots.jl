@@ -1,0 +1,37 @@
+module JetBenchmarkPlots
+
+using JetReconstruction
+using UnicodePlots
+
+function JetReconstruction.plot_trial_times(trial_timing::AbstractVector{<:Real})
+    stats = JetReconstruction.summarise_trial_times(trial_timing)
+
+    bin_width = ceil(2 * stats.iqr / stats.n_samples^(1 / 3))
+
+    if bin_width <= 0 || !isfinite(bin_width)
+        bin_width = 1
+    end
+
+    nbins = min(max(ceil(Int, (stats.maximum - stats.minimum) / bin_width), 1), 80)
+
+    println(
+        UnicodePlots.histogram(
+            trial_timing;
+            nbins = nbins,
+            vertical = true,
+            title = "Histogram of event time per trial",
+        ),
+    )
+
+    println(
+        UnicodePlots.lineplot(
+            collect(1:length(trial_timing)),
+            trial_timing;
+            title = "Runtime per event across trials",
+        ),
+    )
+
+    return nothing
+end
+
+end
