@@ -3,9 +3,19 @@ module JetBenchmarkPlots
 using JetReconstruction
 using UnicodePlots
 
+"""
+    plot_trial_times(trial_timing)
+
+Plot terminal diagnostics for per-event benchmark timing measurements.
+
+This method is provided by the `UnicodePlots` extension. It prints a histogram
+of trial timings and a line plot showing how the timing varies across trials.
+"""
 function JetReconstruction.plot_trial_times(trial_timing::AbstractVector{<:Real})
     stats = JetReconstruction.summarise_trial_times(trial_timing)
 
+    # Freedman-Diaconis bin width, using IQR to remain robust in the presence of
+    # outlier timings from system noise.
     bin_width = ceil(2 * stats.iqr / stats.n_samples^(1 / 3))
 
     if bin_width <= 0 || !isfinite(bin_width)

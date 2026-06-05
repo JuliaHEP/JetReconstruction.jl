@@ -1,7 +1,14 @@
 using Statistics: mean, std, median, quantile
 using Printf: @sprintf
 
+"""
+    summarise_trial_times(trial_timing)
 
+Summarise per-event timing measurements from repeated benchmark trials.
+
+Returns a named tuple containing the number of samples, mean, standard
+deviation, median, minimum, maximum, quartiles, and interquartile range.
+"""
 function summarise_trial_times(trial_timing::AbstractVector{<:Real})
     (
         n_samples = length(trial_timing),
@@ -16,12 +23,24 @@ function summarise_trial_times(trial_timing::AbstractVector{<:Real})
     )
 end
 
+"""
+    filter_outliers_iqr(trial_timing, stats; outlier_band=2.0)
+
+Return the entries in `trial_timing` that lie within `outlier_band` times the
+interquartile range around the first and third quartiles in `stats`.
+"""
 function filter_outliers_iqr(trial_timing::AbstractVector{<:Real}, stats; outlier_band::Real = 2.0)
     min_val = stats.q25 - outlier_band * stats.iqr
     max_val = stats.q75 + outlier_band * stats.iqr
     trial_timing[(time -> min_val <= time <= max_val).(trial_timing)]
 end
 
+"""
+    pprint_trial_stats(stats)
+
+Format a timing summary, as returned by [`summarise_trial_times`](@ref), for
+human-readable terminal output.
+"""
 function pprint_trial_stats(stats)
     " - average time per event " * @sprintf("%.2f", stats.mean) * " ± " *
     @sprintf("%.2f", stats.std) * " μs\n" *
@@ -29,6 +48,16 @@ function pprint_trial_stats(stats)
     " - lowest time per event " * @sprintf("%.2f", stats.minimum) * " μs"
 end
 
+"""
+    print_statistics(trial_timing; outlier_exclusion=true, outlier_band=2.0)
+
+Print summary statistics for per-event benchmark timing measurements.
+
+When `outlier_exclusion` is `true`, also print a second summary after excluding
+measurements outside `outlier_band` times the interquartile range. Returns a
+named tuple with the full summary and, when requested, the outlier-excluded
+summary.
+"""
 function print_statistics(trial_timing::AbstractVector{<:Real};
                           outlier_exclusion::Bool = true,
                           outlier_band::Real = 2.0)
