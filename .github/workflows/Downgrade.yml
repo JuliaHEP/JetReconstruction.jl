@@ -21,7 +21,7 @@ jobs:
           version: ${{ matrix.version }}
       - uses: julia-actions/julia-downgrade-compat@v1
         with:
-          skip: Logging,Random,Statistics,Test
+          skip: Logging,Printf,Random,Statistics,Test,Pkg
       - uses: julia-actions/cache@v3
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1

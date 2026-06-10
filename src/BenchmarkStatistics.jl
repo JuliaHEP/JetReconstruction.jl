@@ -10,17 +10,15 @@ Returns a named tuple containing the number of samples, mean, standard
 deviation, median, minimum, maximum, quartiles, and interquartile range.
 """
 function summarise_trial_times(trial_timing::AbstractVector{<:Real})
-    (
-        n_samples = length(trial_timing),
-        mean = mean(trial_timing),
-        std = length(trial_timing) > 1 ? std(trial_timing) : 0.0,
-        median = median(trial_timing),
-        minimum = minimum(trial_timing),
-        maximum = maximum(trial_timing),
-        q25 = quantile(trial_timing, 0.25),
-        q75 = quantile(trial_timing, 0.75),
-        iqr = quantile(trial_timing, 0.75) - quantile(trial_timing, 0.25),
-    )
+    (n_samples = length(trial_timing),
+     mean = mean(trial_timing),
+     std = length(trial_timing) > 1 ? std(trial_timing) : 0.0,
+     median = median(trial_timing),
+     minimum = minimum(trial_timing),
+     maximum = maximum(trial_timing),
+     q25 = quantile(trial_timing, 0.25),
+     q75 = quantile(trial_timing, 0.75),
+     iqr = quantile(trial_timing, 0.75) - quantile(trial_timing, 0.25))
 end
 
 """
@@ -29,7 +27,8 @@ end
 Return the entries in `trial_timing` that lie within `outlier_band` times the
 interquartile range around the first and third quartiles in `stats`.
 """
-function filter_outliers_iqr(trial_timing::AbstractVector{<:Real}, stats; outlier_band::Real = 2.0)
+function filter_outliers_iqr(trial_timing::AbstractVector{<:Real}, stats;
+                             outlier_band::Real = 2.0)
     min_val = stats.q25 - outlier_band * stats.iqr
     max_val = stats.q75 + outlier_band * stats.iqr
     trial_timing[(time -> min_val <= time <= max_val).(trial_timing)]

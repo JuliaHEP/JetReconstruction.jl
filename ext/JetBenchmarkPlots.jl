@@ -24,22 +24,14 @@ function JetReconstruction.plot_trial_times(trial_timing::AbstractVector{<:Real}
 
     nbins = min(max(ceil(Int, (stats.maximum - stats.minimum) / bin_width), 1), 80)
 
-    println(
-        UnicodePlots.histogram(
-            trial_timing;
-            nbins = nbins,
-            vertical = true,
-            title = "Histogram of event time per trial",
-        ),
-    )
+    println(UnicodePlots.histogram(trial_timing;
+                                   nbins = nbins,
+                                   vertical = true,
+                                   title = "Histogram of event time per trial"))
 
-    println(
-        UnicodePlots.lineplot(
-            collect(1:length(trial_timing)),
-            trial_timing;
-            title = "Runtime per event across trials",
-        ),
-    )
+    println(UnicodePlots.lineplot(collect(1:length(trial_timing)),
+                                  trial_timing;
+                                  title = "Runtime per event across trials"))
 
     return nothing
 end

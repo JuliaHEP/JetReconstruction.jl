@@ -5,6 +5,15 @@ include("common.jl")
 const JULIA_CMD = Base.julia_cmd()
 const EXAMPLES_PROJECT = joinpath(@__DIR__, "..", "examples")
 
+@testset "Instantiate examples environment" begin
+    instantiate_examples = """
+        using Pkg
+        Pkg.activate($(repr(EXAMPLES_PROJECT)))
+        Pkg.instantiate()
+    """
+    @test success(run(`$JULIA_CMD -e $instantiate_examples`))
+end
+
 @testset "Basic jetreco.jl reconstruction examples" begin
     @test success(run(pipeline(`$JULIA_CMD --project=$EXAMPLES_PROJECT $(@__DIR__)/../examples/jetreco.jl --algorithm=CA -R 0.4 $(@__DIR__)/../test/data/events.pp13TeV.hepmc3.zst`,
                                devnull)))
@@ -16,6 +25,6 @@ const EXAMPLES_PROJECT = joinpath(@__DIR__, "..", "examples")
 end
 
 @testset "Basic instrumented-jetreco.jl reconstruction example" begin
-    @test success(run(pipeline(`$JULIA_CMD --project=$EXAMPLES_PROJECT $(@__DIR__)/../examples/instrumented-jetreco.jl --maxevents=1 --nsamples=1 --algorithm=CA -R 0.4 $(@__DIR__)/../test/data/events.pp13TeV.hepmc3.zst`,
+    @test success(run(pipeline(`$JULIA_CMD --project=$EXAMPLES_PROJECT $(@__DIR__)/../examples/instrumented-jetreco.jl --maxevents=1 --nsamples=16 --algorithm=CA -R 0.4 --plot $(@__DIR__)/../test/data/events.pp13TeV.hepmc3.zst`,
                                devnull)))
 end
