@@ -85,8 +85,9 @@ end
 Construct an PseudoJet from a ReconstructedParticle, taking the numerical type from
 the incoming recoparticle.
 """
-function JetReconstruction.PseudoJet{T}(recoparticle::ReconstructedParticle;
-                                        cluster_hist_index::Int = 0) where {T <: Real}
+function JetReconstruction.PseudoJet(recoparticle::ReconstructedParticle;
+                                     cluster_hist_index::Int = 0)
+    T = eltype(recoparticle)
     PseudoJet{T}(JetReconstruction.px(recoparticle), JetReconstruction.py(recoparticle),
                  JetReconstruction.pz(recoparticle), JetReconstruction.energy(recoparticle);
                  cluster_hist_index)
