@@ -526,7 +526,7 @@ A struct representing a jet with its origin ancestors.
 # Note
 This structure needs its associated cluster sequence origin to be useful.
 """
-struct JetWithAncestors{J <: FourMomentum}
+struct JetWithAncestors{T <: Real, J <: FourMomentum{T}}
     self::J
     jetp_index::Int
     ancestors::Set{Int}
@@ -561,9 +561,9 @@ merger steps.
 function reco_state(cs::ClusterSequence{T, J}, ranks; iteration = 0,
                     ignore_beam_merge = true) where {T <: Real, J <: FourMomentum{T}}
     # Get the initial particles
-    reco_state = Dict{Int, JetWithAncestors{J}}()
+    reco_state = Dict{Int, JetWithAncestors{T, J}}()
     for jet_index in 1:(cs.n_initial_jets)
-        reco_state[jet_index] = JetWithAncestors{J}(cs.jets[cs.history[jet_index].jetp_index],
+        reco_state[jet_index] = JetWithAncestors{T, J}(cs.jets[cs.history[jet_index].jetp_index],
                                                     jet_index, Set{Int}([]),
                                                     ranks[jet_index])
     end
@@ -589,7 +589,7 @@ function reco_state(cs::ClusterSequence{T, J}, ranks; iteration = 0,
                 (ranks[ancestor] < pt_rank) && (pt_rank = ranks[ancestor])
             end
 
-            reco_state[h_entry.jetp_index] = JetWithAncestors{T}(cs.jets[h_entry.jetp_index],
+            reco_state[h_entry.jetp_index] = JetWithAncestors{T, J}(cs.jets[h_entry.jetp_index],
                                                                  h_entry.jetp_index,
                                                                  my_ancestors, pt_rank)
             delete!(reco_state, cs.history[h_entry.parent1].jetp_index)
