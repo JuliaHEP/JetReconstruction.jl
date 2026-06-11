@@ -111,6 +111,8 @@ target_link_libraries(myTarget PUBLIC JetReconstruction::JetReconstruction)
 
 Currently it's not possible to create libraries for different platforms - no cross-compilation!
 
+With the current state of `juliac` compilation works reliably on Linux. However, on OS X problems are observed at the LLVM layer that are not yet well understood and compilation fails.
+
 PackageCompiler specific:
 
 - The library is relocatable given the whole installation tree is moved, including libraries in the `lib/julia/` directory.
