@@ -61,7 +61,8 @@ valencia_exclusive_d500_b1g1 = ComparisonTestValencia(events_file_ee,
                                                                "jet-collections-fastjet-valencia-exclusive-d500-beta1.0-gamma1.0-R1.0-eeH.json.zst"),
                                                       JetAlgorithm.Valencia,
                                                       RecoStrategy.N2Plain, 1.0, 1.0, 1.0,
-                                                      cs -> exclusive_jets(cs; dcut = 500.0),
+                                                      cs -> exclusive_jets(cs;
+                                                                           dcut = 500.0),
                                                       "exclusive dcut=500 beta=1.0 gamma=1.0 R=1.0")
 run_reco_test(valencia_exclusive_d500_b1g1)
 
