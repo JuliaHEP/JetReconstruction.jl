@@ -5,6 +5,7 @@ EDM4hep = "eb32b910-dde9-4347-8fce-cd6be3498f0c"
 JetReconstruction = "44e8cb2c-dfab-4825-9c70-d4808a591196"
 LiveServer = "16fef848-5104-11e9-1b77-fb7a48bbb589"
 Makie = "ee78f7c6-11fb-53f2-987a-cfe4a2b5a57a"
+UnicodePlots = "b8865327-cd53-5732-bb35-84acbb429228"
 
 [sources]
 JetReconstruction = {path = ".."}
@@ -13,3 +14,4 @@ JetReconstruction = {path = ".."}
 Documenter = "1.4"
 EDM4hep = "0.4"
 Makie = "0.20, 0.21, 0.22, 0.23, 0.24"
+UnicodePlots = "3"

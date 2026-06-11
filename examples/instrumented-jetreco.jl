@@ -10,10 +10,7 @@ using FlameGraphs: FlameGraphs
 
 using ArgParse
 using Profile
-using Printf
 using StatProfilerHTML
-using Statistics
-using StatsBase
 using Logging
 using JSON
 using UnicodePlots
@@ -194,67 +191,6 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
     trial_timing
 end
 
-"""
-    function print_statistics(trial_stats; outlier_exclusion = true, 
-        outlier_band = 2, plot = false)
-
-Give a statistical summary of trial runs. Statistics for the whole
-sample are given, as well as those with outliers removed.
-
-# Notes
-
-## Why also record the lowest time? 
- 
-The argument is that on a "busy" machine, the run time of an application is
-always TrueRunTime+Overheads, where Overheads is a nuisance parameter that
-adds jitter, depending on the other things the machine is doing. Therefore
-the minimum value is (a) more stable and (b) reflects better the intrinsic
-code performance.
-"""
-function print_statistics(trial_stats; outlier_exclusion = true, outlier_band = 2.0,
-                          plot = false)
-    sstats = summarystats(trial_stats)
-    iqr = sstats.q75 - sstats.q25
-    println("Full statistics ($(sstats.nobs) samples)")
-    println(pprint_trial_stats(sstats))
-
-    if outlier_exclusion
-        # The interquartile range (Q3 - Q1, or q75% - q25%) is the most useful way to filter outliers
-        # as it's insensitive to the outliers themselves (unlike σ)
-        min_val = sstats.q25 - outlier_band * iqr
-        max_val = sstats.q75 + outlier_band * iqr
-        no_outliers = trial_stats[(a -> a >= min_val && a <= max_val).(trial_stats)]
-        no_outliers_stats = summarystats(no_outliers)
-        println("Excluding outliers at $(outlier_band)xIQR (leaving $(no_outliers_stats.nobs) of $(sstats.nobs) samples)")
-        println(pprint_trial_stats(no_outliers_stats))
-    end
-
-    if plot
-        # Derive bin width from the IQR and number of samples
-        bin_width = ceil(2iqr / sstats.nobs^(1 / 3))
-        # No more than 80 bins (sometimes this gets way too big if there's an extreme outlier)
-        hbins = min(ceil((sstats.max - sstats.min) / bin_width), 80)
-
-        println(histogram(trial_stats, nbins = hbins, vertical = true,
-                          title = "Histogram of event time per trial"))
-        println(lineplot(collect(1:length(trial_stats)), trial_stats,
-                         title = "Runtime per event across trials"))
-    end
-end
-
-"""
-    function pprint_trial_stats(sstats)
-
-Generate a "pretty printed" string from a StatsBase statistics object,
-which is basically use @sprintf to limit the precision
-"""
-function pprint_trial_stats(sstats)
-    " - average time per event " * @sprintf("%.2f", sstats.mean) * " ± " *
-    @sprintf("%.2f", sstats.sd) * " μs\n" *
-    " - median time per event " * @sprintf("%.2f", sstats.median) * " μs\n" *
-    " - lowest time per event " * @sprintf("%.2f", sstats.min) * " μs"
-end
-
 function parse_command_line(args)
     s = ArgParseSettings(autofix_names = true)
     @add_arg_table! s begin
@@ -331,7 +267,7 @@ function parse_command_line(args)
         action = :store_true
 
         "--plot"
-        help = "Plot a histogram of trail times on the terminal"
+        help = "Plot a histogram of trial times on the terminal"
         action = :store_true
 
         "--dump"
@@ -404,7 +340,8 @@ function main()
                                          dump_cs = args[:dump_clusterseq])
     end
     if !isnothing(trial_stats)
-        print_statistics(trial_stats; plot = args[:plot])
+        print_statistics(trial_stats)
+        args[:plot] && plot_trial_times(trial_stats)
     end
     nothing
 end
