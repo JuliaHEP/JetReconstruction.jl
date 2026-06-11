@@ -10,7 +10,6 @@ const PACKAGE_ROOT = joinpath(@__DIR__, "..")
     instantiate_examples = """
         using Pkg
         Pkg.activate($(repr(EXAMPLES_PROJECT)))
-        Pkg.develop(Pkg.PackageSpec(path=$(repr(PACKAGE_ROOT))))
         Pkg.instantiate()
     """
     @test success(run(`$JULIA_CMD -e $instantiate_examples`))
