@@ -9,6 +9,7 @@ const test_cone_size = 0.4
 # Test inclusive jets for each algorithm and strategy
 for alg in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.GenKt],
     stg in [RecoStrategy.N2Plain, RecoStrategy.N2Tiled]
+
     if alg == JetAlgorithm.GenKt
         power = test_genkt_power
         fastjet_file = joinpath(@__DIR__, "data",
