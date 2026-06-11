@@ -75,10 +75,10 @@ function process_event(event::Vector{PseudoJet{Float64}}, args::Dict{Symbol, Any
     for (i, pseudo_jet) in enumerate(event)
         # Reconstruct PseudoJet with cluster_hist_index for tracking
         new_pseudo_jet = PseudoJet{Float64}(JetReconstruction.px(pseudo_jet),
-                                   JetReconstruction.py(pseudo_jet),
-                                   JetReconstruction.pz(pseudo_jet),
-                                   JetReconstruction.energy(pseudo_jet);
-                                   cluster_hist_index = i)
+                                            JetReconstruction.py(pseudo_jet),
+                                            JetReconstruction.pz(pseudo_jet),
+                                            JetReconstruction.energy(pseudo_jet);
+                                            cluster_hist_index = i)
         push!(filtered_event, new_pseudo_jet)
     end
 
