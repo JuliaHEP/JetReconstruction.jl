@@ -10,10 +10,13 @@ let inputs = JetReconstruction.read_final_state_particles(events_file_ee)
         @test_throws UndefKeywordError jet_reconstruct(inputs[1]; p = 0.5)
 
         # Unreasonable radius value will throw
-        @test_throws ErrorException _=jet_reconstruct(inputs[1]; algorithm = JetAlgorithm.AntiKt, R = 100π)
+        @test_throws ErrorException _=jet_reconstruct(inputs[1];
+                                                      algorithm = JetAlgorithm.AntiKt,
+                                                      R = 100π)
 
         # No input particles will return no result
-        @test length(jet_reconstruct(PseudoJet{Float64}[]; algorithm = JetAlgorithm.AntiKt).jets) == 0
+        @test length(jet_reconstruct(PseudoJet{Float64}[];
+                                     algorithm = JetAlgorithm.AntiKt).jets) == 0
 
         # EE Algorithms
         @test typeof(jet_reconstruct(inputs[1]; algorithm = JetAlgorithm.Durham)) ==
