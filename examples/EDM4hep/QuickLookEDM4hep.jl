@@ -10,7 +10,8 @@ function main()
     events = RootIO.get(reader, "events")
     evt = events[1]
     # See everything!
-    show(IOContext(stdout, :limit => false, :compact => false, :displaysize => (1000, 200)), reader)
+    show(IOContext(stdout, :limit => false, :compact => false, :displaysize => (1000, 200)),
+         reader)
 end
 
 main()
