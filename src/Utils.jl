@@ -142,18 +142,18 @@ function concretize_return_type(ReturnType::Type, T::Type{<:Real})
                 return ReturnType{T}
             catch e
                 if e isa TypeError
-                    error("Cannot parameterize $ReturnType with type $T: $(e.msg)")
+                    throw(ArgumentError("Cannot parameterize $ReturnType with type $T: $(e.msg)"))
                 else
                     rethrow
                 end
             end
             return ReturnType{T}
         else
-            error("Type $ReturnType requires $num_params type parameters, but only 1 can be inferred")
+            throw(ArgumentError("Type $ReturnType requires $num_params type parameters, but only 1 can be inferred"))
         end
     end
 
-    error("Unexpected type specified: $ReturnType")
+    throw(ArgumentError("Unexpected type specified: $ReturnType"))
 end
 
 # Helper function from before
