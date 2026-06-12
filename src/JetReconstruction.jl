@@ -46,7 +46,7 @@ mass2(p::LorentzVectorCyl) = LorentzVectorHEP.mass2(p)
 mass(p::LorentzVectorCyl) = LorentzVectorHEP.mass(p)
 
 # Some useful constants/limits that are used internally
-const max_allowable_R = 1000.0
+const max_allowable_R = 2π
 
 # Pseudojet and EEJet types
 include("CommonJet.jl")

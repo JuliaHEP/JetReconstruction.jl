@@ -3,14 +3,14 @@
 # Functions that create each jet type from the other need to be defined here,
 # after the structs are defined.
 """
-    PseudoJet(jet::EEJet; cluster_hist_index::Int=0)
+    PseudoJet(eej::EEJet; cluster_hist_index::Int = 0)
 
-Constructs a `PseudoJet` from an `EEJet`.
+Constructs a `PseudoJet` from an `EEJet`. The underlying type `T` is preserved.
 
 # Details
 
 The `cluster_hist_index` is set to the value of the `cluster_hist_index` of the
-EEJet if `0` is passed. Otherwise it is set to the value, `>0`, passed in.
+`EEJet` if `0` is passed. Otherwise it is set to the value, `>0`, passed in.
 """
 function PseudoJet(eej::EEJet; cluster_hist_index::Int = 0)
     cluster_hist_index = cluster_hist_index == 0 ? eej._cluster_hist_index :
@@ -20,14 +20,14 @@ function PseudoJet(eej::EEJet; cluster_hist_index::Int = 0)
 end
 
 """
-    EEJet(jet::PseudoJet; cluster_hist_index::Int=0)
+    EEJet(jet::PseudoJet; cluster_hist_index::Int = 0)
 
-Constructs an `EEJet` from a `PseudoJet`.
+Constructs an `EEJet` from a `PseudoJet`. The underlying type `T` is preserved.
 
 # Details
 
 The `cluster_hist_index` is set to the value of the `cluster_hist_index` of the
-PseudoJet if `0` is passed. Otherwise it is set to the value, `>0`, passed in.
+`PseudoJet` if `0` is passed. Otherwise it is set to the value, `>0`, passed in.
 """
 function EEJet(jet::PseudoJet; cluster_hist_index::Int = 0)
     cluster_hist_index = cluster_hist_index == 0 ? jet._cluster_hist_index :
@@ -38,7 +38,7 @@ end
 
 # Functions to convert jets to types from other packages
 """
-    lorentzvector_cyl(jet::T) where T <: FourMomentum -> LorentzVectorHEP.LorentzVectorCyl
+    lorentzvector_cyl(jet::FourMomentum)
 
 Return a cylindrical `LorentzVectorCyl` from a jet.
 """
@@ -50,7 +50,7 @@ function lorentzvector_cyl(jet::T) where {T <: FourMomentum}
 end
 
 """
-    lorentzvector(jet::T) where {T <: FourMomentum} ->  -> LorentzVector
+    lorentzvector(jet::FourMomentum)
 
 Return a cartesian `LorentzVector` from a jet.
 """
@@ -63,7 +63,7 @@ end
 
 # Utility functions for jet structs using pairs of jets
 """
-    deltaR(jet1::T, jet2::T) where T <: FourMomentum
+    deltaR(jet1::FourMomentum, jet2::FourMomentum)
 
 Function to calculate the distance in the y-ϕ plane between two jets `jet1` and
 `jet2` (that is using *rapidity* and *azimuthal angle*).
@@ -79,7 +79,7 @@ function deltaR(jet1::T, jet2::T) where {T <: FourMomentum}
 end
 
 """
-    deltar(jet1::T, jet2::T) where T <: FourMomentum
+    deltar(jet1::FourMomentum, jet2::FourMomentum)
 
 Function to calculate the distance in the η-ϕ plane between two jets `jet1` and
 `jet2` (that is, using the *pseudorapidity* and *azimuthal angle*).
@@ -95,13 +95,11 @@ function deltar(jet1::T, jet2::T) where {T <: FourMomentum}
 end
 
 """
-    delta_phi(jet1::T, jet2::T) where {T <: FourMomentum}
+    delta_phi(jet1::FourMomentum, jet2::FourMomentum)
 
 Computes the difference in azimuthal angle φ between two jets,
 wrapped into the range [-π, π].
 
-# Returns
-- `δφ` as a Float64 in radians.
 """
 function delta_phi(jet1::T, jet2::T) where {T <: FourMomentum}
     δϕ = phi(jet1) - phi(jet2)
@@ -111,7 +109,7 @@ function delta_phi(jet1::T, jet2::T) where {T <: FourMomentum}
 end
 
 """
-    pt_fraction(jet1::T, jet2::T) where T <: FourMomentum
+    pt_fraction(jet1::FourMomentum, jet2::FourMomentum)
 
 Computes the transverse momentum fraction of the softer of two jets.
 
@@ -125,7 +123,7 @@ function pt_fraction(jet1::T, jet2::T) where {T <: FourMomentum}
 end
 
 """
-    kt_scale(jet1::T, jet2::T) where {T <: FourMomentum}
+    kt_scale(jet1::FourMomentum, jet2::FourMomentum)
 
 Computes the transverse momentum scale as the product of the minimum pt and 
 the angular separation in the η-ϕ plane (using *pseudorapidity*).
@@ -137,4 +135,57 @@ function kt_scale(jet1::T, jet2::T) where {T <: FourMomentum}
     pt1 = JetReconstruction.pt(jet1)
     pt2 = JetReconstruction.pt(jet2)
     return min(pt1, pt2) * deltar(jet1, jet2)
+end
+
+"""
+    construct_reco_jets(particles, ::Type{J}, preprocess) where {J <: FourMomentum}
+
+Generate reconstruction ready jets from the set of input particles.
+
+# Details
+
+The initial "jets" ready for reconstruction will be created from `particles`. The
+type of the jets is given by `J` so that different `FourMomentum` types can be
+used. The function `preprocess` will be used to massage the input particles, unless
+`nothing` is passed, in which case this is skipped.
+"""
+function construct_reco_jets(particles::P, ::Type{J},
+                             preprocess) where {P, J <: FourMomentum}
+    # Decide what our return type will be, based on what we find
+    # in `particles`
+    # See if `particles` sensibly supports `eltype()`, otherwise
+    # apply a hack with an explicit conversion
+    TargetNumericalType = eltype(particles[1])
+    if TargetNumericalType <: Real
+        TargetJetType = J{TargetNumericalType}
+    else
+        TargetJetType = typeof(J(particles[1]))
+    end
+
+    if isnothing(preprocess)
+        if P == J
+            # If we don't have a preprocessor, we just need to copy the inputs
+            # when the type matches the target
+            recombination_particles = copy(particles)
+            sizehint!(recombination_particles, length(particles) * 2)
+        else
+            # We assume a constructor for J that can ingest the appropriate
+            # type of particle
+            recombination_particles = Vector{TargetJetType}(undef, 0)
+            sizehint!(recombination_particles, length(particles) * 2)
+            for (i, particle) in enumerate(particles)
+                push!(recombination_particles, J(particle; cluster_hist_index = i))
+            end
+        end
+    else
+        # We have a preprocessor function that we need to call to modify the
+        # input particles
+        recombination_particles = Vector{TargetJetType}(undef, 0)
+        sizehint!(recombination_particles, length(particles) * 2)
+        for (i, particle) in enumerate(particles)
+            push!(recombination_particles,
+                  preprocess(particle, TargetJetType, cluster_hist_index = i))
+        end
+    end
+    recombination_particles
 end

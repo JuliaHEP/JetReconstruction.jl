@@ -129,7 +129,7 @@ end
 
 function run_reco_test(test::ComparisonTest; testname = nothing,
                        break_history_indices = false)
-    jet_type = JetReconstruction.is_ee(test.algorithm) ? EEJet : PseudoJet
+    jet_type = JetReconstruction.is_ee(test.algorithm) ? EEJet{Float64} : PseudoJet{Float64}
     # Read the input events
     events = JetReconstruction.read_final_state_particles(test.events_file, jet_type)
     # mess around with indices if requested

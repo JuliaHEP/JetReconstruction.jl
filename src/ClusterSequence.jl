@@ -20,56 +20,65 @@ const NonexistentParent = -2
 const BeamJet = -1
 
 """
-    struct HistoryElement
+    struct HistoryElement{T <: Real}
 
-A struct holding a record of jet mergers and finalisations
+A struct holding a record of jet mergers and finalisations. Floating
+point fields are parameterised on T.
 
-Fields:
-- `parent1`: Index in history where first parent of this jet was created
-  (NonexistentParent if this jet is an original particle)
-- `parent2`: Index in history where second parent of this jet was created
-  (NonexistentParent if this jet is an original particle); BeamJet if this
-  history entry just labels the fact that the jet has recombined with the beam)
-- `child`: Index in history where the current jet is recombined with another jet
-  to form its child. It is Invalid if this jet does not further recombine.
-- `jetp_index`: Index in the jets vector where we will find the PseudoJet object
+# Fields
+- `parent1::Int`: Index in history where first parent of this jet was created
+  (`NonexistentParent` if this jet is an original particle).
+- `parent2::Int`: Index in history where second parent of this jet was created
+  (`NonexistentParent` if this jet is an original particle; `BeamJet` if this
+  history entry just labels the fact that the jet has recombined with the beam).
+- `child::Int`: Index in history where the current jet is recombined with another jet
+  to form its child. It is `Invalid` if this jet does not further recombine.
+- `jetp_index::Int`: Index in the jets vector where we will find the `FourMomentum` object
   corresponding to this jet (i.e. the jet created at this entry of the history).
   NB: if this element of the history corresponds to a beam recombination, then
   `jetp_index=Invalid`.
-- `dij`: The distance corresponding to the recombination at this stage of the
+- `dij::T`: The distance corresponding to the recombination at this stage of the
   clustering.
-- `max_dij_so_far`: The largest recombination distance seen so far in the
+- `max_dij_so_far::T`: The largest recombination distance seen so far in the
   clustering history.
 """
-struct HistoryElement
+struct HistoryElement{T <: Real}
     parent1::Int
     parent2::Int
     child::Int
     jetp_index::Int
-    dij::Float64
-    max_dij_so_far::Float64
+    dij::T
+    max_dij_so_far::T
 end
 
+import Base.eltype
 """
-    HistoryElement(jetp_index)
+    eltype(::HistoryElement{T})
 
-Constructs a `HistoryElement` object with the given `jetp_index`, used for
+Return the parameterised type, `T` of the history sequence.
+"""
+eltype(::HistoryElement{T}) where {T} = T
+
+"""
+    HistoryElement{T}(jetp_index) where {T <: Real}
+
+Constructs a `HistoryElement{T}` object with the given `jetp_index`, used for
 initialising the history with original particles.
 
 # Arguments
 - `jetp_index`: The index of the jetp.
 
 # Returns
-A `HistoryElement` object.
-
+A `HistoryElement{T}` object.
 """
-function HistoryElement(jetp_index)
+function HistoryElement{T}(jetp_index) where {T <: Real}
     HistoryElement(NonexistentParent, NonexistentParent, Invalid,
-                   jetp_index, 0.0, 0.0)
+                   jetp_index, zero(T), zero(T))
 end
 
 """
-    initial_history(particles)
+    initial_history(particles::AbstractVector{A}) where {T <: Real, J <: FourMomentum{T},
+                                              A <: AbstractVector{J}}
 
 Create an initial history for the given particles.
 
@@ -77,18 +86,19 @@ Create an initial history for the given particles.
 - `particles`: The initial vector of stable particles.
 
 # Returns
-- `history`: An array of `HistoryElement` objects.
+- `history`: An array of `HistoryElement{T}` objects.
 - `Qtot`: The total energy in the event.
 """
-function initial_history(particles)
+function initial_history(particles::A) where {T <: Real, J <: FourMomentum{T},
+                                              A <: AbstractVector{J}}
     # reserve sufficient space for everything
-    history = Vector{HistoryElement}(undef, length(particles))
+    history = Vector{HistoryElement{T}}(undef, length(particles))
     sizehint!(history, 2 * length(particles))
 
-    Qtot::Float64 = 0
+    Qtot::T = zero(T)
 
     for i in eachindex(particles)
-        history[i] = HistoryElement(i)
+        history[i] = HistoryElement{T}(i)
 
         # get cross-referencing right from the Jets
         # particles[i]._cluster_hist_index = i
@@ -101,58 +111,66 @@ function initial_history(particles)
 end
 
 """
-    struct ClusterSequence
+    struct ClusterSequence{T <: Real, J <: FourMomentum{T}}
 
 A struct holding the full history of a jet clustering sequence, including the
-final jets.
+final jets. Parameterised on the jet type `J`, including it's numerical
+parameter `T`.
 
 # Fields
 - `algorithm::JetAlgorithm.Algorithm`: The algorithm used for clustering.
-- `power::Float64`: The power value used for the clustering algorithm (not that
-  this value is always stored as a Float64 to be type stable)
+- `power::Float64`: The power value used for the clustering algorithm (note that
+  this value is always stored as a `Float64` to be type stable).
 - `R::Float64`: The R parameter used for the clustering algorithm.
 - `strategy::RecoStrategy.Strategy`: The strategy used for clustering.
-- `jets::Vector{T}`: The actual jets in the cluster sequence, which are of type
-  `T <: FourMomentum`.
+- `jets::Vector{J}`: The actual jets in the cluster sequence, which are of type
+  `J <: FourMomentum{T}`.
 - `n_initial_jets::Int`: The initial number of particles used for exclusive
   jets.
-- `history::Vector{HistoryElement}`: The branching history of the cluster
-  sequence. Each stage in the history indicates where to look in the jets vector
-  to get the physical PseudoJet.
-- `Qtot::Float64`: The total energy of the event.
+- `history::Vector{HistoryElement{T}}`: The branching history of the cluster
+  sequence. Each stage in the history indicates where to look in the `jets` vector
+  to get the physical jet.
+- `Qtot::T`: The total energy of the event.
 """
-struct ClusterSequence{T <: FourMomentum}
+struct ClusterSequence{T <: Real, J <: FourMomentum{T}}
     algorithm::JetAlgorithm.Algorithm
-    power::Float64
-    R::Float64
+    power::T
+    R::T
     strategy::RecoStrategy.Strategy
-    jets::Vector{T}
+    jets::Vector{J}
     n_initial_jets::Int
-    history::Vector{HistoryElement}
-    Qtot::Float64
+    history::Vector{HistoryElement{T}}
+    Qtot::T
 end
 
+import Base.eltype
 """
-    ClusterSequence(algorithm::JetAlgorithm.Algorithm, p, R,
-                         strategy::RecoStrategy.Strategy, jets::Vector{T}, history,
-                         Qtot) where {T <: FourMomentum}
+    eltype(::ClusterSequence{T})
 
-Construct a `ClusterSequence` object.
+Return the parameterised type, `J` of the history sequence. Note that this is not
+the numeric type of the jets, that requires `eltype(eltype(::ClusterSequence))`.
+"""
+eltype(::ClusterSequence{T, J}) where {T, J} = J
+
+"""
+    ClusterSequence(algorithm, p, R, strategy, jets::Vector{J}, history, Qtot) where {T <: Real, J <: FourMomentum{T}}
+
+Construct a `ClusterSequence{T, J}` object.
 
 # Arguments
 - `algorithm::JetAlgorithm.Algorithm`: The algorithm used for clustering.
 - `p`: The power value used for the clustering algorithm.
 - `R`: The R parameter used for the clustering algorithm.
 - `strategy::RecoStrategy.Strategy`: The strategy used for clustering.
-- `jets::Vector{T}`: The jets in the cluster sequence, which are of T <: FourMomentum
-- `history::Vector{HistoryElement}`: The branching history of the cluster
+- `jets::Vector{J}`: The jets in the cluster sequence, where `J <: FourMomentum{T}`.
+- `history::Vector{HistoryElement{T}}`: The branching history of the cluster
   sequence.
-- `Qtot`: The total energy of the event.
+- `Qtot::T`: The total energy of the event.
 """
 function ClusterSequence(algorithm::JetAlgorithm.Algorithm, p, R,
-                         strategy::RecoStrategy.Strategy, jets::Vector{T}, history,
-                         Qtot) where {T <: FourMomentum}
-    ClusterSequence{T}(algorithm, p, R, strategy, jets, length(jets), history, Qtot)
+                         strategy::RecoStrategy.Strategy, jets::Vector{J}, history,
+                         Qtot) where {T <: Real, J <: FourMomentum{T}}
+    ClusterSequence{T, J}(algorithm, p, R, strategy, jets, length(jets), history, Qtot)
 end
 
 """
@@ -176,12 +194,13 @@ If the `parent1` or `parent2` have already been recombined, an `InternalError`
 is thrown. The `jetp_index` is used to update the `_cluster_hist_index` of the
 corresponding `PseudoJet` object.
 """
-function add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index,
-                              dij)
+function add_step_to_history!(clusterseq::ClusterSequence{T, J}, parent1, parent2,
+                              jetp_index,
+                              dij) where {T <: Real, J <: FourMomentum{T}}
     max_dij_so_far = max(dij, clusterseq.history[end].max_dij_so_far)
     push!(clusterseq.history,
-          HistoryElement(parent1, parent2, Invalid,
-                         jetp_index, dij, max_dij_so_far))
+          HistoryElement{T}(parent1, parent2, Invalid,
+                            jetp_index, dij, max_dij_so_far))
 
     local_step = length(clusterseq.history)
 
@@ -216,40 +235,40 @@ function add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jet
 end
 
 """
-    inclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVectorCyl{Float64}; ptmin = 0.0) where {T, U}
+    inclusive_jets(clusterseq::ClusterSequence{T, J}, ::Type{R} = LorentzVector{Float64}; ptmin = 0.0) where {T, J, R}
 
-Return all inclusive jets of a ClusterSequence with pt > ptmin.
+Return all inclusive jets of a `ClusterSequence` with pt > ptmin.
 
 # Arguments
 - `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the
   clustering history and jets.
-- `::Type{T} = LorentzVectorCyl{Float64}`: The return type used for the selected jets.
-- `ptmin::Float64 = 0.0`: The minimum transverse momentum (pt) threshold for the
+- `::Type{R} = LorentzVector{Float64}`: The return type used for the selected jets.
+- `ptmin::Real = 0.0`: The minimum transverse momentum (pt) threshold for the
   inclusive jets.
 
 # Returns
-An array of `T` objects representing the inclusive jets.
+An array of `R` objects representing the inclusive jets.
 
 # Description
 This function computes the inclusive jets from a given `ClusterSequence` object.
 It iterates over the clustering history and checks the transverse momentum of
-each parent jet. If the transverse momentum is greater than or equal to `ptmin`,
-the jet is added to the array of inclusive jets.
+each jet that merged with the beam. If the transverse momentum is greater than 
+or equal to `ptmin`, the jet is added to the array of inclusive jets.
 
-Valid return types are `LorentzVector` `LorentzVectorCyl` or the jet type of the
-input `clusterseq` (`U` - either `PseudoJet` or `EEJet` depending which
-algorithm was used).
+Valid return types are `LorentzVector`, `LorentzVectorCyl`, or the jet type of the
+input `clusterseq` (`J` - usually either `PseudoJet` or `EEJet`).
 
 # Example
 ```julia
 inclusive_jets(clusterseq; ptmin = 10.0)
 ```
 """
-function inclusive_jets(clusterseq::ClusterSequence{U},
-                        ::Type{T} = LorentzVector{Float64};
-                        ptmin = 0.0) where {T, U}
+function inclusive_jets(clusterseq::ClusterSequence{T, J},
+                        ::Type{R} = LorentzVector{T};
+                        ptmin = 0.0) where {T <: Real, J <: FourMomentum{T}, R}
     pt2min = ptmin * ptmin
-    jets_local = T[]
+    RetType = concretize_return_type(R, T)
+    jets_local = RetType[]
     # sizehint!(jets_local, length(clusterseq.jets))
     # For inclusive jets with a plugin algorithm, we make no
     # assumptions about anything (relation of dij to momenta,
@@ -261,14 +280,14 @@ function inclusive_jets(clusterseq::ClusterSequence{U},
         jet = clusterseq.jets[iparent_jet]
         if pt2(jet) >= pt2min
             @debug "Added inclusive jet index $iparent_jet"
-            if T == U
+            if J == RetType
                 push!(jets_local, jet)
-            elseif T <: LorentzVectorCyl
+            elseif RetType <: LorentzVectorCyl
                 push!(jets_local, lorentzvector_cyl(jet))
-            elseif T <: LorentzVector
+            elseif RetType <: LorentzVector
                 push!(jets_local, lorentzvector(jet))
             else
-                error("Unsupported return type $T for inclusive jets")
+                error("Unsupported return type $RetType for inclusive jets (cf. ClusterSequence jet type $J)")
             end
         end
     end
@@ -276,15 +295,15 @@ function inclusive_jets(clusterseq::ClusterSequence{U},
 end
 
 """
-    exclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVector{Float64}; dcut = nothing, njets = nothing) where {T, U}
+    exclusive_jets(clusterseq::ClusterSequence{T, J}, ::Type{R} = LorentzVector{Float64}; dcut = nothing, njets = nothing) where {T, J, R}
 
-Return all exclusive jets of a ClusterSequence, with either a specific number of
+Return all exclusive jets of a `ClusterSequence`, with either a specific number of
 jets or a cut on the maximum distance parameter.
 
 # Arguments
 - `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the
   clustering history and jets.
-- `::Type{T} = LorentzVectorCyl{Float64}`: The return type used for the selected
+- `::Type{R} = LorentzVector{Float64}`: The return type used for the selected
   jets.
 - `dcut::Union{Nothing, Real}`: The distance parameter used to define the
   exclusive jets. If `dcut` is provided, the number of exclusive jets will be
@@ -296,11 +315,10 @@ jets or a cut on the maximum distance parameter.
 **Note**: Either `dcut` or `njets` must be provided (but not both).
 
 # Returns
-- An array of `T` objects representing the exclusive jets.
+- An array of `R` objects representing the exclusive jets.
 
-Valid return types are `LorentzVector` `LorentzVectorCyl` or the jet type of the
-input `clusterseq` (`U` - either `PseudoJet` or `EEJet` depending which
-algorithm was used).
+Valid return types are `LorentzVector`, `LorentzVectorCyl`, or the jet type of the
+input `clusterseq` (`J` - usually either `PseudoJet` or `EEJet`).
 
 # Exceptions
 - `ArgumentError`: If neither `dcut` nor `njets` is provided.
@@ -315,9 +333,10 @@ exclusive_jets(clusterseq, dcut = 20.0)
 exclusive_jets(clusterseq, PseudoJet, njets = 3)
 ```
 """
-function exclusive_jets(clusterseq::ClusterSequence{U},
-                        ::Type{T} = LorentzVector{Float64};
-                        dcut = nothing, njets = nothing) where {T, U}
+function exclusive_jets(clusterseq::ClusterSequence{T, J},
+                        ::Type{R} = LorentzVector{Float64};
+                        dcut = nothing,
+                        njets = nothing,) where {T <: Real, J <: FourMomentum{T}, R}
     if isnothing(dcut) && isnothing(njets)
         throw(ArgumentError("Must pass either a dcut or an njets value"))
     end
@@ -349,21 +368,22 @@ function exclusive_jets(clusterseq::ClusterSequence{U},
         throw(ErrorException("Cluster sequence is incomplete, exclusive jets unavailable"))
     end
 
-    excl_jets = T[]
+    RetType = concretize_return_type(R, T)
+    excl_jets = RetType[]
     for j in stop_point:length(clusterseq.history)
         @debug "Search $j ($(clusterseq.history[j].parent1) + $(clusterseq.history[j].parent2))"
         for parent in (clusterseq.history[j].parent1, clusterseq.history[j].parent2)
             if (parent < stop_point && parent > 0)
                 @debug "Added exclusive jet index $(clusterseq.history[parent].jetp_index)"
                 jet = clusterseq.jets[clusterseq.history[parent].jetp_index]
-                if T == U
+                if J == RetType
                     push!(excl_jets, jet)
-                elseif T <: LorentzVectorCyl
+                elseif RetType <: LorentzVectorCyl
                     push!(excl_jets, lorentzvector_cyl(jet))
-                elseif T <: LorentzVector
+                elseif RetType <: LorentzVector
                     push!(excl_jets, lorentzvector(jet))
                 else
-                    error("Unsupported return type $T for inclusive jets")
+                    error("Unsupported return type $RetType for exclusive jets (cf. ClusterSequence jet type $J)")
                 end
             end
         end
@@ -372,13 +392,13 @@ function exclusive_jets(clusterseq::ClusterSequence{U},
 end
 
 """
-    n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
+    n_exclusive_jets(clusterseq::ClusterSequence, dcut::Real)
 
-Return the number of exclusive jets of a ClusterSequence that are above a certain dcut value.
+Return the number of exclusive jets of a `ClusterSequence` that are above a certain `dcut` value.
 
 # Arguments
 - `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the clustering history.
-- `dcut::AbstractFloat`: The maximum value for the distance parameter in the reconstruction.
+- `dcut::Real`: The maximum value for the distance parameter in the reconstruction.
 
 # Returns
 The number of exclusive jets in the `ClusterSequence` object.
@@ -491,30 +511,30 @@ function jet_ranks(clusterseq::ClusterSequence; compare_fn = JetReconstruction.p
 end
 
 """
-    struct JetWithAncestors{T <: FourMomentum}
+    struct JetWithAncestors{J <: FourMomentum}
 
 A struct representing a jet with its origin ancestors.
 
 # Fields
-- `self::T`: The jet object itself.
+- `self::J`: The jet object itself.
 - `jetp_index::Int`: The index of the jet in the corresponding cluster sequence.
-- `ancestors::Set{Int}`: A set of indices representing the jetp_indexes of
+- `ancestors::Set{Int}`: A set of indices representing the `jetp_index`es of
   ancestors of the jet (in the cluster sequence).
 - `jet_rank::Int`: The rank of the jet based on a comparison of all of the jet's
-  ancestors
+  ancestors.
 
 # Note
 This structure needs its associated cluster sequence origin to be useful.
 """
-struct JetWithAncestors{T <: FourMomentum}
-    self::T
+struct JetWithAncestors{T <: Real, J <: FourMomentum{T}}
+    self::J
     jetp_index::Int
     ancestors::Set{Int}
     jet_rank::Int
 end
 
 """
-    reco_state(cs::ClusterSequence, pt_ranks; iteration=0)
+    reco_state(cs::ClusterSequence{T, J}, ranks; iteration = 0, ignore_beam_merge = true) where {T, J}
 
 This function returns the reconstruction state of a `ClusterSequence` object
 based on a given iteration number in the reconstruction.
@@ -523,13 +543,14 @@ based on a given iteration number in the reconstruction.
 - `cs::ClusterSequence`: The `ClusterSequence` object to update.
 - `ranks`: The ranks of the original clusters, that are inherited by pseudojets
  during the reconstruction process.
-- `iteration=0`: The iteration number to consider for updating the
+- `iteration = 0`: The iteration number to consider for updating the
   reconstruction state (0 represents the initial state).
-- `ignore_beam_merge=true`: Ignore beam merging steps in the reconstruction
+- `ignore_beam_merge = true`: Ignore beam merging steps in the reconstruction
   (which produce no change in status).
 
 # Returns
-A dictionary representing a snapshot of the reconstruction state.
+A dictionary representing a snapshot of the reconstruction state, mapping 
+jet indices to `JetWithAncestors` objects.
 
 # Details
 The function starts by initializing the reconstruction state with the initial
@@ -537,13 +558,14 @@ particles. Then, it walks over the iteration sequence and updates the
 reconstruction state based on the history of recombination and finalization/beam
 merger steps.
 """
-function reco_state(cs::ClusterSequence{T}, ranks; iteration = 0,
-                    ignore_beam_merge = true) where {T <: FourMomentum}
+function reco_state(cs::ClusterSequence{T, J}, ranks; iteration = 0,
+                    ignore_beam_merge = true) where {T <: Real, J <: FourMomentum{T}}
     # Get the initial particles
-    reco_state = Dict{Int, JetWithAncestors{T}}()
+    reco_state = Dict{Int, JetWithAncestors{T, J}}()
     for jet_index in 1:(cs.n_initial_jets)
-        reco_state[jet_index] = JetWithAncestors{T}(cs.jets[cs.history[jet_index].jetp_index],
-                                                    jet_index, Set([]), ranks[jet_index])
+        reco_state[jet_index] = JetWithAncestors{T, J}(cs.jets[cs.history[jet_index].jetp_index],
+                                                       jet_index, Set{Int}([]),
+                                                       ranks[jet_index])
     end
     # Now update the reconstruction state by walking over the iteration sequence
     iterations_done = 0
@@ -567,9 +589,9 @@ function reco_state(cs::ClusterSequence{T}, ranks; iteration = 0,
                 (ranks[ancestor] < pt_rank) && (pt_rank = ranks[ancestor])
             end
 
-            reco_state[h_entry.jetp_index] = JetWithAncestors{T}(cs.jets[h_entry.jetp_index],
-                                                                 h_entry.jetp_index,
-                                                                 my_ancestors, pt_rank)
+            reco_state[h_entry.jetp_index] = JetWithAncestors{T, J}(cs.jets[h_entry.jetp_index],
+                                                                    h_entry.jetp_index,
+                                                                    my_ancestors, pt_rank)
             delete!(reco_state, cs.history[h_entry.parent1].jetp_index)
             delete!(reco_state, cs.history[h_entry.parent2].jetp_index)
         else
@@ -587,27 +609,27 @@ function reco_state(cs::ClusterSequence{T}, ranks; iteration = 0,
 end
 
 """
-    constituents(jet::T, cs::ClusterSequence{T}) where T <: FourMomentum
+    constituents(jet::J, cs::ClusterSequence{T, J}) where {T, J}
 
 Get a copy of the constituents of a given jet in a cluster sequence.
 
 # Arguments
-- `cs::ClusterSequence{T}`: The cluster sequence object.
-- `jet::T`: The jet for which to retrieve the constituents.
+- `jet::J`: The jet for which to retrieve the constituents.
+- `cs::ClusterSequence{T, J}`: The cluster sequence object.
 
 # Returns
-An array of jet objects (which are of the same type as the input jet)
-copied from the constituents of the given jet, with reset cluster history
-indexes.
+An array of jet objects (of type `J`) copied from the constituents of the given 
+jet, with reset cluster history indexes.
 """
-function constituents(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
+function constituents(jet::J,
+                      cs::ClusterSequence{T, J}) where {T <: Real, J <: FourMomentum{T}}
     constituent_idxs = constituent_indexes(jet, cs)
-    constituents = Vector{T}()
+    constituents = Vector{J}()
     sizehint!(constituents, length(constituent_idxs))
     new_index = 1
     for idx in constituent_idxs
         push!(constituents,
-              T(px(cs.jets[idx]), py(cs.jets[idx]), pz(cs.jets[idx]),
+              J(px(cs.jets[idx]), py(cs.jets[idx]), pz(cs.jets[idx]),
                 energy(cs.jets[idx]); cluster_hist_index = new_index))
         new_index += 1
     end
@@ -615,40 +637,44 @@ function constituents(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
 end
 
 """
-    constituent_indexes(jet::T, cs::ClusterSequence{T}) where T <: FourMomentum
+    constituent_indexes(jet::J, cs::ClusterSequence{T, J}) where {T, J}
 
 Return the indexes of the original particles which are the constituents of the
 given jet.
 
 # Arguments
-- `jet::T`: The jet for which to retrieve the constituents.
-- `cs::ClusterSequence{T}`: The cluster sequence object.
+- `jet::J`: The jet for which to retrieve the constituents.
+- `cs::ClusterSequence{T, J}`: The cluster sequence object.
 
 # Returns
-
-An vector of indices representing the original constituents of the given jet.
+A vector of indices representing the original constituents of the given jet.
 """
-function constituent_indexes(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
+function constituent_indexes(jet::J,
+                             cs::ClusterSequence{T, J}) where {T <: Real,
+                                                               J <: FourMomentum{T}}
     get_all_ancestors(jet._cluster_hist_index, cs)
 end
 
 """
-    parent_jets(jet::T, cs::ClusterSequence{T})::Tuple{Union{Nothing, T}, Union{Nothing, T}} where {T <: FourMomentum}
+    parent_jets(jet::J, cs::ClusterSequence{T, J}) where {T, J}
 
 Find the parent jets of a given jet in a cluster sequence.
 
 # Arguments
-- `jet::T`: The jet for which to find the parent jets.
-- `cs::ClusterSequence`: The cluster sequence object.
+- `jet::J`: The jet for which to find the parent jets.
+- `cs::ClusterSequence{T, J}`: The cluster sequence object.
 
 # Returns
-A tuple of two elements, each of which is either the parent jet object or
-`nothing` (if the jet has no parent).
+A tuple of two elements, each of which is either the parent jet object (of type `J`) 
+or `nothing` (if the jet has no parent).
 """
-function parent_jets(jet::T,
-                     cs::ClusterSequence{T})::Tuple{Union{Nothing, T},
-                                                    Union{Nothing, T}} where {T <:
-                                                                              FourMomentum}
+function parent_jets(jet::J,
+                     cs::ClusterSequence{T, J})::Tuple{Union{Nothing, J},
+                                                       Union{Nothing, J}} where {T <:
+                                                                                 Real,
+                                                                                 J <:
+                                                                                 FourMomentum{T}
+                                                                                 }
     hist_idx = jet._cluster_hist_index
     jet_history = cs.history[hist_idx]
 

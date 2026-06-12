@@ -1,33 +1,34 @@
 import Accessors
 
 """
-    struct EEJet <: FourMomentum
+    struct EEJet{T <: Real} <: FourMomentum{T}
 
 The `EEJet` struct is a 4-momentum object used for the e+e jet reconstruction routines.
+It is parameterized by the type `T` of its momentum components.
 
 # Fields
-- `px::Float64`: The x-component of the jet momentum.
-- `py::Float64`: The y-component of the jet momentum.
-- `pz::Float64`: The z-component of the jet momentum.
-- `E::Float64`: The energy of the jet.
-- `_cluster_hist_index::Int`: The index of the cluster histogram.
-- `_p2::Float64`: The squared momentum of the jet.
-- `_inv_p::Float64`: The inverse momentum of the jet.
+- `px::T`: The x-component of the jet momentum.
+- `py::T`: The y-component of the jet momentum.
+- `pz::T`: The z-component of the jet momentum.
+- `E::T`: The energy of the jet.
+- `_p2::T`: The squared momentum of the jet.
+- `_inv_p::T`: The inverse momentum of the jet.
+- `_cluster_hist_index::Int`: The index of the cluster history.
 """
-struct EEJet <: FourMomentum
-    px::Float64
-    py::Float64
-    pz::Float64
-    E::Float64
-    _p2::Float64
-    _inv_p::Float64
+struct EEJet{T <: Real} <: FourMomentum{T}
+    px::T
+    py::T
+    pz::T
+    E::T
+    _p2::T
+    _inv_p::T
     _cluster_hist_index::Int
 end
 
 """
-    EEJet(px::Real, py::Real, pz::Real, E::Real, cluster_hist_index::Int)
+    EEJet(px::T, py::T, pz::T, E::T; cluster_hist_index::Int = 0) where {T <: Real}
 
-Constructs an `EEJet` object from the given momentum components, energy, and
+Constructs an `EEJet{T}` object from the given momentum components, energy, and
 cluster history index.
 
 # Details
@@ -35,36 +36,56 @@ cluster history index.
 If the default value of `cluster_hist_index=0` is used, the `EEJet` cannot be
 used in a reconstruction sequence.
 """
-function EEJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::Int = 0)
+function EEJet(px::T, py::T, pz::T, E::T; cluster_hist_index::Int = 0) where {T <: Real}
     @muladd p2 = px * px + py * py + pz * pz
     inv_p = @fastmath 1.0 / sqrt(p2)
-    EEJet(px, py, pz, E, p2, inv_p, cluster_hist_index)
+    EEJet{T}(px, py, pz, E, p2, inv_p, cluster_hist_index)
+end
+
+"""
+    EEJet(px, py, pz, E; cluster_hist_index::Int = 0)
+
+Constructor to use if it happens that input numerical types are mixed. The
+inputs are promoted to a common type `T`, and an `EEJet{T}` is returned.
+"""
+function EEJet(px::Tpx, py::Tpy, pz::Tpz, E::TE;
+               cluster_hist_index::Int = 0) where {Tpx, Tpy, Tpz, TE}
+    EEJet(promote(px, py, pz, E)...; cluster_hist_index)
+end
+
+"""
+    EEJet{T}(px, py, pz, E; cluster_hist_index::Integer = 0) where {T <: Real}
+
+Constructor for explicit parameter type `T`.
+"""
+function EEJet{T}(px, py, pz, E; cluster_hist_index::Integer = 0) where {T <: Real}
+    EEJet(T(px), T(py), T(pz), T(E); cluster_hist_index)
 end
 
 """
     EEJet(jet::EEJet; cluster_hist_index::Int = 0)
 
-Construct a PseudoJet from another `EEJet` object and assign given cluster index to it.
+Construct an `EEJet` from another `EEJet` object and assign given cluster index to it.
 """
 function EEJet(jet::EEJet; cluster_hist_index::Int = 0)
     Accessors.@set jet._cluster_hist_index = cluster_hist_index
 end
 
 """
-    EEJet(;pt::Real, rap::Real, phi::Real, m::Real = 0, cluster_hist_index::Int = 0)
+    EEJet(;pt, rap, phi, m = 0, cluster_hist_index::Int = 0)
 
-Construct an EEJet from `(pt, y, ϕ, m)` with the cluster index
+Construct an `EEJet` from `(pt, rap, phi, m)` with the cluster index
 `cluster_hist_index`. This is not recommended, as the performance is quite
 poor, but is included for completeness and to allow support for PtScheme and
 Pt2Scheme.
 
 # Details
 
-If the (default) value of `cluster_hist_index=0` is used, the PseudoJet cannot be
+If the (default) value of `cluster_hist_index=0` is used, the `EEJet` cannot be
 used in a reconstruction sequence.
 """
-function EEJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
-               cluster_hist_index::Int = 0)
+function EEJet(; pt, rap, phi, m = 0,
+               cluster_hist_index = 0)
     phi = phi < 0 ? phi + 2π : phi
     phi = phi > 2π ? phi - 2π : phi
     ptm = (m == 0) ? pt : sqrt(pt^2 + m^2)
@@ -82,7 +103,8 @@ end
 """
     EEJet(jet::LorentzVector; cluster_hist_index::Int = 0)
 
-Construct a EEJet from a `LorentzVector` object with optional cluster index.
+Construct an `EEJet` from a `LorentzVector` object with optional cluster index.
+The underlying type is inferred from the `LorentzVector` components.
 
 The `cluster_hist_index` is optional, but needed if the `jet` is part of a
 reconstruction sequence. If not provided, it defaults to `0` as an "invalid"
@@ -93,16 +115,51 @@ function EEJet(jet::LorentzVector; cluster_hist_index::Int = 0)
 end
 
 """
+    EEJet{T}(jet::LorentzVector; cluster_hist_index::Int = 0) where {T <: Real}
+
+Construct a `T` parameterised `EEJet` from a `LorentzVector` object with
+optional cluster index.
+
+The `cluster_hist_index` is optional, but needed if the `jet` is part of a
+reconstruction sequence. If not provided, it defaults to `0` as an "invalid"
+value.
+"""
+function EEJet{T}(jet::LorentzVector; cluster_hist_index::Int = 0) where {T <: Real}
+    EEJet(T(jet.x), T(jet.y), T(jet.z), T(jet.t); cluster_hist_index)
+end
+
+"""
+    EEJet(jet::LorentzVectorCyl; cluster_hist_index::Int = 0)
+
+Construct a `EEJet` from a `LorentzVectorCyl` object with the given cluster index.
+The underlying type is inferred from the `LorentzVectorCyl` components.
+"""
+function EEJet(jet::LorentzVectorCyl; cluster_hist_index::Int = 0)
+    EEJet(; pt = pt(jet), rap = rapidity(jet), phi = phi(jet), m = mass(jet),
+          cluster_hist_index)
+end
+
+"""
+    EEJet{T}(jet::LorentzVectorCyl; cluster_hist_index::Int = 0)  where {T <: Real}
+
+Construct a `T` parameterised `EEJet` from a `LorentzVectorCyl` object with the
+given cluster index.
+"""
+function EEJet{T}(jet::LorentzVectorCyl; cluster_hist_index::Int = 0) where {T <: Real}
+    EEJet(; pt = T(pt(jet)), rap = T(rapidity(jet)), phi = T(phi(jet)), m = T(mass(jet)),
+          cluster_hist_index)
+end
+
+"""
     EEJet(jet::Any; cluster_hist_index::Int = 0)
 
-Construct an EEJet from a generic object `jet` with the given cluster index.
-These generic jets must implement the LorentzVectorBase interface from
-`LorentzVectorBase.jl`.
+Construct an `EEJet` from a generic object `jet` with the given cluster index.
+The generic jet must implement the `LorentzVectorBase` interface.
 
 # Details
 
-This function is used to convert a generic object `jet` into a `EEJet`.
-These generic jets should implement the LorentzVectorBase interface: the
+This function is used to convert a generic object `jet` into an `EEJet`.
+These generic jets should implement the `LorentzVectorBase` interface: the
 `LorentzVectorBase.{px,py,pz,energy}()` methods will be called to retrieve
 the four momentum components.
 
@@ -115,6 +172,35 @@ function EEJet(jet::Any; cluster_hist_index::Int = 0)
     if hasmethod(LorentzVectorBase.coordinate_system, (typeof(jet),))
         return EEJet(LorentzVectorBase.px(jet), LorentzVectorBase.py(jet),
                      LorentzVectorBase.pz(jet), LorentzVectorBase.energy(jet);
+                     cluster_hist_index)
+    else
+        throw(ArgumentError("EEJet cannot be constructed from object of type '$(typeof(jet))'"))
+    end
+end
+
+"""
+    EEJet{T}(jet::Any; cluster_hist_index::Int = 0) where {T <: Real}
+
+Construct an `EEJet` from a generic object `jet` with the given cluster index,
+parametrising the resulting jet as `T`. The generic input jet must implement the
+`LorentzVectorBase` interface.
+
+# Details
+
+This function is used to convert a generic object `jet` into an `EEJet`.
+These generic jets should implement the `LorentzVectorBase` interface: the
+`LorentzVectorBase.{px,py,pz,energy}()` methods will be called to retrieve
+the four momentum components.
+
+The `cluster_hist_index` is optional, but needed if the `jet` is part of a
+reconstruction sequence. If not provided, it defaults to `0` as an "invalid"
+value.
+"""
+function EEJet{T}(jet::Any; cluster_hist_index::Int = 0) where {T <: Real}
+    # Check that the interface is implemented
+    if hasmethod(LorentzVectorBase.coordinate_system, (typeof(jet),))
+        return EEJet(T(LorentzVectorBase.px(jet)), T(LorentzVectorBase.py(jet)),
+                     T(LorentzVectorBase.pz(jet)), T(LorentzVectorBase.energy(jet));
                      cluster_hist_index)
     else
         throw(ArgumentError("EEJet cannot be constructed from object of type '$(typeof(jet))'"))
@@ -151,15 +237,18 @@ Return the z-component of the unit vector aligned with the momentum of `eej`
 """
 nz(eej::EEJet) = eej.pz * eej._inv_p
 
-# Optimised reconstruction struct for e+e jets
+"""
+    mutable struct EERecoJet{T}
 
-mutable struct EERecoJet
+An optimised structure, used to create an StructArray for e+e- reconstruction
+"""
+mutable struct EERecoJet{T}
     index::Int
     nni::Int
-    nndist::Float64
-    dijdist::Float64
-    nx::Float64
-    ny::Float64
-    nz::Float64
-    E2p::Float64
+    nndist::T
+    dijdist::T
+    nx::T
+    ny::T
+    nz::T
+    E2p::T
 end

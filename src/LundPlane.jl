@@ -1,14 +1,16 @@
 """
-    decluster(jet::T, clusterseq::ClusterSequence{T}) where {T <: FourMomentum}
+    decluster(jet::J, clusterseq::ClusterSequence{T, J}) where {T, J}
 
 Given a jet and its clustering sequence, this function attempts to 
 decluster it into its two parent subjets. If both parents exist, it 
 returns them ordered by descending `pt²`.
 
-Returns:
-- `(j1, j2)` where `j1` is the harder subjet.
+# Returns
+- `(j1, j2)`: where `j1` is the harder subjet.
 """
-function decluster(jet::T, clusterseq::ClusterSequence{T}) where {T <: FourMomentum}
+function decluster(jet::J,
+                   clusterseq::ClusterSequence{T, J}) where {T <: Real, J <:
+                                                                        FourMomentum{T}}
     j1, j2 = parent_jets(jet, clusterseq)
 
     # Ensure both subjets exist
@@ -21,13 +23,13 @@ function decluster(jet::T, clusterseq::ClusterSequence{T}) where {T <: FourMomen
 end
 
 """
-    generate_lund_emissions(jet::PseudoJet, cs::ClusterSequence{PseudoJet})
+    generate_lund_emissions(jet::J, cs::ClusterSequence{T, J}) where {T, J}
 
 Generates the Lund plane emissions for a given jet. 
 The jet is reclustered using the CA algorithm with a very
 large R to fully capture the jet structure.
 
-Returns:
+# Returns
 - `lundPoints`: A vector of named tuples, each representing one step in the
   declustering with the following fields:
   - `h_pt`: harder branch pt
@@ -38,7 +40,9 @@ Returns:
   - `psi`: azimuthal angle between branches
   - `kappa`: z * ΔR
 """
-function generate_lund_emissions(jet::PseudoJet, cs::ClusterSequence{PseudoJet})
+function generate_lund_emissions(jet::J,
+                                 cs::ClusterSequence{T, J}) where {T <: Real,
+                                                                   J <: FourMomentum{T}}
 
     # Recluster the input jet using Cambridge/Aachen with large R
     reconstructed_cluster_seq = recluster(jet, cs; algorithm = JetAlgorithm.CA,

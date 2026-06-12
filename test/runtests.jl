@@ -15,9 +15,9 @@ function main()
     include("test-jet-utils.jl")
 
     # jet_reconstruct() interface check
-    include("test-jet_reconstruct-interface.jl")
+    include("test-jet-reconstruct-interface.jl")
 
-    # New test structure, factorised tests for pp and e+e-
+    # Core tests of EE and PP reconstruction, with comparison to Fastjet
     include("test-pp-reconstruction.jl")
     include("test-ee-reconstruction.jl")
 
@@ -47,6 +47,9 @@ function main()
 
     # SoftKiller tests
     include("test-softkiller.jl")
+
+    # Test that reconstruction runs with different numerical precision
+    include("test-reco-numtypes.jl")
 
     # Test basic examples (where the dependencies are not too heavy)
     include("test-basic-examples.jl")

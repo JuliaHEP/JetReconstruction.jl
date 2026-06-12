@@ -1,7 +1,7 @@
 using Statistics
 
 """
-    struct SoftKiller
+    struct SoftKiller{T <: Real}
 
 Implements the SoftKiller pileup mitigation algorithm, inspired by the FastJet contrib package.
 
@@ -17,47 +17,47 @@ pt threshold by finding the median of the maximum pt in each tile. Particles wit
 are removed from the event.
 
 # Fields
-- `_ymax::Float64`: Maximum rapidity of the grid.
-- `_ymin::Float64`: Minimum rapidity of the grid.
-- `_requested_drap::Float64`: Requested grid spacing in rapidity.
-- `_requested_dphi::Float64`: Requested grid spacing in phi.
+- `_ymin::T`: Minimum rapidity of the grid.
+- `_ymax::T`: Maximum rapidity of the grid.
+- `_requested_drap::T`: Requested grid spacing in rapidity.
+- `_requested_dphi::T`: Requested grid spacing in phi.
 - `_ntotal::Int`: Total number of tiles.
-- `_dy::Float64`: Actual grid spacing in rapidity.
-- `_dphi::Float64`: Actual grid spacing in phi.
-- `_cell_area::Float64`: Area of a single tile.
-- `_inverse_dy::Float64`: Inverse of rapidity grid spacing.
-- `_inverse_dphi::Float64`: Inverse of phi grid spacing.
+- `_dy::T`: Actual grid spacing in rapidity.
+- `_dphi::T`: Actual grid spacing in phi.
+- `_cell_area::T`: Area of a single tile.
+- `_inverse_dy::T`: Inverse of rapidity grid spacing.
+- `_inverse_dphi::T`: Inverse of phi grid spacing.
 - `_ny::Int`: Number of tiles in rapidity.
 - `_nphi::Int`: Number of tiles in phi.
 
 # Constructors
-- `SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)`: 
+- `SoftKiller(rapmin::T, rapmax::T, drap::T, dphi::T)`: 
   Construct a grid from `rapmin` to `rapmax` in rapidity, with tile sizes `drap` and `dphi`.
-- `SoftKiller(rapmax::Float64, grid_size::Float64)`: 
+- `SoftKiller(rapmax::T, grid_size::T)`: 
   Construct a square grid from `-rapmax` to `rapmax` in rapidity, with tile size `grid_size`.
 
 """
-struct SoftKiller
-    _ymin::Float64
-    _ymax::Float64
-    _requested_drap::Float64
-    _requested_dphi::Float64
+struct SoftKiller{T <: Real}
+    _ymin::T
+    _ymax::T
+    _requested_drap::T
+    _requested_dphi::T
     _ntotal::Int
-    _dy::Float64
-    _dphi::Float64
-    _cell_area::Float64
-    _inverse_dy::Float64
-    _inverse_dphi::Float64
+    _dy::T
+    _dphi::T
+    _cell_area::T
+    _inverse_dy::T
+    _inverse_dphi::T
     _ny::Int
     _nphi::Int
 
     """
-        SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)
+        SoftKiller(rapmin::T, rapmax::T, drap::T, dphi::T)
 
     Construct a SoftKiller grid from `rapmin` to `rapmax` in rapidity, with tile sizes `drap` and `dphi`.
     """
 
-    function SoftKiller(rapmin::Float64, rapmax::Float64, drap::Float64, dphi::Float64)
+    function SoftKiller(rapmin::T, rapmax::T, drap::T, dphi::T) where {T <: Real}
         @assert rapmax > rapmin
         @assert drap > 0
         @assert dphi > 0
@@ -76,27 +76,27 @@ struct SoftKiller
         ntotal = nphi * ny
         cell_area = dy * dphi_final
 
-        new(rapmin, rapmax, drap, dphi, ntotal, dy, dphi_final, cell_area,
-            inverse_dy, inverse_dphi, ny, nphi)
+        new{T}(rapmin, rapmax, drap, dphi, ntotal, dy, dphi_final, cell_area,
+               inverse_dy, inverse_dphi, ny, nphi)
     end
 
     """
-        SoftKiller(rapmax::Float64, grid_size::Float64)
+        SoftKiller(rapmax::T, grid_size::T)
 
     Construct a square SoftKiller grid from `-rapmax` to `rapmax` in rapidity, with tile size `grid_size`.
     """
-    function SoftKiller(rapmax::Float64, grid_size::Float64)
+    function SoftKiller(rapmax::T, grid_size::T) where {T <: Real}
         return SoftKiller(-rapmax, rapmax, grid_size, grid_size)
     end
 end
 
 """
-    tile_index(sk::SoftKiller, p::PseudoJet)
+    tile_index(sk::SoftKiller{U}, p::PseudoJet{T}) where {U, T}
 
 Return the tile index for a given `PseudoJet` `p` in the SoftKiller grid `sk`.
 Returns -1 if the jet is outside the grid bounds.
 """
-function tile_index(sk::SoftKiller, p::PseudoJet)
+function tile_index(sk::SoftKiller{U}, p::PseudoJet{T}) where {U <: Real, T <: Real}
     y_minus_ymin = rapidity(p) - sk._ymin
     if y_minus_ymin < 0
         return -1
@@ -120,11 +120,11 @@ end
 import Base: show
 
 """
-    show(io::IO, sk::SoftKiller)
+    show(io::IO, sk::SoftKiller{U}) where {U}
 
 Pretty-print the SoftKiller grid configuration.
 """
-function show(io::IO, sk::SoftKiller)
+function show(io::IO, sk::SoftKiller{U}) where {U <: Real}
     if sk._ntotal <= 0
         print(io, "Uninitialized rectangular grid")
     else
@@ -149,13 +149,14 @@ function select_ABS_RAP_max(event, absrapmax)
 end
 
 """
-    softkiller(sk::SoftKiller, event::Vector{PseudoJet})
+    softkiller(sk::SoftKiller{U}, event::Vector{J}) where {U, T <: Real, J <: PseudoJet{T}}
 
 Apply the SoftKiller algorithm to an event (a vector of `PseudoJet`s).
 Returns a tuple `(reduced_event, pt_threshold)`, where `reduced_event` is the filtered
 event and `pt_threshold` is the computed pt threshold.
 """
-function softkiller(sk::SoftKiller, event::Vector{PseudoJet})
+function softkiller(sk::SoftKiller{U},
+                    event::Vector{J}) where {U, T <: Real, J <: PseudoJet{T}}
     if (sk._ntotal < 2)
         throw("SoftKiller not properly initialized.")
     end
@@ -173,12 +174,12 @@ function softkiller(sk::SoftKiller, event::Vector{PseudoJet})
 
     pt2cut = median(max_pt2)
 
-    reduced_event = Vector{PseudoJet}()
+    reduced_event = Vector{J}()
     sizehint!(reduced_event, length(event))
     hist_index = 1
     for jet in event
         if pt2(jet) >= pt2cut
-            push!(reduced_event, PseudoJet(jet; cluster_hist_index = hist_index))
+            push!(reduced_event, PseudoJet{T}(jet; cluster_hist_index = hist_index))
             hist_index += 1
         end
     end

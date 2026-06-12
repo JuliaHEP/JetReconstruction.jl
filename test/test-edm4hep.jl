@@ -10,15 +10,16 @@ dummyRecoParticle = ReconstructedParticle(energy = 4.0f0,
 @testset "Construction of jets from EDM4hep particles" begin
     eej = EEJet(dummyRecoParticle)
     pj = PseudoJet(dummyRecoParticle)
-    @test typeof(EEJet(dummyRecoParticle)) === EEJet
-    @test typeof(EEJet(dummyRecoParticle; cluster_hist_index = 99)) === EEJet
+    @test typeof(EEJet(dummyRecoParticle)) === EEJet{Float32}
+    @test typeof(EEJet(dummyRecoParticle; cluster_hist_index = 99)) === EEJet{Float32}
     @test JetReconstruction.energy(eej) == dummyRecoParticle.energy
     @test JetReconstruction.px(eej) == dummyRecoParticle.momentum.x
     @test JetReconstruction.py(eej) == dummyRecoParticle.momentum.y
     @test JetReconstruction.pz(eej) == dummyRecoParticle.momentum.z
 
-    @test typeof(PseudoJet(dummyRecoParticle)) === PseudoJet
-    @test typeof(PseudoJet(dummyRecoParticle; cluster_hist_index = 99)) === PseudoJet
+    @test typeof(PseudoJet(dummyRecoParticle)) === PseudoJet{Float32}
+    @test typeof(PseudoJet(dummyRecoParticle; cluster_hist_index = 99)) ===
+          PseudoJet{Float32}
     @test JetReconstruction.energy(pj) == dummyRecoParticle.energy
     @test JetReconstruction.px(pj) == dummyRecoParticle.momentum.x
     @test JetReconstruction.py(pj) == dummyRecoParticle.momentum.y

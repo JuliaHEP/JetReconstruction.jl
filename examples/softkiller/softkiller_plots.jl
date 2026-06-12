@@ -62,7 +62,7 @@ function parse_command_line(args)
 end
 
 # Cluster a single event and return inclusive jets above ptmin
-function process_event(event::Vector{PseudoJet}, args::Dict{Symbol, Any},
+function process_event(event::Vector{PseudoJet{Float64}}, args::Dict{Symbol, Any},
                        rapmax::Float64)
     event = select_ABS_RAP_max(event, rapmax)
 
@@ -71,14 +71,14 @@ function process_event(event::Vector{PseudoJet}, args::Dict{Symbol, Any},
     p = args[:power]
     strategy = args[:strategy]
 
-    filtered_event = PseudoJet[]
+    filtered_event = PseudoJet{Float64}[]
     for (i, pseudo_jet) in enumerate(event)
         # Reconstruct PseudoJet with cluster_hist_index for tracking
-        new_pseudo_jet = PseudoJet(JetReconstruction.px(pseudo_jet),
-                                   JetReconstruction.py(pseudo_jet),
-                                   JetReconstruction.pz(pseudo_jet),
-                                   JetReconstruction.energy(pseudo_jet);
-                                   cluster_hist_index = i)
+        new_pseudo_jet = PseudoJet{Float64}(JetReconstruction.px(pseudo_jet),
+                                            JetReconstruction.py(pseudo_jet),
+                                            JetReconstruction.pz(pseudo_jet),
+                                            JetReconstruction.energy(pseudo_jet);
+                                            cluster_hist_index = i)
         push!(filtered_event, new_pseudo_jet)
     end
 
@@ -94,7 +94,7 @@ end
 # Helper to extract rapidity, phi, pt2, and color for plotting
 function push_data!(event::AbstractVector, y::Vector{Float64}, phi::Vector{Float64},
                     pt::Vector{Float64}, colors::Vector{String},
-                    color::String, origin::Dict{PseudoJet, String})
+                    color::String, origin::Dict{PseudoJet{Float64}, String})
     for jet in event
         pj = isa(jet, PseudoJet) ? jet :
              PseudoJet(JetReconstruction.px(jet), JetReconstruction.py(jet),
@@ -149,7 +149,7 @@ function main()
 
     # Only PseudoJet is supported for SoftKiller
     @assert JetReconstruction.is_pp(args[:algorithm]) "SoftKiller only supports pp algorithms and PseudoJet"
-    jet_type = PseudoJet
+    jet_type = PseudoJet{Float64}
 
     args[:pileup_file] = normpath(joinpath(@__DIR__, args[:pileup_file]))
     args[:hard_file] = normpath(joinpath(@__DIR__, args[:hard_file]))
@@ -178,10 +178,10 @@ function main()
     # all_jets_sk: all PseudoJets (hard + pileup), for SoftKiller application
     # hard_only: only hard event PseudoJets
     # origin: maps PseudoJet to "hard" or "pileup" for coloring
-    all_jets = PseudoJet[]
-    all_jets_sk = PseudoJet[]
-    hard_only = PseudoJet[]
-    origin = Dict{PseudoJet, String}()
+    all_jets = jet_type[]
+    all_jets_sk = jet_type[]
+    hard_only = jet_type[]
+    origin = Dict{jet_type, String}()
 
     # Fill pileup jets
     for event in events

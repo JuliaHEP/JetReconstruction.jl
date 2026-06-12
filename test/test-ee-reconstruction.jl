@@ -34,11 +34,11 @@ end
     # PseudoJet signature is (px, py, pz, E); give nonzero momentum to avoid 1/0 in EEJet
     pj1 = PseudoJet(1.0, 0.0, 0.0, E1)
     pj2 = PseudoJet(1.0, 0.0, 0.0, E2)
-    particles = EEJet[]
+    particles = EEJet{Float64}[]
     push!(particles, EEJet(pj1; cluster_hist_index = 1))
     push!(particles, EEJet(pj2; cluster_hist_index = 2))
 
-    eereco = StructArray{EERecoJet}(undef, 2)
+    eereco = StructArray{EERecoJet{Float64}}(undef, 2)
     R = 1.0
     R2 = R^2
 

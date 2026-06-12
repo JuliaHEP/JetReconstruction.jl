@@ -3,22 +3,22 @@ const large_distance = 16.0 # = 4^2
 const large_dij = 1.0e6
 
 """
-    angular_distance(eereco, i, j) -> Float64
+    angular_distance(eereco, i, j)
 
 Calculate the angular distance between two jets `i` and `j` using the formula
 ``1 - cos(θ_{ij})``.
 
 # Arguments
 - `eereco`: The array of `EERecoJet` objects.
-- `i`: The first jet.
-- `j`: The second jet.
+- `i`: The first jet index.
+- `j`: The second jet index.
 
 # Returns
-- `Float64`: The angular distance between `i` and `j`, which is ``1 -
-  cos\theta``.
+- The angular distance between `i` and `j`, which is ``1 - cos\theta``.
 """
-@inline function angular_distance(eereco, i, j)
-    @inbounds @muladd 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
+@inline function angular_distance(eereco::StructVector{EERecoJet{T}}, i,
+                                  j) where {T <: Real}
+    @inbounds @muladd one(T) - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
                       eereco[i].nz * eereco[j].nz
 end
 
@@ -29,8 +29,9 @@ Compute dij distance for (Durham, EEKt, Valencia) using simple conditionals.
 Beam index `j==0` returns a large sentinel. For Valencia we use the full
 Valencia metric (independent of `dij_factor`).
 """
-@inline function dij_dist(eereco, i, j, dij_factor, algorithm, invR2)
-    j == 0 && return large_dij
+@inline function dij_dist(eereco::StructVector{EERecoJet{T}}, i, j, dij_factor::T,
+                          algorithm, invR2::T) where {T <: Real}
+    j == 0 && return T(large_dij)
     @inbounds begin
         if algorithm === JetAlgorithm.Valencia
             return valencia_distance(eereco, i, j, invR2)
@@ -42,28 +43,31 @@ Valencia metric (independent of `dij_factor`).
 end
 
 """
-    valencia_distance(eereco, i, j, invR2) -> Float64
+    valencia_distance(eereco, i, j, invR2)
 
 Calculate the Valencia distance between two jets `i` and `j` as
 ``min(E_i^{2β}, E_j^{2β}) * 2 * (1 - cos(θ_{ij})) * invR2``.
 
 # Arguments
 - `eereco`: The array of `EERecoJet` objects.
-- `i`: The first jet.
-- `j`: The second jet.
+- `i`: The first jet index.
+- `j`: The second jet index.
 - `invR2`: The inverse square of the radius, i.e. ``1 / R^2``.
 
 # Returns
-- `Float64`: The Valencia distance between `i` and `j`.
+- The Valencia distance between `i` and `j`.
 """
-Base.@propagate_inbounds @inline function valencia_distance(eereco, i, j, invR2)
-    @muladd angular_dist = 1.0 - eereco[i].nx * eereco[j].nx - eereco[i].ny * eereco[j].ny -
+Base.@propagate_inbounds @inline function valencia_distance(eereco::StructVector{EERecoJet{T}},
+                                                            i, j,
+                                                            invR2::T) where {T <: Real}
+    @muladd angular_dist = one(T) - eereco[i].nx * eereco[j].nx -
+                           eereco[i].ny * eereco[j].ny -
                            eereco[i].nz * eereco[j].nz
     return min(eereco[i].E2p, eereco[j].E2p) * 2 * angular_dist * invR2
 end
 
 """
-    valencia_beam_distance(eereco, i, γ, β) -> Float64
+    valencia_beam_distance(eereco, i, γ, β)
 
 Calculate the Valencia beam distance for jet `i` using the FastJet ValenciaPlugin
 definition: ``d_iB = E_i^{2β} * (sin θ_i)^{2γ}``, where ``cos θ_i = nz``
@@ -77,30 +81,34 @@ for unit direction cosines. Since ``sin^2 θ = 1 - nz^2``, we implement
 - `β`: The energy exponent (same as `p` in our implementation).
 
 # Returns
-- `Float64`: The Valencia beam distance for jet `i`.
+- The Valencia beam distance for jet `i`.
 """
-Base.@propagate_inbounds @inline function valencia_beam_distance(eereco, i, γ, β)
+Base.@propagate_inbounds @inline function valencia_beam_distance(eereco::StructVector{EERecoJet{T}},
+                                                                 i, γ::T,
+                                                                 β::T) where {T <: Real}
     nz_i = eereco[i].nz
-    sin2 = 1 - nz_i * nz_i
+    sin2 = one(T) - nz_i * nz_i
     E2p = eereco[i].E2p
-    if γ == 1.0
+    if γ == one(T)
         return E2p * sin2
-    elseif γ == 2.0
+    elseif γ == 2 * one(T)
         return E2p * (sin2 * sin2)
     else
         return E2p * sin2^γ
     end
 end
 
-function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, invR2, γ = 1.0)
+function get_angular_nearest_neighbours!(eereco::StructVector{EERecoJet{T}}, algorithm,
+                                         dij_factor::T, p::T, invR2::T,
+                                         γ::T) where {T <: Real}
     # Get the initial nearest neighbours for each jet
     N = length(eereco)
     # Initialise sentinels so the first comparison always wins
     @inbounds for i in 1:N
         if algorithm === JetAlgorithm.Valencia
-            eereco.nndist[i] = Inf
+            eereco.nndist[i] = T(Inf)
         else
-            eereco.nndist[i] = large_distance
+            eereco.nndist[i] = T(large_distance)
         end
         eereco.nni[i] = i
     end
@@ -151,13 +159,14 @@ function get_angular_nearest_neighbours!(eereco, algorithm, dij_factor, p, invR2
     end
 end
 
-@inline function update_nn_no_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm,
-                                     dij_factor, invR2, β = 1.0, γ = 1.0)
+@inline function update_nn_no_cross!(eereco::StructVector{EERecoJet{T}}, i, N,
+                                     algorithm::JetAlgorithm.Algorithm,
+                                     dij_factor::T, invR2::T, β::T, γ::T) where {T <: Real}
     # Valencia metric is unbounded, others use a large finite value
     if algorithm === JetAlgorithm.Valencia
-        eereco.nndist[i] = Inf
+        eereco.nndist[i] = T(Inf)
     else
-        eereco.nndist[i] = large_distance
+        eereco.nndist[i] = T(large_distance)
     end
     eereco.nni[i] = i
     # Scan all other jets, update i, and cross-update j
@@ -185,13 +194,14 @@ end
     end
 end
 
-@inline function update_nn_cross!(eereco, i, N, algorithm::JetAlgorithm.Algorithm,
-                                  dij_factor, invR2, β = 1.0, γ = 1.0)
+@inline function update_nn_cross!(eereco::StructVector{EERecoJet{T}}, i, N,
+                                  algorithm::JetAlgorithm.Algorithm,
+                                  dij_factor::T, invR2::T, β::T, γ::T) where {T <: Real}
     # Valencia metric is unbounded, others use a large finite value
     if algorithm === JetAlgorithm.Valencia
-        eereco.nndist[i] = Inf
+        eereco.nndist[i] = T(Inf)
     else
-        eereco.nndist[i] = large_distance
+        eereco.nndist[i] = T(large_distance)
     end
     eereco.nni[i] = i
     # Scan all other jets, update i, and cross-update j
@@ -254,40 +264,36 @@ function ee_check_consistency(clusterseq, eereco, N)
     @debug "Consistency check passed"
 end
 
-Base.@propagate_inbounds @inline function fill_reco_array!(eereco, particles, invR2, p)
+Base.@propagate_inbounds @inline function fill_reco_array!(eereco::StructVector{EERecoJet{T}},
+                                                           particles, invR2,
+                                                           p) where {T <: Real}
     @inbounds for i in eachindex(particles)
         eereco.index[i] = i
-        eereco.nni[i] = 0
-        eereco.nndist[i] = inv(invR2) # R^2 as initial sentinel for angular algorithms
+        eereco.nni[i] = zero(T)
+        eereco.nndist[i] = inv(T(invR2)) # R^2 as initial sentinel for angular algorithms
         # eereco.dijdist[i] = UNDEF # Does not need to be initialised
         eereco.nx[i] = nx(particles[i])
         eereco.ny[i] = ny(particles[i])
         eereco.nz[i] = nz(particles[i])
-        eereco.E2p[i] = energy(particles[i])^(2p)
+        eereco.E2p[i] = energy(particles[i])^T(2p)
         # No precomputed beam factor; compute on demand to preserve previous behaviour
     end
 end
 
-Base.@propagate_inbounds @inline function insert_new_jet!(eereco, i, newjet_k, invR2,
-                                                          merged_jet, p)
+Base.@propagate_inbounds @inline function insert_new_jet!(eereco::StructVector{EERecoJet{T}},
+                                                          i, newjet_k, invR2,
+                                                          merged_jet::J,
+                                                          p) where {T <: Real, J <:
+                                                                               EEJet{T}}
     @inbounds begin
         eereco.index[i] = newjet_k
-        eereco.nni[i] = 0
-        eereco.nndist[i] = inv(invR2)
+        eereco.nni[i] = zero(T)
+        eereco.nndist[i] = inv(T(invR2))
         eereco.nx[i] = nx(merged_jet)
         eereco.ny[i] = ny(merged_jet)
         eereco.nz[i] = nz(merged_jet)
         E = energy(merged_jet)
-        if p isa Int
-            if p == 1
-                eereco.E2p[i] = E * E
-            else
-                E2 = E * E
-                eereco.E2p[i] = E2^p
-            end
-        else
-            eereco.E2p[i] = E^(2p)
-        end
+        eereco.E2p[i] = E^T(2p)
     end
 end
 
@@ -310,16 +316,16 @@ Base.@propagate_inbounds @inline function copy_to_slot!(eereco, i, j)
 end
 
 """
-    ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
+    ee_genkt_algorithm(particles::AbstractVector{J}; algorithm::JetAlgorithm.Algorithm,
                        p::Union{Real, Nothing} = nothing, R = 4.0, 
                        γ::Union{Real, Nothing} = 1.0, β::Union{Real, Nothing} = nothing,
                        recombine = addjets_escheme,
-                       preprocess = preprocess_escheme) where {T}
+                       preprocess = preprocess_escheme) where {J}
 
 Run an e+e- reconstruction algorithm on a set of initial particles.
 
 # Arguments
-- `particles::AbstractVector{T}`: A vector of particles to be clustered.
+- `particles::AbstractVector{J}`: A vector of particles to be clustered.
 - `algorithm::JetAlgorithm.Algorithm`: The jet algorithm to use.
 - `p::Union{Real, Nothing} = nothing`: The power parameter for the algorithm.
   Must be specified for EEKt algorithm. 
@@ -346,12 +352,12 @@ If the algorithm is Durham, `R` is nominally set to 4.
 If the algorithm is EEkt, power `p` must be specified.
 If the algorithm is Valencia, you can provide `p` and `γ`, or pass `β` explicitly to override `p`.
 """
-function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorithm.Algorithm,
+function ee_genkt_algorithm(particles::AbstractVector{J}; algorithm::JetAlgorithm.Algorithm,
                             p::Union{Real, Nothing} = nothing, R = 4.0,
                             γ::Union{Real, Nothing} = 1.0,
                             β::Union{Real, Nothing} = nothing,
                             recombine = addjets_escheme,
-                            preprocess = preprocess_escheme) where {T}
+                            preprocess = preprocess_escheme) where {J}
 
     # For Valencia, if β is provided, overwrite p
     if algorithm === JetAlgorithm.Valencia && β !== nothing
@@ -371,31 +377,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
         R = 4.0
     end
 
-    if isnothing(preprocess)
-        if T == EEJet
-            # If we don't have a preprocessor, we just need to copy to our own
-            # EEJet objects
-            recombination_particles = copy(particles)
-            sizehint!(recombination_particles, length(particles) * 2)
-        else
-            # We assume a constructor for EEJet that can ingest the appropriate
-            # type of particle
-            recombination_particles = EEJet[]
-            sizehint!(recombination_particles, length(particles) * 2)
-            for (i, particle) in enumerate(particles)
-                push!(recombination_particles, EEJet(particle; cluster_hist_index = i))
-            end
-        end
-    else
-        # We have a preprocessor function that we need to call to modify the
-        # input particles
-        recombination_particles = EEJet[]
-        sizehint!(recombination_particles, length(particles) * 2)
-        for (i, particle) in enumerate(particles)
-            push!(recombination_particles,
-                  preprocess(particle, EEJet; cluster_hist_index = i))
-        end
-    end
+    recombination_particles = construct_reco_jets(particles, EEJet, preprocess)
 
     # Compute invR2 once and thread it through
     invR2 = inv(R * R)
@@ -406,55 +388,57 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
 end
 
 """
-    _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
+    _ee_genkt_algorithm!(particles::AbstractVector{EEJet{T}};
                         algorithm::JetAlgorithm.Algorithm, p::Real, R = 4.0,
-                        invR2::Union{Real, Nothing} = nothing, γ::Real = 1.0,
-                        recombine = addjets_escheme)
+                        invR2::Real = 1/(16.0), γ::Union{Real, Nothing} = 1.0,
+                        recombine = addjets_escheme) where {T <: Real}
 
 This function is the internal implementation of the e+e- jet clustering
-algorithm. It takes a vector of `EEJet` `particles` representing the input
+algorithm. It takes a vector of `EEJet{T}` `particles` representing the input
 particles and reconstructs jets based on the specified parameters.
 
-Users of the package should use the `ee_genkt_algorithm` function as their
-entry point to this jet reconstruction.
-
 # Arguments
-- `particles::AbstractVector{EEJet}`: A vector of `EEJet` particles used
+- `particles::AbstractVector{EEJet{T}}`: A vector of `EEJet{T}` particles used
   as input for jet reconstruction. This vector must supply the correct
-  `cluster_hist_index` values and will be *mutated* as part of the returned
+  `_cluster_hist_index` values and will be *mutated* as part of the returned
   `ClusterSequence`.
 - `algorithm::JetAlgorithm.Algorithm`: The jet reconstruction algorithm to use.
-- `p::Real`: The power to which the transverse momentum (`pt`) of each particle
-  is raised.
-- `R = 4.0`: The jet radius parameter.
-- `invR2::Real = 1/(16.0)`: The inverse square of the radius, i.e. ``1 / R^2``.
-- `γ::Real = 1.0`: Angular exponent for the Valencia beam metric (ignored for other algorithms).
-- `recombine = addjets_escheme`: The recombination function used to merge two jets.
+- `p::Real`: The power value.
+- `R`: The jet radius parameter.
+- `invR2`: The inverse square of the radius, i.e. ``1 / R^2``.
+- `γ`: Angular exponent for the Valencia beam metric (ignored for other algorithms).
+- `recombine`: The recombination function used to merge two jets.
 
 # Returns
 - `clusterseq`: The resulting `ClusterSequence` object representing the
   reconstructed jets.
 """
-function _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
+function _ee_genkt_algorithm!(particles::AbstractVector{EEJet{T}};
                               algorithm::JetAlgorithm.Algorithm, p::Real, R::Real = 4.0,
                               invR2::Real = 1 / (16.0),
                               γ::Union{Real, Nothing} = 1.0,
-                              recombine = addjets_escheme)
+                              recombine = addjets_escheme) where {T <: Real}
 
     # Bounds
     N::Int = length(particles)
 
+    # Force down to T
+    p = T(p)
+    R = T(R)
+    invR2 = T(invR2)
+    γ = typeof(γ) == Nothing ? zero(T) : T(γ)
+
     # Constant factor for the dij metric and the beam distance function
     if algorithm == JetAlgorithm.Durham
-        dij_factor = 2.0
+        dij_factor = T(2.0)
     elseif algorithm == JetAlgorithm.EEKt
         if R < π
-            dij_factor = 1 / (1 - cos(R))
+            dij_factor = T(1 / (1 - cos(R)))
         else
-            dij_factor = 1 / (3 + cos(R))
+            dij_factor = T(1 / (3 + cos(R)))
         end
     elseif algorithm === JetAlgorithm.Valencia
-        dij_factor = 1.0
+        dij_factor = T(1.0)
     else
         throw(ArgumentError("Algorithm $algorithm not supported for e+e-"))
     end
@@ -462,7 +446,7 @@ function _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
     # For optimised reconstruction generate an SoA containing the necessary
     # jet information and populate it accordingly
     # We need N slots for this array
-    eereco = StructArray{EERecoJet}(undef, N)
+    eereco = StructArray{EERecoJet{T}}(undef, N)
 
     fill_reco_array!(eereco, particles, invR2, p)
 
