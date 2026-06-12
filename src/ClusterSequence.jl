@@ -92,7 +92,7 @@ function initial_history(particles)
 
         # get cross-referencing right from the Jets
         # particles[i]._cluster_hist_index = i
-        @assert cluster_hist_index(particles[i])==i "Cluster history index should match jet's index in the input vector"
+        @assert cluster_hist_index(particles[i])==i "Cluster history index should match jet's index in the input vector. Expected $(i), got $(cluster_hist_index(particles[i]))"
 
         # determine the total energy in the event
         Qtot += particles[i].E
@@ -317,7 +317,7 @@ exclusive_jets(clusterseq, PseudoJet, njets = 3)
 """
 function exclusive_jets(clusterseq::ClusterSequence{U},
                         ::Type{T} = LorentzVector{Float64};
-                        dcut = nothing, njets = nothing,) where {T, U}
+                        dcut = nothing, njets = nothing) where {T, U}
     if isnothing(dcut) && isnothing(njets)
         throw(ArgumentError("Must pass either a dcut or an njets value"))
     end

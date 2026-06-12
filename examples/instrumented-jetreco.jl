@@ -13,6 +13,7 @@ using Profile
 using StatProfilerHTML
 using Logging
 using JSON
+using UnicodePlots
 
 using LorentzVectorHEP
 using JetReconstruction
@@ -126,15 +127,15 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
         jet_collection = FinalJets[]
     end
 
+    # Vector for the trial results
+    trial_timing = zeros(Float64, nsamples)
+
     # Set consistent algorithm power
     p = JetReconstruction.get_algorithm_power(p = p, algorithm = algorithm)
     @info "Jet reconstruction will use $(algorithm) with power $(p)"
 
     # Now setup timers and run the loop
     GC.gc()
-    cumulative_time = 0.0
-    cumulative_time2 = 0.0
-    lowest_time = typemax(Float64)
     # Do a warm up run if we are running more than once
     start = nsamples > 1 ? 0 : 1
     for irun in start:nsamples
@@ -178,41 +179,16 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
         gcoff && GC.enable(true)
         if irun > 0
             dt_μs = convert(Float64, t_stop - t_start) * 1.e-3
-            if nsamples > 1
-                @info "$(irun)/$(nsamples) $(dt_μs)"
-            end
-            cumulative_time += dt_μs
-            cumulative_time2 += dt_μs^2
-            lowest_time = dt_μs < lowest_time ? dt_μs : lowest_time
+            trial_timing[irun] = dt_μs / length(events)
         end
     end
-
-    mean = cumulative_time / nsamples
-    cumulative_time2 /= nsamples
-    if nsamples > 1
-        sigma = sqrt(nsamples / (nsamples - 1) * (cumulative_time2 - mean^2))
-    else
-        sigma = 0.0
-    end
-    mean /= length(events)
-    sigma /= length(events)
-    lowest_time /= length(events)
-    # Why also record the lowest time? 
-    # 
-    # The argument is that on a "busy" machine, the run time of an application is
-    # always TrueRunTime+Overheads, where Overheads is a nuisance parameter that
-    # adds jitter, depending on the other things the machine is doing. Therefore
-    # the minimum value is (a) more stable and (b) reflects better the intrinsic
-    # code performance.
-    println("Processed $(length(events)) events $(nsamples) times")
-    println("Average time per event $(mean) ± $(sigma) μs")
-    println("Lowest time per event $lowest_time μs")
 
     if !isnothing(dump)
         open(dump, "w") do io
             JSON.print(io, jet_collection, 2)
         end
     end
+    trial_timing
 end
 
 function parse_command_line(args)
@@ -290,6 +266,10 @@ function parse_command_line(args)
         help = "Provide memory allocation statistics."
         action = :store_true
 
+        "--plot"
+        help = "Plot a histogram of trial times on the terminal"
+        action = :store_true
+
         "--dump"
         help = "Write list of reconstructed jets to a JSON formatted file"
 
@@ -334,7 +314,8 @@ function main()
                                                                   maxevents = args[:maxevents],
                                                                   skipevents = args[:skip])
 
-    # Major switch between modes of running 
+    # Major switch between modes of running
+    trial_stats = nothing
     if args[:alloc]
         allocation_stats(events; distance = args[:distance],
                          p = args[:power], γ = args[:gamma], algorithm = args[:algorithm],
@@ -347,14 +328,20 @@ function main()
                      algorithm = args[:algorithm], strategy = args[:strategy],
                      recombine = JetReconstruction.RecombinationMethods[args[:recombine]])
     else
-        benchmark_jet_reco(events, distance = args[:distance], algorithm = args[:algorithm],
-                           p = args[:power], γ = args[:gamma],
-                           strategy = args[:strategy],
-                           recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
-                           ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
-                           njets = args[:exclusive_njets],
-                           nsamples = args[:nsamples], gcoff = args[:gcoff],
-                           dump = args[:dump], dump_cs = args[:dump_clusterseq])
+        trial_stats = benchmark_jet_reco(events, distance = args[:distance],
+                                         algorithm = args[:algorithm],
+                                         p = args[:power], γ = args[:gamma],
+                                         strategy = args[:strategy],
+                                         recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
+                                         ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
+                                         njets = args[:exclusive_njets],
+                                         nsamples = args[:nsamples], gcoff = args[:gcoff],
+                                         dump = args[:dump],
+                                         dump_cs = args[:dump_clusterseq])
+    end
+    if !isnothing(trial_stats)
+        print_statistics(trial_stats)
+        args[:plot] && plot_trial_times(trial_stats)
     end
     nothing
 end

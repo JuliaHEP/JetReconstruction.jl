@@ -13,7 +13,7 @@ function jet_reconstruct_harness(events; algorithm, strategy = RecoStrategy.Best
                                  distance = nothing,
                                  power = nothing, γ = nothing,
                                  recombine = RecombinationMethods[RecombinationScheme.EScheme],
-                                 ptmin::Real = 5.0, dcut = nothing, njets = nothing,)
+                                 ptmin::Real = 5.0, dcut = nothing, njets = nothing)
     for event in events
         cs = jet_reconstruct(event; R = distance, p = power, γ = γ, algorithm = algorithm,
                              strategy = strategy, recombine...)

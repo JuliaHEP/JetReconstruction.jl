@@ -2,11 +2,13 @@ using Documenter
 using CairoMakie
 using EDM4hep
 using JetReconstruction
+using UnicodePlots
 
 push!(LOAD_PATH, "../ext/")
 
 include(joinpath(@__DIR__, "..", "ext", "JetVisualisation.jl"))
 include(joinpath(@__DIR__, "..", "ext", "EDM4hepJets.jl"))
+include(joinpath(@__DIR__, "..", "ext", "JetBenchmarkPlots.jl"))
 
 makedocs(sitename = "JetReconstruction.jl",
          clean = false,

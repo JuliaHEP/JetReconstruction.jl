@@ -108,6 +108,16 @@
         "doc",
         "example"
       ]
+    },
+    {
+      "login": "HarshitNagpal29",
+      "name": "Harshit Nagpal",
+      "avatar_url": "https://avatars.githubusercontent.com/u/145873102?v=4",
+      "profile": "https://github.com/HarshitNagpal29",
+      "contributions": [
+        "code",
+        "doc"
+      ]
     }
   ],
   "contributorsPerLine": 7,

@@ -1,6 +1,6 @@
 # JetReconstruction.jl
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
-[![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)
+[![All Contributors](https://img.shields.io/badge/all_contributors-10-orange.svg?style=flat-square)](#contributors-)
 <!-- ALL-CONTRIBUTORS-BADGE:END -->
 
 [![Build Status](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/JuliaHEP/JetReconstruction.jl/actions/workflows/CI.yml?query=branch%3Amain)
@@ -146,7 +146,7 @@ Also available as [arXiv:2503.08146](https://arxiv.org/abs/2503.08146).
 
 ### Other Articles
 
-- CHEP2023, *Polyglot Jet Finding*: [arXiv:2309.17309](https://arxiv.org/abs/2309.17309), [10.1051/epjconf/202429505017](https://doi.org/10.1051/epjconf)
+- CHEP2023, *Polyglot Jet Finding*: [arXiv:2309.17309](https://arxiv.org/abs/2309.17309), [doi.org/10.1051/epjconf/202429505017](https://doi.org/10.1051/epjconf/202429505017)
 
 ## Copyright
 
@@ -176,6 +176,7 @@ Thanks goes to these contributors to this code ([emoji key](https://allcontribut
     <tr>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/ExpandingMan"><img src="https://avatars.githubusercontent.com/u/11379353?v=4?s=100" width="100px;" alt="ExpandingMan"/><br /><sub><b>ExpandingMan</b></sub></a><br /><a href="#infra-ExpandingMan" title="Infrastructure (Hosting, Build-Tools, etc)">🚇</a></td>
       <td align="center" valign="top" width="14.28%"><a href="https://github.com/emadmtr"><img src="https://avatars.githubusercontent.com/u/144483559?v=4?s=100" width="100px;" alt="emadmtr"/><br /><sub><b>emadmtr</b></sub></a><br /><a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=emadmtr" title="Tests">⚠️</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=emadmtr" title="Code">💻</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=emadmtr" title="Documentation">📖</a> <a href="#example-emadmtr" title="Examples">💡</a></td>
+      <td align="center" valign="top" width="14.28%"><a href="https://github.com/HarshitNagpal29"><img src="https://avatars.githubusercontent.com/u/145873102?v=4?s=100" width="100px;" alt="Harshit Nagpal"/><br /><sub><b>Harshit Nagpal</b></sub></a><br /><a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=HarshitNagpal29" title="Code">💻</a> <a href="https://github.com/JuliaHEP/JetReconstruction.jl/commits?author=HarshitNagpal29" title="Documentation">📖</a></td>
     </tr>
   </tbody>
 </table>
