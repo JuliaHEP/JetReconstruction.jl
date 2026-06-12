@@ -4,13 +4,13 @@ include("common.jl")
 
 const JULIA_CMD = Base.julia_cmd()
 const EXAMPLES_PROJECT = joinpath(@__DIR__, "..", "examples")
-const PACKAGE_ROOT = joinpath(@__DIR__, "..")
 
 @testset "Instantiate examples environment" begin
     instantiate_examples = """
         using Pkg
+        cd($(repr(EXAMPLES_PROJECT)))
         Pkg.activate($(repr(EXAMPLES_PROJECT)))
-        Pkg.develop(Pkg.PackageSpec(path=$(repr(PACKAGE_ROOT))))
+        Pkg.develop(path="..")
         Pkg.instantiate()
     """
     @test success(run(`$JULIA_CMD -e $instantiate_examples`))
