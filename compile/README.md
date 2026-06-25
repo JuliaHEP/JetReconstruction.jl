@@ -111,7 +111,10 @@ target_link_libraries(myTarget PUBLIC JetReconstruction::JetReconstruction)
 
 Currently it's not possible to create libraries for different platforms - no cross-compilation!
 
-With the current state of `juliac` compilation works reliably on Linux. However, on OS X problems are observed at the LLVM layer that are not yet well understood and compilation fails.
+With the current state of `juliac` compilation works reliably on Linux. However, on OS X it is not possible currently to compile with the `LoopVectorization` package. To compile on OS X one must
+
+- Remove the `LoopVectorization` dependency
+- Remove the `@turbo` macro from the `fast_findmin()` function in `src/Utils.jl`
 
 PackageCompiler specific:
 
