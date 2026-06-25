@@ -36,3 +36,6 @@ tune.json
 **/profile/*
 /statprof/*
 /debug/*
+
+# Compiled packages
+JetReconstructionCompiled

@@ -121,4 +121,7 @@ export plot_trial_times
 include("JSONresults.jl")
 export FinalJet, FinalJets
 
+# C bindings sub-module
+include("C_JetReconstruction/C_JetReconstruction.jl")
+
 end
