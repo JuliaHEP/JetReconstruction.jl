@@ -19,6 +19,24 @@ const NonexistentParent = -2
 "Cluster recombined with beam"
 const BeamJet = -1
 
+# Julia 1.11 introduced the `shrink` keyword for `sizehint!`.
+#
+# On Julia 1.11 and later, explicitly disable shrinking.
+# On Julia 1.10, the existing Vector method already behaves grow-only.
+@inline function _grow_only_sizehint!(buffer::Vector,
+                                      requested::Integer)
+    requested >= 0 ||
+        throw(ArgumentError("requested capacity must be non-negative, got $requested"))
+
+    @static if VERSION >= v"1.11"
+        sizehint!(buffer, requested; shrink = false)
+    else
+        sizehint!(buffer, requested)
+    end
+
+    return buffer
+end
+
 """
     struct HistoryElement
 
@@ -69,35 +87,61 @@ function HistoryElement(jetp_index)
 end
 
 """
-    initial_history(particles)
+    initial_history!(
+        history::Vector{HistoryElement},
+        particles,
+    )
 
-Create an initial history for the given particles.
+Reset and initialise reusable clustering-history storage for `particles`.
 
-# Arguments
-- `particles`: The initial vector of stable particles.
+The vector's logical length is reset to the number of initial particles.
+Capacity is retained for the complete clustering history.
 
-# Returns
-- `history`: An array of `HistoryElement` objects.
-- `Qtot`: The total energy in the event.
+The returned history vector is borrowed storage owned by the caller.
 """
-function initial_history(particles)
-    # reserve sufficient space for everything
-    history = Vector{HistoryElement}(undef, length(particles))
-    sizehint!(history, 2 * length(particles))
+function initial_history!(history::Vector{HistoryElement},
+                          particles)
+    N = length(particles)
 
-    Qtot::Float64 = 0
+    # Remove the previous event's logical history entries.
+    #
+    # This changes length(history) to zero, but retained vector capacity is
+    # preserved.
+    empty!(history)
 
-    for i in eachindex(particles)
+    # A complete hadron-collider clustering sequence contains:
+    #
+    #   N initial history entries
+    # + N recombination/finalisation entries
+    # = 2N total entries.
+    _grow_only_sizehint!(history, 2 * N)
+
+    # Establish exactly N active initial-history slots.
+    resize!(history, N)
+
+    Qtot::Float64 = 0.0
+
+    @inbounds for i in eachindex(particles)
         history[i] = HistoryElement(i)
 
-        # get cross-referencing right from the Jets
-        # particles[i]._cluster_hist_index = i
-        @assert cluster_hist_index(particles[i])==i "Cluster history index should match jet's index in the input vector. Expected $(i), got $(cluster_hist_index(particles[i]))"
+        @assert cluster_hist_index(particles[i]) == i ("Cluster history index should match jet's index in the input vector. " *
+                                                       "Expected $(i), got $(cluster_hist_index(particles[i]))")
 
-        # determine the total energy in the event
         Qtot += particles[i].E
     end
-    history, Qtot
+
+    return history, Qtot
+end
+
+"""
+    initial_history(particles)
+
+Create independently owned initial clustering-history storage.
+"""
+function initial_history(particles)
+    history = HistoryElement[]
+
+    return initial_history!(history, particles)
 end
 
 """
@@ -216,29 +260,68 @@ function add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jet
 end
 
 """
-    inclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVectorCyl{Float64}; ptmin = 0.0) where {T, U}
+    inclusive_jets!(
+        output::Vector{T},
+        clusterseq::ClusterSequence{U};
+        ptmin=0.0,
+    )
 
-Return all inclusive jets of a ClusterSequence with pt > ptmin.
+Write inclusive jets into reusable `output` storage.
 
-# Arguments
-- `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the
-  clustering history and jets.
-- `::Type{T} = LorentzVectorCyl{Float64}`: The return type used for the selected jets.
-- `ptmin::Float64 = 0.0`: The minimum transverse momentum (pt) threshold for the
-  inclusive jets.
+The output vector is cleared before use. Its retained capacity is preserved.
+The returned vector is the same object supplied as `output`.
 
-# Returns
-An array of `T` objects representing the inclusive jets.
+The output must not alias `clusterseq.jets`.
+"""
+function inclusive_jets!(output::Vector{T},
+                         clusterseq::ClusterSequence{U};
+                         ptmin = 0.0) where {T, U}
+    output === clusterseq.jets &&
+        throw(ArgumentError("inclusive-jet output must not alias ClusterSequence.jets"))
 
-# Description
-This function computes the inclusive jets from a given `ClusterSequence` object.
-It iterates over the clustering history and checks the transverse momentum of
-each parent jet. If the transverse momentum is greater than or equal to `ptmin`,
-the jet is added to the array of inclusive jets.
+    pt2min = ptmin * ptmin
 
-Valid return types are `LorentzVector` `LorentzVectorCyl` or the jet type of the
-input `clusterseq` (`U` - either `PseudoJet` or `EEJet` depending which
-algorithm was used).
+    # Remove the previous event's logical output while retaining capacity.
+    empty!(output)
+
+    for history_element in clusterseq.history
+        history_element.parent2 == BeamJet || continue
+
+        parent_jet_index = clusterseq.history[history_element.parent1].jetp_index
+
+        jet = clusterseq.jets[parent_jet_index]
+
+        pt2(jet) >= pt2min || continue
+
+        if T == U
+            push!(output, jet)
+        elseif T <: LorentzVectorCyl
+            push!(output, lorentzvector_cyl(jet))
+        elseif T <: LorentzVector
+            push!(output, lorentzvector(jet))
+        else
+            error("Unsupported return type $T for inclusive jets")
+        end
+    end
+
+    return output
+end
+
+"""
+    inclusive_jets(
+        clusterseq::ClusterSequence{U},
+        ::Type{T}=LorentzVector{Float64};
+        ptmin=0.0,
+    )
+
+Return all inclusive jets of a `ClusterSequence` with transverse momentum
+greater than or equal to `ptmin`.
+
+Valid return types are `LorentzVector`, `LorentzVectorCyl`, or the jet type of
+the input `clusterseq` (`U`, either `PseudoJet` or `EEJet` depending on the
+algorithm).
+
+The returned vector is independently owned.
 
 # Example
 ```julia
@@ -248,31 +331,11 @@ inclusive_jets(clusterseq; ptmin = 10.0)
 function inclusive_jets(clusterseq::ClusterSequence{U},
                         ::Type{T} = LorentzVector{Float64};
                         ptmin = 0.0) where {T, U}
-    pt2min = ptmin * ptmin
-    jets_local = T[]
-    # sizehint!(jets_local, length(clusterseq.jets))
-    # For inclusive jets with a plugin algorithm, we make no
-    # assumptions about anything (relation of dij to momenta,
-    # ordering of the dij, etc.)
-    # for elt in Iterators.reverse(clusterseq.history)
-    for elt in clusterseq.history
-        elt.parent2 == BeamJet || continue
-        iparent_jet = clusterseq.history[elt.parent1].jetp_index
-        jet = clusterseq.jets[iparent_jet]
-        if pt2(jet) >= pt2min
-            @debug "Added inclusive jet index $iparent_jet"
-            if T == U
-                push!(jets_local, jet)
-            elseif T <: LorentzVectorCyl
-                push!(jets_local, lorentzvector_cyl(jet))
-            elseif T <: LorentzVector
-                push!(jets_local, lorentzvector(jet))
-            else
-                error("Unsupported return type $T for inclusive jets")
-            end
-        end
-    end
-    jets_local
+    output = T[]
+
+    return inclusive_jets!(output,
+                           clusterseq;
+                           ptmin = ptmin)
 end
 
 """

@@ -193,6 +193,18 @@ struct Tiling
 end
 
 """
+Reusable matrix storage for one particular N2Tiled grid shape.
+
+The contents are reset before each event. The dimensions remain fixed for the
+lifetime of one cache entry.
+"""
+mutable struct TilingArrays
+    tiles::Matrix{TiledJet}
+    positions::Matrix{Int}
+    tags::Matrix{Bool}
+end
+
+"""
     Tiling(setup::TilingDef)
 
 Constructs a initial `Tiling` object based on the provided `setup` parameters.
@@ -225,6 +237,259 @@ const tile_central = 0
 const tile_right = 1
 "Number of neighbours for a tile in the tiling array (including itself)"
 const _n_tile_neighbours = 9
+
+"""
+Temporary reusable storage for one independent N2Tiled reconstruction worker.
+
+A `TiledScratch` must never be shared concurrently between tasks.
+"""
+mutable struct TiledScratch
+    tile_union::Vector{Int}
+    eta::Vector{Float64}
+    tiledjets::Vector{TiledJet}
+    NNs::Vector{TiledJet}
+    dij::Vector{Float64}
+    tiling_cache::Dict{Tuple{Int, Int}, TilingArrays}
+end
+
+function TiledScratch()
+    return TiledScratch(Vector{Int}(undef, 3 * _n_tile_neighbours),
+                        Float64[],
+                        TiledJet[],
+                        TiledJet[],
+                        Float64[],
+                        Dict{Tuple{Int, Int}, TilingArrays}())
+end
+
+"""
+Reset and fill reusable recombination-jet storage.
+
+This mirrors the preprocessing behaviour of `tiled_jet_reconstruct`.
+
+When `preprocess === nothing`:
+
+- PseudoJet inputs are copied directly;
+- other supported input types are converted to PseudoJet.
+
+Otherwise, the supplied preprocessing function is called for every particle.
+"""
+function _prepare_recombination_jets!(jets::Vector{PseudoJet},
+                                      particles::AbstractVector{T};
+                                      preprocess = preprocess_escheme) where {T}
+    jets === particles &&
+        throw(ArgumentError("reusable jet storage must not alias the input particle vector"))
+
+    N = length(particles)
+
+    empty!(jets)
+    _grow_only_sizehint!(jets, 2 * N)
+
+    if isnothing(preprocess)
+        if T == PseudoJet
+            append!(jets, particles)
+        else
+            for (i, particle) in enumerate(particles)
+                push!(jets,
+                      PseudoJet(particle;
+                                cluster_hist_index = i))
+            end
+        end
+    else
+        for (i, particle) in enumerate(particles)
+            push!(jets,
+                  preprocess(particle,
+                             PseudoJet;
+                             cluster_hist_index = i))
+        end
+    end
+
+    return jets
+end
+
+"""
+Reusable state for one full-semantics N2Tiled reconstruction worker.
+
+The workspace owns reusable:
+
+- tiled scratch;
+- reconstructed jets;
+- complete clustering history;
+- inclusive-jet output.
+
+The ClusterSequence and inclusive output produced from this workspace are
+borrowed. They are overwritten by the next reconstruction using the same
+workspace.
+
+A workspace must never be used concurrently or reentrantly.
+"""
+mutable struct N2TiledWorkspace{T}
+    scratch::TiledScratch
+    jets::Vector{PseudoJet}
+    history::Vector{HistoryElement}
+    inclusive_output::Vector{T}
+    in_use::Threads.Atomic{Int}
+end
+
+function N2TiledWorkspace(::Type{T} = LorentzVector{Float64}) where {T}
+    return N2TiledWorkspace{T}(TiledScratch(),
+                               PseudoJet[],
+                               HistoryElement[],
+                               T[],
+                               Threads.Atomic{Int}(0))
+end
+
+"""
+Write inclusive jets from `clusterseq` into the workspace-owned output vector.
+
+This method is intended to be called while `workspace` is owned by an active
+`with_n2tiled_reconstruction` callback.
+
+The returned vector is borrowed and is overwritten by the next selection using
+the same workspace.
+"""
+function inclusive_jets!(workspace::N2TiledWorkspace,
+                         clusterseq::ClusterSequence;
+                         ptmin = 0.0)
+    return inclusive_jets!(workspace.inclusive_output,
+                           clusterseq;
+                           ptmin = ptmin)
+end
+
+"""
+Acquire exclusive use of `workspace`.
+
+A nonzero previous state means another task or a nested reconstruction is
+already using the same workspace.
+"""
+@inline function _acquire_n2tiled_workspace!(workspace::N2TiledWorkspace)
+    previous_state = Threads.atomic_cas!(workspace.in_use,
+                                         0,
+                                         1)
+
+    previous_state == 0 || throw(ArgumentError("N2TiledWorkspace is already in use. " *
+                        "A workspace must not be shared concurrently or used reentrantly."))
+
+    return nothing
+end
+
+"""
+Release exclusive use of `workspace`.
+"""
+@inline function _release_n2tiled_workspace!(workspace::N2TiledWorkspace)
+    workspace.in_use[] = 0
+
+    return nothing
+end
+
+"""
+    release_n2tiled_workspace_capacity!(workspace)
+
+Release grow-only storage retained by `workspace`.
+
+This operation acquires exclusive ownership of the workspace. It therefore
+fails clearly if the workspace is already being used.
+
+The small fixed-size `tile_union` buffer is retained. All event-size-dependent
+vectors and cached tiling matrices become eligible for garbage collection.
+"""
+function release_n2tiled_workspace_capacity!(workspace::N2TiledWorkspace{T}) where {T}
+    _acquire_n2tiled_workspace!(workspace)
+
+    try
+        workspace.jets = PseudoJet[]
+        workspace.history = HistoryElement[]
+        workspace.inclusive_output = T[]
+
+        scratch = workspace.scratch
+
+        scratch.eta = Float64[]
+        scratch.tiledjets = TiledJet[]
+        scratch.NNs = TiledJet[]
+        scratch.dij = Float64[]
+
+        scratch.tiling_cache = Dict{Tuple{Int, Int}, TilingArrays}()
+    finally
+        _release_n2tiled_workspace!(workspace)
+    end
+
+    return nothing
+end
+
+function prepare_recombination_jets!(workspace::N2TiledWorkspace,
+                                     particles::AbstractVector;
+                                     preprocess = preprocess_escheme)
+    return _prepare_recombination_jets!(workspace.jets,
+                                        particles;
+                                        preprocess = preprocess)
+end
+
+"""
+Ensure that `scratch` can hold active state for an event with `N` particles.
+
+The vectors grow when necessary and do not shrink for smaller later events.
+Only entries `1:N` belong to the current event.
+"""
+function ensure_capacity!(scratch::TiledScratch, N::Int)
+    N >= 0 || throw(ArgumentError("N must be non-negative, got $N"))
+
+    if length(scratch.eta) < N
+        resize!(scratch.eta, N)
+    end
+
+    if length(scratch.NNs) < N
+        resize!(scratch.NNs, N)
+    end
+
+    if length(scratch.dij) < N
+        resize!(scratch.dij, N)
+    end
+
+    old_tiledjet_length = length(scratch.tiledjets)
+
+    if old_tiledjet_length < N
+        resize!(scratch.tiledjets, N)
+
+        for i in (old_tiledjet_length + 1):N
+            scratch.tiledjets[i] = TiledJet(i)
+        end
+    end
+
+    return nothing
+end
+
+"""
+Return a Tiling for `setup`, reusing matrix storage for the same grid shape.
+
+Every matrix is reset before being exposed to the reconstruction.
+"""
+function get_tiling!(scratch::TiledScratch, setup::TilingDef)
+    n_tiles_eta = setup._n_tiles_eta
+    n_tiles_phi = setup._n_tiles_phi
+
+    shape = (n_tiles_eta, n_tiles_phi)
+
+    arrays = get!(scratch.tiling_cache, shape) do
+        TilingArrays(Matrix{typeof(noTiledJet)}(undef, n_tiles_eta, n_tiles_phi),
+                     Matrix{Int}(undef, n_tiles_eta, n_tiles_phi),
+                     Matrix{Bool}(undef, n_tiles_eta, n_tiles_phi))
+    end
+
+    # Remove the previous event's logical tiling contents.
+    fill!(arrays.tiles, noTiledJet)
+    fill!(arrays.positions, 0)
+    fill!(arrays.tags, false)
+
+    # Restore the same edge markers created by Tiling(setup).
+    @inbounds for iphi in 1:n_tiles_phi
+        arrays.positions[1, iphi] = tile_left
+        arrays.positions[n_tiles_eta, iphi] = tile_right
+    end
+
+    return Tiling(setup,
+                  arrays.tiles,
+                  arrays.positions,
+                  arrays.tags)
+end
 
 """
     struct Surrounding{N}

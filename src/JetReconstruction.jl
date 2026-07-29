@@ -76,7 +76,8 @@ export plain_jet_reconstruct
 include("TiledAlgoUtils.jl")
 # Algorithmic part, tiled reconstruction strategy with linked list jet objects
 include("TiledAlgoLL.jl")
-export tiled_jet_reconstruct
+export N2TiledWorkspace, inclusive_jets!, release_n2tiled_workspace_capacity!,
+       tiled_jet_reconstruct, with_n2tiled_reconstruction
 
 ## E+E- algorithms
 include("EEAlgorithm.jl")
