@@ -124,8 +124,8 @@ function initial_history!(history::Vector{HistoryElement},
     @inbounds for i in eachindex(particles)
         history[i] = HistoryElement(i)
 
-        @assert cluster_hist_index(particles[i]) == i ("Cluster history index should match jet's index in the input vector. " *
-                                                       "Expected $(i), got $(cluster_hist_index(particles[i]))")
+        @assert cluster_hist_index(particles[i])==i ("Cluster history index should match jet's index in the input vector. "*
+                                                     "Expected $(i), got $(cluster_hist_index(particles[i]))")
 
         Qtot += particles[i].E
     end

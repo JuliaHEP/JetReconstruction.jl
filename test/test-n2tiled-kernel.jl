@@ -23,15 +23,13 @@ function run_workspace_event!(workspace,
                               ptmin = 5.0,
                               recombine = addjets_escheme,
                               preprocess = preprocess_escheme)
-    return with_n2tiled_reconstruction(
-                                       workspace,
+    return with_n2tiled_reconstruction(workspace,
                                        event;
                                        algorithm = algorithm,
                                        p = p,
                                        R = R,
                                        recombine = recombine,
-                                       preprocess = preprocess
-                                       ) do clusterseq
+                                       preprocess = preprocess) do clusterseq
         inclusive_jets!(workspace, clusterseq; ptmin = ptmin)
         return nothing
     end
@@ -70,14 +68,12 @@ end
                                              preprocess = nothing)
             expected_inclusive = inclusive_jets(expected; ptmin = 5.0)
 
-            with_n2tiled_reconstruction(
-                                        workspace,
+            with_n2tiled_reconstruction(workspace,
                                         event;
                                         algorithm = algorithm,
                                         p = power,
                                         R = distance,
-                                        preprocess = nothing
-                                        ) do actual
+                                        preprocess = nothing) do actual
                 @test actual.jets === workspace.jets
                 @test actual.history === workspace.history
                 test_exact_clustersequence_equality(actual, expected)
@@ -106,14 +102,12 @@ end
                                              preprocess = preprocess,
                                              recombine = recombine)
 
-            with_n2tiled_reconstruction(
-                                        workspace,
+            with_n2tiled_reconstruction(workspace,
                                         event;
                                         algorithm = JetAlgorithm.AntiKt,
                                         R = 0.4,
                                         preprocess = preprocess,
-                                        recombine = recombine
-                                        ) do actual
+                                        recombine = recombine) do actual
                 test_exact_clustersequence_equality(actual, expected)
             end
         end
@@ -123,12 +117,10 @@ end
                                          algorithm = JetAlgorithm.AntiKt,
                                          R = 0.4)
 
-        with_n2tiled_reconstruction(
-                                    workspace,
+        with_n2tiled_reconstruction(workspace,
                                     lorentz_event;
                                     algorithm = JetAlgorithm.AntiKt,
-                                    R = 0.4
-                                    ) do actual
+                                    R = 0.4) do actual
             test_exact_clustersequence_equality(actual, expected)
         end
     end
@@ -145,26 +137,22 @@ end
         borrowed_result = Ref{Any}()
         borrowed_output = Ref{Any}()
 
-        with_n2tiled_reconstruction(
-                                    workspace,
+        with_n2tiled_reconstruction(workspace,
                                     small_event;
                                     algorithm = JetAlgorithm.AntiKt,
                                     R = 0.4,
-                                    preprocess = nothing
-                                    ) do clusterseq
+                                    preprocess = nothing) do clusterseq
             borrowed_result[] = clusterseq
             borrowed_output[] = inclusive_jets!(workspace,
                                                 clusterseq;
                                                 ptmin = 5.0)
         end
 
-        with_n2tiled_reconstruction(
-                                    workspace,
+        with_n2tiled_reconstruction(workspace,
                                     large_event;
                                     algorithm = JetAlgorithm.AntiKt,
                                     R = 0.4,
-                                    preprocess = nothing
-                                    ) do clusterseq
+                                    preprocess = nothing) do clusterseq
             inclusive_jets!(workspace, clusterseq; ptmin = 5.0)
         end
 
@@ -178,49 +166,39 @@ end
     @testset "Workspace ownership guard" begin
         workspace = N2TiledWorkspace()
 
-        @test_throws ArgumentError with_n2tiled_reconstruction(
-                                                               workspace,
+        @test_throws ArgumentError with_n2tiled_reconstruction(workspace,
                                                                small_event;
                                                                algorithm = JetAlgorithm.AntiKt,
-                                                               R = 0.4
-                                                               ) do _
-            with_n2tiled_reconstruction(
-                                        workspace,
+                                                               R = 0.4) do _
+            with_n2tiled_reconstruction(workspace,
                                         small_event;
                                         algorithm = JetAlgorithm.AntiKt,
-                                        R = 0.4
-                                        ) do _
+                                        R = 0.4) do _
                 nothing
             end
         end
 
-        @test_throws ErrorException with_n2tiled_reconstruction(
-                                                                workspace,
+        @test_throws ErrorException with_n2tiled_reconstruction(workspace,
                                                                 small_event;
                                                                 algorithm = JetAlgorithm.AntiKt,
-                                                                R = 0.4
-                                                                ) do _
+                                                                R = 0.4) do _
             error("intentional callback failure")
         end
 
-        @test with_n2tiled_reconstruction(
-                                          workspace,
+        @test with_n2tiled_reconstruction(workspace,
                                           small_event;
                                           algorithm = JetAlgorithm.AntiKt,
-                                          R = 0.4
-                                          ) do _
+                                          R = 0.4) do _
             :recovered
         end == :recovered
 
         entered = Channel{Nothing}(1)
         release = Channel{Nothing}(1)
 
-        holder = @async with_n2tiled_reconstruction(
-                                                    workspace,
+        holder = @async with_n2tiled_reconstruction(workspace,
                                                     small_event;
                                                     algorithm = JetAlgorithm.AntiKt,
-                                                    R = 0.4
-                                                    ) do _
+                                                    R = 0.4) do _
             put!(entered, nothing)
             take!(release)
         end
