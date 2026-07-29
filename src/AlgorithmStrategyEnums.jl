@@ -139,11 +139,15 @@ const AllRecombinationSchemes = [String(Symbol(x))
 # Note it's a bit fragile to have the dictionary and the enum built
 # separately, but it is manageable. There is a test in the CI that
 # checks that all the enums are defined in the dictionary.
-const RecombinationMethods = Dict(RecombinationScheme.EScheme => (recombine = addjets_escheme,
-                                                                  preprocess = preprocess_escheme),
-                                  RecombinationScheme.ESchemeRaw => (recombine = addjets_escheme,
-                                                                     preprocess = nothing),
-                                  RecombinationScheme.PtScheme => (recombine = addjets_ptscheme,
-                                                                   preprocess = preprocess_ptscheme),
-                                  RecombinationScheme.Pt2Scheme => (recombine = addjets_pt2scheme,
-                                                                    preprocess = preprocess_pt2scheme))
+const RecombinationMethods = Dict(RecombinationScheme.EScheme =>
+                                      (recombine = addjets_escheme,
+                                       preprocess = preprocess_escheme),
+                                  RecombinationScheme.ESchemeRaw =>
+                                      (recombine = addjets_escheme,
+                                       preprocess = nothing),
+                                  RecombinationScheme.PtScheme =>
+                                      (recombine = addjets_ptscheme,
+                                       preprocess = preprocess_ptscheme),
+                                  RecombinationScheme.Pt2Scheme =>
+                                      (recombine = addjets_pt2scheme,
+                                       preprocess = preprocess_pt2scheme))
