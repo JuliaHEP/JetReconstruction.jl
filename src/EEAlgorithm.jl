@@ -354,7 +354,7 @@ function ee_genkt_algorithm(particles::AbstractVector{T}; algorithm::JetAlgorith
                             preprocess = preprocess_escheme) where {T}
 
     # For Valencia, if β is provided, overwrite p
-    if algorithm === JetAlgorithm.Valencia && β !== nothing
+    if algorithm === JetAlgorithm.Valencia && !isnothing(β)
         p = β
     end
 
