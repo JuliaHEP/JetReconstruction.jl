@@ -439,7 +439,9 @@ function _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
                               algorithm::JetAlgorithm.Algorithm, p::Real, R::Real = 4.0,
                               invR2::Real = 1 / (16.0),
                               γ::Union{Real, Nothing} = 1.0,
-                              recombine = addjets_escheme)
+                              recombine = addjets_escheme,
+                              scratch::Union{Nothing, StructArray{EERecoJet}} = nothing,
+                              history_buffer::Union{Nothing, Vector{HistoryElement}} = nothing)
 
     # Bounds
     N::Int = length(particles)
@@ -462,12 +464,21 @@ function _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
     # For optimised reconstruction generate an SoA containing the necessary
     # jet information and populate it accordingly
     # We need N slots for this array
-    eereco = StructArray{EERecoJet}(undef, N)
+    eereco = if isnothing(scratch)
+        StructArray{EERecoJet}(undef, N)
+    else
+        ensure_length!(scratch, N)
+        scratch
+    end
 
     fill_reco_array!(eereco, particles, invR2, p)
 
     # Setup the initial history and get the total energy
-    history, Qtot = initial_history(particles)
+    history, Qtot = if isnothing(history_buffer)
+        initial_history(particles)
+    else
+        initial_history!(history_buffer, particles)
+    end
 
     clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Plain, particles, history,
                                  Qtot)
@@ -561,4 +572,50 @@ function _ee_genkt_algorithm!(particles::AbstractVector{EEJet};
 
     # Return the final cluster sequence structure
     clusterseq
+end
+
+"""
+Reconstruct an electron-positron event using storage owned by `workspace`.
+
+This is the electron-positron implementation behind
+[`with_n2plain_reconstruction`](@ref). The returned sequence borrows
+`workspace.jets` and `workspace.history`.
+"""
+function _n2plain_reconstruct_with_workspace!(workspace::N2PlainWorkspace{EEJet},
+                                              particles::AbstractVector;
+                                              algorithm::JetAlgorithm.Algorithm,
+                                              p::Union{Real, Nothing} = nothing,
+                                              R = nothing,
+                                              recombine = addjets_escheme,
+                                              preprocess = preprocess_escheme,
+                                              γ::Union{Real, Nothing} = nothing,
+                                              β::Union{Real, Nothing} = nothing)
+    is_ee(algorithm) ||
+        throw(ArgumentError("algorithm $algorithm requires a PseudoJet N2PlainWorkspace"))
+
+    if algorithm === JetAlgorithm.Valencia && !isnothing(β)
+        p = β
+    end
+
+    resolved_power = get_algorithm_power(p = p, algorithm = algorithm)
+    if algorithm !== JetAlgorithm.Valencia
+        resolved_power = round(resolved_power) == resolved_power ? Int(resolved_power) :
+                         resolved_power
+    end
+
+    resolved_R = algorithm === JetAlgorithm.Durham ? 4.0 : something(R, 4.0)
+    resolved_gamma = something(γ, 1.0)
+    jets = prepare_n2plain_recombination_jets!(workspace,
+                                               particles;
+                                               preprocess = preprocess)
+
+    return _ee_genkt_algorithm!(jets;
+                                algorithm = algorithm,
+                                p = resolved_power,
+                                R = resolved_R,
+                                invR2 = inv(resolved_R * resolved_R),
+                                γ = resolved_gamma,
+                                recombine = recombine,
+                                scratch = workspace.scratch,
+                                history_buffer = workspace.history)
 end

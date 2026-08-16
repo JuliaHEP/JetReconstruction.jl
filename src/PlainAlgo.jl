@@ -301,7 +301,9 @@ entry point to this jet reconstruction.
 """
 function _plain_jet_reconstruct!(particles::AbstractVector{PseudoJet};
                                  algorithm::JetAlgorithm.Algorithm, p::Real, R = 1.0,
-                                 recombine = addjets_escheme)
+                                 recombine = addjets_escheme,
+                                 scratch::Union{Nothing, PPPlainScratch} = nothing,
+                                 history_buffer::Union{Nothing, Vector{HistoryElement}} = nothing)
     # Bounds
     N::Int = length(particles)
     # Parameters
@@ -310,18 +312,51 @@ function _plain_jet_reconstruct!(particles::AbstractVector{PseudoJet};
     # Optimised compact arrays for determining the next merge step
     # We make sure these arrays are type stable - have seen issues where, depending on the values
     # returned by the methods, they can become unstable and performance degrades
-    kt2_array::Vector{Float64} = pt2.(particles) .^ p
-    phi_array::Vector{Float64} = phi.(particles)
-    rapidity_array::Vector{Float64} = rapidity.(particles)
-    nn::Vector{Int} = Vector(1:N) # nearest neighbours
-    nndist::Vector{Float64} = fill(float(R2), N) # geometric distances to the nearest neighbour
-    nndij::Vector{Float64} = zeros(N) # dij metric distance
+    local kt2_array::Vector{Float64}
+    local phi_array::Vector{Float64}
+    local rapidity_array::Vector{Float64}
+    local nn::Vector{Int}
+    local nndist::Vector{Float64}
+    local nndij::Vector{Float64}
+    local clusterseq_index::Vector{Int}
 
-    # Maps index from the compact array to the clusterseq jet vector
-    clusterseq_index::Vector{Int} = collect(1:N)
+    if isnothing(scratch)
+        kt2_array = pt2.(particles) .^ p
+        phi_array = phi.(particles)
+        rapidity_array = rapidity.(particles)
+        nn = Vector(1:N) # nearest neighbours
+        nndist = fill(float(R2), N) # geometric distances to the nearest neighbour
+        nndij = zeros(N) # dij metric distance
+
+        # Maps index from the compact array to the clusterseq jet vector
+        clusterseq_index = collect(1:N)
+    else
+        ensure_length!(scratch, N)
+        kt2_array = scratch.kt2
+        phi_array = scratch.phi
+        rapidity_array = scratch.rapidity
+        nn = scratch.nn
+        nndist = scratch.nndist
+        nndij = scratch.nndij
+        clusterseq_index = scratch.clusterseq_index
+
+        @inbounds for i in 1:N
+            kt2_array[i] = pt2(particles[i])^p
+            phi_array[i] = phi(particles[i])
+            rapidity_array[i] = rapidity(particles[i])
+            nn[i] = i
+            nndist[i] = float(R2)
+            nndij[i] = 0.0
+            clusterseq_index[i] = i
+        end
+    end
 
     # Setup the initial history and get the total energy
-    history, Qtot = initial_history(particles)
+    history, Qtot = if isnothing(history_buffer)
+        initial_history(particles)
+    else
+        initial_history!(history_buffer, particles)
+    end
     clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Plain, particles, history,
                                  Qtot)
 
@@ -403,4 +438,44 @@ function _plain_jet_reconstruct!(particles::AbstractVector{PseudoJet};
 
     # Return the final cluster sequence structure
     clusterseq
+end
+
+"""
+Reconstruct a pp event using storage owned by `workspace`.
+
+This is the pp implementation behind [`with_n2plain_reconstruction`](@ref).
+The returned sequence borrows `workspace.jets` and `workspace.history`.
+"""
+function _n2plain_reconstruct_with_workspace!(workspace::N2PlainWorkspace{PseudoJet,
+                                                                          PPPlainScratch},
+                                              particles::AbstractVector;
+                                              algorithm::JetAlgorithm.Algorithm,
+                                              p::Union{Real, Nothing} = nothing,
+                                              R = nothing,
+                                              recombine = addjets_escheme,
+                                              preprocess = preprocess_escheme,
+                                              γ::Union{Real, Nothing} = nothing,
+                                              β::Union{Real, Nothing} = nothing)
+    is_pp(algorithm) ||
+        throw(ArgumentError("algorithm $algorithm requires an EEJet N2PlainWorkspace"))
+    isnothing(β) ||
+        throw(ArgumentError("β is only supported by the Valencia algorithm"))
+    isnothing(γ) ||
+        throw(ArgumentError("γ is only supported by the Valencia algorithm"))
+
+    resolved_power = get_algorithm_power(p = p, algorithm = algorithm)
+    resolved_power = round(resolved_power) == resolved_power ? Int(resolved_power) :
+                     resolved_power
+    resolved_R = something(R, 1.0)
+    jets = prepare_n2plain_recombination_jets!(workspace,
+                                               particles;
+                                               preprocess = preprocess)
+
+    return _plain_jet_reconstruct!(jets;
+                                   algorithm = algorithm,
+                                   p = resolved_power,
+                                   R = resolved_R,
+                                   recombine = recombine,
+                                   scratch = workspace.scratch,
+                                   history_buffer = workspace.history)
 end
