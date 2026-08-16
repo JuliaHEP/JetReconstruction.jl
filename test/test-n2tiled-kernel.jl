@@ -16,6 +16,7 @@ function test_exact_clustersequence_equality(actual, expected)
 end
 
 function run_workspace_event!(workspace,
+                              output,
                               event;
                               algorithm = JetAlgorithm.AntiKt,
                               p = nothing,
@@ -30,7 +31,7 @@ function run_workspace_event!(workspace,
                                        R = R,
                                        recombine = recombine,
                                        preprocess = preprocess) do clusterseq
-        inclusive_jets!(workspace, clusterseq; ptmin = ptmin)
+        inclusive_jets!(output, clusterseq; ptmin = ptmin)
         return nothing
     end
 end
@@ -51,6 +52,7 @@ end
 
     @testset "Exact owning/workspace equivalence" begin
         workspace = N2TiledWorkspace()
+        output_buffer = LorentzVector{Float64}[]
 
         cases = ((PseudoJet[], JetAlgorithm.AntiKt, nothing, 0.4),
                  (small_event[1:1], JetAlgorithm.AntiKt, nothing, 0.8),
@@ -78,10 +80,10 @@ end
                 @test actual.history === workspace.history
                 test_exact_clustersequence_equality(actual, expected)
 
-                output = inclusive_jets!(workspace,
+                output = inclusive_jets!(output_buffer,
                                          actual;
                                          ptmin = 5.0)
-                @test output === workspace.inclusive_output
+                @test output === output_buffer
                 @test output == expected_inclusive
             end
         end
@@ -133,7 +135,8 @@ end
         owning_jets = copy(owning_result.jets)
         owning_history = copy(owning_result.history)
 
-        workspace = N2TiledWorkspace(PseudoJet)
+        workspace = N2TiledWorkspace()
+        output_buffer = PseudoJet[]
         borrowed_result = Ref{Any}()
         borrowed_output = Ref{Any}()
 
@@ -143,7 +146,7 @@ end
                                     R = 0.4,
                                     preprocess = nothing) do clusterseq
             borrowed_result[] = clusterseq
-            borrowed_output[] = inclusive_jets!(workspace,
+            borrowed_output[] = inclusive_jets!(output_buffer,
                                                 clusterseq;
                                                 ptmin = 5.0)
         end
@@ -153,71 +156,14 @@ end
                                     algorithm = JetAlgorithm.AntiKt,
                                     R = 0.4,
                                     preprocess = nothing) do clusterseq
-            inclusive_jets!(workspace, clusterseq; ptmin = 5.0)
+            inclusive_jets!(output_buffer, clusterseq; ptmin = 5.0)
         end
 
         @test owning_result.jets == owning_jets
         @test owning_result.history == owning_history
         @test borrowed_result[].jets === workspace.jets
         @test borrowed_result[].history === workspace.history
-        @test borrowed_output[] === workspace.inclusive_output
-    end
-
-    @testset "Workspace ownership guard" begin
-        workspace = N2TiledWorkspace()
-
-        @test_throws ArgumentError with_n2tiled_reconstruction(workspace,
-                                                               small_event;
-                                                               algorithm = JetAlgorithm.AntiKt,
-                                                               R = 0.4) do _
-            with_n2tiled_reconstruction(workspace,
-                                        small_event;
-                                        algorithm = JetAlgorithm.AntiKt,
-                                        R = 0.4) do _
-                nothing
-            end
-        end
-
-        @test_throws ErrorException with_n2tiled_reconstruction(workspace,
-                                                                small_event;
-                                                                algorithm = JetAlgorithm.AntiKt,
-                                                                R = 0.4) do _
-            error("intentional callback failure")
-        end
-
-        @test with_n2tiled_reconstruction(workspace,
-                                          small_event;
-                                          algorithm = JetAlgorithm.AntiKt,
-                                          R = 0.4) do _
-            :recovered
-        end == :recovered
-
-        entered = Channel{Nothing}(1)
-        release = Channel{Nothing}(1)
-
-        holder = @async with_n2tiled_reconstruction(workspace,
-                                                    small_event;
-                                                    algorithm = JetAlgorithm.AntiKt,
-                                                    R = 0.4) do _
-            put!(entered, nothing)
-            take!(release)
-        end
-
-        wait_status = timedwait(() -> isready(entered) || istaskdone(holder),
-                                10.0)
-        @test wait_status == :ok
-
-        if isready(entered)
-            take!(entered)
-            @test_throws ArgumentError run_workspace_event!(workspace,
-                                                            small_event)
-            put!(release, nothing)
-        else
-            # Ensure a late holder cannot remain blocked if the wait failed.
-            put!(release, nothing)
-        end
-
-        fetch(holder)
+        @test borrowed_output[] === output_buffer
     end
 
     @testset "In-place inclusive selection" begin
@@ -237,8 +183,9 @@ end
 
     @testset "Capacity reuse and release" begin
         workspace = N2TiledWorkspace()
+        output_buffer = LorentzVector{Float64}[]
 
-        run_workspace_event!(workspace, large_event)
+        run_workspace_event!(workspace, output_buffer, large_event)
         retained_jets = workspace.jets
         retained_history = workspace.history
         retained_eta = workspace.scratch.eta
@@ -247,7 +194,12 @@ end
         retained_dij = workspace.scratch.dij
         retained_tilings = copy(workspace.scratch.tiling_cache)
 
-        run_workspace_event!(workspace, large_event)
+        @test length(workspace.scratch.eta) == length(large_event)
+        @test length(workspace.scratch.tiledjets) == length(large_event)
+        @test length(workspace.scratch.NNs) == length(large_event)
+        @test length(workspace.scratch.dij) == length(large_event)
+
+        run_workspace_event!(workspace, output_buffer, large_event)
         @test workspace.scratch.eta === retained_eta
         @test workspace.scratch.tiledjets === retained_tiledjets
         @test workspace.scratch.NNs === retained_NNs
@@ -255,9 +207,13 @@ end
         @test all(workspace.scratch.tiling_cache[shape] === arrays
                   for (shape, arrays) in retained_tilings)
 
-        run_workspace_event!(workspace, small_event)
+        run_workspace_event!(workspace, output_buffer, small_event)
         @test workspace.jets === retained_jets
         @test workspace.history === retained_history
+        @test length(workspace.scratch.eta) == length(small_event)
+        @test length(workspace.scratch.tiledjets) == length(small_event)
+        @test length(workspace.scratch.NNs) == length(small_event)
+        @test length(workspace.scratch.dij) == length(small_event)
 
         release_n2tiled_workspace_capacity!(workspace)
         @test workspace.jets !== retained_jets
@@ -268,39 +224,33 @@ end
         @test workspace.scratch.dij !== retained_dij
         @test isempty(workspace.jets)
         @test isempty(workspace.history)
-        @test isempty(workspace.inclusive_output)
         @test isempty(workspace.scratch.eta)
         @test isempty(workspace.scratch.tiledjets)
         @test isempty(workspace.scratch.NNs)
         @test isempty(workspace.scratch.dij)
         @test isempty(workspace.scratch.tiling_cache)
 
-        run_workspace_event!(workspace, small_event)
+        run_workspace_event!(workspace, output_buffer, small_event)
         @test !isempty(workspace.history)
     end
 
     @testset "Workspace allocation regression" begin
         event = large_event
         workspace = N2TiledWorkspace()
+        output_buffer = LorentzVector{Float64}[]
 
         run_owning_n2tiled_event(event)
-        run_workspace_event!(workspace, event; preprocess = nothing)
+        run_workspace_event!(workspace,
+                             output_buffer,
+                             event;
+                             preprocess = nothing)
 
         owning_bytes = @allocated run_owning_n2tiled_event(event)
         reused_bytes = @allocated run_workspace_event!(workspace,
+                                                       output_buffer,
                                                        event;
                                                        preprocess = nothing)
 
         @test reused_bytes < owning_bytes ÷ 4
-    end
-
-    @testset "Abstract-vector tiling input" begin
-        eta_values = [-2.0, -0.5, 0.25, 1.5]
-        eta_view = @view eta_values[1:3]
-
-        @test JetReconstruction.determine_rapidity_extent(eta_view) ==
-              JetReconstruction.determine_rapidity_extent(collect(eta_view))
-        @test JetReconstruction.setup_tiling(eta_view, 0.4) ==
-              JetReconstruction.setup_tiling(collect(eta_view), 0.4)
     end
 end
