@@ -19,19 +19,17 @@ const NonexistentParent = -2
 "Cluster recombined with beam"
 const BeamJet = -1
 
-# Julia 1.11 introduced the `shrink` keyword for `sizehint!`.
-#
-# On Julia 1.11 and later, explicitly disable shrinking.
-# On Julia 1.10, the existing Vector method already behaves grow-only.
-@inline function _grow_only_sizehint!(buffer::Vector,
+# Julia 1.11 introduced the `shrink` keyword for `sizehint!`. Disable shrinking
+# when that keyword is available. Older Julia versions have no public no-shrink
+# sizehint API, so leave their capacity untouched and let `resize!`/`push!` grow
+# it as needed.
+@inline function _sizehint_for_reuse!(buffer::Vector,
                                       requested::Integer)
     requested >= 0 ||
         throw(ArgumentError("requested capacity must be non-negative, got $requested"))
 
     @static if VERSION >= v"1.11"
         sizehint!(buffer, requested; shrink = false)
-    else
-        sizehint!(buffer, requested)
     end
 
     return buffer
@@ -114,7 +112,7 @@ function initial_history!(history::Vector{HistoryElement},
     #   N initial history entries
     # + N recombination/finalisation entries
     # = 2N total entries.
-    _grow_only_sizehint!(history, 2 * N)
+    _sizehint_for_reuse!(history, 2 * N)
 
     # Establish exactly N active initial-history slots.
     resize!(history, N)
@@ -139,7 +137,11 @@ end
 Create independently owned initial clustering-history storage.
 """
 function initial_history(particles)
-    history = HistoryElement[]
+    # This is newly owned storage, so requesting the complete sequence size
+    # cannot discard reusable capacity. Preserve the original eager allocation
+    # on Julia versions that do not support `sizehint!(...; shrink=false)`.
+    history = Vector{HistoryElement}(undef, length(particles))
+    sizehint!(history, 2 * length(particles))
 
     return initial_history!(history, particles)
 end
@@ -279,28 +281,29 @@ function inclusive_jets!(output::Vector{T},
     output === clusterseq.jets &&
         throw(ArgumentError("inclusive-jet output must not alias ClusterSequence.jets"))
 
-    pt2min = ptmin * ptmin
-
     # Remove the previous event's logical output while retaining capacity.
     empty!(output)
 
-    for history_element in clusterseq.history
-        history_element.parent2 == BeamJet || continue
-
-        parent_jet_index = clusterseq.history[history_element.parent1].jetp_index
-
-        jet = clusterseq.jets[parent_jet_index]
-
-        pt2(jet) >= pt2min || continue
-
-        if T == U
-            push!(output, jet)
-        elseif T <: LorentzVectorCyl
-            push!(output, lorentzvector_cyl(jet))
-        elseif T <: LorentzVector
-            push!(output, lorentzvector(jet))
-        else
-            error("Unsupported return type $T for inclusive jets")
+    pt2min = ptmin * ptmin
+    # For inclusive jets with a plugin algorithm, we make no
+    # assumptions about anything (relation of dij to momenta,
+    # ordering of the dij, etc.)
+    # for elt in Iterators.reverse(clusterseq.history)
+    for elt in clusterseq.history
+        elt.parent2 == BeamJet || continue
+        iparent_jet = clusterseq.history[elt.parent1].jetp_index
+        jet = clusterseq.jets[iparent_jet]
+        if pt2(jet) >= pt2min
+            @debug "Added inclusive jet index $iparent_jet"
+            if T == U
+                push!(output, jet)
+            elseif T <: LorentzVectorCyl
+                push!(output, lorentzvector_cyl(jet))
+            elseif T <: LorentzVector
+                push!(output, lorentzvector(jet))
+            else
+                error("Unsupported return type $T for inclusive jets")
+            end
         end
     end
 

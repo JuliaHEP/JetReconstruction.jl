@@ -266,7 +266,7 @@ Reset and fill reusable recombination-jet storage.
 
 This mirrors the preprocessing behaviour of `tiled_jet_reconstruct`.
 
-When `preprocess === nothing`:
+When `isnothing(preprocess)`:
 
 - PseudoJet inputs are copied directly;
 - other supported input types are converted to PseudoJet.
@@ -282,7 +282,7 @@ function _prepare_recombination_jets!(jets::Vector{PseudoJet},
     N = length(particles)
 
     empty!(jets)
-    _grow_only_sizehint!(jets, 2 * N)
+    _sizehint_for_reuse!(jets, 2 * N)
 
     if isnothing(preprocess)
         if T == PseudoJet
@@ -313,104 +313,49 @@ The workspace owns reusable:
 
 - tiled scratch;
 - reconstructed jets;
-- complete clustering history;
-- inclusive-jet output.
+- complete clustering history.
 
-The ClusterSequence and inclusive output produced from this workspace are
-borrowed. They are overwritten by the next reconstruction using the same
-workspace.
+The ClusterSequence produced from this workspace is borrowed. It is overwritten
+by the next reconstruction using the same workspace. Callers may provide their
+own reusable output vectors to post-processing functions such as
+`inclusive_jets!`.
 
 A workspace must never be used concurrently or reentrantly.
 """
-mutable struct N2TiledWorkspace{T}
+mutable struct N2TiledWorkspace
     scratch::TiledScratch
     jets::Vector{PseudoJet}
     history::Vector{HistoryElement}
-    inclusive_output::Vector{T}
-    in_use::Threads.Atomic{Int}
 end
 
-function N2TiledWorkspace(::Type{T} = LorentzVector{Float64}) where {T}
-    return N2TiledWorkspace{T}(TiledScratch(),
-                               PseudoJet[],
-                               HistoryElement[],
-                               T[],
-                               Threads.Atomic{Int}(0))
-end
-
-"""
-Write inclusive jets from `clusterseq` into the workspace-owned output vector.
-
-This method is intended to be called while `workspace` is owned by an active
-`with_n2tiled_reconstruction` callback.
-
-The returned vector is borrowed and is overwritten by the next selection using
-the same workspace.
-"""
-function inclusive_jets!(workspace::N2TiledWorkspace,
-                         clusterseq::ClusterSequence;
-                         ptmin = 0.0)
-    return inclusive_jets!(workspace.inclusive_output,
-                           clusterseq;
-                           ptmin = ptmin)
-end
-
-"""
-Acquire exclusive use of `workspace`.
-
-A nonzero previous state means another task or a nested reconstruction is
-already using the same workspace.
-"""
-@inline function _acquire_n2tiled_workspace!(workspace::N2TiledWorkspace)
-    previous_state = Threads.atomic_cas!(workspace.in_use,
-                                         0,
-                                         1)
-
-    previous_state == 0 || throw(ArgumentError("N2TiledWorkspace is already in use. " *
-                        "A workspace must not be shared concurrently or used reentrantly."))
-
-    return nothing
-end
-
-"""
-Release exclusive use of `workspace`.
-"""
-@inline function _release_n2tiled_workspace!(workspace::N2TiledWorkspace)
-    workspace.in_use[] = 0
-
-    return nothing
+function N2TiledWorkspace()
+    return N2TiledWorkspace(TiledScratch(),
+                            PseudoJet[],
+                            HistoryElement[])
 end
 
 """
     release_n2tiled_workspace_capacity!(workspace)
 
-Release grow-only storage retained by `workspace`.
-
-This operation acquires exclusive ownership of the workspace. It therefore
-fails clearly if the workspace is already being used.
+Release storage retained by `workspace`.
 
 The small fixed-size `tile_union` buffer is retained. All event-size-dependent
 vectors and cached tiling matrices become eligible for garbage collection.
+
+The caller must ensure that `workspace` is not in use by another task.
 """
-function release_n2tiled_workspace_capacity!(workspace::N2TiledWorkspace{T}) where {T}
-    _acquire_n2tiled_workspace!(workspace)
+function release_n2tiled_workspace_capacity!(workspace::N2TiledWorkspace)
+    workspace.jets = PseudoJet[]
+    workspace.history = HistoryElement[]
 
-    try
-        workspace.jets = PseudoJet[]
-        workspace.history = HistoryElement[]
-        workspace.inclusive_output = T[]
+    scratch = workspace.scratch
 
-        scratch = workspace.scratch
+    scratch.eta = Float64[]
+    scratch.tiledjets = TiledJet[]
+    scratch.NNs = TiledJet[]
+    scratch.dij = Float64[]
 
-        scratch.eta = Float64[]
-        scratch.tiledjets = TiledJet[]
-        scratch.NNs = TiledJet[]
-        scratch.dij = Float64[]
-
-        scratch.tiling_cache = Dict{Tuple{Int, Int}, TilingArrays}()
-    finally
-        _release_n2tiled_workspace!(workspace)
-    end
+    scratch.tiling_cache = Dict{Tuple{Int, Int}, TilingArrays}()
 
     return nothing
 end
@@ -424,31 +369,22 @@ function prepare_recombination_jets!(workspace::N2TiledWorkspace,
 end
 
 """
-Ensure that `scratch` can hold active state for an event with `N` particles.
+Resize the event-sized vectors in `scratch` for an event with `N` particles.
 
-The vectors grow when necessary and do not shrink for smaller later events.
-Only entries `1:N` belong to the current event.
+Every vector has logical length `N` on return. Existing `TiledJet` objects are
+reused, and new objects are constructed only when that vector grows.
 """
-function ensure_capacity!(scratch::TiledScratch, N::Int)
+function ensure_length!(scratch::TiledScratch, N::Int)
     N >= 0 || throw(ArgumentError("N must be non-negative, got $N"))
 
-    if length(scratch.eta) < N
-        resize!(scratch.eta, N)
-    end
-
-    if length(scratch.NNs) < N
-        resize!(scratch.NNs, N)
-    end
-
-    if length(scratch.dij) < N
-        resize!(scratch.dij, N)
-    end
+    resize!(scratch.eta, N)
+    resize!(scratch.NNs, N)
+    resize!(scratch.dij, N)
 
     old_tiledjet_length = length(scratch.tiledjets)
+    resize!(scratch.tiledjets, N)
 
     if old_tiledjet_length < N
-        resize!(scratch.tiledjets, N)
-
         for i in (old_tiledjet_length + 1):N
             scratch.tiledjets[i] = TiledJet(i)
         end

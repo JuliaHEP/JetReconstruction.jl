@@ -42,7 +42,7 @@ struct TilingDef
 end
 
 """
-    determine_rapidity_extent(eta::AbstractVector{T}) where T <: AbstractFloat
+    determine_rapidity_extent(eta::Vector{T}) where T <: AbstractFloat
 
 Calculate the minimum and maximum rapidities based on the input vector `eta`.
 The function determines the rapidity extent by binning the multiplicities as a
@@ -59,12 +59,8 @@ This is the heuristic which is used by FastJet (inline comments are from FastJet
 - `minrap::T`: The minimum rapidity value.
 - `maxrap::T`: The maximum rapidity value.
 """
-function determine_rapidity_extent(eta::AbstractVector{T},
-                                   N::Int) where {T <: AbstractFloat}
-    Base.require_one_based_indexing(eta)
-    0 <= N <= length(eta) ||
-        throw(ArgumentError("N must be between 0 and the length of eta"))
-    N == 0 && return (0.0, 0.0) # If there are no particles, return (0, 0)
+function determine_rapidity_extent(eta::Vector{T}) where {T <: AbstractFloat}
+    length(eta) == 0 && return 0.0, 0.0
 
     nrap = 20
     nbins = 2 * nrap
@@ -75,8 +71,7 @@ function determine_rapidity_extent(eta::AbstractVector{T},
     # far out it is worth going
     minrap = maxrap = eta[1]
     ibin = 0
-    for i in 1:N
-        y = @inbounds eta[i]
+    for y in eta
         minrap = min(minrap, y)
         maxrap = max(maxrap, y)
 
@@ -141,12 +136,9 @@ function determine_rapidity_extent(eta::AbstractVector{T},
 
     minrap, maxrap
 end
-function determine_rapidity_extent(eta::AbstractVector{T}) where {T <: AbstractFloat}
-    determine_rapidity_extent(eta, length(eta))
-end
 
 """
-    setup_tiling(eta::AbstractVector{T}, Rparam::AbstractFloat) where T <: AbstractFloat
+    setup_tiling(eta::Vector{T}, Rparam::AbstractFloat) where T <: AbstractFloat
 
 This function sets up the tiling parameters for a reconstruction given a vector
 of rapidities `eta` and a radius parameter `Rparam`.
@@ -165,9 +157,7 @@ tile size. Next, it determines the rapidity extent of the input `eta` vector and
 adjusts the values accordingly. Finally, it creates a `TilingDef` object with
 the calculated tiling parameters and returns it.
 """
-function setup_tiling(eta::AbstractVector{T},
-                      Rparam::AbstractFloat,
-                      N::Int) where {T <: AbstractFloat}
+function setup_tiling(eta::Vector{T}, Rparam::AbstractFloat) where {T <: AbstractFloat}
     # First decide tile sizes (with a lower bound to avoid huge memory use with
     # very small R)
     tile_size_eta = max(0.1, Rparam)
@@ -178,7 +168,7 @@ function setup_tiling(eta::AbstractVector{T},
     n_tiles_phi = max(3, floor(Int, 2π / tile_size_eta))
     tile_size_phi = 2π / n_tiles_phi # >= Rparam and fits in 2pi
 
-    tiles_eta_min, tiles_eta_max = determine_rapidity_extent(eta, N)
+    tiles_eta_min, tiles_eta_max = determine_rapidity_extent(eta)
 
     # now adjust the values
     tiles_ieta_min = floor(Int, tiles_eta_min / tile_size_eta)
@@ -193,11 +183,6 @@ function setup_tiling(eta::AbstractVector{T},
                              tiles_ieta_min, tiles_ieta_max)
 
     tiling_setup
-end
-
-function setup_tiling(eta::AbstractVector{T},
-                      Rparam::AbstractFloat) where {T <: AbstractFloat}
-    setup_tiling(eta, Rparam, length(eta))
 end
 
 """
