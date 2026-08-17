@@ -262,55 +262,6 @@ function add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jet
 end
 
 """
-    inclusive_jets!(
-        output::Vector{T},
-        clusterseq::ClusterSequence{U};
-        ptmin=0.0,
-    )
-
-Write inclusive jets into reusable `output` storage.
-
-The output vector is cleared before use. Its retained capacity is preserved.
-The returned vector is the same object supplied as `output`.
-
-The output must not alias `clusterseq.jets`.
-"""
-function inclusive_jets!(output::Vector{T},
-                         clusterseq::ClusterSequence{U};
-                         ptmin = 0.0) where {T, U}
-    output === clusterseq.jets &&
-        throw(ArgumentError("inclusive-jet output must not alias ClusterSequence.jets"))
-
-    # Remove the previous event's logical output while retaining capacity.
-    empty!(output)
-
-    pt2min = ptmin * ptmin
-    # For inclusive jets with a plugin algorithm, we make no
-    # assumptions about anything (relation of dij to momenta,
-    # ordering of the dij, etc.)
-    # for elt in Iterators.reverse(clusterseq.history)
-    for elt in clusterseq.history
-        elt.parent2 == BeamJet || continue
-        iparent_jet = clusterseq.history[elt.parent1].jetp_index
-        jet = clusterseq.jets[iparent_jet]
-        if pt2(jet) >= pt2min
-            @debug "Added inclusive jet index $iparent_jet"
-            if T == U
-                push!(output, jet)
-            elseif T <: LorentzVectorCyl
-                push!(output, lorentzvector_cyl(jet))
-            elseif T <: LorentzVector
-                push!(output, lorentzvector(jet))
-            else
-                error("Unsupported return type $T for inclusive jets")
-            end
-        end
-    end
-
-    return output
-end
-
-"""
     inclusive_jets(
         clusterseq::ClusterSequence{U},
         ::Type{T}=LorentzVector{Float64};
@@ -334,11 +285,31 @@ inclusive_jets(clusterseq; ptmin = 10.0)
 function inclusive_jets(clusterseq::ClusterSequence{U},
                         ::Type{T} = LorentzVector{Float64};
                         ptmin = 0.0) where {T, U}
-    output = T[]
-
-    return inclusive_jets!(output,
-                           clusterseq;
-                           ptmin = ptmin)
+    pt2min = ptmin * ptmin
+    jets_local = T[]
+    # sizehint!(jets_local, length(clusterseq.jets))
+    # For inclusive jets with a plugin algorithm, we make no
+    # assumptions about anything (relation of dij to momenta,
+    # ordering of the dij, etc.)
+    # for elt in Iterators.reverse(clusterseq.history)
+    for elt in clusterseq.history
+        elt.parent2 == BeamJet || continue
+        iparent_jet = clusterseq.history[elt.parent1].jetp_index
+        jet = clusterseq.jets[iparent_jet]
+        if pt2(jet) >= pt2min
+            @debug "Added inclusive jet index $iparent_jet"
+            if T == U
+                push!(jets_local, jet)
+            elseif T <: LorentzVectorCyl
+                push!(jets_local, lorentzvector_cyl(jet))
+            elseif T <: LorentzVector
+                push!(jets_local, lorentzvector(jet))
+            else
+                error("Unsupported return type $T for inclusive jets")
+            end
+        end
+    end
+    jets_local
 end
 
 """

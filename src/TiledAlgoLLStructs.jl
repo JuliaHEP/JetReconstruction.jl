@@ -14,11 +14,11 @@ additional information to track the jet's position in the tiled structures.
 - `eta::Float64`: The rapidity of the jet.
 - `phi::Float64`: The azimuthal angle of the jet.
 - `kt2::Float64`: The transverse momentum squared of the jet.
-- `NN_dist::Float64`: The distance to the nearest neighbor.
+- `NN_dist::Float64`: The distance to the nearest neighbour.
 - `jets_index::Int`: The index of the jet in the jet array.
 - `tile_index::Int`: The index of the tile in the tile array.
 - `dij_posn::Int`: The position of this jet in the dij compact array.
-- `NN::TiledJet`: The nearest neighbor.
+- `NN::TiledJet`: The nearest neighbour.
 - `previous::TiledJet`: The previous jet.
 - `next::TiledJet`: The next jet.
 """
@@ -316,9 +316,8 @@ The workspace owns reusable:
 - complete clustering history.
 
 The ClusterSequence produced from this workspace is borrowed. It is overwritten
-by the next reconstruction using the same workspace. Callers may provide their
-own reusable output vectors to post-processing functions such as
-`inclusive_jets!`.
+by the next reconstruction using the same workspace. Post-processing functions
+such as `inclusive_jets` return independently owned results.
 
 A workspace must never be used concurrently or reentrantly.
 """
@@ -491,8 +490,8 @@ end
 """
     rightneighbours(center::Int, tiling::Tiling)
 
-Compute the indices of the right neighbors of a given center index in a tiling.
-This is used in the initial sweep to calculate the nearest neighbors, where the
+Compute the indices of the right neighbours of a given center index in a tiling.
+This is used in the initial sweep to calculate the nearest neighbours, where the
 search between jets for the nearest neighbour is bi-directional, thus when a
 tile is considered only the right neighbours are needed to compare jet
 distances as the left-hand tiles have been done from that tile already.
@@ -502,7 +501,7 @@ distances as the left-hand tiles have been done from that tile already.
 - `tiling::Tiling`: The tiling object.
 
 # Returns
-- `Surrounding`: An object containing the indices of the right neighbors.
+- `Surrounding`: An object containing the indices of the right neighbours.
 """
 function rightneighbours(center::Int, tiling::Tiling)
     #                         |1|4

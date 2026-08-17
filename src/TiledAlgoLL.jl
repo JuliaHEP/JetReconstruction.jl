@@ -149,8 +149,8 @@ nearest-neighbour and distance buffers.
 - `nothing`
 
 The function iterates over each tile in the `tiling` and sets the nearest
-neighbor information for each jet in the tile. It then looks for neighbor jets
-in the neighboring tiles and updates the nearest neighbor information
+neighbour information for each jet in the tile. It then looks for neighbour jets
+in the neighbouring tiles and updates the nearest neighbour information
 accordingly. Finally, it fills the supplied nearest-neighbour and diJ tables.
 
 Note: The diJ values are calculated as the kt distance multiplied by R^2.
@@ -443,27 +443,24 @@ function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
     R2::Float64 = R * R
     p = (round(p) == p) ? Int(p) : p # integer p if possible
 
-    # This will be used quite deep inside loops, so declare it here so that
-    # memory (de)allocation gets done only once
-    if isnothing(scratch)
-        tile_union = Vector{Int}(undef, 3 * _n_tile_neighbours)
-        eta_local = Vector{Float64}(undef, N)
-        tiledjets = Vector{TiledJet}(undef, N)
-    else
-        ensure_length!(scratch, N)
+    # Normalise the optional storage once. The owning path uses temporary
+    # buffers, while the workspace path supplies reusable ones; reconstruction
+    # below is identical in both cases.
+    scratch = isnothing(scratch) ? TiledScratch() : scratch
+    ensure_length!(scratch, N)
 
-        tile_union = scratch.tile_union
-        eta_local = scratch.eta
-        tiledjets = scratch.tiledjets
-    end
+    tile_union = scratch.tile_union
+    eta_local = scratch.eta
+    tiledjets = scratch.tiledjets
 
-    history, Qtot = if isnothing(history_buffer)
-        # Normal owning path.
-        initial_history(particles)
-    else
-        # Borrowed reusable path.
-        initial_history!(history_buffer, particles)
+    if isnothing(history_buffer)
+        # Preserve the owning path's eager complete-history allocation. This is
+        # especially important on Julia < 1.11, where initial_history!'s
+        # no-shrink size hint is intentionally unavailable.
+        history_buffer = Vector{HistoryElement}(undef, N)
+        sizehint!(history_buffer, 2 * N)
     end
+    history, Qtot = initial_history!(history_buffer, particles)
 
     # Now get the tiling setup
     for ijet in 1:N
@@ -472,11 +469,7 @@ function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
 
     setup = setup_tiling(eta_local, R)
 
-    tiling = if isnothing(scratch)
-        Tiling(setup)
-    else
-        get_tiling!(scratch, setup)
-    end
+    tiling = get_tiling!(scratch, setup)
 
     # ClusterSequence is the struct that holds the state of the reconstruction
     clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Tiled, particles, history,
@@ -485,9 +478,6 @@ function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
     # Tiled jets is a structure that has additional variables for tracking which tile a jet is in
     for ijet in 1:N
         @inbounds begin
-            if isnothing(scratch)
-                tiledjets[ijet] = TiledJet(ijet)
-            end
             jet = tiledjets[ijet]
             # A previous event may have repurposed this node during merging.
             # Restore its current event-local initial identity.
@@ -498,13 +488,8 @@ function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
     end
 
     # Now initialise all of the nearest neighbour tiles
-    if isnothing(scratch)
-        NNs = Vector{TiledJet}(undef, N)
-        dij = Vector{Float64}(undef, N)
-    else
-        NNs = scratch.NNs
-        dij = scratch.dij
-    end
+    NNs = scratch.NNs
+    dij = scratch.dij
     set_nearest_neighbours!(tiling, tiledjets, NNs, dij)
 
     # Main loop of the reconstruction
