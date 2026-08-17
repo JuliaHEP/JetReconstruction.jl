@@ -117,6 +117,19 @@ end
                                     R = 0.4) do actual
             test_exact_clustersequence_equality(actual, expected)
         end
+
+        expected = tiled_jet_reconstruct(lorentz_event;
+                                         algorithm = JetAlgorithm.AntiKt,
+                                         R = 0.4,
+                                         preprocess = nothing)
+
+        with_n2tiled_reconstruction(workspace,
+                                    lorentz_event;
+                                    algorithm = JetAlgorithm.AntiKt,
+                                    R = 0.4,
+                                    preprocess = nothing) do actual
+            test_exact_clustersequence_equality(actual, expected)
+        end
     end
 
     @testset "Owning and borrowed lifetimes" begin
@@ -218,6 +231,8 @@ end
     end
 
     @testset "Workspace allocation regression" begin
+        @test_throws ArgumentError JetReconstruction._sizehint_for_reuse!(Int[], -1)
+
         event = large_event
         workspace = N2TiledWorkspace()
 
