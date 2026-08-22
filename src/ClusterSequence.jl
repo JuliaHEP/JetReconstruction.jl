@@ -92,8 +92,8 @@ end
 
 Reset and initialise reusable clustering-history storage for `particles`.
 
-The vector's logical length is reset to the number of initial particles.
-Capacity is retained for the complete clustering history.
+The vector's logical length is reset to the number of initial particles while
+retaining any capacity already owned by the vector.
 
 The returned history vector is borrowed storage owned by the caller.
 """
@@ -101,20 +101,8 @@ function initial_history!(history::Vector{HistoryElement},
                           particles)
     N = length(particles)
 
-    # Remove the previous event's logical history entries.
-    #
-    # This changes length(history) to zero, but retained vector capacity is
-    # preserved.
-    empty!(history)
-
-    # A complete hadron-collider clustering sequence contains:
-    #
-    #   N initial history entries
-    # + N recombination/finalisation entries
-    # = 2N total entries.
-    _sizehint_for_reuse!(history, 2 * N)
-
-    # Establish exactly N active initial-history slots.
+    # Establish exactly N active initial-history slots. All slots are
+    # overwritten below, and `resize!` retains any existing excess capacity.
     resize!(history, N)
 
     Qtot::Float64 = 0.0

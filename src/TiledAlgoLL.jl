@@ -220,20 +220,6 @@ function set_nearest_neighbours!(tiling::Tiling,
     return nothing
 end
 
-function set_nearest_neighbours!(clusterseq::ClusterSequence,
-                                 tiling::Tiling,
-                                 tiledjets::Vector{TiledJet})
-    NNs = similar(clusterseq.jets, TiledJet)
-    diJ = similar(clusterseq.jets, Float64)
-
-    set_nearest_neighbours!(tiling,
-                            tiledjets,
-                            NNs,
-                            diJ)
-
-    NNs, diJ
-end
-
 """
     do_iB_recombination_step!(clusterseq::ClusterSequence, jet_i, diB)
 
@@ -361,31 +347,9 @@ function tiled_jet_reconstruct(particles::AbstractVector{T};
     # Get consistent algorithm power
     p = get_algorithm_power(p = p, algorithm = algorithm)
 
-    if isnothing(preprocess)
-        if T == PseudoJet
-            # If we don't have a preprocessor, we just need to copy to our own
-            # PseudoJet objects
-            recombination_particles = copy(particles)
-            sizehint!(recombination_particles, length(particles) * 2)
-        else
-            # We assume a constructor for PseudoJet that can ingest the appropriate
-            # type of particle
-            recombination_particles = PseudoJet[]
-            sizehint!(recombination_particles, length(particles) * 2)
-            for (i, particle) in enumerate(particles)
-                push!(recombination_particles, PseudoJet(particle; cluster_hist_index = i))
-            end
-        end
-    else
-        # We have a preprocessor function that we need to call to modify the
-        # input particles
-        recombination_particles = PseudoJet[]
-        sizehint!(recombination_particles, length(particles) * 2)
-        for (i, particle) in enumerate(particles)
-            push!(recombination_particles,
-                  preprocess(particle, PseudoJet; cluster_hist_index = i))
-        end
-    end
+    recombination_particles = construct_reco_jets(particles,
+                                                  PseudoJet,
+                                                  preprocess)
 
     _tiled_jet_reconstruct!(recombination_particles; algorithm = algorithm, p = p, R = R,
                             recombine = recombine)
@@ -454,9 +418,7 @@ function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
     tiledjets = scratch.tiledjets
 
     if isnothing(history_buffer)
-        # Preserve the owning path's eager complete-history allocation. This is
-        # especially important on Julia < 1.11, where initial_history!'s
-        # no-shrink size hint is intentionally unavailable.
+        # Preserve the owning path's eager complete-history allocation.
         history_buffer = Vector{HistoryElement}(undef, N)
         sizehint!(history_buffer, 2 * N)
     end
@@ -631,9 +593,9 @@ function _n2tiled_reconstruct_with_workspace!(workspace::N2TiledWorkspace,
     resolved_power = get_algorithm_power(p = p,
                                          algorithm = algorithm)
 
-    jets = prepare_recombination_jets!(workspace,
-                                       particles,
-                                       preprocess = preprocess)
+    jets = construct_reco_jets!(workspace.jets,
+                                particles,
+                                preprocess)
 
     return _tiled_jet_reconstruct!(jets;
                                    algorithm = algorithm,

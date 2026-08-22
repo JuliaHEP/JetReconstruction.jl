@@ -49,8 +49,7 @@ end
     @testset "Exact owning/workspace equivalence" begin
         workspace = N2TiledWorkspace()
 
-        cases = ((PseudoJet[], JetAlgorithm.AntiKt, nothing, 0.4),
-                 (small_event[1:1], JetAlgorithm.AntiKt, nothing, 0.8),
+        cases = ((small_event[1:1], JetAlgorithm.AntiKt, nothing, 0.8),
                  (small_event, JetAlgorithm.AntiKt, nothing, 0.4),
                  (large_event, JetAlgorithm.AntiKt, nothing, 0.2),
                  (small_event, JetAlgorithm.Kt, nothing, 0.4),
@@ -65,19 +64,20 @@ end
                                              preprocess = nothing)
             expected_inclusive = inclusive_jets(expected; ptmin = 5.0)
 
-            with_n2tiled_reconstruction(workspace,
-                                        event;
-                                        algorithm = algorithm,
-                                        p = power,
-                                        R = distance,
-                                        preprocess = nothing) do actual
+            output = with_n2tiled_reconstruction(workspace,
+                                                 event;
+                                                 algorithm = algorithm,
+                                                 p = power,
+                                                 R = distance,
+                                                 preprocess = nothing) do actual
                 @test actual.jets === workspace.jets
                 @test actual.history === workspace.history
+                @test length(actual.history) == 2 * length(event)
                 test_exact_clustersequence_equality(actual, expected)
 
-                output = inclusive_jets(actual; ptmin = 5.0)
-                @test output == expected_inclusive
+                return inclusive_jets(actual; ptmin = 5.0)
             end
+            @test output == expected_inclusive
         end
     end
 

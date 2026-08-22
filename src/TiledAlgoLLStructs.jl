@@ -262,51 +262,6 @@ function TiledScratch()
 end
 
 """
-Reset and fill reusable recombination-jet storage.
-
-This mirrors the preprocessing behaviour of `tiled_jet_reconstruct`.
-
-When `isnothing(preprocess)`:
-
-- PseudoJet inputs are copied directly;
-- other supported input types are converted to PseudoJet.
-
-Otherwise, the supplied preprocessing function is called for every particle.
-"""
-function _prepare_recombination_jets!(jets::Vector{PseudoJet},
-                                      particles::AbstractVector{T};
-                                      preprocess = preprocess_escheme) where {T}
-    jets === particles &&
-        throw(ArgumentError("reusable jet storage must not alias the input particle vector"))
-
-    N = length(particles)
-
-    empty!(jets)
-    _sizehint_for_reuse!(jets, 2 * N)
-
-    if isnothing(preprocess)
-        if T == PseudoJet
-            append!(jets, particles)
-        else
-            for (i, particle) in enumerate(particles)
-                push!(jets,
-                      PseudoJet(particle;
-                                cluster_hist_index = i))
-            end
-        end
-    else
-        for (i, particle) in enumerate(particles)
-            push!(jets,
-                  preprocess(particle,
-                             PseudoJet;
-                             cluster_hist_index = i))
-        end
-    end
-
-    return jets
-end
-
-"""
 Reusable state for one full-semantics N2Tiled reconstruction worker.
 
 The workspace owns reusable:
@@ -357,14 +312,6 @@ function release_n2tiled_workspace_capacity!(workspace::N2TiledWorkspace)
     scratch.tiling_cache = Dict{Tuple{Int, Int}, TilingArrays}()
 
     return nothing
-end
-
-function prepare_recombination_jets!(workspace::N2TiledWorkspace,
-                                     particles::AbstractVector;
-                                     preprocess = preprocess_escheme)
-    return _prepare_recombination_jets!(workspace.jets,
-                                        particles;
-                                        preprocess = preprocess)
 end
 
 """

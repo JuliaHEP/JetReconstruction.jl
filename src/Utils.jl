@@ -125,3 +125,42 @@ fast_findmin(dij, n) = begin
     end
     dij_min, best
 end
+
+"""
+    concretize_return_type(return_type, numerical_type)
+
+Return `return_type` unchanged when it is already a `DataType`, or apply the
+single type parameter of a `UnionAll` type using `numerical_type`.
+"""
+function concretize_return_type(return_type::Type,
+                                numerical_type::Type{<:Real})
+    return_type isa DataType && return return_type
+
+    if return_type isa UnionAll
+        n_parameters = count_typevars(return_type)
+        n_parameters == 1 ||
+            throw(ArgumentError("Type $return_type requires $n_parameters type parameters, " *
+                                "but only 1 can be inferred"))
+
+        typevar = return_type.var
+        if !(typevar.lb <: numerical_type <: typevar.ub)
+            throw(ArgumentError("Cannot parameterize $return_type with type $numerical_type"))
+        end
+
+        return return_type{numerical_type}
+    end
+
+    throw(ArgumentError("Unexpected type specified: $return_type"))
+end
+
+function count_typevars(type::UnionAll)
+    count = 0
+    current = type
+
+    while current isa UnionAll
+        count += 1
+        current = current.body
+    end
+
+    return count
+end

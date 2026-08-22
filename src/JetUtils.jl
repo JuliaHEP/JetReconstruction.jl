@@ -138,3 +138,68 @@ function kt_scale(jet1::T, jet2::T) where {T <: FourMomentum}
     pt2 = JetReconstruction.pt(jet2)
     return min(pt1, pt2) * deltar(jet1, jet2)
 end
+
+"""
+    construct_reco_jets(particles, ::Type{J}, preprocess) where {J <: FourMomentum}
+
+Create independently owned, reconstruction-ready jets of type `J` from
+`particles`.
+
+When `preprocess` is `nothing`, inputs that already have type `J` are copied
+directly and other inputs are converted to `J`. Otherwise `preprocess` is called
+for every input particle.
+"""
+function construct_reco_jets(particles::AbstractVector{P},
+                             ::Type{J},
+                             preprocess) where {P, J <: FourMomentum}
+    TargetNumericalType = eltype(particles[1])
+    if TargetNumericalType <: Real
+        TargetJetType = concretize_return_type(J, TargetNumericalType)
+    else
+        TargetJetType = typeof(J(particles[1]))
+    end
+
+    recombination_particles = Vector{TargetJetType}()
+    sizehint!(recombination_particles, 2 * length(particles))
+
+    return construct_reco_jets!(recombination_particles,
+                                particles,
+                                preprocess)
+end
+
+"""
+    construct_reco_jets!(recombination_particles, particles, preprocess)
+
+Reset and fill reusable reconstruction-jet storage. The destination must not
+alias the input collection.
+"""
+function construct_reco_jets!(recombination_particles::Vector{J},
+                              particles::AbstractVector{P},
+                              preprocess) where {P, J <: FourMomentum}
+    Base.mightalias(recombination_particles, particles) &&
+        throw(ArgumentError("reusable jet storage must not alias the input particles"))
+
+    N = length(particles)
+    empty!(recombination_particles)
+    _sizehint_for_reuse!(recombination_particles, 2 * N)
+
+    if isnothing(preprocess)
+        if P === J
+            append!(recombination_particles, particles)
+        else
+            for (i, particle) in enumerate(particles)
+                push!(recombination_particles,
+                      J(particle; cluster_hist_index = i))
+            end
+        end
+    else
+        for (i, particle) in enumerate(particles)
+            push!(recombination_particles,
+                  preprocess(particle,
+                             J;
+                             cluster_hist_index = i))
+        end
+    end
+
+    return recombination_particles
+end
