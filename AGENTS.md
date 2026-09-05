@@ -21,7 +21,9 @@ The `docs/src` directory contains documentation that will be processed by `Docum
 
 The canonical upstream repository is
 <https://github.com/JuliaHEP/JetReconstruction.jl>; pull requests are made
-against its `main` branch.
+against its `main` branch. However, do not commit a branch directly into this
+repository, but rather into a fork (usually from the `origin` remote, if the
+developer is following the correct forking workflow).
 
 ### Nomenclature
 
@@ -173,8 +175,6 @@ declared `[compat]` floor of a dependency either.
   fails. Same for `[extras]` used by tests.
 - No method ambiguities, no type piracy, no stale dependencies.
 
-Aqua failures are the most common self-inflicted CI break in this repo.
-
 ### Type Parameters
 
 The package makes extensive use of type parameters for performance. The one you
@@ -195,7 +195,7 @@ carry no package-wide meaning.
 - Use `@inbounds` and `@simd` where appropriate - this is the dominant idiom in the hot loops of `src/PlainAlgo.jl`, `src/EEAlgorithm.jl` and `src/TiledAlgoLL.jl`.
 - Prefer `StructArrays.jl` for arrays-of-structs to keep hot loops columnar
 - Avoid dynamic dispatch in inner loops; keep functions type-stable
-- `LoopVectorization.jl` is a dependency but is used in exactly one place (`@turbo` in `src/Utils.jl`). Do not reach for it by default - match the surrounding code and measure first.
+- `LoopVectorization.jl` is a dependency but is used in exactly one place where it makes a significant difference (`@turbo` in `src/Utils.jl:fast_findmin()`). Do not use it by default - match the surrounding code and measure performance first.
 - Profile before optimising. See *Benchmarking and profiling* below.
 
 ### Tests
@@ -275,9 +275,10 @@ For profiling, `examples/instrumented-jetreco.jl` is the worked example, and
 
 - Develop against `main` (see `docs/src/contributing.md` for the exception on
   `release-X` branches for bug fixes).
+- If asked to push to remote, this should be the developer's `origin` fork of the upstream repository
 - Open an issue to discuss anything large before implementing it.
 - Run the formatter and the full test suite before proposing a PR.
-- Rebase on `main` if review takes a while.
+- Rebase on `main` if review takes a while and `main` had advanced.
 
 ## Common Patterns
 
