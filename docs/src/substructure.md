@@ -8,7 +8,7 @@ Jet substructure techniques provide powerful tools for analysing and refining th
 mass_drop(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; mu::Float64, y::Float64) -> PseudoJet
 ```
 
-The [mass_drop](@ref) function identifies subjets in a jet that pass the mass drop tagging condition. To use the `mass_drop` function:
+The [`mass_drop`](@ref) function identifies subjets in a jet that pass the mass drop tagging condition. To use the `mass_drop` function:
 
 - Apply the `mass_drop` function to the jet and its clustering sequence.
 
@@ -27,7 +27,7 @@ tagged_jet = mass_drop(jet, clusterseq; tagger...)
 soft_drop(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}: zcut::Real, beta::Real) -> PseudoJet
 ```
 
-The [soft_drop](@ref) function applies soft-drop grooming to remove soft, wide-angle radiation from jets. It reclusters the jet with a specified radius and clustering method, iteratively checking the soft-drop condition on subjets. To use the `soft_drop` function:
+The [`soft_drop`](@ref) function applies soft-drop grooming to remove soft, wide-angle radiation from jets. It reclusters the jet with a specified radius and clustering method, iteratively checking the soft-drop condition on subjets. To use the `soft_drop` function:
 
 - Apply the `soft_drop` function to the jet and its clustering sequence.
 
@@ -52,7 +52,7 @@ tagged_jet = soft_drop(jet, clusterseq; tagger...)
 jet_filtering(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; radius::Real, hardest_jets::Integer) -> PseudoJet
 ```
 
-The [jet_filtering](@ref) function filters a jet to retain only the hardest subjets based on a specified radius and number. To use the function:
+The [`jet_filtering`](@ref) function filters a jet to retain only the hardest subjets based on a specified radius and number. To use the function:
 
 - Apply the `jet_filtering` function to refine the jet.
 
@@ -71,7 +71,7 @@ filtered_jet = jet_filtering(jet, clusterseq; filter...)
 jet_trimming(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; radius::Real, fraction::Real, recluster_method::JetAlgorithm.Algorithm) -> PseudoJet
 ```
 
-The [jet_trimming](@ref) function trims a jet by removing subjets with transverse momentum below a specified fraction of the main jet's momentum. This method cleans up jets by removing soft particles. To use this function:
+The [`jet_trimming`](@ref) function trims a jet by removing subjets with transverse momentum below a specified fraction of the main jet's momentum. This method cleans up jets by removing soft particles. To use this function:
 
 - Apply the `jet_trimming` function to clean the jet.
 
