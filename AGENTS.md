@@ -1,6 +1,6 @@
-# AI.md - Guide for AI Coding Assistants
+# AGENTS.md - Guide for Agentic Coding Assistants
 
-This document provides guidance for AI coding assistants when working with the **JetReconstruction.jl** package. It outlines the project structure, conventions, and best practices to help AI generate appropriate and consistent code.
+This document provides guidance for agentic coding assistants when working with the **JetReconstruction.jl** package. It outlines the project structure, conventions, and best practices to help AI generate appropriate and consistent code.
 
 ## Package Overview
 
@@ -23,7 +23,7 @@ The basic steps are outlined here:
 - a metric distance is calculated between each pair of clusters in the initial cluster distribution
 - for the lowest value of the metric distance, the pair of clusters are merged into a new pseudojet
   - for some algorithms it is possible to do a so-called beam merge, which instead finalises this pseudojet (no more merges are possible), removing it from the list of active clusters
-- given the disappearance of two pesudojets and the creation of a new one (or the beam-merge, with one dissapearance) metric distances are updated
+- given the disappearance of two pesudojets and the creation of a new one (or the beam-merge, with one disappearance) metric distances are updated
 - the loop then continues, with the next lowest distance pseudojets being merged, until no more merges are possible and all initial clusters have been processed
 
 Note that special attention is paid in the implementation to minimise the calculations performed, so as to increase speed (see `Reconstruction Strategies` below.)
@@ -34,7 +34,7 @@ Algorithms express different mathematical formula used to calculate the metric d
 
 The other major difference is that in pp reconstruction the (rapidity, phi) space is used; in the e+e- reconstruction the (theta, phi) space is used for the geometric distance component.
 
-| Algorithm | Julia XENUM Type | Notes |
+| Algorithm | Julia EnumX Type | Notes |
 |-----------|------|-------|
 | Anti-kₜ | `JetAlgorithm.AntiKt` | Default for pp collisions, p=-1, R value controls radius of maximum merger distance |
 | Cambridge/Aachen | `JetAlgorithm.CA` | pp collisions, p=0, R used |
@@ -58,51 +58,18 @@ The e+e- algorithms and N2Plain share the same basic structure, in that all part
 
 ## Project Structure
 
-```sh
-JetReconstruction.jl/
-├── src/                    # Main source code (all files in flat structure)
-│   ├── JetReconstruction.jl         # Main module file, includes all below
-│   ├── CommonJet.jl                 # FourMomentum abstract type interface
-│   ├── PseudoJet.jl                  # pp jet type and methods
-│   ├── EEJet.jl                      # e+e- jet type and methods
-│   ├── JetUtils.jl                   # Utility functions: lorentzvector, lorentzvector_cyl,
-│   │                                    #  deltaR, pt_fraction, kt_scale
-│   ├── AlgorithmStrategyEnums.jl     # RecoStrategy, JetAlgorithm, RecombinationScheme enums,
-│   │                                    #  RecombinationMethods dict
-│   ├── ClusterSequence.jl            # ClusterSequence type, history tracking,
-│   │                                    #  inclusive_jets, exclusive_jets, n_exclusive_jets,
-│   │                                    #  constituents, constituent_indexes, parent_jets
-│   ├── PlainAlgo.jl                  # N2Plain strategy: plain_jet_reconstruct
-│   ├── TiledAlgoUtils.jl             # Tiled algorithm utilities
-│   ├── TiledAlgoLLStructs.jl         # Tiled algorithm struct definitions
-│   ├── TiledAlgoLL.jl                # N2Tiled strategy: tiled_jet_reconstruct
-│   ├── GenericAlgo.jl                # Main entry point: jet_reconstruct
-│   ├── EEAlgorithm.jl                # e+e- algorithms: ee_genkt_algorithm
-│   ├── Substructure.jl               # Jet grooming: mass_drop, soft_drop,
-│   │                                    #  jet_filtering, jet_trimming, recluster
-│   ├── LundPlane.jl                  # Lund plane: generate_lund_emissions
-│   ├── SoftKiller.jl                 # Pileup mitigation: SoftKiller, softkiller, select_ABS_RAP_max
-│   ├── HepMC3.jl                     # HepMC3 file reading support
-│   ├── Utils.jl                      # Utilities: open_with_stream, read_final_state_particles,
-│   │                                    #  final_jets
-│   └── JSONresults.jl                # JSON output: FinalJet, FinalJets
-├── ext/                            # Package extensions
-│   ├── EDM4hepJets.jl                # EDM4hep integration
-│   ├── JetBenchmarkPlots.jl          # Unicode plots, used to visualise benchmarks
-│   └── JetVisualisation.jl           # Makie-based visualisation (jetsplot, animatereco)
-├── test/                           # Test files
-│   ├── runtests.jl                   # Test runner
-│   ├── test-*.jl                     # Individual test files
-│   └── data/                         # Test data files (compressed .hepmc3.zst)
-├── examples/                       # Example scripts
-│   ├── jetreco.jl                    # Basic reconstruction
-│   ├── instrumented-jetreco.jl       # Performance profiling
-│   ├── visualise-jets.jl             # 3D jet visualisation
-│   ├── animate-reconstruction.jl     # Animation of reconstruction process
-│   └── visualisation/                # Additional visualisation examples
-└── docs/                           # Documentation
-    └── src/                          # Documentation sources
-```
+This project follows standard Julia conventions on layout, with a few additions:
+
+- `src` - package source files, with the main package entry point `src/JetReconstruction.jl`
+- `docs` - package documentation to be processes with `Documenter.jl`
+- `test` - package unit and integration tests
+  - `test/data` - sample input data and test reference files
+- `ext` - additional extension functionality loaded by `Pkg`
+
+Additions:
+
+- `benchmarks` - mini-benchmarks for the `JetReconstruction.jl` package
+- `examples` - examples of using the package, with subdirectories for some different functionalities (note, has it's own `Package.toml` for packages that are not required in the main package itself)
 
 ## Development Conventions
 
@@ -126,10 +93,37 @@ The package makes extensive use of type parameters for performance. Key type var
 ### Performance Considerations
 
 - Use `@inbounds` and `@simd` where appropriate
-- Prefer `StructArrays.jl` for arrays-of-structs to keep hot loops columnar (no `StaticArrays` dependency in this package)
+- Prefer `StructArrays.jl` for arrays-of-structs to keep hot loops columnar
 - Use `LoopVectorization.jl` for hot loops
 - Avoid dynamic dispatch in inner loops
 - Profile with `@time`, `@btime`, and `--project` profiling tools
+
+### Tests
+
+All new features should be supported by tests. The pattern used is that feature
+`foo` should be tested in the specific test file `test/test-foo.jl`, which will
+be included in the main test suite entry point `test/runtests.jl`.
+
+Note the use of `test/common.jl` which allows sub-tests to run independently.
+
+#### Reference Data
+
+Any reference data should live in `test/data`.
+
+#### Running tests
+
+For a specific feature:
+
+```julia
+julia --project test/test-foo.jl
+```
+
+or for the full suite:
+
+```
+julia
+julia --project test/runtests.jl
+```
 
 ## Common Patterns
 
@@ -230,79 +224,6 @@ constituents_list = constituents(jet, cs)
 parents = parent_jets(jet, cs)  # Returns Tuple or nothing
 ```
 
-## Testing Guidelines
-
-### Test Structure
-
-1. Create a new test file: `test/test-FEATURE.jl`
-  1. Include the common setup file `test/common.jl` (usually just `include("common.jl")`)
-2. Add it to `test/runtests.jl`
-3. Use reference data from `test/data/` for validation
-
-### Test Template
-
-```julia
-# Comment on the general nature of this test
-
-include("common.jl")
-
-@testset "Feature Name" begin
-    # Setup test data
-    particles = [...]
-    
-    # Test basic functionality
-    cs = jet_reconstruct(particles; algorithm=JetAlgorithm.AntiKt, R=1.0)
-    jets = inclusive_jets(cs; ptmin=0.0)
-    
-    @test length(jets) == expected_count
-    @test isapprox(pt(jets[1]), expected_pt, rtol=1e-6)
-    
-    # Test edge cases
-    # ...
-end
-```
-
-### Running Tests
-
-```bash
-# From package directory to run all tests
-julia --project test/runtests.jl
-
-# Run a specific test
-julia --project test/test-something-new.jl
-```
-
-## Documentation
-
-### Docstring Format
-
-Use Julia's standard docstring format:
-
-```julia
-"""
-    function_name(arg1, arg2; kwarg=default) -> ReturnType
-
-Brief description of what the function does.
-
-# Arguments
-- `arg1`: Description of first argument
-- `arg2`: Description of second argument
-- `kwarg`: Description of keyword argument
-
-# Returns
-Description of return value.
-
-# Examples
-```julia-repl
-julia> function_name(arg1, arg2)
-result
-```
-"""
-function function_name(arg1, arg2; kwarg=default)
-    # implementation
-end
-```
-
 ### Documentation Generation
 
 The docs use Documenter.jl. To build:
@@ -368,6 +289,7 @@ julia --project -e '@time include("script.jl")'
 
 ## When in Doubt
 
+0. Ask the human, with an explanation of the issue and the options for moving forward
 1. Check existing implementations in `src/` for patterns
 2. Look at test files for usage examples
 3. Consult the documentation at <https://juliahep.github.io/JetReconstruction.jl/>
