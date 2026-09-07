@@ -4,7 +4,7 @@ include("common.jl")
 
 # PseudoJet comparison test
 function Base.isapprox(j1::PseudoJet, j2::PseudoJet)
-    isapprox(j1.E, j2.E) && isapprox(j1.px, j2.px) &&
+    return isapprox(j1.E, j2.E) && isapprox(j1.px, j2.px) &&
         isapprox(j1.py, j2.py) && isapprox(j1.pz, j2.pz)
 end
 
@@ -44,9 +44,9 @@ end
     @testset "Parent of jet number $(event_no)" begin
         my_parents = JetReconstruction.parent_jets(pj_jets[event_no], cluster_seq)
         @test my_parents[1] ≈
-              cluster_seq.jets[cluster_seq.history[expected_parent_indexes[1]].jetp_index]
+            cluster_seq.jets[cluster_seq.history[expected_parent_indexes[1]].jetp_index]
         @test my_parents[2] ≈
-              cluster_seq.jets[cluster_seq.history[expected_parent_indexes[2]].jetp_index]
+            cluster_seq.jets[cluster_seq.history[expected_parent_indexes[2]].jetp_index]
     end
     @testset "Parents of input cluster" begin
         no_parents = JetReconstruction.parent_jets(cluster_seq.jets[1], cluster_seq)

@@ -62,8 +62,10 @@ function parse_command_line(args)
 end
 
 # Cluster a single event and return inclusive jets above ptmin
-function process_event(event::Vector{PseudoJet}, args::Dict{Symbol, Any},
-                       rapmax::Float64)
+function process_event(
+        event::Vector{PseudoJet}, args::Dict{Symbol, Any},
+        rapmax::Float64
+    )
     event = select_ABS_RAP_max(event, rapmax)
 
     distance = args[:distance]
@@ -74,31 +76,39 @@ function process_event(event::Vector{PseudoJet}, args::Dict{Symbol, Any},
     filtered_event = PseudoJet[]
     for (i, pseudo_jet) in enumerate(event)
         # Reconstruct PseudoJet with cluster_hist_index for tracking
-        new_pseudo_jet = PseudoJet(JetReconstruction.px(pseudo_jet),
-                                   JetReconstruction.py(pseudo_jet),
-                                   JetReconstruction.pz(pseudo_jet),
-                                   JetReconstruction.energy(pseudo_jet);
-                                   cluster_hist_index = i)
+        new_pseudo_jet = PseudoJet(
+            JetReconstruction.px(pseudo_jet),
+            JetReconstruction.py(pseudo_jet),
+            JetReconstruction.pz(pseudo_jet),
+            JetReconstruction.energy(pseudo_jet);
+            cluster_hist_index = i
+        )
         push!(filtered_event, new_pseudo_jet)
     end
 
-    # Clustering of the given vector of PseudoJets 
-    cluster_seq_pu = jet_reconstruct(filtered_event,
-                                     R = distance, p = p, algorithm = algorithm,
-                                     strategy = strategy)
+    # Clustering of the given vector of PseudoJets
+    cluster_seq_pu = jet_reconstruct(
+        filtered_event,
+        R = distance, p = p, algorithm = algorithm,
+        strategy = strategy
+    )
 
     finaljets_pu_lorv = inclusive_jets(cluster_seq_pu, ptmin = 25.0)
     return finaljets_pu_lorv
 end
 
 # Helper to extract rapidity, phi, pt2, and color for plotting
-function push_data!(event::AbstractVector, y::Vector{Float64}, phi::Vector{Float64},
-                    pt::Vector{Float64}, colors::Vector{String},
-                    color::String, origin::Dict{PseudoJet, String})
+function push_data!(
+        event::AbstractVector, y::Vector{Float64}, phi::Vector{Float64},
+        pt::Vector{Float64}, colors::Vector{String},
+        color::String, origin::Dict{PseudoJet, String}
+    )
     for jet in event
         pj = isa(jet, PseudoJet) ? jet :
-             PseudoJet(JetReconstruction.px(jet), JetReconstruction.py(jet),
-                       JetReconstruction.pz(jet), JetReconstruction.energy(jet))
+            PseudoJet(
+                JetReconstruction.px(jet), JetReconstruction.py(jet),
+                JetReconstruction.pz(jet), JetReconstruction.energy(jet)
+            )
         push!(y, JetReconstruction.rapidity(pj))
         push!(phi, JetReconstruction.phi(pj))
         push!(pt, JetReconstruction.pt2(pj))
@@ -109,37 +119,46 @@ function push_data!(event::AbstractVector, y::Vector{Float64}, phi::Vector{Float
             push!(colors, color)
         end
     end
+    return
 end
 
 # Plot a scatter of jets or particles in (y, phi) with pt-dependent marker size
-function plot_set_up(y::Vector{Float64}, phi::Vector{Float64}, pt::Vector{Float64},
-                     color::Vector{String}, plot_title::String)
+function plot_set_up(
+        y::Vector{Float64}, phi::Vector{Float64}, pt::Vector{Float64},
+        color::Vector{String}, plot_title::String
+    )
     fig = Figure()
-    ax = Axis(fig[1, 1],
-              xlabel = "Rapidity (y)", ylabel = "Azimuthal Angle (φ)",
-              title = plot_title,
-              limits = ((-5.0, 5.0), (0.0, 6.5)))
+    ax = Axis(
+        fig[1, 1],
+        xlabel = "Rapidity (y)", ylabel = "Azimuthal Angle (φ)",
+        title = plot_title,
+        limits = ((-5.0, 5.0), (0.0, 6.5))
+    )
 
     marker_sizes = 8 .+ pt ./ 50
     color_syms = Symbol.(color)
 
-    scatter!(ax, y, phi;
-             markersize = marker_sizes,
-             strokecolor = :black,
-             strokewidth = 1.0,
-             color = color_syms,
-             transparency = true)
+    scatter!(
+        ax, y, phi;
+        markersize = marker_sizes,
+        strokecolor = :black,
+        strokewidth = 1.0,
+        color = color_syms,
+        transparency = true
+    )
 
-    Legend(fig[1, 2],
-           [
-               PolyElement(color = :white),
-               PolyElement(color = :purple),
-               PolyElement(color = :royalblue3)
-           ],
-           ["Pileup", "Hard Event", "Jet"], "Legend")
+    Legend(
+        fig[1, 2],
+        [
+            PolyElement(color = :white),
+            PolyElement(color = :purple),
+            PolyElement(color = :royalblue3),
+        ],
+        ["Pileup", "Hard Event", "Jet"], "Legend"
+    )
 
     save(plot_title * ".png", fig)
-    @info "Plot '$(plot_title)' saved"
+    return @info "Plot '$(plot_title)' saved"
 end
 
 function main()
@@ -155,13 +174,17 @@ function main()
     args[:hard_file] = normpath(joinpath(@__DIR__, args[:hard_file]))
 
     # Reading pileup and hard event files
-    events = read_final_state_particles(args[:pileup_file], jet_type;
-                                        maxevents = args[:pileup_maxevents],
-                                        skipevents = args[:pileup_skip])
+    events = read_final_state_particles(
+        args[:pileup_file], jet_type;
+        maxevents = args[:pileup_maxevents],
+        skipevents = args[:pileup_skip]
+    )
 
-    h_events = read_final_state_particles(args[:hard_file], jet_type;
-                                          maxevents = args[:eventno],
-                                          skipevents = args[:eventno])
+    h_events = read_final_state_particles(
+        args[:hard_file], jet_type;
+        maxevents = args[:eventno],
+        skipevents = args[:eventno]
+    )
 
     # Set up SoftKiller grid and rapidity range
     rapmax = 5.0
@@ -203,56 +226,76 @@ function main()
     # Plot hard event only
     y_hard, phi_hard, pt_hard, color_hard = Float64[], Float64[], Float64[], String[]
     push_data!(hard_only, y_hard, phi_hard, pt_hard, color_hard, "royalblue3", origin)
-    plot_set_up(y_hard, phi_hard, pt_hard, color_hard,
-                "Hard event only")
+    plot_set_up(
+        y_hard, phi_hard, pt_hard, color_hard,
+        "Hard event only"
+    )
 
     # Plot expected jets from hard event
     y_exp, ph_exp, pt_exp, color_exp = Float64[], Float64[], Float64[], String[]
     expected = process_event(hard_only, args, rapmax)
     push_data!(expected, y_exp, ph_exp, pt_exp, color_exp, "royalblue3", origin)
-    plot_set_up(y_exp, ph_exp, pt_exp, color_exp,
-                "Jets, expected results")
+    plot_set_up(
+        y_exp, ph_exp, pt_exp, color_exp,
+        "Jets, expected results"
+    )
 
     # Plot all PseudoJets before clustering, no SoftKiller
     y_all_nosk, phi_all_nosk, pt_all_nosk,
-    colors_all_nosk = Float64[], Float64[],
-                      Float64[], String[]
-    push_data!(all_jets, y_all_nosk, phi_all_nosk, pt_all_nosk, colors_all_nosk,
-               "royalblue3", origin)
-    plot_set_up(y_all_nosk, phi_all_nosk, pt_all_nosk, colors_all_nosk,
-                "All PseudoJets before clustering, no SoftKiller")
+        colors_all_nosk = Float64[], Float64[],
+        Float64[], String[]
+    push_data!(
+        all_jets, y_all_nosk, phi_all_nosk, pt_all_nosk, colors_all_nosk,
+        "royalblue3", origin
+    )
+    plot_set_up(
+        y_all_nosk, phi_all_nosk, pt_all_nosk, colors_all_nosk,
+        "All PseudoJets before clustering, no SoftKiller"
+    )
 
     # Plot all PseudoJets after clustering, no SoftKiller
     y_cl_nosk, phi_cl_nosk, pt_cl_nosk,
-    colors_cl_nosk = Float64[], Float64[], Float64[],
-                     String[]
+        colors_cl_nosk = Float64[], Float64[], Float64[],
+        String[]
     clustered_jets = process_event(all_jets, args, rapmax)
-    push_data!(clustered_jets, y_cl_nosk, phi_cl_nosk, pt_cl_nosk, colors_cl_nosk,
-               "royalblue3", origin)
-    plot_set_up(y_cl_nosk, phi_cl_nosk, pt_cl_nosk, colors_cl_nosk,
-                "All PseudoJets after clustering, no SoftKiller")
+    push_data!(
+        clustered_jets, y_cl_nosk, phi_cl_nosk, pt_cl_nosk, colors_cl_nosk,
+        "royalblue3", origin
+    )
+    plot_set_up(
+        y_cl_nosk, phi_cl_nosk, pt_cl_nosk, colors_cl_nosk,
+        "All PseudoJets after clustering, no SoftKiller"
+    )
 
-    pt_threshold = 0.00
+    pt_threshold = 0.0
     # Apply SoftKiller to all_jets_sk (hard + pileup)
     reduced_event, pt_threshold = softkiller(soft_killer, all_jets_sk)
     @info "SoftKiller applied: $(length(reduced_event)) clusters remaining from $(length(all_jets_sk)), pt threshold = $pt_threshold"
 
     # Plot all PseudoJets after SoftKiller, before clustering
     y_all_sk, phi_all_sk, pt_all_sk,
-    colors_all_sk = Float64[], Float64[], Float64[],
-                    String[]
-    push_data!(reduced_event, y_all_sk, phi_all_sk, pt_all_sk, colors_all_sk, "royalblue3",
-               origin)
-    plot_set_up(y_all_sk, phi_all_sk, pt_all_sk, colors_all_sk,
-                "All PseudoJets before clustering, with SoftKiller")
+        colors_all_sk = Float64[], Float64[], Float64[],
+        String[]
+    push_data!(
+        reduced_event, y_all_sk, phi_all_sk, pt_all_sk, colors_all_sk, "royalblue3",
+        origin
+    )
+    plot_set_up(
+        y_all_sk, phi_all_sk, pt_all_sk, colors_all_sk,
+        "All PseudoJets before clustering, with SoftKiller"
+    )
 
     # Plot all PseudoJets after SoftKiller and clustering
     y_cl_sk, phi_cl_sk, pt_cl_sk, colors_cl_sk = Float64[], Float64[], Float64[], String[]
     clustered_jets_sk = process_event(reduced_event, args, rapmax)
-    push_data!(clustered_jets_sk, y_cl_sk, phi_cl_sk, pt_cl_sk, colors_cl_sk, "royalblue3",
-               origin)
-    plot_set_up(y_cl_sk, phi_cl_sk, pt_cl_sk, colors_cl_sk,
-                "All PseudoJets after clustering, with SoftKiller")
+    push_data!(
+        clustered_jets_sk, y_cl_sk, phi_cl_sk, pt_cl_sk, colors_cl_sk, "royalblue3",
+        origin
+    )
+    return plot_set_up(
+        y_cl_sk, phi_cl_sk, pt_cl_sk, colors_cl_sk,
+        "All PseudoJets after clustering, with SoftKiller"
+    )
 end
 
 main()

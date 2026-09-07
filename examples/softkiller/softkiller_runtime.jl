@@ -75,13 +75,17 @@ function main()
     args[:hard_file] = normpath(joinpath(@__DIR__, args[:hard_file]))
 
     # Reading pileup and hard event files
-    events = read_final_state_particles(args[:pileup_file], jet_type;
-                                        maxevents = args[:pileup_maxevents],
-                                        skipevents = args[:pileup_skip])
+    events = read_final_state_particles(
+        args[:pileup_file], jet_type;
+        maxevents = args[:pileup_maxevents],
+        skipevents = args[:pileup_skip]
+    )
 
-    h_events = read_final_state_particles(args[:hard_file], jet_type;
-                                          maxevents = args[:eventno],
-                                          skipevents = args[:eventno])
+    h_events = read_final_state_particles(
+        args[:hard_file], jet_type;
+        maxevents = args[:eventno],
+        skipevents = args[:eventno]
+    )
 
     # Set up SoftKiller grid and rapidity range
     rapmax = 5.0
@@ -109,10 +113,12 @@ function main()
     reduced_event, pt_threshold = softkiller(soft_killer, all_jets_sk)
     @info "SoftKiller applied: $(length(reduced_event)) clusters remaining from $(length(all_jets_sk)), pt threshold = $pt_threshold"
 
-    cs = jet_reconstruct(reduced_event; algorithm = args[:algorithm],
-                         R = args[:distance], p = args[:power],
-                         strategy = args[:strategy], preprocess = nothing)
-    @info "Reconstructed softkiller filtered clusters with algorithm $(args[:algorithm]), radius $(args[:distance]) and strategy $(args[:strategy])"
+    cs = jet_reconstruct(
+        reduced_event; algorithm = args[:algorithm],
+        R = args[:distance], p = args[:power],
+        strategy = args[:strategy], preprocess = nothing
+    )
+    return @info "Reconstructed softkiller filtered clusters with algorithm $(args[:algorithm]), radius $(args[:distance]) and strategy $(args[:strategy])"
 end
 
 main()

@@ -39,8 +39,10 @@ the particles of a particular event. In particular T can be `PseudoJet` or
 a `LorentzVector` type. Note, if T is not `PseudoJet`, the order of the
 arguments in the constructor must be `(t, x, y, z)`.
 """
-function read_final_state_particles(fname, ::Type{T} = PseudoJet; maxevents = -1,
-                                    skipevents = 0) where {T}
+function read_final_state_particles(
+        fname, ::Type{T} = PseudoJet; maxevents = -1,
+        skipevents = 0
+    ) where {T}
     f = open_with_stream(fname)
     events = Vector{T}[]
 
@@ -53,8 +55,10 @@ function read_final_state_particles(fname, ::Type{T} = PseudoJet; maxevents = -1
                 # Annoyingly PseudoJet and LorentzVector constructors
                 # disagree on the order of arguments...
                 if T <: FourMomentum
-                    particle = T(p.momentum.x, p.momentum.y, p.momentum.z, p.momentum.t;
-                                 cluster_hist_index = particle_index)
+                    particle = T(
+                        p.momentum.x, p.momentum.y, p.momentum.z, p.momentum.t;
+                        cluster_hist_index = particle_index
+                    )
                 else
                     particle = T(p.momentum.t, p.momentum.x, p.momentum.y, p.momentum.z)
                 end
@@ -69,7 +73,7 @@ function read_final_state_particles(fname, ::Type{T} = PseudoJet; maxevents = -1
 
     @info "Total Events: $(length(events))"
     @debug events
-    events
+    return events
 end
 
 """
@@ -97,7 +101,7 @@ function final_jets(jets::Vector{T}, ptmin::AbstractFloat = 0.0) where {T}
             push!(final_jets, FinalJet(jet))
         end
     end
-    final_jets
+    return final_jets
 end
 
 """

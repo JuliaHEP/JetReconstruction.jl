@@ -18,7 +18,7 @@ pj_beam = PseudoJet(0.0, 0.0, 5.0, 5.0)
     @test isvalid(pj) == true
 
     @test JetReconstruction.rapidity(pj_beam) ≈
-          JetReconstruction._MaxRap + JetReconstruction.pz(pj_beam)
+        JetReconstruction._MaxRap + JetReconstruction.pz(pj_beam)
     @test JetReconstruction.eta(pj_beam) ≈ JetReconstruction._MaxRap
 
     @test LorentzVectorBase.mass(pj) ≈ JetReconstruction.mass(pj)
@@ -51,7 +51,7 @@ eej_beam = EEJet(0.0, 0.0, 5.0, 5.0)
     @test JetReconstruction.cluster_hist_index(eej) == 7
 
     @test JetReconstruction.rapidity(eej_beam) ≈
-          JetReconstruction._MaxRap + JetReconstruction.pz(eej_beam)
+        JetReconstruction._MaxRap + JetReconstruction.pz(eej_beam)
 
     @test LorentzVectorBase.mass(eej) ≈ JetReconstruction.mass(eej)
     @test LorentzVectorBase.mass2(eej) ≈ JetReconstruction.mass2(eej)

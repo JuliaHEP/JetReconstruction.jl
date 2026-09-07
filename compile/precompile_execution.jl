@@ -3,18 +3,18 @@
 
 using JetReconstruction: PseudoJet, RecoStrategy, JetAlgorithm, RecombinationScheme
 using JetReconstruction.C_JetReconstruction: jetreconstruction_PseudoJet_init,
-                                             C_ClusterSequence,
-                                             jetreconstruction_ClusterSequence_free_members_,
-                                             C_JetsResult,
-                                             jetreconstruction_JetsResult_free_members_,
-                                             jetreconstruction_jet_reconstruct,
-                                             jetreconstruction_inclusive_jets,
-                                             jetreconstruction_exclusive_jets_njets,
-                                             jetreconstruction_exclusive_jets_dcut,
-                                             StatusCode
+    C_ClusterSequence,
+    jetreconstruction_ClusterSequence_free_members_,
+    C_JetsResult,
+    jetreconstruction_JetsResult_free_members_,
+    jetreconstruction_jet_reconstruct,
+    jetreconstruction_inclusive_jets,
+    jetreconstruction_exclusive_jets_njets,
+    jetreconstruction_exclusive_jets_dcut,
+    StatusCode
 
 function assert_ok(ret_val)
-    @assert StatusCode.T(ret_val) == StatusCode.OK
+    return @assert StatusCode.T(ret_val) == StatusCode.OK
 end
 
 R = 2.0
@@ -31,33 +31,53 @@ results_ptr = Ptr{C_JetsResult{PseudoJet}}(Libc.malloc(sizeof(C_JetsResult{Pseud
 @assert results_ptr != C_NULL
 
 assert_ok(jetreconstruction_PseudoJet_init(jets_ptr, 0.0, 1.0, 2.0, 3.0, 1))
-assert_ok(jetreconstruction_PseudoJet_init(jets_ptr + sizeof(PseudoJet), 1.0, 2.0, 3.0,
-                                           4.0, 2))
+assert_ok(
+    jetreconstruction_PseudoJet_init(
+        jets_ptr + sizeof(PseudoJet), 1.0, 2.0, 3.0,
+        4.0, 2
+    )
+)
 
 for algorithm in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.GenKt],
-    strategy in [RecoStrategy.N2Plain, RecoStrategy.N2Tiled, RecoStrategy.Best],
-    recombination in [
-        RecombinationScheme.EScheme,
-        RecombinationScheme.PtScheme,
-        RecombinationScheme.Pt2Scheme
-    ]
+        strategy in [RecoStrategy.N2Plain, RecoStrategy.N2Tiled, RecoStrategy.Best],
+        recombination in [
+            RecombinationScheme.EScheme,
+            RecombinationScheme.PtScheme,
+            RecombinationScheme.Pt2Scheme,
+        ]
 
-    assert_ok(jetreconstruction_jet_reconstruct(jets_ptr, jets_len, algorithm, power, R,
-                                                strategy, recombination,
-                                                clustersequence_ptr))
+    assert_ok(
+        jetreconstruction_jet_reconstruct(
+            jets_ptr, jets_len, algorithm, power, R,
+            strategy, recombination,
+            clustersequence_ptr
+        )
+    )
 
-    assert_ok(jetreconstruction_inclusive_jets(clustersequence_ptr, 0.0,
-                                               results_ptr))
+    assert_ok(
+        jetreconstruction_inclusive_jets(
+            clustersequence_ptr, 0.0,
+            results_ptr
+        )
+    )
     jetreconstruction_JetsResult_free_members_(results_ptr)
 
     if algorithm != JetAlgorithm.AntiKt
-        assert_ok(jetreconstruction_exclusive_jets_njets(clustersequence_ptr,
-                                                         Csize_t(2),
-                                                         results_ptr))
+        assert_ok(
+            jetreconstruction_exclusive_jets_njets(
+                clustersequence_ptr,
+                Csize_t(2),
+                results_ptr
+            )
+        )
         jetreconstruction_JetsResult_free_members_(results_ptr)
 
-        assert_ok(jetreconstruction_exclusive_jets_dcut(clustersequence_ptr, 1.0,
-                                                        results_ptr))
+        assert_ok(
+            jetreconstruction_exclusive_jets_dcut(
+                clustersequence_ptr, 1.0,
+                results_ptr
+            )
+        )
         jetreconstruction_JetsResult_free_members_(results_ptr)
 
         jetreconstruction_ClusterSequence_free_members_(clustersequence_ptr)

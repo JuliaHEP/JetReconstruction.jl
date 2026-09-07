@@ -4,8 +4,10 @@ include("common.jl")
 
 using EDM4hep
 
-dummyRecoParticle = ReconstructedParticle(energy = 4.0f0,
-                                          momentum = Vector3f(1.0f0, 2.0f0, 3.0f0))
+dummyRecoParticle = ReconstructedParticle(
+    energy = 4.0f0,
+    momentum = Vector3f(1.0f0, 2.0f0, 3.0f0)
+)
 
 @testset "Construction of jets from EDM4hep particles" begin
     eej = EEJet(dummyRecoParticle)

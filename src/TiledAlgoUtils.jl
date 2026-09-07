@@ -33,11 +33,15 @@ struct TilingDef
     _tiles_ieta_min::Int
     _tiles_ieta_max::Int
 
-    function TilingDef(_tiles_eta_min, _tiles_eta_max, _tile_size_eta, _tile_size_phi,
-                       _n_tiles_eta, _n_tiles_phi, _tiles_ieta_min, _tiles_ieta_max)
-        new(_tiles_eta_min, _tiles_eta_max, _tile_size_eta, _tile_size_phi,
+    function TilingDef(
+            _tiles_eta_min, _tiles_eta_max, _tile_size_eta, _tile_size_phi,
+            _n_tiles_eta, _n_tiles_phi, _tiles_ieta_min, _tiles_ieta_max
+        )
+        return new(
+            _tiles_eta_min, _tiles_eta_max, _tile_size_eta, _tile_size_phi,
             _n_tiles_eta, _n_tiles_phi, _n_tiles_eta * _n_tiles_phi, _tiles_ieta_min,
-            _tiles_ieta_max)
+            _tiles_ieta_max
+        )
     end
 end
 
@@ -99,8 +103,12 @@ function determine_rapidity_extent(eta::Vector{T}) where {T <: AbstractFloat}
     min_multiplicity = 4
 
     # now calculate how much we can accumulate into an edge bin
-    allowed_max_cumul = floor(max(max_in_bin * allowed_max_fraction,
-                                  min_multiplicity))
+    allowed_max_cumul = floor(
+        max(
+            max_in_bin * allowed_max_fraction,
+            min_multiplicity
+        )
+    )
 
     # make sure we don't require more particles in a bin than max_in_bin
     allowed_max_cumul = min(max_in_bin, allowed_max_cumul)
@@ -134,7 +142,7 @@ function determine_rapidity_extent(eta::Vector{T}) where {T <: AbstractFloat}
     # consistency check
     @assert ibin_hi >= ibin_lo
 
-    minrap, maxrap
+    return minrap, maxrap
 end
 
 """
@@ -177,12 +185,14 @@ function setup_tiling(eta::Vector{T}, Rparam::AbstractFloat) where {T <: Abstrac
     tiles_eta_max = tiles_ieta_max * tile_size_eta
     n_tiles_eta = tiles_ieta_max - tiles_ieta_min + 1
 
-    tiling_setup = TilingDef(tiles_eta_min, tiles_eta_max,
-                             tile_size_eta, tile_size_phi,
-                             n_tiles_eta, n_tiles_phi,
-                             tiles_ieta_min, tiles_ieta_max)
+    tiling_setup = TilingDef(
+        tiles_eta_min, tiles_eta_max,
+        tile_size_eta, tile_size_phi,
+        n_tiles_eta, n_tiles_phi,
+        tiles_ieta_min, tiles_ieta_max
+    )
 
-    tiling_setup
+    return tiling_setup
 end
 
 """
@@ -199,8 +209,10 @@ Compute the geometric distance between two points in the rap-phi plane.
 # Returns
 - `distance::Float64`: The geometric distance between the two points.
 """
-function geometric_distance(eta1::AbstractFloat, phi1::AbstractFloat, eta2::AbstractFloat,
-                            phi2::AbstractFloat)
+function geometric_distance(
+        eta1::AbstractFloat, phi1::AbstractFloat, eta2::AbstractFloat,
+        phi2::AbstractFloat
+    )
     δeta = eta2 - eta1
     δphi = π - abs(π - abs(phi1 - phi2))
     return δeta * δeta + δphi * δphi
@@ -248,13 +260,19 @@ the tile indices for the given `eta` and `phi` values.
 """
 function get_tile(tiling_setup::TilingDef, eta::AbstractFloat, phi::AbstractFloat)
     # The eta clamp is necessary as the extreme bins catch overflows for high abs(eta)
-    ieta = clamp(floor(Int,
-                       (eta - tiling_setup._tiles_eta_min) / tiling_setup._tile_size_eta),
-                 1, tiling_setup._n_tiles_eta)
+    ieta = clamp(
+        floor(
+            Int,
+            (eta - tiling_setup._tiles_eta_min) / tiling_setup._tile_size_eta
+        ),
+        1, tiling_setup._n_tiles_eta
+    )
     # The phi clamp should not really be necessary, as long as phi values are [0,2π)
-    iphi = clamp(floor(Int, 1 + (phi / 2π) * tiling_setup._n_tiles_phi), 1,
-                 tiling_setup._n_tiles_phi)
-    ieta, iphi
+    iphi = clamp(
+        floor(Int, 1 + (phi / 2π) * tiling_setup._n_tiles_phi), 1,
+        tiling_setup._n_tiles_phi
+    )
+    return ieta, iphi
 end
 
 """
@@ -274,8 +292,10 @@ but there you go...)
 - The linear index of the tile.
 """
 function get_tile_cartesian_indices(tiling_setup::TilingDef, index::Int)
-    return (rem(index - 1, tiling_setup._n_tiles_eta) + 1,
-            div(index - 1, tiling_setup._n_tiles_eta) + 1)
+    return (
+        rem(index - 1, tiling_setup._n_tiles_eta) + 1,
+        div(index - 1, tiling_setup._n_tiles_eta) + 1,
+    )
 end
 
 """
@@ -308,10 +328,10 @@ Note, rapidity coordinate must be in range, ϕ coordinate wraps
 - `start_ϕ::Int`: Centre ϕ tile coordinate
 """
 struct rightmost_tiles
-    n_η::Int# Number of η tiles
-    n_ϕ::Int# Number of ϕ tiles
-    start_η::Int# Centre η tile coordinate
-    start_ϕ::Int# Centre ϕ tile coordinate
+    n_η::Int # Number of η tiles
+    n_ϕ::Int # Number of ϕ tiles
+    start_η::Int # Centre η tile coordinate
+    start_ϕ::Int # Centre ϕ tile coordinate
 end
 
 """
@@ -360,10 +380,10 @@ Note, rapidity coordinate must be in range, ϕ coordinate wraps
 - `start_ϕ::Int`: Centre ϕ tile coordinate
 """
 struct neighbour_tiles
-    n_η::Int# Number of η tiles
-    n_ϕ::Int# Number of ϕ tiles
-    start_η::Int# Centre η tile coordinate
-    start_ϕ::Int# Centre ϕ tile coordinate
+    n_η::Int # Number of η tiles
+    n_ϕ::Int # Number of ϕ tiles
+    start_η::Int # Centre η tile coordinate
+    start_ϕ::Int # Centre ϕ tile coordinate
 end
 
 """

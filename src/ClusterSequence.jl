@@ -8,7 +8,7 @@ using Accessors
 using Logging
 
 # Constant values for "magic numbers" that represent special states
-# in the history. These are negative integers, but as this is 
+# in the history. These are negative integers, but as this is
 # not runtime critical, so could consider a Union{Int,Emum}
 "Invalid child for this jet, meaning it did not recombine further"
 const Invalid = -3
@@ -64,8 +64,10 @@ A `HistoryElement` object.
 
 """
 function HistoryElement(jetp_index)
-    HistoryElement(NonexistentParent, NonexistentParent, Invalid,
-                   jetp_index, 0.0, 0.0)
+    return HistoryElement(
+        NonexistentParent, NonexistentParent, Invalid,
+        jetp_index, 0.0, 0.0
+    )
 end
 
 """
@@ -92,12 +94,12 @@ function initial_history(particles)
 
         # get cross-referencing right from the Jets
         # particles[i]._cluster_hist_index = i
-        @assert cluster_hist_index(particles[i])==i "Cluster history index should match jet's index in the input vector. Expected $(i), got $(cluster_hist_index(particles[i]))"
+        @assert cluster_hist_index(particles[i]) == i "Cluster history index should match jet's index in the input vector. Expected $(i), got $(cluster_hist_index(particles[i]))"
 
         # determine the total energy in the event
         Qtot += particles[i].E
     end
-    history, Qtot
+    return history, Qtot
 end
 
 """
@@ -149,10 +151,12 @@ Construct a `ClusterSequence` object.
   sequence.
 - `Qtot`: The total energy of the event.
 """
-function ClusterSequence(algorithm::JetAlgorithm.Algorithm, p, R,
-                         strategy::RecoStrategy.Strategy, jets::Vector{T}, history,
-                         Qtot) where {T <: FourMomentum}
-    ClusterSequence{T}(algorithm, p, R, strategy, jets, length(jets), history, Qtot)
+function ClusterSequence(
+        algorithm::JetAlgorithm.Algorithm, p, R,
+        strategy::RecoStrategy.Strategy, jets::Vector{T}, history,
+        Qtot
+    ) where {T <: FourMomentum}
+    return ClusterSequence{T}(algorithm, p, R, strategy, jets, length(jets), history, Qtot)
 end
 
 """
@@ -176,12 +180,18 @@ If the `parent1` or `parent2` have already been recombined, an `InternalError`
 is thrown. The `jetp_index` is used to update the `_cluster_hist_index` of the
 corresponding `PseudoJet` object.
 """
-function add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jetp_index,
-                              dij)
+function add_step_to_history!(
+        clusterseq::ClusterSequence, parent1, parent2, jetp_index,
+        dij
+    )
     max_dij_so_far = max(dij, clusterseq.history[end].max_dij_so_far)
-    push!(clusterseq.history,
-          HistoryElement(parent1, parent2, Invalid,
-                         jetp_index, dij, max_dij_so_far))
+    push!(
+        clusterseq.history,
+        HistoryElement(
+            parent1, parent2, Invalid,
+            jetp_index, dij, max_dij_so_far
+        )
+    )
 
     local_step = length(clusterseq.history)
 
@@ -195,21 +205,25 @@ function add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jet
     # retry the clustering with a different strategy.
     @assert parent1 >= 1
     if clusterseq.history[parent1].child != Invalid
-        error("Internal error. Trying to recombine an object that has previously been recombined. Parent " *
-              string(parent1) * "'s child index " *
-              string(clusterseq.history[parent1].child) * ". Parent jet index: " *
-              string(clusterseq.history[parent1].jetp_index) * ".")
+        error(
+            "Internal error. Trying to recombine an object that has previously been recombined. Parent " *
+                string(parent1) * "'s child index " *
+                string(clusterseq.history[parent1].child) * ". Parent jet index: " *
+                string(clusterseq.history[parent1].jetp_index) * "."
+        )
     end
 
     hist_elem = clusterseq.history[parent1]
     clusterseq.history[parent1] = @set hist_elem.child = local_step
 
-    if parent2 >= 1
+    return if parent2 >= 1
         clusterseq.history[parent2].child == Invalid ||
-            error("Internal error. Trying to recombine an object that has previously been recombined.  Parent " *
-                  string(parent2) * "'s child index " *
-                  string(clusterseq.history[parent1].child) * ". Parent jet index: " *
-                  string(clusterseq.history[parent2].jetp_index) * ".")
+            error(
+            "Internal error. Trying to recombine an object that has previously been recombined.  Parent " *
+                string(parent2) * "'s child index " *
+                string(clusterseq.history[parent1].child) * ". Parent jet index: " *
+                string(clusterseq.history[parent2].jetp_index) * "."
+        )
         hist_elem = clusterseq.history[parent2]
         clusterseq.history[parent2] = @set hist_elem.child = local_step
     end
@@ -245,9 +259,11 @@ algorithm was used).
 inclusive_jets(clusterseq; ptmin = 10.0)
 ```
 """
-function inclusive_jets(clusterseq::ClusterSequence{U},
-                        ::Type{T} = LorentzVector{Float64};
-                        ptmin = 0.0) where {T, U}
+function inclusive_jets(
+        clusterseq::ClusterSequence{U},
+        ::Type{T} = LorentzVector{Float64};
+        ptmin = 0.0
+    ) where {T, U}
     pt2min = ptmin * ptmin
     jets_local = T[]
     # sizehint!(jets_local, length(clusterseq.jets))
@@ -272,7 +288,7 @@ function inclusive_jets(clusterseq::ClusterSequence{U},
             end
         end
     end
-    jets_local
+    return jets_local
 end
 
 """
@@ -315,9 +331,11 @@ exclusive_jets(clusterseq, dcut = 20.0)
 exclusive_jets(clusterseq, PseudoJet, njets = 3)
 ```
 """
-function exclusive_jets(clusterseq::ClusterSequence{U},
-                        ::Type{T} = LorentzVector{Float64};
-                        dcut = nothing, njets = nothing) where {T, U}
+function exclusive_jets(
+        clusterseq::ClusterSequence{U},
+        ::Type{T} = LorentzVector{Float64};
+        dcut = nothing, njets = nothing
+    ) where {T, U}
     if isnothing(dcut) && isnothing(njets)
         throw(ArgumentError("Must pass either a dcut or an njets value"))
     end
@@ -328,11 +346,13 @@ function exclusive_jets(clusterseq::ClusterSequence{U},
 
     # Check that an algorithm was used that makes sense for exclusive jets
     if (clusterseq.algorithm ∈ (JetAlgorithm.GenKt, JetAlgorithm.EEKt)) &&
-       clusterseq.power < 0
+            clusterseq.power < 0
         throw(ArgumentError("Algorithm $(clusterseq.algorithm) requires power >= 0 for exclusive jets (power=$(clusterseq.power))"))
     elseif clusterseq.algorithm ∉
-           (JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.Durham, JetAlgorithm.GenKt,
-            JetAlgorithm.EEKt, JetAlgorithm.Valencia)
+            (
+            JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.Durham, JetAlgorithm.GenKt,
+            JetAlgorithm.EEKt, JetAlgorithm.Valencia,
+        )
         throw(ArgumentError("Algorithm used is not suitable for exclusive jets ($(clusterseq.algorithm))"))
     end
 
@@ -368,7 +388,7 @@ function exclusive_jets(clusterseq::ClusterSequence{U},
             end
         end
     end
-    excl_jets
+    return excl_jets
 end
 
 """
@@ -391,11 +411,13 @@ n_exclusive_jets(clusterseq, dcut = 20.0)
 function n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
     # Check that an algorithm was used that makes sense for exclusive jets
     if (clusterseq.algorithm ∈ (JetAlgorithm.GenKt, JetAlgorithm.EEKt)) &&
-       clusterseq.power < 0
+            clusterseq.power < 0
         throw(ArgumentError("Algorithm $(clusterseq.algorithm) requires power >= 0 for exclusive jets(power=$(clusterseq.power))"))
     elseif clusterseq.algorithm ∉
-           (JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.Durham, JetAlgorithm.GenKt,
-            JetAlgorithm.EEKt, JetAlgorithm.Valencia)
+            (
+            JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgorithm.Durham, JetAlgorithm.GenKt,
+            JetAlgorithm.EEKt, JetAlgorithm.Valencia,
+        )
         throw(ArgumentError("Algorithm used is not suitable for exclusive jets ($(clusterseq.algorithm))"))
     end
 
@@ -411,7 +433,7 @@ function n_exclusive_jets(clusterseq::ClusterSequence; dcut::AbstractFloat)
     end
 
     # The number of jets is then given by this formula
-    length(clusterseq.history) - i_dcut
+    return length(clusterseq.history) - i_dcut
 end
 
 """
@@ -456,7 +478,7 @@ function merge_steps(clusterseq::ClusterSequence)
         step.parent2 == BeamJet && continue
         merge_steps += 1
     end
-    merge_steps
+    return merge_steps
 end
 
 """
@@ -487,7 +509,7 @@ function jet_ranks(clusterseq::ClusterSequence; compare_fn = JetReconstruction.p
     for (rank, jetp_index) in enumerate(initial_jet_list)
         jet_ranks[jetp_index] = rank
     end
-    jet_ranks
+    return jet_ranks
 end
 
 """
@@ -537,13 +559,17 @@ particles. Then, it walks over the iteration sequence and updates the
 reconstruction state based on the history of recombination and finalization/beam
 merger steps.
 """
-function reco_state(cs::ClusterSequence{T}, ranks; iteration = 0,
-                    ignore_beam_merge = true) where {T <: FourMomentum}
+function reco_state(
+        cs::ClusterSequence{T}, ranks; iteration = 0,
+        ignore_beam_merge = true
+    ) where {T <: FourMomentum}
     # Get the initial particles
     reco_state = Dict{Int, JetWithAncestors{T}}()
     for jet_index in 1:(cs.n_initial_jets)
-        reco_state[jet_index] = JetWithAncestors{T}(cs.jets[cs.history[jet_index].jetp_index],
-                                                    jet_index, Set([]), ranks[jet_index])
+        reco_state[jet_index] = JetWithAncestors{T}(
+            cs.jets[cs.history[jet_index].jetp_index],
+            jet_index, Set([]), ranks[jet_index]
+        )
     end
     # Now update the reconstruction state by walking over the iteration sequence
     iterations_done = 0
@@ -554,8 +580,10 @@ function reco_state(cs::ClusterSequence{T}, ranks; iteration = 0,
             iterations_done += 1
             # We store all of the original particle ancestors (but only the
             # original ones, not intermediate merges)
-            my_ancestors = union(reco_state[cs.history[h_entry.parent1].jetp_index].ancestors,
-                                 reco_state[cs.history[h_entry.parent2].jetp_index].ancestors)
+            my_ancestors = union(
+                reco_state[cs.history[h_entry.parent1].jetp_index].ancestors,
+                reco_state[cs.history[h_entry.parent2].jetp_index].ancestors
+            )
             cs.history[h_entry.parent1].parent1 == JetReconstruction.NonexistentParent &&
                 push!(my_ancestors, h_entry.parent1)
             cs.history[h_entry.parent2].parent1 == JetReconstruction.NonexistentParent &&
@@ -567,9 +595,11 @@ function reco_state(cs::ClusterSequence{T}, ranks; iteration = 0,
                 (ranks[ancestor] < pt_rank) && (pt_rank = ranks[ancestor])
             end
 
-            reco_state[h_entry.jetp_index] = JetWithAncestors{T}(cs.jets[h_entry.jetp_index],
-                                                                 h_entry.jetp_index,
-                                                                 my_ancestors, pt_rank)
+            reco_state[h_entry.jetp_index] = JetWithAncestors{T}(
+                cs.jets[h_entry.jetp_index],
+                h_entry.jetp_index,
+                my_ancestors, pt_rank
+            )
             delete!(reco_state, cs.history[h_entry.parent1].jetp_index)
             delete!(reco_state, cs.history[h_entry.parent2].jetp_index)
         else
@@ -583,7 +613,7 @@ function reco_state(cs::ClusterSequence{T}, ranks; iteration = 0,
             break
         end
     end
-    reco_state
+    return reco_state
 end
 
 """
@@ -606,12 +636,16 @@ function constituents(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
     sizehint!(constituents, length(constituent_idxs))
     new_index = 1
     for idx in constituent_idxs
-        push!(constituents,
-              T(px(cs.jets[idx]), py(cs.jets[idx]), pz(cs.jets[idx]),
-                energy(cs.jets[idx]); cluster_hist_index = new_index))
+        push!(
+            constituents,
+            T(
+                px(cs.jets[idx]), py(cs.jets[idx]), pz(cs.jets[idx]),
+                energy(cs.jets[idx]); cluster_hist_index = new_index
+            )
+        )
         new_index += 1
     end
-    constituents
+    return constituents
 end
 
 """
@@ -629,7 +663,7 @@ given jet.
 An vector of indices representing the original constituents of the given jet.
 """
 function constituent_indexes(jet::T, cs::ClusterSequence{T}) where {T <: FourMomentum}
-    get_all_ancestors(jet._cluster_hist_index, cs)
+    return get_all_ancestors(jet._cluster_hist_index, cs)
 end
 
 """
@@ -645,10 +679,16 @@ Find the parent jets of a given jet in a cluster sequence.
 A tuple of two elements, each of which is either the parent jet object or
 `nothing` (if the jet has no parent).
 """
-function parent_jets(jet::T,
-                     cs::ClusterSequence{T})::Tuple{Union{Nothing, T},
-                                                    Union{Nothing, T}} where {T <:
-                                                                              FourMomentum}
+function parent_jets(
+        jet::T,
+        cs::ClusterSequence{T}
+    )::Tuple{
+        Union{Nothing, T},
+        Union{Nothing, T},
+    } where {
+        T <:
+        FourMomentum,
+    }
     hist_idx = jet._cluster_hist_index
     jet_history = cs.history[hist_idx]
 

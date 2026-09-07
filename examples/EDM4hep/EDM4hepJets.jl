@@ -64,9 +64,9 @@ function main()
         end
     end
     global_timer_stop = time_ns()
-    @info "Reconstructed $(count) events in $(total_time/1.0e9)s: rate = $((count * 1.0e9) / total_time)Hz"
-    @info "Total time: $((global_timer_stop - global_timer_start)/1.0e9)s"
-    count, total_time
+    @info "Reconstructed $(count) events in $(total_time / 1.0e9)s: rate = $((count * 1.0e9) / total_time)Hz"
+    @info "Total time: $((global_timer_stop - global_timer_start) / 1.0e9)s"
+    return count, total_time
 end
 
 main()

@@ -14,9 +14,11 @@ EEJet if `0` is passed. Otherwise it is set to the value, `>0`, passed in.
 """
 function PseudoJet(eej::EEJet; cluster_hist_index::Int = 0)
     cluster_hist_index = cluster_hist_index == 0 ? eej._cluster_hist_index :
-                         cluster_hist_index
-    PseudoJet(px(eej), py(eej), pz(eej), energy(eej);
-              cluster_hist_index)
+        cluster_hist_index
+    return PseudoJet(
+        px(eej), py(eej), pz(eej), energy(eej);
+        cluster_hist_index
+    )
 end
 
 """
@@ -31,9 +33,11 @@ PseudoJet if `0` is passed. Otherwise it is set to the value, `>0`, passed in.
 """
 function EEJet(jet::PseudoJet; cluster_hist_index::Int = 0)
     cluster_hist_index = cluster_hist_index == 0 ? jet._cluster_hist_index :
-                         cluster_hist_index
-    EEJet(px(jet), py(jet), pz(jet), energy(jet);
-          cluster_hist_index)
+        cluster_hist_index
+    return EEJet(
+        px(jet), py(jet), pz(jet), energy(jet);
+        cluster_hist_index
+    )
 end
 
 # Functions to convert jets to types from other packages
@@ -43,10 +47,12 @@ end
 Return a cylindrical `LorentzVectorCyl` from a jet.
 """
 function lorentzvector_cyl(jet::T) where {T <: FourMomentum}
-    return LorentzVectorHEP.fromPtEtaPhiE(JetReconstruction.pt(jet),
-                                          JetReconstruction.eta(jet),
-                                          JetReconstruction.phi(jet),
-                                          JetReconstruction.energy(jet))
+    return LorentzVectorHEP.fromPtEtaPhiE(
+        JetReconstruction.pt(jet),
+        JetReconstruction.eta(jet),
+        JetReconstruction.phi(jet),
+        JetReconstruction.energy(jet)
+    )
 end
 
 """
@@ -55,10 +61,12 @@ end
 Return a cartesian `LorentzVector` from a jet.
 """
 function lorentzvector(jet::T) where {T <: FourMomentum}
-    return LorentzVector(JetReconstruction.energy(jet),
-                         JetReconstruction.px(jet),
-                         JetReconstruction.py(jet),
-                         JetReconstruction.pz(jet))
+    return LorentzVector(
+        JetReconstruction.energy(jet),
+        JetReconstruction.px(jet),
+        JetReconstruction.py(jet),
+        JetReconstruction.pz(jet)
+    )
 end
 
 # Utility functions for jet structs using pairs of jets

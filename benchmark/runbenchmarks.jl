@@ -31,11 +31,14 @@ function display_results(flat_results::Dict)
         println("• $key")
         display(trial)
     end
+    return
 end
 
 function parse_command_line(args)
-    s = ArgParseSettings(autofix_names = true,
-                         description = "Run JetReconstruction.jl benchmark suite")
+    s = ArgParseSettings(
+        autofix_names = true,
+        description = "Run JetReconstruction.jl benchmark suite"
+    )
     @add_arg_table! s begin
         "--verbose", "-v"
         help = "Enable verbose output, print results to console"

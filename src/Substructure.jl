@@ -15,11 +15,15 @@ Reclusters the constituents of a given jet `jet` with a different clustering alg
 # Returns
 - `ClusterSequence`: The new cluster sequence.
 """
-function recluster(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; R = 1.0,
-                   algorithm::JetAlgorithm.Algorithm = JetAlgorithm.CA)
+function recluster(
+        jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; R = 1.0,
+        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.CA
+    )
     cons = constituents(jet, clusterseq)
-    new_clusterseq = jet_reconstruct(cons; p = nothing, R = R, algorithm = algorithm,
-                                     strategy = RecoStrategy.Best)
+    new_clusterseq = jet_reconstruct(
+        cons; p = nothing, R = R, algorithm = algorithm,
+        strategy = RecoStrategy.Best
+    )
 
     return new_clusterseq
 end
@@ -40,8 +44,10 @@ The method stops at the first jet satisfying the mass and distance thresholds.
 # Returns:
 - `PseudoJet`: The jet (or subjet) satisfying the mass drop conditions, if tagging is successful, otherwise `invalid_pseudojet` object
 """
-function mass_drop(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; mu::Real,
-                   y::Real)
+function mass_drop(
+        jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; mu::Real,
+        y::Real
+    )
     all_jets = clusterseq.jets
     hist = clusterseq.history
 
@@ -57,7 +63,7 @@ function mass_drop(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; mu::R
             pt2 = pt(parent2)
 
             if m2(parent1) < m2(jet) * mu^2 &&
-               (min(pt1, pt2) * deltaR(parent1, parent2))^2 > y * m2(jet)
+                    (min(pt1, pt2) * deltaR(parent1, parent2))^2 > y * m2(jet)
                 return jet
             else
                 jet = parent1
@@ -67,6 +73,7 @@ function mass_drop(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; mu::R
             return invalid_pseudojet
         end
     end
+    return
 end
 
 """
@@ -87,8 +94,10 @@ This function reclusters the jet and iteratively checks the soft-drop condition 
 # Returns:
 - `PseudoJet`: Groomed jet or `invalid_pseudojet` object if grooming fails.
 """
-function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; zcut::Real,
-                   beta::Real, radius::Real = 1.0)
+function soft_drop(
+        jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; zcut::Real,
+        beta::Real, radius::Real = 1.0
+    )
     new_clusterseq = recluster(jet, clusterseq; R = radius, algorithm = JetAlgorithm.CA)
     new_jet = sort!(inclusive_jets(new_clusterseq, PseudoJet), by = pt2, rev = true)[1]
 
@@ -107,7 +116,7 @@ function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; zcut:
             pt2 = pt(parent2)
 
             if min(pt1, pt2) / (pt1 + pt2) >
-               zcut * (deltaR(parent1, parent2) / radius)^beta
+                    zcut * (deltaR(parent1, parent2) / radius)^beta
                 return new_jet
             else
                 new_jet = parent1
@@ -117,6 +126,7 @@ function soft_drop(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; zcut:
             return invalid_pseudojet
         end
     end
+    return
 end
 
 """
@@ -134,8 +144,10 @@ Filters a jet to retain only the hardest subjets based on a specified radius and
 # Returns:
 - `PseudoJet`: Filtered jet composed of the hardest subjets.
 """
-function jet_filtering(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; radius::Real,
-                       hardest_jets::Integer)
+function jet_filtering(
+        jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; radius::Real,
+        hardest_jets::Integer
+    )
     new_clusterseq = recluster(jet, clusterseq; R = radius, algorithm = JetAlgorithm.CA)
     reclustered = sort!(inclusive_jets(new_clusterseq, PseudoJet), by = pt2, rev = true)
 
@@ -162,8 +174,10 @@ Trims a jet by removing subjets with transverse momentum below a specified fract
 # Returns:
 - `PseudoJet`: Trimmed jet composed of retained subjets.
 """
-function jet_trimming(jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; radius::Real,
-                      fraction::Real, recluster_method::JetAlgorithm.Algorithm)
+function jet_trimming(
+        jet::PseudoJet, clusterseq::ClusterSequence{PseudoJet}; radius::Real,
+        fraction::Real, recluster_method::JetAlgorithm.Algorithm
+    )
     frac2 = fraction^2
 
     new_clusterseq = recluster(jet, clusterseq; R = radius, algorithm = recluster_method)

@@ -8,8 +8,10 @@ using Logging
 logger = ConsoleLogger(stdout, Logging.Info)
 global_logger(logger)
 
-input_file = joinpath(dirname(pathof(JetReconstruction)), "..", "test", "data",
-                      "events.pp13TeV.hepmc3.zst")
+input_file = joinpath(
+    dirname(pathof(JetReconstruction)), "..", "test", "data",
+    "events.pp13TeV.hepmc3.zst"
+)
 events = read_final_state_particles(input_file)
 
 # Event to pick

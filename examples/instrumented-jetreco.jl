@@ -31,18 +31,25 @@ include(joinpath(@__DIR__, "parse-options.jl"))
 Profile the jet reconstruction code using the `@profile` macro and generate a
 flamegraph which is saved to the `profile/profile_subdir` directory.
 """
-function profile_code(events::Vector{Vector{T}}, profile, nsamples; R = 0.4, p = -1,
-                      γ::Union{Real, Nothing} = nothing,
-                      algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
-                      strategy = RecoStrategy.N2Tiled,
-                      recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw]) where {T <:
-                                                                                               JetReconstruction.FourMomentum}
+function profile_code(
+        events::Vector{Vector{T}}, profile, nsamples; R = 0.4, p = -1,
+        γ::Union{Real, Nothing} = nothing,
+        algorithm::JetAlgorithm.Algorithm = JetAlgorithm.AntiKt,
+        strategy = RecoStrategy.N2Tiled,
+        recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw]
+    ) where {
+        T <:
+        JetReconstruction.FourMomentum,
+    }
     Profile.init(n = 5 * 10^6, delay = 0.00001)
     function profile_events(events)
         for evt in events
-            jet_reconstruct(evt; R = R, p = p, γ = γ, algorithm = algorithm,
-                            strategy = strategy, recombine...)
+            jet_reconstruct(
+                evt; R = R, p = p, γ = γ, algorithm = algorithm,
+                strategy = strategy, recombine...
+            )
         end
+        return
     end
     # Do a warm up run first to avoid JIT compilation costs
     profile_events(events)
@@ -54,7 +61,7 @@ function profile_code(events::Vector{Vector{T}}, profile, nsamples; R = 0.4, p =
     profile_dir = joinpath("profile", profile)
     mkpath(profile_dir)
     println("""Generating HTML flame graph at $(joinpath(profile_dir, "index.html"))""")
-    statprofilehtml(path = profile_dir)
+    return statprofilehtml(path = profile_dir)
 end
 
 """
@@ -67,20 +74,26 @@ end
 Take a memory allocation profile of the jet reconstruction code, printing the
 output.
 """
-function allocation_stats(events::Vector{Vector{T}}; algorithm::JetAlgorithm.Algorithm,
-                          distance::Real = 0.4, p::Union{Real, Nothing} = nothing,
-                          γ::Union{Real, Nothing} = nothing,
-                          strategy::RecoStrategy.Strategy,
-                          recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw],
-                          ptmin::Real = 5.0) where {T <: JetReconstruction.FourMomentum}
+function allocation_stats(
+        events::Vector{Vector{T}}; algorithm::JetAlgorithm.Algorithm,
+        distance::Real = 0.4, p::Union{Real, Nothing} = nothing,
+        γ::Union{Real, Nothing} = nothing,
+        strategy::RecoStrategy.Strategy,
+        recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw],
+        ptmin::Real = 5.0
+    ) where {T <: JetReconstruction.FourMomentum}
     println("Memory allocation statistics:")
     @timev for event in events
-        _ = inclusive_jets(jet_reconstruct(event; R = distance, p = p, γ = γ,
-                                           algorithm = algorithm,
-                                           strategy = strategy, recombine...),
-                           ptmin = ptmin)
+        _ = inclusive_jets(
+            jet_reconstruct(
+                event; R = distance, p = p, γ = γ,
+                algorithm = algorithm,
+                strategy = strategy, recombine...
+            ),
+            ptmin = ptmin
+        )
     end
-    nothing
+    return nothing
 end
 
 """
@@ -107,20 +120,22 @@ print summary statistics on the runtime.
   formatted file.
 - `dump_cs`: If `true`, dump the cluster sequence for each event.
 """
-function benchmark_jet_reco(events::Vector{Vector{T}};
-                            algorithm::JetAlgorithm.Algorithm,
-                            distance::Real = 0.4,
-                            p::Union{Real, Nothing} = nothing,
-                            γ::Union{Real, Nothing} = nothing,
-                            strategy::RecoStrategy.Strategy,
-                            recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw],
-                            ptmin::Real = 5.0,
-                            dcut = nothing,
-                            njets = nothing,
-                            nsamples::Integer = 1,
-                            gcoff::Bool = false,
-                            dump::Union{String, Nothing} = nothing,
-                            dump_cs = false) where {T <: JetReconstruction.FourMomentum}
+function benchmark_jet_reco(
+        events::Vector{Vector{T}};
+        algorithm::JetAlgorithm.Algorithm,
+        distance::Real = 0.4,
+        p::Union{Real, Nothing} = nothing,
+        γ::Union{Real, Nothing} = nothing,
+        strategy::RecoStrategy.Strategy,
+        recombine = RecombinationMethods[RecombinationScheme.ESchemeRaw],
+        ptmin::Real = 5.0,
+        dcut = nothing,
+        njets = nothing,
+        nsamples::Integer = 1,
+        gcoff::Bool = false,
+        dump::Union{String, Nothing} = nothing,
+        dump_cs = false
+    ) where {T <: JetReconstruction.FourMomentum}
 
     # If we are dumping the results, setup the JSON structure
     if !isnothing(dump)
@@ -142,8 +157,10 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
         gcoff && GC.enable(false)
         t_start = time_ns()
         for (ievt, event) in enumerate(events)
-            cs = jet_reconstruct(event; R = distance, p = p, γ = γ, algorithm = algorithm,
-                                 strategy = strategy, recombine...)
+            cs = jet_reconstruct(
+                event; R = distance, p = p, γ = γ, algorithm = algorithm,
+                strategy = strategy, recombine...
+            )
             if !isnothing(njets)
                 selectedjets = exclusive_jets(cs; njets = njets)
             elseif !isnothing(dcut)
@@ -178,7 +195,7 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
         t_stop = time_ns()
         gcoff && GC.enable(true)
         if irun > 0
-            dt_μs = convert(Float64, t_stop - t_start) * 1.e-3
+            dt_μs = convert(Float64, t_stop - t_start) * 1.0e-3
             trial_timing[irun] = dt_μs / length(events)
         end
     end
@@ -188,7 +205,7 @@ function benchmark_jet_reco(events::Vector{Vector{T}};
             JSON.print(io, jet_collection, 2)
         end
     end
-    trial_timing
+    return trial_timing
 end
 
 function parse_command_line(args)
@@ -310,40 +327,48 @@ function main()
     else
         jet_type = PseudoJet
     end
-    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file], jet_type;
-                                                                  maxevents = args[:maxevents],
-                                                                  skipevents = args[:skip])
+    events::Vector{Vector{jet_type}} = read_final_state_particles(
+        args[:file], jet_type;
+        maxevents = args[:maxevents],
+        skipevents = args[:skip]
+    )
 
     # Major switch between modes of running
     trial_stats = nothing
     if args[:alloc]
-        allocation_stats(events; distance = args[:distance],
-                         p = args[:power], γ = args[:gamma], algorithm = args[:algorithm],
-                         strategy = args[:strategy],
-                         recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
-                         ptmin = args[:ptmin])
+        allocation_stats(
+            events; distance = args[:distance],
+            p = args[:power], γ = args[:gamma], algorithm = args[:algorithm],
+            strategy = args[:strategy],
+            recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
+            ptmin = args[:ptmin]
+        )
     elseif !isnothing(args[:profile])
-        profile_code(events, args[:profile], args[:nsamples];
-                     R = args[:distance], p = args[:power], γ = args[:gamma],
-                     algorithm = args[:algorithm], strategy = args[:strategy],
-                     recombine = JetReconstruction.RecombinationMethods[args[:recombine]])
+        profile_code(
+            events, args[:profile], args[:nsamples];
+            R = args[:distance], p = args[:power], γ = args[:gamma],
+            algorithm = args[:algorithm], strategy = args[:strategy],
+            recombine = JetReconstruction.RecombinationMethods[args[:recombine]]
+        )
     else
-        trial_stats = benchmark_jet_reco(events, distance = args[:distance],
-                                         algorithm = args[:algorithm],
-                                         p = args[:power], γ = args[:gamma],
-                                         strategy = args[:strategy],
-                                         recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
-                                         ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
-                                         njets = args[:exclusive_njets],
-                                         nsamples = args[:nsamples], gcoff = args[:gcoff],
-                                         dump = args[:dump],
-                                         dump_cs = args[:dump_clusterseq])
+        trial_stats = benchmark_jet_reco(
+            events, distance = args[:distance],
+            algorithm = args[:algorithm],
+            p = args[:power], γ = args[:gamma],
+            strategy = args[:strategy],
+            recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
+            ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
+            njets = args[:exclusive_njets],
+            nsamples = args[:nsamples], gcoff = args[:gcoff],
+            dump = args[:dump],
+            dump_cs = args[:dump_clusterseq]
+        )
     end
     if !isnothing(trial_stats)
         print_statistics(trial_stats)
         args[:plot] && plot_trial_times(trial_stats)
     end
-    nothing
+    return nothing
 end
 
 main()

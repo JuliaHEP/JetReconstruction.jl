@@ -23,14 +23,22 @@ function test_jet_equality(ref, test)
         @test JetReconstruction.mass2(j1) ≈ JetReconstruction.mass2(j2)
         @test JetReconstruction.mass(j1) ≈ JetReconstruction.mass(j2)
     end
-    nothing
+    return nothing
 end
 
 @testset "Jet selections to types" begin
-    pp_event = first(JetReconstruction.read_final_state_particles(events_file_pp;
-                                                                  maxevents = 1))
-    ee_event = first(JetReconstruction.read_final_state_particles(events_file_ee;
-                                                                  maxevents = 1))
+    pp_event = first(
+        JetReconstruction.read_final_state_particles(
+            events_file_pp;
+            maxevents = 1
+        )
+    )
+    ee_event = first(
+        JetReconstruction.read_final_state_particles(
+            events_file_ee;
+            maxevents = 1
+        )
+    )
 
     pp_cs = jet_reconstruct(pp_event; algorithm = JetAlgorithm.Kt)
     ee_cs = jet_reconstruct(ee_event; algorithm = JetAlgorithm.Durham)

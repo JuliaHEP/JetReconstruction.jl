@@ -1,0 +1,13 @@
+name: Runic formatting
+on:
+  pull_request:
+
+jobs:
+  runic:
+    name: Runic
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: fredrikekre/runic-action@v1
+        with:
+          version: '1'

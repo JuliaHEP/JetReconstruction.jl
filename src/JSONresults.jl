@@ -33,7 +33,7 @@ azimuthal angle, and transverse momentum. `kwargs` are passed to the `isapprox`
 function, e.g., `tol`.
 """
 function isapprox(fj1::FinalJet, fj2::FinalJet; kwargs...)
-    isapprox(fj1.rap, fj2.rap; kwargs...) && isapprox(fj1.phi, fj2.phi; kwargs...) &&
+    return isapprox(fj1.rap, fj2.rap; kwargs...) && isapprox(fj1.phi, fj2.phi; kwargs...) &&
         isapprox(fj1.pt, fj2.pt; kwargs...)
 end
 

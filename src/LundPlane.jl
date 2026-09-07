@@ -41,8 +41,10 @@ Returns:
 function generate_lund_emissions(jet::PseudoJet, cs::ClusterSequence{PseudoJet})
 
     # Recluster the input jet using Cambridge/Aachen with large R
-    reconstructed_cluster_seq = recluster(jet, cs; algorithm = JetAlgorithm.CA,
-                                          R = max_allowable_R)
+    reconstructed_cluster_seq = recluster(
+        jet, cs; algorithm = JetAlgorithm.CA,
+        R = max_allowable_R
+    )
     reconstructed_jet = inclusive_jets(reconstructed_cluster_seq, PseudoJet)[1]
 
     lundPoints = Vector{NamedTuple}()
@@ -67,13 +69,15 @@ function generate_lund_emissions(jet::PseudoJet, cs::ClusterSequence{PseudoJet})
         kappa = z * Δ                                 # Log-polar projection
 
         # Store one step of the declustering
-        temp = (h_pt = harder_pt,
-                s_pt = softer_pt,
-                z = z,
-                delta = Δ,
-                kt = kt,
-                psi = psi,
-                kappa = kappa)
+        temp = (
+            h_pt = harder_pt,
+            s_pt = softer_pt,
+            z = z,
+            delta = Δ,
+            kt = kt,
+            psi = psi,
+            kappa = kappa,
+        )
 
         push!(lundPoints, temp)
     end

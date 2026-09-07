@@ -152,12 +152,14 @@ function read_events(f, fin; maxevents = -1, skipevents = 0)
             pz = parse(T, tok[7])
             e = parse(T, tok[8])
             status = parse(Int, tok[10])
-            push!(particles,
-                  Particle{T}(LorentzVector(e, px, py, pz), status, pdgid, barcode, vertex))
+            push!(
+                particles,
+                Particle{T}(LorentzVector(e, px, py, pz), status, pdgid, barcode, vertex)
+            )
         end
     end
     #processing the last event:
-    ievent > 0 && f(particles)
+    return ievent > 0 && f(particles)
 end
 
 end

@@ -7,7 +7,7 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     #! format: off
-    quote
+    return quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
@@ -51,13 +51,17 @@ md"Jet radius parameter"
 @bind radius PlutoUI.Slider(range(start = 0.4, stop = 2.0, step = 0.1), show_value = true)
 
 # ╔═╡ 79f24ec1-a63e-4e96-bd67-49661125be66
-input_file = joinpath(dirname(pathof(JetReconstruction)), "..", "test", "data",
-                      "events.pp13TeV.hepmc3.zst")
+input_file = joinpath(
+    dirname(pathof(JetReconstruction)), "..", "test", "data",
+    "events.pp13TeV.hepmc3.zst"
+)
 
 # ╔═╡ 7d7a8b11-19b3-4b83-a0b1-8201b74b588e
-events::Vector{Vector{PseudoJet}} = read_final_state_particles(input_file,
-                                                               maxevents = event_no,
-                                                               skipevents = event_no);
+events::Vector{Vector{PseudoJet}} = read_final_state_particles(
+    input_file,
+    maxevents = event_no,
+    skipevents = event_no
+);
 
 # ╔═╡ 2a899d67-71f3-4fe0-8104-7633a44a06a8
 cs = jet_reconstruct(events[1]; algorithm = JetAlgorithm.GenKt, p = power, R = radius)

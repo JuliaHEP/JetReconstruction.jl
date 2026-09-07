@@ -62,17 +62,21 @@ function main()
     logger = ConsoleLogger(stdout, Logging.Info)
     global_logger(logger)
 
-    events::Vector{Vector{PseudoJet}} = read_final_state_particles(args[:file],
-                                                                   maxevents = args[:event],
-                                                                   skipevents = args[:event])
-    cs = jet_reconstruct(events[1], R = args[:distance], p = args[:power],
-                         algorithm = args[:algorithm],
-                         strategy = args[:strategy])
+    events::Vector{Vector{PseudoJet}} = read_final_state_particles(
+        args[:file],
+        maxevents = args[:event],
+        skipevents = args[:event]
+    )
+    cs = jet_reconstruct(
+        events[1], R = args[:distance], p = args[:power],
+        algorithm = args[:algorithm],
+        strategy = args[:strategy]
+    )
 
     plt = jetsplot(events[1], cs; Module = CairoMakie)
     save(args[:output], plt)
 
-    @info "Saved jet visualisation to $(args[:output])"
+    return @info "Saved jet visualisation to $(args[:output])"
 end
 
 main()

@@ -48,12 +48,16 @@ mutable struct TiledJet
     """
     TiledJet constructor with all fields.
     """
-    function TiledJet(id, eta, phi, kt2, NN_dist,
-                      jet_index, tile_index, dij_posn,
-                      NN, previous, next)
-        new(id, eta, phi, kt2, NN_dist,
+    function TiledJet(
+            id, eta, phi, kt2, NN_dist,
             jet_index, tile_index, dij_posn,
-            NN, previous, next)
+            NN, previous, next
+        )
+        return new(
+            id, eta, phi, kt2, NN_dist,
+            jet_index, tile_index, dij_posn,
+            NN, previous, next
+        )
     end
 end
 
@@ -88,9 +92,11 @@ Constructs a `TiledJet` object with the given `id` and initializes its propertie
 # Returns
 A `TiledJet` object with the specified `id` and values set to zero or noTiledJet.
 """
-TiledJet(id) = TiledJet(id, 0.0, 0.0, 0.0, 0.0,
-                        0, 0, 0,
-                        noTiledJet, noTiledJet, noTiledJet)
+TiledJet(id) = TiledJet(
+    id, 0.0, 0.0, 0.0, 0.0,
+    0, 0, 0,
+    noTiledJet, noTiledJet, noTiledJet
+)
 
 """
     insert!(nextjet::TiledJet, jettomove::TiledJet)
@@ -145,8 +151,10 @@ Create a copy of a `TiledJet` object.
 A new `TiledJet` object with the same attributes as the input object.
 """
 function copy(j::TiledJet)
-    TiledJet(j.id, j.eta, j.phi, j.kt2, j.NN_dist, j.jets_index,
-             j.tile_index, j.dij_posn, j.NN, j.previous, j.next)
+    return TiledJet(
+        j.id, j.eta, j.phi, j.kt2, j.NN_dist, j.jets_index,
+        j.tile_index, j.dij_posn, j.NN, j.previous, j.next
+    )
 end
 
 # Iterator over a TiledJet walks along the chain of linked jets
@@ -165,7 +173,7 @@ Base.iterate(tj::TiledJet) = begin
     isvalid(tj) ? (tj, tj) : nothing
 end
 function Base.iterate(tj::TiledJet, state::TiledJet)
-    isvalid(state.next) ? (state.next::TiledJet, state.next::TiledJet) : nothing
+    return isvalid(state.next) ? (state.next::TiledJet, state.next::TiledJet) : nothing
 end
 
 """
@@ -204,17 +212,19 @@ Constructs a initial `Tiling` object based on the provided `setup` parameters.
 A `Tiling` object.
 """
 function Tiling(setup::TilingDef)
-    t = Tiling(setup,
-               fill(noTiledJet, (setup._n_tiles_eta, setup._n_tiles_phi)),
-               fill(0, (setup._n_tiles_eta, setup._n_tiles_phi)),
-               fill(false, (setup._n_tiles_eta, setup._n_tiles_phi)))
+    t = Tiling(
+        setup,
+        fill(noTiledJet, (setup._n_tiles_eta, setup._n_tiles_phi)),
+        fill(0, (setup._n_tiles_eta, setup._n_tiles_phi)),
+        fill(false, (setup._n_tiles_eta, setup._n_tiles_phi))
+    )
     @inbounds for iphi in 1:(setup._n_tiles_phi)
         # The order of the following two statements is important
         # to have position = tile_right in case n_tiles_eta = 1
         t.positions[1, iphi] = tile_left
         t.positions[setup._n_tiles_eta, iphi] = tile_right
     end
-    t
+    return t
 end
 
 "Signal that a tile is on the left hand side of the tiling array in ϕ"
@@ -278,12 +288,20 @@ function surrounding(center::Int, tiling::Tiling)
     elseif tiling.positions[center] == tile_right
         return Surrounding{6}((center, iphim, iphip, iphim - 1, center - 1, iphip - 1))
     elseif tiling.positions[center] == tile_central
-        return Surrounding{9}((center, iphim - 1, center - 1, iphip - 1,
-                               iphim, iphip,
-                               iphim + 1, center + 1, iphip + 1))
+        return Surrounding{9}(
+            (
+                center, iphim - 1, center - 1, iphip - 1,
+                iphim, iphip,
+                iphim + 1, center + 1, iphip + 1,
+            )
+        )
     else #tile_left
-        return Surrounding{6}((center, iphim, iphip,
-                               iphim + 1, center + 1, iphip + 1))
+        return Surrounding{6}(
+            (
+                center, iphim, iphip,
+                iphim + 1, center + 1, iphip + 1,
+            )
+        )
     end
 end
 

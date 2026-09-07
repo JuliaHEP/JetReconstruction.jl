@@ -4,9 +4,9 @@ Minimal C bindings for JetReconstruction.jl
 module C_JetReconstruction
 
 using ..JetReconstruction: JetAlgorithm, RecoStrategy,
-                           RecombinationScheme, RecombinationMethods,
-                           PseudoJet, ClusterSequence, HistoryElement,
-                           jet_reconstruct, exclusive_jets, inclusive_jets
+    RecombinationScheme, RecombinationMethods,
+    PseudoJet, ClusterSequence, HistoryElement,
+    jet_reconstruct, exclusive_jets, inclusive_jets
 using EnumX
 
 """
@@ -19,7 +19,7 @@ An enumeration of common status codes used in the JetReconstruction C-bindings.
 - `GenericException`- An unspecified error, not covered by other status codes occurred.
 - The rest of the status codes have corresponding standard Julia exception.
 """
-@enumx StatusCode OK=0 GenericException=1 ArgumentError=2 BoundsError=3 CompositeException=4 DimensionMismatch=5 DivideError=6 DomainError=7 EOFError=8 ErrorException=9 InexactError=10 InitError=11 InterruptException=12 InvalidStateException=13 KeyError=14 LoadError=15 OutOfMemoryError=16 ReadOnlyMemoryError=17 RemoteException=18 MethodError=19 OverflowError=20 ParseError=21 SystemError=22 TypeError=23 UndefRefError=24 UndefVarError=25 StringIndexError=26
+@enumx StatusCode OK = 0 GenericException = 1 ArgumentError = 2 BoundsError = 3 CompositeException = 4 DimensionMismatch = 5 DivideError = 6 DomainError = 7 EOFError = 8 ErrorException = 9 InexactError = 10 InitError = 11 InterruptException = 12 InvalidStateException = 13 KeyError = 14 LoadError = 15 OutOfMemoryError = 16 ReadOnlyMemoryError = 17 RemoteException = 18 MethodError = 19 OverflowError = 20 ParseError = 21 SystemError = 22 TypeError = 23 UndefRefError = 24 UndefVarError = 25 StringIndexError = 26
 
 function handle_exception(exception)::Cint
     @error exception
@@ -113,10 +113,12 @@ C-binding for `PseudoJet` initialization.
 
 """ jetreconstruction_PseudoJet_init
 
-Base.@ccallable function jetreconstruction_PseudoJet_init(ptr::Ptr{PseudoJet}, px::Cdouble,
-                                                          py::Cdouble, pz::Cdouble,
-                                                          E::Cdouble,
-                                                          cluster_hist_index::Clong)::Cint
+Base.@ccallable function jetreconstruction_PseudoJet_init(
+        ptr::Ptr{PseudoJet}, px::Cdouble,
+        py::Cdouble, pz::Cdouble,
+        E::Cdouble,
+        cluster_hist_index::Clong
+    )::Cint
     try
         pseudojet = PseudoJet(px, py, pz, E; cluster_hist_index = cluster_hist_index)
         unsafe_store!(ptr, pseudojet)
@@ -153,7 +155,7 @@ Internal function for freeing dynamically allocated `C_ClusterSequence` members 
 - `ptr::Ptr{C_ClusterSequence{T}}`: A pointer to a `C_ClusterSequence` structure.
 """
 function free_members(ptr::Ptr{C_ClusterSequence{T}}) where {T}
-    if ptr != C_NULL
+    return if ptr != C_NULL
         clusterseq = unsafe_load(ptr)
         Libc.free(clusterseq.jets)
         Libc.free(clusterseq.history)
@@ -198,9 +200,11 @@ Convert a `C_ClusterSequence` object to a `ClusterSequence` object.
 function ClusterSequence{T}(c::C_ClusterSequence{T}) where {T}
     jets_v = unsafe_wrap(Vector{T}, c.jets, c.jets_length)
     history_v = unsafe_wrap(Vector{HistoryElement}, c.history, c.history_length)
-    return ClusterSequence{T}(c.algorithm, c.power, c.R, c.strategy, jets_v,
-                              c.n_initial_jets,
-                              history_v, c.Qtot)
+    return ClusterSequence{T}(
+        c.algorithm, c.power, c.R, c.strategy, jets_v,
+        c.n_initial_jets,
+        history_v, c.Qtot
+    )
 end
 
 """
@@ -221,10 +225,12 @@ Convert a `ClusterSequence` object to a `C_ClusterSequence` object.
 function C_ClusterSequence{T}(clustersequence::ClusterSequence{T}) where {T}
     jets_ptr, jets_length = make_c_array(clustersequence.jets)
     history_ptr, history_length = make_c_array(clustersequence.history)
-    return C_ClusterSequence{T}(clustersequence.algorithm, clustersequence.power,
-                                clustersequence.R, clustersequence.strategy, jets_ptr,
-                                jets_length, clustersequence.n_initial_jets, history_ptr,
-                                history_length, clustersequence.Qtot)
+    return C_ClusterSequence{T}(
+        clustersequence.algorithm, clustersequence.power,
+        clustersequence.R, clustersequence.strategy, jets_ptr,
+        jets_length, clustersequence.n_initial_jets, history_ptr,
+        history_length, clustersequence.Qtot
+    )
 end
 
 """
@@ -255,19 +261,23 @@ Internal helper functions for calling `jet_reconstruct` with C-compatible data-s
 # Notes
 - To avoid memory leaks the memory allocated for members of `result` should be freed with `free_members` function or equivalent.
 """
-function c_jet_reconstruct(particles::Ptr{T},
-                           particles_length::Csize_t,
-                           algorithm::JetAlgorithm.Algorithm,
-                           power::Cdouble,
-                           R::Cdouble,
-                           strategy::RecoStrategy.Strategy,
-                           recombination_scheme::RecombinationScheme.Recombine,
-                           result::Ptr{C_ClusterSequence{U}}) where {T, U}
+function c_jet_reconstruct(
+        particles::Ptr{T},
+        particles_length::Csize_t,
+        algorithm::JetAlgorithm.Algorithm,
+        power::Cdouble,
+        R::Cdouble,
+        strategy::RecoStrategy.Strategy,
+        recombination_scheme::RecombinationScheme.Recombine,
+        result::Ptr{C_ClusterSequence{U}}
+    ) where {T, U}
     try
         particles_v = unsafe_wrap(Vector{T}, particles, particles_length)
-        clusterseq = jet_reconstruct(particles_v; p = power, algorithm = algorithm, R = R,
-                                     strategy = strategy,
-                                     RecombinationMethods[recombination_scheme]...)
+        clusterseq = jet_reconstruct(
+            particles_v; p = power, algorithm = algorithm, R = R,
+            strategy = strategy,
+            RecombinationMethods[recombination_scheme]...
+        )
         c_clusterseq = C_ClusterSequence{U}(clusterseq)
         unsafe_store!(result, c_clusterseq)
     catch e
@@ -306,16 +316,20 @@ C-binding for `jet_reconstruct`.
 - To avoid memory leaks the memory allocated for members of `result` should be freed with `jetreconstruction_ClusterSequence_free_members_`.
 """ jetreconstruction_jet_reconstruct
 
-Base.@ccallable function jetreconstruction_jet_reconstruct(particles::Ptr{PseudoJet},
-                                                           particles_length::Csize_t,
-                                                           algorithm::JetAlgorithm.Algorithm,
-                                                           power::Cdouble,
-                                                           R::Cdouble,
-                                                           strategy::RecoStrategy.Strategy,
-                                                           recombination_scheme::RecombinationScheme.Recombine,
-                                                           result::Ptr{C_ClusterSequence{PseudoJet}})::Cint
-    return c_jet_reconstruct(particles, particles_length, algorithm, power, R, strategy,
-                             recombination_scheme, result)
+Base.@ccallable function jetreconstruction_jet_reconstruct(
+        particles::Ptr{PseudoJet},
+        particles_length::Csize_t,
+        algorithm::JetAlgorithm.Algorithm,
+        power::Cdouble,
+        R::Cdouble,
+        strategy::RecoStrategy.Strategy,
+        recombination_scheme::RecombinationScheme.Recombine,
+        result::Ptr{C_ClusterSequence{PseudoJet}}
+    )::Cint
+    return c_jet_reconstruct(
+        particles, particles_length, algorithm, power, R, strategy,
+        recombination_scheme, result
+    )
 end
 
 """
@@ -341,7 +355,7 @@ Internal function for freeing dynamically allocated `C_JetsResult` members memor
 - `ptr::Ptr{C_JetsResult{T}}`: A pointer to a `C_JetsResult` structure.
 """
 function free_members(ptr::Ptr{C_JetsResult{T}}) where {T}
-    if ptr != C_NULL
+    return if ptr != C_NULL
         result = unsafe_load(ptr)
         Libc.free(result.data)
         # Struct is immutable so pointer can't be assigned NULL and length updated to zero (without making a copy)
@@ -381,8 +395,10 @@ An internal helper function for calling calling functions selecting jets from a 
 # Returns
 - `Cint`: An integer status code indicating the success or failure.
 """
-function jets_selection(selector, clustersequence::Ptr{C_ClusterSequence{T}},
-                        result::Ptr{C_JetsResult{U}}; kwargs...)::Cint where {T, U}
+function jets_selection(
+        selector, clustersequence::Ptr{C_ClusterSequence{T}},
+        result::Ptr{C_JetsResult{U}}; kwargs...
+    )::Cint where {T, U}
     try
         c_clusterseq = unsafe_load(clustersequence)
         clusterseq = ClusterSequence{T}(c_clusterseq)
@@ -415,9 +431,11 @@ C-binding for `exclusive_jets` with a cut on the maximum distance parameter.
 - To avoid memory leaks the memory allocated for members of `result` should be freed with `jetreconstruction_JetsResult_free_members_`.
 """ jetreconstruction_exclusive_jets_dcut
 
-Base.@ccallable function jetreconstruction_exclusive_jets_dcut(clustersequence::Ptr{C_ClusterSequence{PseudoJet}},
-                                                               dcut::Cdouble,
-                                                               result::Ptr{C_JetsResult{PseudoJet}})::Cint
+Base.@ccallable function jetreconstruction_exclusive_jets_dcut(
+        clustersequence::Ptr{C_ClusterSequence{PseudoJet}},
+        dcut::Cdouble,
+        result::Ptr{C_JetsResult{PseudoJet}}
+    )::Cint
     return jets_selection(exclusive_jets, clustersequence, result; dcut = dcut)
 end
 
@@ -441,9 +459,11 @@ C-binding for `exclusive_jets` with a specific number of jets.
 - To avoid memory leaks the memory allocated for members of `result` should be freed with `jetreconstruction_JetsResult_free_members_`.
 """ jetreconstruction_exclusive_jets_njets
 
-Base.@ccallable function jetreconstruction_exclusive_jets_njets(clustersequence::Ptr{C_ClusterSequence{PseudoJet}},
-                                                                njets::Csize_t,
-                                                                result::Ptr{C_JetsResult{PseudoJet}})::Cint
+Base.@ccallable function jetreconstruction_exclusive_jets_njets(
+        clustersequence::Ptr{C_ClusterSequence{PseudoJet}},
+        njets::Csize_t,
+        result::Ptr{C_JetsResult{PseudoJet}}
+    )::Cint
     return jets_selection(exclusive_jets, clustersequence, result; njets = njets)
 end
 
@@ -467,9 +487,11 @@ C-binding for `inclusive_jets`.
 - To avoid memory leaks the memory allocated for members of `result` should be freed with `jetreconstruction_JetsResult_free_members_`.
 """ jetreconstruction_inclusive_jets
 
-Base.@ccallable function jetreconstruction_inclusive_jets(clustersequence::Ptr{C_ClusterSequence{PseudoJet}},
-                                                          ptmin::Cdouble,
-                                                          result::Ptr{C_JetsResult{PseudoJet}})::Cint
+Base.@ccallable function jetreconstruction_inclusive_jets(
+        clustersequence::Ptr{C_ClusterSequence{PseudoJet}},
+        ptmin::Cdouble,
+        result::Ptr{C_JetsResult{PseudoJet}}
+    )::Cint
     return jets_selection(inclusive_jets, clustersequence, result; ptmin = ptmin)
 end
 

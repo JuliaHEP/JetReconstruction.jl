@@ -24,9 +24,11 @@ Returns:
 - A tuple `(xgrid, ygrid, avg_image)` where `xgrid` and `ygrid` are coordinate axes labels and
   `avg_image` is the averaged 2D histogram as a matrix
 """
-function generate_average_lund_image(njets::Int, delta_array::Vector{Vector{Real}},
-                                     kt_array::Vector{Vector{Real}}; xrange = (0.0, 4.0),
-                                     yrange = (-5.0, 7.0), bins = 25)
+function generate_average_lund_image(
+        njets::Int, delta_array::Vector{Vector{Real}},
+        kt_array::Vector{Vector{Real}}; xrange = (0.0, 4.0),
+        yrange = (-5.0, 7.0), bins = 25
+    )
     xmin, xmax = xrange
     ymin, ymax = yrange
 
@@ -64,8 +66,10 @@ function generate_average_lund_image(njets::Int, delta_array::Vector{Vector{Real
     return (x, y, avg_res)
 end
 
-input_file = joinpath(dirname(pathof(JetReconstruction)),
-                      "..", "test", "data", "events.pp13TeV.hepmc3.zst")
+input_file = joinpath(
+    dirname(pathof(JetReconstruction)),
+    "..", "test", "data", "events.pp13TeV.hepmc3.zst"
+)
 events = read_final_state_particles(input_file)
 
 N = length(events)
@@ -77,10 +81,14 @@ lund_delta(p) = p.delta
 
 # Event to pick
 for event_no in 1:N
-    cluster_seq = jet_reconstruct(events[event_no]; algorithm = JetAlgorithm.AntiKt,
-                                  R = 1.0)
-    jets = sort!(inclusive_jets(cluster_seq, PseudoJet; ptmin = 10.0),
-                 by = JetReconstruction.pt2, rev = true)
+    cluster_seq = jet_reconstruct(
+        events[event_no]; algorithm = JetAlgorithm.AntiKt,
+        R = 1.0
+    )
+    jets = sort!(
+        inclusive_jets(cluster_seq, PseudoJet; ptmin = 10.0),
+        by = JetReconstruction.pt2, rev = true
+    )
 
     @info "Generating Primary Lund Emissions for $(length(jets)) jets for Event $(event_no):"
     for (ijet, jet) in enumerate(jets)
@@ -98,8 +106,10 @@ njets = length(lundX)
 x, y, avg_res = generate_average_lund_image(njets, lundX, lundY)
 
 fig = Figure()
-ax = Axis(fig[1, 1], xlabel = L"\ln(R/\Delta)", ylabel = L"\ln(k_T/\mathrm{GeV})",
-          title = "Average Lund Image")
+ax = Axis(
+    fig[1, 1], xlabel = L"\ln(R/\Delta)", ylabel = L"\ln(k_T/\mathrm{GeV})",
+    title = "Average Lund Image"
+)
 hm = heatmap!(ax, x, y, avg_res; colormap = :viridis, colorrange = extrema(avg_res))
 Colorbar(fig[1, 2], hm; label = "")
 

@@ -22,18 +22,22 @@ happens inside the JetReconstruction package itself.
 
 Final jets can be serialised if the "dump" option is given
 """
-function jet_process(events::Vector{Vector{T}};
-                     algorithm::JetAlgorithm.Algorithm,
-                     distance::Real = 0.4,
-                     p::Union{Real, Nothing} = nothing,
-                     γ::Union{Real, Nothing} = nothing,
-                     ptmin::Real = 5.0,
-                     dcut = nothing,
-                     njets = nothing,
-                     strategy::RecoStrategy.Strategy,
-                     recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
-                     dump::Union{String, Nothing} = nothing) where {T <:
-                                                                    JetReconstruction.FourMomentum}
+function jet_process(
+        events::Vector{Vector{T}};
+        algorithm::JetAlgorithm.Algorithm,
+        distance::Real = 0.4,
+        p::Union{Real, Nothing} = nothing,
+        γ::Union{Real, Nothing} = nothing,
+        ptmin::Real = 5.0,
+        dcut = nothing,
+        njets = nothing,
+        strategy::RecoStrategy.Strategy,
+        recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
+        dump::Union{String, Nothing} = nothing
+    ) where {
+        T <:
+        JetReconstruction.FourMomentum,
+    }
 
     # If we are dumping the results, setup the JSON structure
     if !isnothing(dump)
@@ -56,9 +60,11 @@ function jet_process(events::Vector{Vector{T}};
     # Now run over each event
     for (ievt, event) in enumerate(events)
         # Run the jet reconstruction
-        cluster_seq = jet_reconstruct(event, R = distance, p = p, γ = γ,
-                                      algorithm = algorithm,
-                                      strategy = strategy)
+        cluster_seq = jet_reconstruct(
+            event, R = distance, p = p, γ = γ,
+            algorithm = algorithm,
+            strategy = strategy
+        )
         # Now select jets, with inclusive or exclusive parameters
         if !isnothing(njets)
             selectedjets = exclusive_jets(cluster_seq; njets = njets)
@@ -80,7 +86,7 @@ function jet_process(events::Vector{Vector{T}};
         end
     end
 
-    if !isnothing(dump)
+    return if !isnothing(dump)
         open(dump, "w") do io
             JSON.print(io, jet_collection, 2)
         end
@@ -160,22 +166,26 @@ function main()
     else
         jet_type = PseudoJet
     end
-    events::Vector{Vector{jet_type}} = read_final_state_particles(args[:file], jet_type;
-                                                                  maxevents = args[:maxevents],
-                                                                  skipevents = args[:skip])
+    events::Vector{Vector{jet_type}} = read_final_state_particles(
+        args[:file], jet_type;
+        maxevents = args[:maxevents],
+        skipevents = args[:skip]
+    )
     if isnothing(args[:algorithm]) && isnothing(args[:power])
         @warn "Neither algorithm nor power specified, defaulting to AntiKt"
         args[:algorithm] = JetAlgorithm.AntiKt
     end
-    jet_process(events, distance = args[:distance], algorithm = args[:algorithm],
-                p = args[:power],
-                γ = args[:gamma],
-                strategy = args[:strategy],
-                ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
-                njets = args[:exclusive_njets],
-                recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
-                dump = args[:dump])
-    nothing
+    jet_process(
+        events, distance = args[:distance], algorithm = args[:algorithm],
+        p = args[:power],
+        γ = args[:gamma],
+        strategy = args[:strategy],
+        ptmin = args[:ptmin], dcut = args[:exclusive_dcut],
+        njets = args[:exclusive_njets],
+        recombine = JetReconstruction.RecombinationMethods[args[:recombine]],
+        dump = args[:dump]
+    )
+    return nothing
 end
 
 main()

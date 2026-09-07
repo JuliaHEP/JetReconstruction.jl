@@ -42,11 +42,15 @@ JetReconstruction.energy(particle::EDM4hepParticle) = particle.energy
 
 Construct an EEJet from a EDM4hepParticle.
 """
-function JetReconstruction.EEJet(particle::EDM4hepParticle;
-                                 cluster_hist_index::Int = 0)
-    EEJet(JetReconstruction.px(particle), JetReconstruction.py(particle),
-          JetReconstruction.pz(particle), JetReconstruction.energy(particle);
-          cluster_hist_index)
+function JetReconstruction.EEJet(
+        particle::EDM4hepParticle;
+        cluster_hist_index::Int = 0
+    )
+    return EEJet(
+        JetReconstruction.px(particle), JetReconstruction.py(particle),
+        JetReconstruction.pz(particle), JetReconstruction.energy(particle);
+        cluster_hist_index
+    )
 end
 
 """
@@ -54,11 +58,15 @@ end
 
 Construct an PseudoJet from a EDM4hepParticle.
 """
-function JetReconstruction.PseudoJet(particle::EDM4hepParticle;
-                                     cluster_hist_index::Int = 0)
-    PseudoJet(JetReconstruction.px(particle), JetReconstruction.py(particle),
-              JetReconstruction.pz(particle), JetReconstruction.energy(particle);
-              cluster_hist_index)
+function JetReconstruction.PseudoJet(
+        particle::EDM4hepParticle;
+        cluster_hist_index::Int = 0
+    )
+    return PseudoJet(
+        JetReconstruction.px(particle), JetReconstruction.py(particle),
+        JetReconstruction.pz(particle), JetReconstruction.energy(particle);
+        cluster_hist_index
+    )
 end
 
 end

@@ -38,7 +38,7 @@ used in a reconstruction sequence.
 function EEJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::Int = 0)
     @muladd p2 = px * px + py * py + pz * pz
     inv_p = @fastmath 1.0 / sqrt(p2)
-    EEJet(px, py, pz, E, p2, inv_p, cluster_hist_index)
+    return EEJet(px, py, pz, E, p2, inv_p, cluster_hist_index)
 end
 
 """
@@ -47,7 +47,7 @@ end
 Construct a PseudoJet from another `EEJet` object and assign given cluster index to it.
 """
 function EEJet(jet::EEJet; cluster_hist_index::Int = 0)
-    Accessors.@set jet._cluster_hist_index = cluster_hist_index
+    return Accessors.@set jet._cluster_hist_index = cluster_hist_index
 end
 
 """
@@ -63,8 +63,10 @@ Pt2Scheme.
 If the (default) value of `cluster_hist_index=0` is used, the PseudoJet cannot be
 used in a reconstruction sequence.
 """
-function EEJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
-               cluster_hist_index::Int = 0)
+function EEJet(;
+        pt::Real, rap::Real, phi::Real, m::Real = 0,
+        cluster_hist_index::Int = 0
+    )
     phi = phi < 0 ? phi + 2π : phi
     phi = phi > 2π ? phi - 2π : phi
     ptm = (m == 0) ? pt : sqrt(pt^2 + m^2)
@@ -76,7 +78,7 @@ function EEJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
     pz = @fastmath (pplus - pminus) / 2
     E = @fastmath (pplus + pminus) / 2
 
-    EEJet(px, py, pz, E; cluster_hist_index)
+    return EEJet(px, py, pz, E; cluster_hist_index)
 end
 
 """
@@ -89,7 +91,7 @@ reconstruction sequence. If not provided, it defaults to `0` as an "invalid"
 value.
 """
 function EEJet(jet::LorentzVector; cluster_hist_index::Int = 0)
-    EEJet(jet.x, jet.y, jet.z, jet.t; cluster_hist_index)
+    return EEJet(jet.x, jet.y, jet.z, jet.t; cluster_hist_index)
 end
 
 """
@@ -113,9 +115,11 @@ value.
 function EEJet(jet::Any; cluster_hist_index::Int = 0)
     # Check that the interface is implemented
     if hasmethod(LorentzVectorBase.coordinate_system, (typeof(jet),))
-        return EEJet(LorentzVectorBase.px(jet), LorentzVectorBase.py(jet),
-                     LorentzVectorBase.pz(jet), LorentzVectorBase.energy(jet);
-                     cluster_hist_index)
+        return EEJet(
+            LorentzVectorBase.px(jet), LorentzVectorBase.py(jet),
+            LorentzVectorBase.pz(jet), LorentzVectorBase.energy(jet);
+            cluster_hist_index
+        )
     else
         throw(ArgumentError("EEJet cannot be constructed from object of type '$(typeof(jet))'"))
     end

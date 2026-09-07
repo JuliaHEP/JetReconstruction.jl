@@ -74,24 +74,30 @@ If it takes a while to develop or implement review changes, rebase against
 - If your examples require extra packages, e.g., graphics or statistics, please put them into a subdirectory (`examples/FEATURE/...`) with their own `Project.toml`.
 - Examples should be minimal, clear, and runnable.
 
+
 ### Formatting
 
-The code in this repository is formatted with
-[`JuliaFormatter`](https://github.com/domluna/JuliaFormatter.jl). Currently we
-use *version 1* of the formatter so please use this too or the CI may complain.
+The code in this repository is formatted with [`Runic.jl`](https://github.com/fredrikekre/Runic.jl). Before submitting your pull request, please format your changes locally by running the appropriate command from the root directory of the project:
 
-#### Bootstrap
+**For Julia v1.12 and later:**
+```bash
+julia -e 'using Pkg; Pkg.Apps.add("Runic")'
+runic --inplace .
+```
+*(Note: This assumes `${HOME}/.julia/bin` has been added to your system's `PATH` variable, which is required by default to run the global `runic` command).*
 
-This is one way to do it:
+#### Bootstrap (For Julia v1.11 and earlier)
+
+If you are running an older version of Julia that does not support modern App installations, you can bootstrap and run the formatter directly using a shared project environment:
 
 ```sh
-$ julia --project=@juliaformatter
-] add JuliaFormatter
-] compat JuliaFormatter 1.0
-] update
+# 1. Spin up an isolated global environment pool and install Runic
+julia --project=@runic -e 'using Pkg; Pkg.add("Runic")'
 
-$ julia --project=@juliaformatter -e 'using JuliaFormatter; format(".")'
+# 2. Execute the formatter directly via the Julia runtime environment
+julia --project=@runic -e 'using Runic; Runic.format(".", inplace=true)'
 ```
+
 
 ### Communication
 

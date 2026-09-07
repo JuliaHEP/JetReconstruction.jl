@@ -39,8 +39,8 @@ broken4v = willnotwork(1.0, 1.3, -2.3, 25.0)
     @test JetReconstruction.pz(ej_generic) == g4v.zmom
     @test JetReconstruction.energy(ej_generic) == g4v.energy
 
-    @test_throws ArgumentError _=PseudoJet(broken4v)
-    @test_throws ArgumentError _=EEJet(broken4v)
+    @test_throws ArgumentError _ = PseudoJet(broken4v)
+    @test_throws ArgumentError _ = EEJet(broken4v)
 end
 
 # Test construction from LorentzVector and LorentzVectorCyl

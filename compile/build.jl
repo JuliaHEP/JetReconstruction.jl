@@ -25,67 +25,97 @@ function parse_args(args)
 end
 
 function cp_file(input_dir, basename, output_dir)
-    cp(joinpath(input_dir, basename),
-       joinpath(output_dir, basename); force = true)
+    return cp(
+        joinpath(input_dir, basename),
+        joinpath(output_dir, basename); force = true
+    )
 end
 
-function configure_file(template_path::String, output_path::String,
-                        replacements::Dict{String, String})
+function configure_file(
+        template_path::String, output_path::String,
+        replacements::Dict{String, String}
+    )
     template = read(template_path, String)
     for (key, value) in replacements
         template = replace(template, "@$(key)@" => value)
     end
-    open(output_path, "w") do io
+    return open(output_path, "w") do io
         write(io, template)
     end
 end
 
-const C_ENUM_SPECS = ((placeholder = "JETRECONSTRUCTION_JETALGORITHM_ENUM",
-                       enum_type = JetReconstruction.JetAlgorithm.Algorithm,
-                       prefix = "JETRECONSTRUCTION_JETALGORITHM"),
-                      (placeholder = "JETRECONSTRUCTION_RECOSTRATEGY_ENUM",
-                       enum_type = JetReconstruction.RecoStrategy.Strategy,
-                       prefix = "JETRECONSTRUCTION_RECOSTRATEGY"),
-                      (placeholder = "JETRECONSTRUCTION_RECOMBINATIONSCHEME_ENUM",
-                       enum_type = JetReconstruction.RecombinationScheme.Recombine,
-                       prefix = "JETRECONSTRUCTION_RECOMBINATIONSCHEME"))
+const C_ENUM_SPECS = (
+    (
+        placeholder = "JETRECONSTRUCTION_JETALGORITHM_ENUM",
+        enum_type = JetReconstruction.JetAlgorithm.Algorithm,
+        prefix = "JETRECONSTRUCTION_JETALGORITHM",
+    ),
+    (
+        placeholder = "JETRECONSTRUCTION_RECOSTRATEGY_ENUM",
+        enum_type = JetReconstruction.RecoStrategy.Strategy,
+        prefix = "JETRECONSTRUCTION_RECOSTRATEGY",
+    ),
+    (
+        placeholder = "JETRECONSTRUCTION_RECOMBINATIONSCHEME_ENUM",
+        enum_type = JetReconstruction.RecombinationScheme.Recombine,
+        prefix = "JETRECONSTRUCTION_RECOMBINATIONSCHEME",
+    ),
+)
 
 function render_c_enum_entries(enum_type::Type{<:Enum}, prefix::AbstractString)
     vals = collect(instances(enum_type))
-    join(("  $(prefix)_$(uppercase(String(Symbol(v)))) = $(Int(v))" *
-          (i == lastindex(vals) ? "" : ",")
-          for (i, v) in pairs(vals)),
-         "\n")
+    return join(
+        (
+            "  $(prefix)_$(uppercase(String(Symbol(v)))) = $(Int(v))" *
+                (i == lastindex(vals) ? "" : ",")
+                for (i, v) in pairs(vals)
+        ),
+        "\n"
+    )
 end
 
 function c_enum_replacements()
-    return Dict(spec.placeholder => render_c_enum_entries(spec.enum_type, spec.prefix)
-                for spec in C_ENUM_SPECS)
+    return Dict(
+        spec.placeholder => render_c_enum_entries(spec.enum_type, spec.prefix)
+            for spec in C_ENUM_SPECS
+    )
 end
 
 function compile_w_packagecompiler(source_dir, output_dir)
-    return @elapsed PackageCompiler.create_library(source_dir, output_dir;
-                                                   lib_name = "jetreconstruction",
-                                                   precompile_execution_file = [joinpath(@__DIR__,
-                                                                                         "precompile_execution.jl")],
-                                                   incremental = false,
-                                                   filter_stdlibs = true,
-                                                   force = true)
+    return @elapsed PackageCompiler.create_library(
+        source_dir, output_dir;
+        lib_name = "jetreconstruction",
+        precompile_execution_file = [
+            joinpath(
+                @__DIR__,
+                "precompile_execution.jl"
+            )
+        ],
+        incremental = false,
+        filter_stdlibs = true,
+        force = true
+    )
 end
 
 function compile_w_juliac(source_dir, output_dir)
-    img = JuliaC.ImageRecipe(output_type = "--output-lib",
-                             trim_mode = "no",
-                             file = joinpath(source_dir, "src", "JetReconstruction.jl"),
-                             project = source_dir,
-                             add_ccallables = true,
-                             verbose = false)
+    img = JuliaC.ImageRecipe(
+        output_type = "--output-lib",
+        trim_mode = "no",
+        file = joinpath(source_dir, "src", "JetReconstruction.jl"),
+        project = source_dir,
+        add_ccallables = true,
+        verbose = false
+    )
 
-    link = JuliaC.LinkRecipe(image_recipe = img,
-                             outname = joinpath(output_dir, "lib", "libjetreconstruction"))
+    link = JuliaC.LinkRecipe(
+        image_recipe = img,
+        outname = joinpath(output_dir, "lib", "libjetreconstruction")
+    )
 
-    bun = JuliaC.BundleRecipe(link_recipe = link,
-                              output_dir = nothing)
+    bun = JuliaC.BundleRecipe(
+        link_recipe = link,
+        output_dir = nothing
+    )
     return @elapsed begin
         JuliaC.compile_products(img)
         JuliaC.link_products(link)
@@ -110,16 +140,20 @@ function (@main)(args)
     end
     @info "Compiled in $(compilation_time) seconds"
     compiler = parsed_args["juliac"] ? "JETRECONSTRUCTION_COMPILER_JULIAC" :
-               "JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER"
+        "JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER"
 
     includes_input = joinpath(@__DIR__, "include")
     includes_output = joinpath(output_dir, "include")
     mkpath(includes_output)
     @info "Copying header files to $includes_output"
-    configure_file(joinpath(includes_input, "JetReconstruction.h.in"),
-                   joinpath(includes_output, "JetReconstruction.h"),
-                   merge(Dict("JETRECONSTRUCTION_COMPILER" => compiler),
-                         c_enum_replacements()))
+    configure_file(
+        joinpath(includes_input, "JetReconstruction.h.in"),
+        joinpath(includes_output, "JetReconstruction.h"),
+        merge(
+            Dict("JETRECONSTRUCTION_COMPILER" => compiler),
+            c_enum_replacements()
+        )
+    )
 
     cmake_input = joinpath(@__DIR__, "cmake", "JetReconstruction")
     cmake_output = joinpath(output_dir, "lib", "cmake", "JetReconstruction")
@@ -129,12 +163,16 @@ function (@main)(args)
     version = pkgversion(JetReconstruction)
     cmake_project_version = "$(version.major).$(version.minor).$(version.patch)"
 
-    configure_file(joinpath(cmake_input, "JetReconstructionConfig.cmake.in"),
-                   joinpath(cmake_output, "JetReconstructionConfig.cmake"),
-                   Dict("JETRECONSTRUCTION_COMPILER" => compiler))
-    configure_file(joinpath(cmake_input, "JetReconstructionConfigVersion.cmake.in"),
-                   joinpath(cmake_output, "JetReconstructionConfigVersion.cmake"),
-                   Dict("PROJECT_VERSION" => cmake_project_version))
+    configure_file(
+        joinpath(cmake_input, "JetReconstructionConfig.cmake.in"),
+        joinpath(cmake_output, "JetReconstructionConfig.cmake"),
+        Dict("JETRECONSTRUCTION_COMPILER" => compiler)
+    )
+    configure_file(
+        joinpath(cmake_input, "JetReconstructionConfigVersion.cmake.in"),
+        joinpath(cmake_output, "JetReconstructionConfigVersion.cmake"),
+        Dict("PROJECT_VERSION" => cmake_project_version)
+    )
     cp_file(cmake_input, "JetReconstructionTargets.cmake", cmake_output)
     return 0
 end

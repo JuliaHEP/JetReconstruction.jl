@@ -55,7 +55,7 @@ function main()
     include("test-aqua.jl")
 
     # C-interface tests
-    include("test-c-interface.jl")
+    return include("test-c-interface.jl")
 end
 
 logger = ConsoleLogger(stdout, Logging.Warn)

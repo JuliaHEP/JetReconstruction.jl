@@ -67,7 +67,7 @@ function PseudoJet(px::Real, py::Real, pz::Real, E::Real; cluster_hist_index::In
         rap = 0.5 * log((pt2 + effective_m2) / (E_plus_pz * E_plus_pz))
         rap = pz > 0.0 ? -rap : rap
     end
-    PseudoJet(px, py, pz, E, cluster_hist_index, pt2, rap, phi)
+    return PseudoJet(px, py, pz, E, cluster_hist_index, pt2, rap, phi)
 end
 
 """
@@ -87,8 +87,10 @@ Construct a PseudoJet from `(pt, y, ϕ, m)` with the cluster index
 If the (default) value of `cluster_hist_index=0` is used, the PseudoJet cannot be
 used in a reconstruction sequence.
 """
-function PseudoJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
-                   cluster_hist_index::Int = 0)
+function PseudoJet(;
+        pt::Real, rap::Real, phi::Real, m::Real = 0,
+        cluster_hist_index::Int = 0
+    )
     phi = phi < 0 ? phi + 2π : phi
     phi = phi > 2π ? phi - 2π : phi
     ptm = (m == 0) ? pt : sqrt(pt^2 + m^2)
@@ -100,7 +102,7 @@ function PseudoJet(; pt::Real, rap::Real, phi::Real, m::Real = 0,
     pz = @fastmath (pplus - pminus) / 2
     E = @fastmath (pplus + pminus) / 2
 
-    PseudoJet(px, py, pz, E, cluster_hist_index, pt^2, rap, phi)
+    return PseudoJet(px, py, pz, E, cluster_hist_index, pt^2, rap, phi)
 end
 
 """
@@ -109,7 +111,7 @@ end
 Construct a PseudoJet from another `PseudoJet` object and assign given cluster index to it.
 """
 function PseudoJet(jet::PseudoJet; cluster_hist_index::Int = 0)
-    Accessors.@set jet._cluster_hist_index = cluster_hist_index
+    return Accessors.@set jet._cluster_hist_index = cluster_hist_index
 end
 
 """
@@ -118,7 +120,7 @@ end
 Construct a PseudoJet from a `LorentzVector` object with the cluster index.
 """
 function PseudoJet(jet::LorentzVector; cluster_hist_index::Int = 0)
-    PseudoJet(jet.x, jet.y, jet.z, jet.t; cluster_hist_index)
+    return PseudoJet(jet.x, jet.y, jet.z, jet.t; cluster_hist_index)
 end
 
 """
@@ -127,8 +129,10 @@ end
 Construct a PseudoJet from a `LorentzVectorCyl` object with the given cluster index.
 """
 function PseudoJet(jet::LorentzVectorCyl; cluster_hist_index::Int = 0)
-    PseudoJet(; pt = pt(jet), rap = rapidity(jet), phi = phi(jet), m = mass(jet),
-              cluster_hist_index)
+    return PseudoJet(;
+        pt = pt(jet), rap = rapidity(jet), phi = phi(jet), m = mass(jet),
+        cluster_hist_index
+    )
 end
 
 """
@@ -152,9 +156,11 @@ value.
 function PseudoJet(jet::Any; cluster_hist_index::Int = 0)
     # Check that the interface is implemented
     if hasmethod(LorentzVectorBase.coordinate_system, (typeof(jet),))
-        return PseudoJet(LorentzVectorBase.px(jet), LorentzVectorBase.py(jet),
-                         LorentzVectorBase.pz(jet), LorentzVectorBase.energy(jet);
-                         cluster_hist_index)
+        return PseudoJet(
+            LorentzVectorBase.px(jet), LorentzVectorBase.py(jet),
+            LorentzVectorBase.pz(jet), LorentzVectorBase.energy(jet);
+            cluster_hist_index
+        )
     else
         throw(ArgumentError("PseudoJet cannot be constructed from object of type '$(typeof(jet))'"))
     end

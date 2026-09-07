@@ -76,8 +76,10 @@ struct SoftKiller
         ntotal = nphi * ny
         cell_area = dy * dphi_final
 
-        new(rapmin, rapmax, drap, dphi, ntotal, dy, dphi_final, cell_area,
-            inverse_dy, inverse_dphi, ny, nphi)
+        return new(
+            rapmin, rapmax, drap, dphi, ntotal, dy, dphi_final, cell_area,
+            inverse_dy, inverse_dphi, ny, nphi
+        )
     end
 
     """
@@ -114,7 +116,7 @@ function tile_index(sk::SoftKiller, p::PseudoJet)
 
     res = round(Int, iy * sk._nphi + iphi)
 
-    res + 1
+    return res + 1
 end
 
 import Base: show
@@ -125,14 +127,16 @@ import Base: show
 Pretty-print the SoftKiller grid configuration.
 """
 function show(io::IO, sk::SoftKiller)
-    if sk._ntotal <= 0
+    return if sk._ntotal <= 0
         print(io, "Uninitialized rectangular grid")
     else
-        print(io,
-              "rectangular grid with rapidity extent ",
-              sk._ymin, " < rap < ", sk._ymax, "; ",
-              "total tiles = ", sk._ntotal, "; ",
-              "tile size Δy × Δφ = ", sk._dy, " × ", sk._dphi, ")")
+        print(
+            io,
+            "rectangular grid with rapidity extent ",
+            sk._ymin, " < rap < ", sk._ymax, "; ",
+            "total tiles = ", sk._ntotal, "; ",
+            "tile size Δy × Δφ = ", sk._dy, " × ", sk._dphi, ")"
+        )
     end
 end
 
@@ -142,9 +146,11 @@ end
 Filter a collection of `PseudoJet`s, returning only those with absolute rapidity less than or equal to `absrapmax`.
 """
 function select_ABS_RAP_max(event, absrapmax)
-    filtered_events = filter(e -> begin
-                                 abs(rapidity(e)) <= absrapmax
-                             end, event)
+    filtered_events = filter(
+        e -> begin
+            abs(rapidity(e)) <= absrapmax
+        end, event
+    )
     return filtered_events
 end
 

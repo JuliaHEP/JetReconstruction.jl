@@ -67,19 +67,25 @@ function main()
     logger = ConsoleLogger(stdout, Logging.Info)
     global_logger(logger)
 
-    events::Vector{Vector{PseudoJet}} = read_final_state_particles(args[:file],
-                                                                   maxevents = args[:event],
-                                                                   skipevents = args[:event])
-    cs = jet_reconstruct(events[1], R = args[:distance], p = args[:power],
-                         algorithm = args[:algorithm],
-                         strategy = args[:strategy])
+    events::Vector{Vector{PseudoJet}} = read_final_state_particles(
+        args[:file],
+        maxevents = args[:event],
+        skipevents = args[:event]
+    )
+    cs = jet_reconstruct(
+        events[1], R = args[:distance], p = args[:power],
+        algorithm = args[:algorithm],
+        strategy = args[:strategy]
+    )
 
-    animatereco(cs, args[:output]; azimuth = (1.8, 3.0), elevation = 0.5,
-                perspective = 0.5, ancestors = args[:ancestors],
-                barsize_phi = 0.1, barsize_y = 0.3, title = args[:title],
-                framerate = args[:framerate], end_frames = args[:end_frames])
+    animatereco(
+        cs, args[:output]; azimuth = (1.8, 3.0), elevation = 0.5,
+        perspective = 0.5, ancestors = args[:ancestors],
+        barsize_phi = 0.1, barsize_y = 0.3, title = args[:title],
+        framerate = args[:framerate], end_frames = args[:end_frames]
+    )
 
-    @info "Saved jet reconstruction animation to $(args[:output])"
+    return @info "Saved jet reconstruction animation to $(args[:output])"
 end
 
 main()

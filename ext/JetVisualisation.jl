@@ -36,16 +36,18 @@ using WGLMakie
 jetsplot(my_objects, cs, Module=Main) #default
 ```
 """
-function JetReconstruction.jetsplot(objects, cs::ClusterSequence; barsize_phi = 0.1,
-                                    barsize_eta = 0.1, colormap = :glasbey_hv_n256,
-                                    Module = Makie)
+function JetReconstruction.jetsplot(
+        objects, cs::ClusterSequence; barsize_phi = 0.1,
+        barsize_eta = 0.1, colormap = :glasbey_hv_n256,
+        Module = Makie
+    )
     idx_arrays = Vector{Int}[]
     for elt in cs.history
         elt.parent2 == JetReconstruction.BeamJet || continue
         push!(idx_arrays, JetReconstruction.get_all_ancestors(elt.parent1, cs))
     end
 
-    jetsplot(objects, idx_arrays; barsize_phi, barsize_eta, colormap, Module)
+    return jetsplot(objects, idx_arrays; barsize_phi, barsize_eta, colormap, Module)
 end
 
 """
@@ -86,9 +88,11 @@ using WGLMakie
 jetsplot(my_objects, my_colour_arrays, Module=Main) #default
 ```
 """
-function JetReconstruction.jetsplot(objects, idx_arrays; barsize_phi = 0.1,
-                                    barsize_eta = 0.1, colormap = :glasbey_hv_n256,
-                                    Module = Main)
+function JetReconstruction.jetsplot(
+        objects, idx_arrays; barsize_phi = 0.1,
+        barsize_eta = 0.1, colormap = :glasbey_hv_n256,
+        Module = Main
+    )
     cs = fill(0, length(objects)) # colours
     for i in 1:length(idx_arrays), j in idx_arrays[i]
         cs[j] = i
@@ -97,27 +101,39 @@ function JetReconstruction.jetsplot(objects, idx_arrays; barsize_phi = 0.1,
     pts = sqrt.(JetReconstruction.pt2.(objects))
 
     set_theme!(jetreco_theme)
-    Module.meshscatter(Module.Point3f.(JetReconstruction.phi.(objects),
-                                       JetReconstruction.rapidity.(objects), 0pts);
-                       color = cs,
-                       markersize = Module.Vec3f.(barsize_phi, barsize_eta, pts),
-                       colormap = colormap,
-                       marker = Module.Rect3f(Module.Vec3f(0), Module.Vec3f(1)),
-                       figure = (size = (700, 600),),
-                       axis = (type = Module.Axis3, perspectiveness = 0.5, azimuth = 2.6,
-                               elevation = 0.5,
-                               xlabel = L"\phi", ylabel = L"y", zlabel = L"p_T",
-                               limits = (nothing, nothing, nothing, nothing, 0,
-                                         findmax(pts)[1] + 10)),
-                       shading = NoShading)
+    return Module.meshscatter(
+        Module.Point3f.(
+            JetReconstruction.phi.(objects),
+            JetReconstruction.rapidity.(objects), 0pts
+        );
+        color = cs,
+        markersize = Module.Vec3f.(barsize_phi, barsize_eta, pts),
+        colormap = colormap,
+        marker = Module.Rect3f(Module.Vec3f(0), Module.Vec3f(1)),
+        figure = (size = (700, 600),),
+        axis = (
+            type = Module.Axis3, perspectiveness = 0.5, azimuth = 2.6,
+            elevation = 0.5,
+            xlabel = L"\phi", ylabel = L"y", zlabel = L"p_T",
+            limits = (
+                nothing, nothing, nothing, nothing, 0,
+                findmax(pts)[1] + 10,
+            ),
+        ),
+        shading = NoShading
+    )
 end
 
-function JetReconstruction.jetsplot(cs::ClusterSequence,
-                                    reco_state::Dict{Int,
-                                                     JetReconstruction.JetWithAncestors};
-                                    barsize_phi = 0.1,
-                                    barsize_y = 0.1, colormap = :glasbey_category10_n256,
-                                    Module = Makie)
+function JetReconstruction.jetsplot(
+        cs::ClusterSequence,
+        reco_state::Dict{
+            Int,
+            JetReconstruction.JetWithAncestors,
+        };
+        barsize_phi = 0.1,
+        barsize_y = 0.1, colormap = :glasbey_category10_n256,
+        Module = Makie
+    )
     # Setup the marker as a square object
     jet_plot_marker = Rect3f(Vec3f(0), Vec3f(1))
 
@@ -145,22 +161,28 @@ function JetReconstruction.jetsplot(cs::ClusterSequence,
 
     set_theme!(jetreco_theme)
     fig, ax,
-    plt_obj = Module.meshscatter(jet_plot_points;
-                                 markersize = jet_plot_marker_size,
-                                 marker = jet_plot_marker,
-                                 colormap = colormap,
-                                 color = jet_plot_colours,
-                                 colorrange = (1, 256),
-                                 figure = (size = (700, 600),),
-                                 axis = (type = Axis3, perspectiveness = 0.5,
-                                         azimuth = 2.7,
-                                         elevation = 0.5,
-                                         xlabel = L"\phi", ylabel = L"y",
-                                         zlabel = L"p_T",
-                                         limits = (0, 2π, min_rap - 0.5,
-                                                   max_rap + 0.5, 0, max_pt + 10)),
-                                 shading = NoShading)
-    fig, ax, plt_obj
+        plt_obj = Module.meshscatter(
+        jet_plot_points;
+        markersize = jet_plot_marker_size,
+        marker = jet_plot_marker,
+        colormap = colormap,
+        color = jet_plot_colours,
+        colorrange = (1, 256),
+        figure = (size = (700, 600),),
+        axis = (
+            type = Axis3, perspectiveness = 0.5,
+            azimuth = 2.7,
+            elevation = 0.5,
+            xlabel = L"\phi", ylabel = L"y",
+            zlabel = L"p_T",
+            limits = (
+                0, 2π, min_rap - 0.5,
+                max_rap + 0.5, 0, max_pt + 10,
+            ),
+        ),
+        shading = NoShading
+    )
+    return fig, ax, plt_obj
 end
 
 """
@@ -208,16 +230,18 @@ the animation.
 - `fig`: The figure object representing the final frame.
 
 """
-function JetReconstruction.animatereco(cs::ClusterSequence, filename;
-                                       barsize_phi = 0.1,
-                                       barsize_y = 0.1,
-                                       colormap = :glasbey_category10_n256,
-                                       perspective::Union{Real, Tuple{Real, Real}} = 0.5,
-                                       azimuth::Union{Real, Tuple{Real, Real}} = 2.7,
-                                       elevation::Union{Real, Tuple{Real, Real}} = 0.5,
-                                       framerate = 5, end_frames = 0, ancestors = false,
-                                       title = nothing,
-                                       Module = Makie)
+function JetReconstruction.animatereco(
+        cs::ClusterSequence, filename;
+        barsize_phi = 0.1,
+        barsize_y = 0.1,
+        colormap = :glasbey_category10_n256,
+        perspective::Union{Real, Tuple{Real, Real}} = 0.5,
+        azimuth::Union{Real, Tuple{Real, Real}} = 2.7,
+        elevation::Union{Real, Tuple{Real, Real}} = 0.5,
+        framerate = 5, end_frames = 0, ancestors = false,
+        title = nothing,
+        Module = Makie
+    )
     # Setup the marker as a square object
     jet_plot_marker = Rect3f(Vec3f(0), Vec3f(1))
 
@@ -248,22 +272,32 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
         phis = [JetReconstruction.phi(x.self) for x in values(reco_state)]
         ys = [JetReconstruction.rapidity(x.self) for x in values(reco_state)]
         pts = [JetReconstruction.pt(x.self) for x in values(reco_state)]
-        push!(all_jet_plot_points,
-              Point3f.(phis .- (barsize_phi / 2), ys .- (barsize_y / 2), 0pts))
+        push!(
+            all_jet_plot_points,
+            Point3f.(phis .- (barsize_phi / 2), ys .- (barsize_y / 2), 0pts)
+        )
         push!(all_jet_plot_marker_size, Vec3f.(barsize_phi, barsize_y, pts))
-        push!(all_jet_plot_colours,
-              [mod1(x.jet_rank, colormap_end) for x in values(reco_state)])
+        push!(
+            all_jet_plot_colours,
+            [mod1(x.jet_rank, colormap_end) for x in values(reco_state)]
+        )
         if ancestors
             for jet_entry in values(reco_state)
                 for ancestor in jet_entry.ancestors
                     ancestor_jet = cs.jets[ancestor]
-                    push!(all_jet_plot_points[end],
-                          Point3f(JetReconstruction.phi(ancestor_jet) - (barsize_phi / 2),
-                                  JetReconstruction.rapidity(ancestor_jet) -
-                                  (barsize_y / 2),
-                                  0.0))
-                    push!(all_jet_plot_marker_size[end],
-                          Vec3f(barsize_phi, barsize_y, 0.001max_pt))
+                    push!(
+                        all_jet_plot_points[end],
+                        Point3f(
+                            JetReconstruction.phi(ancestor_jet) - (barsize_phi / 2),
+                            JetReconstruction.rapidity(ancestor_jet) -
+                                (barsize_y / 2),
+                            0.0
+                        )
+                    )
+                    push!(
+                        all_jet_plot_marker_size[end],
+                        Vec3f(barsize_phi, barsize_y, 0.001max_pt)
+                    )
                     push!(all_jet_plot_colours[end], mod1(jet_entry.jet_rank, colormap_end))
                 end
             end
@@ -286,34 +320,42 @@ function JetReconstruction.animatereco(cs::ClusterSequence, filename;
 
     # We may want to have a shifting viewpoint
     azimuth_axis = typeof(azimuth) <: Tuple ?
-                   @lift(azimuth[1]+$it_obs / merge_steps * (azimuth[2] - azimuth[1])) :
-                   azimuth
+        @lift(azimuth[1] + $it_obs / merge_steps * (azimuth[2] - azimuth[1])) :
+        azimuth
     elevation_axis = typeof(elevation) <: Tuple ?
-                     @lift(elevation[1]+$it_obs / merge_steps *
-                                        (elevation[2] - elevation[1])) : elevation
+        @lift(
+            elevation[1] + $it_obs / merge_steps *
+            (elevation[2] - elevation[1])
+        ) : elevation
     perspective_axis = typeof(perspective) <: Tuple ?
-                       @lift(perspective[1]+$it_obs / merge_steps *
-                                            (perspective[2] - perspective[1])) : perspective
+        @lift(
+            perspective[1] + $it_obs / merge_steps *
+            (perspective[2] - perspective[1])
+        ) : perspective
 
     set_theme!(jetreco_theme)
-    ax = (type = Axis3, title = isnothing(title) ? "" : title,
-          xlabel = L"\phi", ylabel = L"y", zlabel = L"p_T",
-          limits = (0, 2π, min_rap - 0.5, max_rap + 0.5, 0, max_pt + 10),
-          perspectiveness = perspective_axis, azimuth = azimuth_axis,
-          elevation = elevation_axis)
-    fig = Module.meshscatter(jet_plot_points_obs;
-                             markersize = jet_plot_marker_size_obs,
-                             marker = jet_plot_marker,
-                             colormap = colormap,
-                             color = jet_plot_colours_obs,
-                             colorrange = (1, colormap_end),
-                             figure = (size = (800, 600),),
-                             axis = ax,
-                             shading = NoShading)
+    ax = (
+        type = Axis3, title = isnothing(title) ? "" : title,
+        xlabel = L"\phi", ylabel = L"y", zlabel = L"p_T",
+        limits = (0, 2π, min_rap - 0.5, max_rap + 0.5, 0, max_pt + 10),
+        perspectiveness = perspective_axis, azimuth = azimuth_axis,
+        elevation = elevation_axis,
+    )
+    fig = Module.meshscatter(
+        jet_plot_points_obs;
+        markersize = jet_plot_marker_size_obs,
+        marker = jet_plot_marker,
+        colormap = colormap,
+        color = jet_plot_colours_obs,
+        colorrange = (1, colormap_end),
+        figure = (size = (800, 600),),
+        axis = ax,
+        shading = NoShading
+    )
     record(fig, filename, 0:(merge_steps + end_frames); framerate = framerate) do iteration
         it_obs[] = min(iteration, merge_steps)
     end
-    fig
+    return fig
 end
 
 end

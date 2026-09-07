@@ -13,8 +13,10 @@ md"""# Jet Reconstruction Constituents Example
 Perform a simple reconstruction example and show how to retrieve constituent jets."""
 
 # ╔═╡ 79f24ec1-a63e-4e96-bd67-49661125be66
-input_file = joinpath(dirname(pathof(JetReconstruction)), "..", "test", "data",
-                      "events.pp13TeV.hepmc3.zst")
+input_file = joinpath(
+    dirname(pathof(JetReconstruction)), "..", "test", "data",
+    "events.pp13TeV.hepmc3.zst"
+)
 
 # ╔═╡ 7d7a8b11-19b3-4b83-a0b1-8201b74b588e
 events = read_final_state_particles(input_file)
@@ -50,11 +52,11 @@ end
 
 # ╔═╡ c9ce9c76-82ef-42ff-bb2e-3b3b8085d8bc
 begin
-	my_constituent_indexes = JetReconstruction.constituent_indexes(pj_jets[1], cluster_seq)
-	println("\nConsitituent indexes for jet number $(event_no): $my_constituent_indexes")
-	for i in my_constituent_indexes
-	    println("  Constituent jet $i: $(events[1][i])")
-	end
+    my_constituent_indexes = JetReconstruction.constituent_indexes(pj_jets[1], cluster_seq)
+    println("\nConsitituent indexes for jet number $(event_no): $my_constituent_indexes")
+    for i in my_constituent_indexes
+        println("  Constituent jet $i: $(events[1][i])")
+    end
 end
 
 # ╔═╡ 00000000-0000-0000-0000-000000000001

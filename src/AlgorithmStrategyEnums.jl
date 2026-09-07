@@ -13,7 +13,7 @@ See [Algorithm Strategy](@ref) page for more details.
 - `N2Plain`: The plain N2 strategy.
 - `N2Tiled`: The tiled N2 strategy.
 """
-@enumx T=Strategy RecoStrategy Best N2Plain N2Tiled
+@enumx T = Strategy RecoStrategy Best N2Plain N2Tiled
 const AllJetRecoStrategies = [String(Symbol(x)) for x in instances(RecoStrategy.Strategy)]
 
 """
@@ -30,7 +30,7 @@ Scoped enumeration (using EnumX) representing different jet algorithms used in t
 - `Durham`: The e+e- kt algorithm, aka Durham.
 - `Valencia`: The Valencia e+e- algorithm.
 """
-@enumx T=Algorithm JetAlgorithm AntiKt CA Kt GenKt EEKt Durham Valencia
+@enumx T = Algorithm JetAlgorithm AntiKt CA Kt GenKt EEKt Durham Valencia
 const AllJetRecoAlgorithms = [String(Symbol(x)) for x in instances(JetAlgorithm.Algorithm)]
 
 """
@@ -46,10 +46,12 @@ const varpower_algorithms = (JetAlgorithm.GenKt, JetAlgorithm.EEKt, JetAlgorithm
 
 A dictionary that maps algorithm names to their corresponding power values.
 """
-const algorithm2power = Dict(JetAlgorithm.AntiKt => -1,
-                             JetAlgorithm.CA => 0,
-                             JetAlgorithm.Kt => 1,
-                             JetAlgorithm.Durham => 1)
+const algorithm2power = Dict(
+    JetAlgorithm.AntiKt => -1,
+    JetAlgorithm.CA => 0,
+    JetAlgorithm.Kt => 1,
+    JetAlgorithm.Durham => 1
+)
 
 """
     get_algorithm_power(; algorithm::JetAlgorithm.Algorithm, p::Union{Real, Nothing}) -> Real
@@ -99,7 +101,7 @@ function is_pp(algorithm::JetAlgorithm.Algorithm)
         JetAlgorithm.AntiKt,
         JetAlgorithm.CA,
         JetAlgorithm.Kt,
-        JetAlgorithm.GenKt
+        JetAlgorithm.GenKt,
     ]
 end
 
@@ -132,18 +134,30 @@ See [Jet Recombination](@ref) page for more details.
 - `PtScheme`: The Pt-scheme recombination scheme using [`addjets_ptscheme`](@ref) and [`preprocess_ptscheme`](@ref) functions.
 - `Pt2Scheme`: The Pt2-scheme recombination scheme using [`addjets_pt2scheme`](@ref) and [`preprocess_pt2scheme`](@ref) functions.
 """
-@enumx T=Recombine RecombinationScheme ESchemeRaw EScheme PtScheme Pt2Scheme
-const AllRecombinationSchemes = [String(Symbol(x))
-                                 for x in instances(RecombinationScheme.Recombine)]
+@enumx T = Recombine RecombinationScheme ESchemeRaw EScheme PtScheme Pt2Scheme
+const AllRecombinationSchemes = [
+    String(Symbol(x))
+        for x in instances(RecombinationScheme.Recombine)
+]
 
 # Note it's a bit fragile to have the dictionary and the enum built
 # separately, but it is manageable. There is a test in the CI that
 # checks that all the enums are defined in the dictionary.
-const RecombinationMethods = Dict(RecombinationScheme.EScheme => (recombine = addjets_escheme,
-                                                                  preprocess = preprocess_escheme),
-                                  RecombinationScheme.ESchemeRaw => (recombine = addjets_escheme,
-                                                                     preprocess = nothing),
-                                  RecombinationScheme.PtScheme => (recombine = addjets_ptscheme,
-                                                                   preprocess = preprocess_ptscheme),
-                                  RecombinationScheme.Pt2Scheme => (recombine = addjets_pt2scheme,
-                                                                    preprocess = preprocess_pt2scheme))
+const RecombinationMethods = Dict(
+    RecombinationScheme.EScheme => (
+        recombine = addjets_escheme,
+        preprocess = preprocess_escheme,
+    ),
+    RecombinationScheme.ESchemeRaw => (
+        recombine = addjets_escheme,
+        preprocess = nothing,
+    ),
+    RecombinationScheme.PtScheme => (
+        recombine = addjets_ptscheme,
+        preprocess = preprocess_ptscheme,
+    ),
+    RecombinationScheme.Pt2Scheme => (
+        recombine = addjets_pt2scheme,
+        preprocess = preprocess_pt2scheme,
+    )
+)

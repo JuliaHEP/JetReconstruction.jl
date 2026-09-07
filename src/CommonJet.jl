@@ -134,7 +134,7 @@ const phi02pi = phi
 
 """Used to protect against parton-level events where pt can be zero
 for some partons, giving rapidity=infinity. KtJet fails in those cases."""
-const _MaxRap = 1e5
+const _MaxRap = 1.0e5
 
 """
     rapidity(j::FourMomentum)
@@ -168,7 +168,7 @@ clamp the return value to our package's `_MaxRap`.
 """
 function eta(j::FourMomentum)
     eta = LorentzVectorBase.eta(j)
-    clamp(eta, -_MaxRap, _MaxRap)
+    return clamp(eta, -_MaxRap, _MaxRap)
 end
 """
     const η = eta
@@ -190,7 +190,7 @@ This addition operation will return a jet with the cluster history index set to
 history.*
 """
 function +(jet1::T, jet2::T) where {T <: FourMomentum}
-    T(jet1.px + jet2.px, jet1.py + jet2.py, jet1.pz + jet2.pz, jet1.E + jet2.E)
+    return T(jet1.px + jet2.px, jet1.py + jet2.py, jet1.pz + jet2.pz, jet1.E + jet2.E)
 end
 
 """
@@ -204,8 +204,10 @@ specified cluster history index.
 This method is also known as the `E_scheme` in Fastjet.
 """
 function addjets(jet1::T, jet2::T; cluster_hist_index::Int = 0) where {T <: FourMomentum}
-    T(px(jet1) + px(jet2), py(jet1) + py(jet2), pz(jet1) + pz(jet2),
-      energy(jet1) + energy(jet2), cluster_hist_index = cluster_hist_index)
+    return T(
+        px(jet1) + px(jet2), py(jet1) + py(jet2), pz(jet1) + pz(jet2),
+        energy(jet1) + energy(jet2), cluster_hist_index = cluster_hist_index
+    )
 end
 
 """
@@ -221,11 +223,13 @@ const addjets_escheme = addjets
 Use the massless ``p_T`` scheme for combining two jets, setting the appropriate
 cluster history index for the new jet.
 """
-function addjets_ptscheme(jet1::T, jet2::T;
-                          cluster_hist_index::Int = 0) where {T <: FourMomentum}
+function addjets_ptscheme(
+        jet1::T, jet2::T;
+        cluster_hist_index::Int = 0
+    ) where {T <: FourMomentum}
     scale1 = pt(jet1)
     scale2 = pt(jet2)
-    _addjets_with_scale(scale1, scale2, jet1, jet2, cluster_hist_index)::T
+    return _addjets_with_scale(scale1, scale2, jet1, jet2, cluster_hist_index)::T
 end
 
 """
@@ -236,10 +240,14 @@ end
 Jet preprocessor for the E-scheme, simply copying the four-momentum and assigning the cluster
 history index.
 """
-function preprocess_escheme(jet::T, ::Type{OutputT};
-                            cluster_hist_index::Int = 0) where {T,
-                                                                OutputT <: FourMomentum}
-    OutputT(jet; cluster_hist_index = cluster_hist_index)
+function preprocess_escheme(
+        jet::T, ::Type{OutputT};
+        cluster_hist_index::Int = 0
+    ) where {
+        T,
+        OutputT <: FourMomentum,
+    }
+    return OutputT(jet; cluster_hist_index = cluster_hist_index)
 end
 
 """
@@ -250,10 +258,14 @@ end
 Jet preprocessor for the massless ``p_T`` schemes, resetting the energy of the
 jet to be equal to the 3-momentum of the input jet.
 """
-function preprocess_ptscheme(jet::T, ::Type{OutputT};
-                             cluster_hist_index::Int = 0) where {T <: FourMomentum,
-                                                                 OutputT <: FourMomentum}
-    OutputT(px(jet), py(jet), pz(jet), p(jet); cluster_hist_index = cluster_hist_index)
+function preprocess_ptscheme(
+        jet::T, ::Type{OutputT};
+        cluster_hist_index::Int = 0
+    ) where {
+        T <: FourMomentum,
+        OutputT <: FourMomentum,
+    }
+    return OutputT(px(jet), py(jet), pz(jet), p(jet); cluster_hist_index = cluster_hist_index)
 end
 
 """
@@ -271,11 +283,15 @@ This function is used to convert a particle of type `LorentzVector` or
 `FourMomentum`. (This is a work around until `LorentzVectorBase` can be used,
 which will make the accessors uniform.)
 """
-function preprocess_ptscheme(particle::Union{LorentzVector, LorentzVectorCyl},
-                             ::Type{OutputT} = PseudoJet;
-                             cluster_hist_index::Int = 0) where {OutputT <: FourMomentum}
-    OutputT(px(particle), py(particle), pz(particle), mag(particle);
-            cluster_hist_index = cluster_hist_index)
+function preprocess_ptscheme(
+        particle::Union{LorentzVector, LorentzVectorCyl},
+        ::Type{OutputT} = PseudoJet;
+        cluster_hist_index::Int = 0
+    ) where {OutputT <: FourMomentum}
+    return OutputT(
+        px(particle), py(particle), pz(particle), mag(particle);
+        cluster_hist_index = cluster_hist_index
+    )
 end
 
 """
@@ -284,11 +300,13 @@ end
 Use the massless ``p_T^2`` scheme for combining two jets, setting the
 appropriate cluster history index for the new jet.
 """
-function addjets_pt2scheme(jet1::T, jet2::T;
-                           cluster_hist_index::Int) where {T <: FourMomentum}
+function addjets_pt2scheme(
+        jet1::T, jet2::T;
+        cluster_hist_index::Int
+    ) where {T <: FourMomentum}
     scale1 = pt2(jet1)
     scale2 = pt2(jet2)
-    _addjets_with_scale(scale1, scale2, jet1, jet2, cluster_hist_index)::T
+    return _addjets_with_scale(scale1, scale2, jet1, jet2, cluster_hist_index)::T
 end
 
 """
@@ -304,8 +322,10 @@ const preprocess_pt2scheme = preprocess_ptscheme
 Combine two jets as massless objects using the given scale factors for each jet,
 and return the new jet with the cluster history index set.
 """
-function _addjets_with_scale(scale1::Real, scale2::Real, jet1::T, jet2::T,
-                             cluster_hist_index::Int) where {T <: FourMomentum}
+function _addjets_with_scale(
+        scale1::Real, scale2::Real, jet1::T, jet2::T,
+        cluster_hist_index::Int
+    ) where {T <: FourMomentum}
     new_pt = pt(jet1) + pt(jet2)
     new_rap = (scale1 * rapidity(jet1) + scale2 * rapidity(jet2)) / (scale1 + scale2)
     phi_wrap = 0.0
@@ -318,7 +338,7 @@ function _addjets_with_scale(scale1::Real, scale2::Real, jet1::T, jet2::T,
     new_phi = (scale1 * phi(jet1) + scale2 * (phi(jet2) + phi_wrap)) / (scale1 + scale2)
 
     # Now create new jet from pt, y and phi... implicitly assume that mass=0!
-    T(pt = new_pt, rap = new_rap, phi = new_phi; cluster_hist_index = cluster_hist_index)
+    return T(pt = new_pt, rap = new_rap, phi = new_phi; cluster_hist_index = cluster_hist_index)
 end
 
 import Base.show
@@ -329,7 +349,9 @@ Print core information about the four-momentum vector of `jet` to the given IO
 stream.
 """
 function show(io::IO, jet::FourMomentum)
-    print(io, "$(typeof(jet))(px: ", px(jet), " py: ", py(jet), " pz: ", pz(jet), " E: ",
-          E(jet),
-          " cluster_hist_index: ", cluster_hist_index(jet), ")")
+    return print(
+        io, "$(typeof(jet))(px: ", px(jet), " py: ", py(jet), " pz: ", pz(jet), " E: ",
+        E(jet),
+        " cluster_hist_index: ", cluster_hist_index(jet), ")"
+    )
 end
