@@ -26,7 +26,8 @@ const BeamJet = -1
 @inline function _sizehint_for_reuse!(buffer::Vector,
                                       requested::Integer)
     requested >= 0 ||
-        throw(ArgumentError("requested capacity must be non-negative, got $requested"))
+        error("Internal error: requested capacity must be non-negative (got $requested). " *
+              "Please file a bug report.")
 
     @static if VERSION >= v"1.11"
         sizehint!(buffer, requested; shrink = false)

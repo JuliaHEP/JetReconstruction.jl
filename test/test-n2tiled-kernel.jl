@@ -41,6 +41,8 @@ function run_owning_n2tiled_event(event)
 end
 
 @testset "Reusable N2Tiled reconstruction" begin
+    @test :release_n2tiled_workspace_capacity! ∉ names(JetReconstruction)
+
     events = read_final_state_particles(events_file_pp)
     event_sizes = length.(events)
     small_event = events[argmin(event_sizes)]
@@ -211,7 +213,7 @@ end
         @test length(workspace.scratch.NNs) == length(small_event)
         @test length(workspace.scratch.dij) == length(small_event)
 
-        release_n2tiled_workspace_capacity!(workspace)
+        JetReconstruction.release_n2tiled_workspace_capacity!(workspace)
         @test workspace.jets !== retained_jets
         @test workspace.history !== retained_history
         @test workspace.scratch.eta !== retained_eta
@@ -231,7 +233,7 @@ end
     end
 
     @testset "Workspace allocation regression" begin
-        @test_throws ArgumentError JetReconstruction._sizehint_for_reuse!(Int[], -1)
+        @test_throws ErrorException JetReconstruction._sizehint_for_reuse!(Int[], -1)
 
         event = large_event
         workspace = N2TiledWorkspace()

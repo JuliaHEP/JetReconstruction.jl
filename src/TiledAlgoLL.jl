@@ -160,9 +160,11 @@ function set_nearest_neighbours!(tiling::Tiling,
                                  NNs::Vector{TiledJet},
                                  diJ::Vector{Float64})
     length(NNs) == length(tiledjets) ||
-        throw(ArgumentError("NNs and tiledjets must have the same length"))
+        error("Internal error: nearest-neighbour and tiled-jet buffers have different lengths. " *
+              "Please file a bug report.")
     length(diJ) == length(tiledjets) ||
-        throw(ArgumentError("diJ and tiledjets must have the same length"))
+        error("Internal error: diJ and tiledjets have different lengths. " *
+              "Please file a bug report.")
 
     # Setup the initial nearest neighbour information
     for tile in tiling.tiles
