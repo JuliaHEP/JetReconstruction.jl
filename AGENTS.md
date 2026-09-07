@@ -161,7 +161,7 @@ updating too.** This is easy to miss and the failure shows up late.
 
 ### Julia version floor
 
-`[compat]` sets `julia = "1.10"`, and CI runs `lts`, `1` and `nightly` on both
+`[compat]` sets `julia = "1.10"`, and CI runs `lts`, `1` and `pre` on both
 x64 and aarch64. **Do not use language features newer than 1.10.** A
 `Downgrade compat` workflow additionally tests against the lowest permitted
 version of every dependency, so do not rely on behaviour newer than the
