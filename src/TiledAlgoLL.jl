@@ -96,12 +96,20 @@ This function sets the eta, phi, kt2, jets_index, NN_dist, NN, tile_index, previ
 Returns:
 - `nothing`
 """
-function tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tiling::Tiling,
-                               jets_index, R2, p)
-    @inbounds jet.eta = rapidity(clusterseq.jets[jets_index])
-    @inbounds jet.phi = phi(clusterseq.jets[jets_index])
-    @inbounds jet.kt2 = pt2(clusterseq.jets[jets_index]) > 1.e-300 ?
-                        pt2(clusterseq.jets[jets_index])^p : 1.e300
+function tiledjet_set_jetinfo!(jet::TiledJet,
+                               clusterseq::ClusterSequence,
+                               tiling::Tiling,
+                               jets_index::Int,
+                               R2,
+                               p)
+    real_jet = @inbounds clusterseq.jets[jets_index]
+
+    jet.eta = rapidity(real_jet)
+    jet.phi = phi(real_jet)
+
+    jet_pt2 = pt2(real_jet)
+    jet.kt2 = jet_pt2 > 1.0e-300 ? jet_pt2^p : 1.0e300
+
     jet.jets_index = jets_index
     # Initialise NN info as well
     jet.NN_dist = R2
@@ -113,6 +121,7 @@ function tiledjet_set_jetinfo!(jet::TiledJet, clusterseq::ClusterSequence, tilin
     # Insert it into the tile's linked list of jets (at the beginning)
     jet.previous = noTiledJet
     @inbounds jet.next = tiling.tiles[jet.tile_index]
+
     if isvalid(jet.next)
         jet.next.previous = jet
     end
@@ -123,30 +132,40 @@ end
 """Full scan for nearest neighbours"""
 
 """
-    set_nearest_neighbours!(clusterseq::ClusterSequence, tiling::Tiling, tiledjets::Vector{TiledJet})
+    set_nearest_neighbours!(tiling, tiledjets, NNs, diJ)
 
-This function sets the nearest neighbor information for all jets in the
-`tiledjets` vector.
+Set nearest-neighbour information for all jets in `tiledjets` and fill reusable
+nearest-neighbour and distance buffers.
 
 # Arguments
-- `clusterseq::ClusterSequence`: The cluster sequence object.
 - `tiling::Tiling`: The tiling object.
 - `tiledjets::Vector{TiledJet}`: The vector of tiled jets.
+- `NNs::Vector{TiledJet}`: Reusable nearest-neighbour storage with the same
+  length as `tiledjets`.
+- `diJ::Vector{Float64}`: Reusable distance storage with the same length as
+  `tiledjets`.
 
 # Returns
-- `NNs::Vector{TiledJet}`: The vector of nearest neighbor jets.
-- `diJ::Vector{Float64}`: The vector of diJ values.
+- `nothing`
 
 The function iterates over each tile in the `tiling` and sets the nearest
-neighbor information for each jet in the tile. It then looks for neighbor jets
-in the neighboring tiles and updates the nearest neighbor information
-accordingly. Finally, it creates the diJ table and returns the vectors of
-nearest neighbor jets and diJ values.
+neighbour information for each jet in the tile. It then looks for neighbour jets
+in the neighbouring tiles and updates the nearest neighbour information
+accordingly. Finally, it fills the supplied nearest-neighbour and diJ tables.
 
 Note: The diJ values are calculated as the kt distance multiplied by R^2.
 """
-function set_nearest_neighbours!(clusterseq::ClusterSequence, tiling::Tiling,
-                                 tiledjets::Vector{TiledJet})
+function set_nearest_neighbours!(tiling::Tiling,
+                                 tiledjets::Vector{TiledJet},
+                                 NNs::Vector{TiledJet},
+                                 diJ::Vector{Float64})
+    length(NNs) == length(tiledjets) ||
+        error("Internal error: nearest-neighbour and tiled-jet buffers have different lengths. " *
+              "Please file a bug report.")
+    length(diJ) == length(tiledjets) ||
+        error("Internal error: diJ and tiledjets have different lengths. " *
+              "Please file a bug report.")
+
     # Setup the initial nearest neighbour information
     for tile in tiling.tiles
         isvalid(tile) || continue
@@ -187,20 +206,20 @@ function set_nearest_neighbours!(clusterseq::ClusterSequence, tiling::Tiling,
         end
     end
 
-    # Now create the diJ (where J is i's NN) table - remember that
+    # Now create the diJ (where j is i's NN) table - remember that
     # we differ from standard normalisation here by a factor of R2
     # (corrected for at the end).
-    diJ = similar(clusterseq.jets, Float64)
-    NNs = similar(clusterseq.jets, TiledJet)
     for i in eachindex(diJ)
-        jetA = tiledjets[i]
-        diJ[i] = _tj_diJ(jetA) # kt distance * R^2
-        # Our compact diJ table will not be in one-to-one corresp. with non-compact jets,
-        # so set up bi-directional correspondence here.
-        @inbounds NNs[i] = jetA
-        jetA.dij_posn = i
+        @inbounds begin
+            jetA = tiledjets[i]
+
+            diJ[i] = _tj_diJ(jetA)
+            NNs[i] = jetA
+            jetA.dij_posn = i
+        end
     end
-    NNs, diJ
+
+    return nothing
 end
 
 """
@@ -251,7 +270,7 @@ function add_untagged_neighbours_to_tile_union(center_index, tile_union, n_near_
 end
 
 """
-    find_tile_neighbours!(tile_union, jetA, jetB, oldB, tiling)
+    find_tile_neighbours!(tile_union, jetA, jetB, oldB_tile_index::Int, tiling)
 
 Find the union of neighbouring tiles of `jetA`, `jetB`, and `oldB` and add them
 to the `tile_union`. This established the set of tiles over which searches for
@@ -261,13 +280,13 @@ updated and new nearest-neighbours must be run
 - `tile_union`: The tile union to which the neighbouring tiles will be added.
 - `jetA`: The first jet.
 - `jetB`: The second jet.
-- `oldB`: The old second jet.
+- `oldB_tile_index::Int`: The tile index of the old second jet.
 - `tiling`: The tiling information.
 
 # Returns
 The number of neighbouring tiles added to the `tile_union`.
 """
-function find_tile_neighbours!(tile_union, jetA, jetB, oldB, tiling)
+function find_tile_neighbours!(tile_union, jetA, jetB, oldB_tile_index::Int, tiling)
     n_near_tiles = add_untagged_neighbours_to_tile_union(jetA.tile_index,
                                                          tile_union, 0, tiling)
     if isvalid(jetB)
@@ -276,8 +295,8 @@ function find_tile_neighbours!(tile_union, jetA, jetB, oldB, tiling)
                                                                  tile_union, n_near_tiles,
                                                                  tiling)
         end
-        if oldB.tile_index != jetA.tile_index && oldB.tile_index != jetB.tile_index
-            n_near_tiles = add_untagged_neighbours_to_tile_union(oldB.tile_index,
+        if oldB_tile_index != jetA.tile_index && oldB_tile_index != jetB.tile_index
+            n_near_tiles = add_untagged_neighbours_to_tile_union(oldB_tile_index,
                                                                  tile_union, n_near_tiles,
                                                                  tiling)
         end
@@ -330,31 +349,9 @@ function tiled_jet_reconstruct(particles::AbstractVector{T};
     # Get consistent algorithm power
     p = get_algorithm_power(p = p, algorithm = algorithm)
 
-    if isnothing(preprocess)
-        if T == PseudoJet
-            # If we don't have a preprocessor, we just need to copy to our own
-            # PseudoJet objects
-            recombination_particles = copy(particles)
-            sizehint!(recombination_particles, length(particles) * 2)
-        else
-            # We assume a constructor for PseudoJet that can ingest the appropriate
-            # type of particle
-            recombination_particles = PseudoJet[]
-            sizehint!(recombination_particles, length(particles) * 2)
-            for (i, particle) in enumerate(particles)
-                push!(recombination_particles, PseudoJet(particle; cluster_hist_index = i))
-            end
-        end
-    else
-        # We have a preprocessor function that we need to call to modify the
-        # input particles
-        recombination_particles = PseudoJet[]
-        sizehint!(recombination_particles, length(particles) * 2)
-        for (i, particle) in enumerate(particles)
-            push!(recombination_particles,
-                  preprocess(particle, PseudoJet; cluster_hist_index = i))
-        end
-    end
+    recombination_particles = construct_reco_jets(particles,
+                                                  PseudoJet,
+                                                  preprocess)
 
     _tiled_jet_reconstruct!(recombination_particles; algorithm = algorithm, p = p, R = R,
                             recombine = recombine)
@@ -392,7 +389,11 @@ _tiled_jet_reconstruct!(particles::Vector{PseudoJet}; algorithm = JetAlgorithm.K
 """
 function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
                                  algorithm::JetAlgorithm.Algorithm,
-                                 p::Real, R = 1.0, recombine = addjets_escheme)
+                                 p::Real,
+                                 R = 1.0,
+                                 recombine = addjets_escheme,
+                                 scratch::Union{Nothing, TiledScratch} = nothing,
+                                 history_buffer::Union{Nothing, Vector{HistoryElement}} = nothing)
     # Bounds
     N::Int = length(particles)
 
@@ -408,34 +409,52 @@ function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
     R2::Float64 = R * R
     p = (round(p) == p) ? Int(p) : p # integer p if possible
 
-    # This will be used quite deep inside loops, so declare it here so that
-    # memory (de)allocation gets done only once
-    tile_union = Vector{Int}(undef, 3 * _n_tile_neighbours)
+    # Normalise the optional storage once. The owning path uses temporary
+    # buffers, while the workspace path supplies reusable ones; reconstruction
+    # below is identical in both cases.
+    scratch = isnothing(scratch) ? TiledScratch() : scratch
+    ensure_length!(scratch, N)
 
-    # Setup the initial history and get the total energy
-    history, Qtot = initial_history(particles)
+    tile_union = scratch.tile_union
+    eta_local = scratch.eta
+    tiledjets = scratch.tiledjets
+
+    if isnothing(history_buffer)
+        # Preserve the owning path's eager complete-history allocation.
+        history_buffer = Vector{HistoryElement}(undef, N)
+        sizehint!(history_buffer, 2 * N)
+    end
+    history, Qtot = initial_history!(history_buffer, particles)
 
     # Now get the tiling setup
-    _eta = Vector{Float64}(undef, length(particles))
-    for ijet in 1:length(particles)
-        _eta[ijet] = rapidity(particles[ijet])
+    for ijet in 1:N
+        @inbounds eta_local[ijet] = rapidity(particles[ijet])
     end
 
-    tiling = Tiling(setup_tiling(_eta, R))
+    setup = setup_tiling(eta_local, R)
+
+    tiling = get_tiling!(scratch, setup)
 
     # ClusterSequence is the struct that holds the state of the reconstruction
     clusterseq = ClusterSequence(algorithm, p, R, RecoStrategy.N2Tiled, particles, history,
                                  Qtot)
 
     # Tiled jets is a structure that has additional variables for tracking which tile a jet is in
-    tiledjets = similar(clusterseq.jets, TiledJet)
-    for ijet in eachindex(tiledjets)
-        tiledjets[ijet] = TiledJet(ijet)
-        tiledjet_set_jetinfo!(tiledjets[ijet], clusterseq, tiling, ijet, R2, p)
+    for ijet in 1:N
+        @inbounds begin
+            jet = tiledjets[ijet]
+            # A previous event may have repurposed this node during merging.
+            # Restore its current event-local initial identity.
+            jet.id = ijet
+
+            tiledjet_set_jetinfo!(jet, clusterseq, tiling, ijet, R2, p)
+        end
     end
 
     # Now initialise all of the nearest neighbour tiles
-    NNs, dij = set_nearest_neighbours!(clusterseq, tiling, tiledjets)
+    NNs = scratch.NNs
+    dij = scratch.dij
+    set_nearest_neighbours!(tiling, tiledjets, NNs, dij)
 
     # Main loop of the reconstruction
     # Each iteration we either merge 2→1 or finalise a jet, so it takes N iterations
@@ -443,7 +462,7 @@ function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
 
     for iteration in 1:N
         # Last slot holds the index of the final valid entry in the
-        # compact NNs and dij arrays
+        # compact NNs and diJ arrays
         ilast = N - (iteration - 1)
         # Search for the lowest value of min_dij_ijet
         dij_min, ibest = fast_findmin(dij, ilast)
@@ -454,7 +473,7 @@ function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
         @fastmath dij_min /= R2
 
         # @debug "Iteration $(iteration): dij_min $(dij_min); jetA $(jetA.id), jetB $(jetB.id)"
-
+        oldB_tile_index = 0
         if isvalid(jetB)
             # Jet-jet recombination
             # If necessary relabel A & B to ensure jetB < jetA, that way if
@@ -464,6 +483,10 @@ function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
             if jetA.id < jetB.id
                 jetA, jetB = jetB, jetA
             end
+
+            # Only the old tile index is needed below. Copying this mutable
+            # TiledJet would allocate once for every jet-jet recombination.
+            oldB_tile_index = jetB.tile_index
 
             # Recombine jetA and jetB into the new jet
             real_jetA = clusterseq.jets[jetA.jets_index]
@@ -478,7 +501,6 @@ function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
                                  newjet_k, dij_min)
 
             tiledjet_remove_from_tiles!(tiling, jetA)
-            oldB = copy(jetB)  # take a copy because we will need it...
 
             tiledjet_remove_from_tiles!(tiling, jetB)
             # Move jetB to be jets[newjet_k] and register the new jet in the tiling
@@ -487,11 +509,11 @@ function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
             # Jet-beam recombination
             do_iB_recombination_step!(clusterseq, jetA.jets_index, dij_min)
             tiledjet_remove_from_tiles!(tiling, jetA)
-            oldB = jetB
         end
 
         # Find all the neighbour tiles that hold candidate jets for Updates
-        n_near_tiles = find_tile_neighbours!(tile_union, jetA, jetB, oldB, tiling)
+        n_near_tiles = find_tile_neighbours!(tile_union, jetA, jetB, oldB_tile_index,
+                                             tiling)
 
         # Firstly compactify the diJ by taking the last of the diJ and copying
         # it to the position occupied by the diJ for jetA
@@ -556,4 +578,84 @@ function _tiled_jet_reconstruct!(particles::AbstractVector{PseudoJet};
         end
     end
     clusterseq
+end
+
+"""
+Run full-semantics N2Tiled reconstruction using workspace-owned storage.
+
+The caller must ensure exclusive ownership of the workspace.
+"""
+function _n2tiled_reconstruct_with_workspace!(workspace::N2TiledWorkspace,
+                                              particles::AbstractVector;
+                                              algorithm::JetAlgorithm.Algorithm,
+                                              p::Union{Real, Nothing} = nothing,
+                                              R = 1.0,
+                                              recombine = addjets_escheme,
+                                              preprocess = preprocess_escheme)
+    resolved_power = get_algorithm_power(p = p,
+                                         algorithm = algorithm)
+
+    jets = construct_reco_jets!(workspace.jets,
+                                particles,
+                                preprocess)
+
+    return _tiled_jet_reconstruct!(jets;
+                                   algorithm = algorithm,
+                                   p = resolved_power,
+                                   R = R,
+                                   recombine = recombine,
+                                   scratch = workspace.scratch,
+                                   history_buffer = workspace.history)
+end
+
+"""
+    with_n2tiled_reconstruction(
+        f,
+        workspace,
+        particles;
+        algorithm,
+        p=nothing,
+        R=1.0,
+        recombine=addjets_escheme,
+        preprocess=preprocess_escheme,
+    )
+
+Run full N2Tiled reconstruction using workspace-owned reusable storage, then
+invoke `f` with the resulting borrowed ClusterSequence.
+
+# Borrowed lifetime
+
+Inside the callback:
+
+- `clusterseq.jets === workspace.jets`;
+- `clusterseq.history === workspace.history`;
+- complete clustering history is available;
+- constituent and exclusive-jet queries remain available.
+
+The ClusterSequence, its jets vector, and its history vector must not be retained
+for use after this workspace processes another event.
+
+Copy any data that needs to outlive the callback.
+
+The same workspace must not be used concurrently or reentrantly.
+Use ordinary `jet_reconstruct` or `tiled_jet_reconstruct` when an independently
+owned ClusterSequence is required.
+"""
+function with_n2tiled_reconstruction(f::F,
+                                     workspace::N2TiledWorkspace,
+                                     particles::AbstractVector{T};
+                                     algorithm::JetAlgorithm.Algorithm,
+                                     p::Union{Real, Nothing} = nothing,
+                                     R = 1.0,
+                                     recombine = addjets_escheme,
+                                     preprocess = preprocess_escheme) where {F, T}
+    clusterseq = _n2tiled_reconstruct_with_workspace!(workspace,
+                                                      particles;
+                                                      algorithm = algorithm,
+                                                      p = p,
+                                                      R = R,
+                                                      recombine = recombine,
+                                                      preprocess = preprocess)
+
+    return f(clusterseq)
 end

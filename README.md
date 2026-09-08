@@ -85,6 +85,11 @@ plain_jet_reconstruct(particles::AbstractVector{T}; algorithm = JetAlgorithm.Ant
 
 Note that there is no `strategy` option in these interfaces.
 
+#### Multithreaded reconstruction
+
+For high-throughput applications that reconstruct independent events in
+parallel, see the [multithreaded reconstruction documentation](docs/src/multithreading.md).
+
 ### Examples
 
 In the examples directory there are a number of example scripts (note there is a

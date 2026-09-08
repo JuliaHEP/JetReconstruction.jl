@@ -212,7 +212,7 @@ end
 Compute the dij metric distance between two jets.
 
 # Arguments
-- `nn_dist`: The nearest-neighbor distance between two jets.
+- `nn_dist`: The nearest-neighbour distance between two jets.
 - `kt2_1`: The squared momentum metric value of the first jet.
 - `kt2_2`: The squared momentum metric value of the second jet.
 - `R2`: The jet radius parameter squared.

@@ -30,3 +30,8 @@ end
     @test success(run(pipeline(`$JULIA_CMD --project=$EXAMPLES_PROJECT $(@__DIR__)/../examples/instrumented-jetreco.jl --maxevents=1 --nsamples=16 --algorithm=CA -R 0.4 --plot $(@__DIR__)/../test/data/events.pp13TeV.hepmc3.zst`,
                                devnull)))
 end
+
+@testset "Multithreaded N2Tiled workspace example" begin
+    @test success(run(pipeline(`$JULIA_CMD --threads=2 --project=$EXAMPLES_PROJECT $(@__DIR__)/../examples/n2tiled-multithreaded.jl --maxevents=4 $(@__DIR__)/../test/data/events.pp13TeV.hepmc3.zst`,
+                               devnull)))
+end

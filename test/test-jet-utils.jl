@@ -95,3 +95,44 @@ end
         @test finaljets_pj[i] ≈ finaljets_lorentzhep[i] ≈ finaljets_lorentzhepcyl[i]
     end
 end
+
+@testset "Reconstruction-jet construction" begin
+    raw_jets = [PseudoJet(1.0, 2.0, 3.0, 4.0; cluster_hist_index = 11),
+        PseudoJet(2.0, 3.0, 4.0, 6.0; cluster_hist_index = 17)]
+
+    owned_jets = JetReconstruction.construct_reco_jets(raw_jets,
+                                                       PseudoJet,
+                                                       nothing)
+    @test owned_jets == raw_jets
+    @test owned_jets !== raw_jets
+    @test JetReconstruction.cluster_hist_index.(owned_jets) == [11, 17]
+
+    lorentz_particles = lorentzvector.(raw_jets)
+    converted_jets = JetReconstruction.construct_reco_jets(lorentz_particles,
+                                                           PseudoJet,
+                                                           nothing)
+    @test JetReconstruction.cluster_hist_index.(converted_jets) == [1, 2]
+    @test lorentzvector.(converted_jets) == lorentz_particles
+
+    preprocessed_jets = JetReconstruction.construct_reco_jets(raw_jets,
+                                                              PseudoJet,
+                                                              preprocess_ptscheme)
+    @test JetReconstruction.cluster_hist_index.(preprocessed_jets) == [1, 2]
+
+    reusable_jets = PseudoJet[]
+    returned_jets = JetReconstruction.construct_reco_jets!(reusable_jets,
+                                                           raw_jets,
+                                                           nothing)
+    @test returned_jets === reusable_jets
+    @test returned_jets == raw_jets
+
+    JetReconstruction.construct_reco_jets!(reusable_jets,
+                                           raw_jets[1:1],
+                                           nothing)
+    @test length(reusable_jets) == 1
+    @test reusable_jets[1] == raw_jets[1]
+
+    @test_throws ArgumentError JetReconstruction.construct_reco_jets!(raw_jets,
+                                                                      raw_jets,
+                                                                      nothing)
+end

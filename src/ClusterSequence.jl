@@ -19,6 +19,23 @@ const NonexistentParent = -2
 "Cluster recombined with beam"
 const BeamJet = -1
 
+# Julia 1.11 introduced the `shrink` keyword for `sizehint!`. Disable shrinking
+# when that keyword is available. Older Julia versions have no public no-shrink
+# sizehint API, so leave their capacity untouched and let `resize!`/`push!` grow
+# it as needed.
+@inline function _sizehint_for_reuse!(buffer::Vector,
+                                      requested::Integer)
+    requested >= 0 ||
+        error("Internal error: requested capacity must be non-negative (got $requested). " *
+              "Please file a bug report.")
+
+    @static if VERSION >= v"1.11"
+        sizehint!(buffer, requested; shrink = false)
+    end
+
+    return buffer
+end
+
 """
     struct HistoryElement
 
@@ -69,35 +86,53 @@ function HistoryElement(jetp_index)
 end
 
 """
+    initial_history!(
+        history::Vector{HistoryElement},
+        particles,
+    )
+
+Reset and initialise reusable clustering-history storage for `particles`.
+
+The vector's logical length is reset to the number of initial particles while
+retaining any capacity already owned by the vector.
+
+The returned history vector is borrowed storage owned by the caller.
+"""
+function initial_history!(history::Vector{HistoryElement},
+                          particles)
+    N = length(particles)
+
+    # Establish exactly N active initial-history slots. All slots are
+    # overwritten below, and `resize!` retains any existing excess capacity.
+    resize!(history, N)
+
+    Qtot::Float64 = 0.0
+
+    @inbounds for i in eachindex(particles)
+        history[i] = HistoryElement(i)
+
+        @assert cluster_hist_index(particles[i])==i ("Cluster history index should match jet's index in the input vector. "*
+                                                     "Expected $(i), got $(cluster_hist_index(particles[i]))")
+
+        Qtot += particles[i].E
+    end
+
+    return history, Qtot
+end
+
+"""
     initial_history(particles)
 
-Create an initial history for the given particles.
-
-# Arguments
-- `particles`: The initial vector of stable particles.
-
-# Returns
-- `history`: An array of `HistoryElement` objects.
-- `Qtot`: The total energy in the event.
+Create independently owned initial clustering-history storage.
 """
 function initial_history(particles)
-    # reserve sufficient space for everything
+    # This is newly owned storage, so requesting the complete sequence size
+    # cannot discard reusable capacity. Preserve the original eager allocation
+    # on Julia versions that do not support `sizehint!(...; shrink=false)`.
     history = Vector{HistoryElement}(undef, length(particles))
     sizehint!(history, 2 * length(particles))
 
-    Qtot::Float64 = 0
-
-    for i in eachindex(particles)
-        history[i] = HistoryElement(i)
-
-        # get cross-referencing right from the Jets
-        # particles[i]._cluster_hist_index = i
-        @assert cluster_hist_index(particles[i])==i "Cluster history index should match jet's index in the input vector. Expected $(i), got $(cluster_hist_index(particles[i]))"
-
-        # determine the total energy in the event
-        Qtot += particles[i].E
-    end
-    history, Qtot
+    return initial_history!(history, particles)
 end
 
 """

@@ -19,6 +19,7 @@ function main()
 
     # New test structure, factorised tests for pp and e+e-
     include("test-pp-reconstruction.jl")
+    include("test-n2tiled-kernel.jl")
     include("test-ee-reconstruction.jl")
 
     # Valencia algorithm tests

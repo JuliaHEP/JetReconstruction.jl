@@ -14,11 +14,11 @@ additional information to track the jet's position in the tiled structures.
 - `eta::Float64`: The rapidity of the jet.
 - `phi::Float64`: The azimuthal angle of the jet.
 - `kt2::Float64`: The transverse momentum squared of the jet.
-- `NN_dist::Float64`: The distance to the nearest neighbor.
+- `NN_dist::Float64`: The distance to the nearest neighbour.
 - `jets_index::Int`: The index of the jet in the jet array.
 - `tile_index::Int`: The index of the tile in the tile array.
 - `dij_posn::Int`: The position of this jet in the dij compact array.
-- `NN::TiledJet`: The nearest neighbor.
+- `NN::TiledJet`: The nearest neighbour.
 - `previous::TiledJet`: The previous jet.
 - `next::TiledJet`: The next jet.
 """
@@ -193,6 +193,18 @@ struct Tiling
 end
 
 """
+Reusable matrix storage for one particular N2Tiled grid shape.
+
+The contents are reset before each event. The dimensions remain fixed for the
+lifetime of one cache entry.
+"""
+mutable struct TilingArrays
+    tiles::Matrix{TiledJet}
+    positions::Matrix{Int}
+    tags::Matrix{Bool}
+end
+
+"""
     Tiling(setup::TilingDef)
 
 Constructs a initial `Tiling` object based on the provided `setup` parameters.
@@ -225,6 +237,141 @@ const tile_central = 0
 const tile_right = 1
 "Number of neighbours for a tile in the tiling array (including itself)"
 const _n_tile_neighbours = 9
+
+"""
+Temporary reusable storage for one independent N2Tiled reconstruction worker.
+
+A `TiledScratch` must never be shared concurrently between tasks.
+"""
+mutable struct TiledScratch
+    tile_union::Vector{Int}
+    eta::Vector{Float64}
+    tiledjets::Vector{TiledJet}
+    NNs::Vector{TiledJet}
+    dij::Vector{Float64}
+    tiling_cache::Dict{Tuple{Int, Int}, TilingArrays}
+end
+
+function TiledScratch()
+    return TiledScratch(Vector{Int}(undef, 3 * _n_tile_neighbours),
+                        Float64[],
+                        TiledJet[],
+                        TiledJet[],
+                        Float64[],
+                        Dict{Tuple{Int, Int}, TilingArrays}())
+end
+
+"""
+Reusable state for one full-semantics N2Tiled reconstruction worker.
+
+The workspace owns reusable:
+
+- tiled scratch;
+- reconstructed jets;
+- complete clustering history.
+
+The ClusterSequence produced from this workspace is borrowed. It is overwritten
+by the next reconstruction using the same workspace. Post-processing functions
+such as `inclusive_jets` return independently owned results.
+
+A workspace must never be used concurrently or reentrantly.
+"""
+mutable struct N2TiledWorkspace
+    scratch::TiledScratch
+    jets::Vector{PseudoJet}
+    history::Vector{HistoryElement}
+end
+
+function N2TiledWorkspace()
+    return N2TiledWorkspace(TiledScratch(),
+                            PseudoJet[],
+                            HistoryElement[])
+end
+
+"""
+    release_n2tiled_workspace_capacity!(workspace)
+
+Release storage retained by `workspace`.
+
+The small fixed-size `tile_union` buffer is retained. All event-size-dependent
+vectors and cached tiling matrices become eligible for garbage collection.
+
+The caller must ensure that `workspace` is not in use by another task.
+"""
+function release_n2tiled_workspace_capacity!(workspace::N2TiledWorkspace)
+    workspace.jets = PseudoJet[]
+    workspace.history = HistoryElement[]
+
+    scratch = workspace.scratch
+
+    scratch.eta = Float64[]
+    scratch.tiledjets = TiledJet[]
+    scratch.NNs = TiledJet[]
+    scratch.dij = Float64[]
+
+    scratch.tiling_cache = Dict{Tuple{Int, Int}, TilingArrays}()
+
+    return nothing
+end
+
+"""
+Resize the event-sized vectors in `scratch` for an event with `N` particles.
+
+Every vector has logical length `N` on return. Existing `TiledJet` objects are
+reused, and new objects are constructed only when that vector grows.
+"""
+function ensure_length!(scratch::TiledScratch, N::Int)
+    N >= 0 || throw(ArgumentError("N must be non-negative, got $N"))
+
+    resize!(scratch.eta, N)
+    resize!(scratch.NNs, N)
+    resize!(scratch.dij, N)
+
+    old_tiledjet_length = length(scratch.tiledjets)
+    resize!(scratch.tiledjets, N)
+
+    if old_tiledjet_length < N
+        for i in (old_tiledjet_length + 1):N
+            scratch.tiledjets[i] = TiledJet(i)
+        end
+    end
+
+    return nothing
+end
+
+"""
+Return a Tiling for `setup`, reusing matrix storage for the same grid shape.
+
+Every matrix is reset before being exposed to the reconstruction.
+"""
+function get_tiling!(scratch::TiledScratch, setup::TilingDef)
+    n_tiles_eta = setup._n_tiles_eta
+    n_tiles_phi = setup._n_tiles_phi
+
+    shape = (n_tiles_eta, n_tiles_phi)
+
+    arrays = get!(scratch.tiling_cache, shape) do
+        TilingArrays(Matrix{typeof(noTiledJet)}(undef, n_tiles_eta, n_tiles_phi),
+                     Matrix{Int}(undef, n_tiles_eta, n_tiles_phi),
+                     Matrix{Bool}(undef, n_tiles_eta, n_tiles_phi))
+    end
+
+    # Remove the previous event's logical tiling contents.
+    fill!(arrays.tiles, noTiledJet)
+    fill!(arrays.positions, 0)
+    fill!(arrays.tags, false)
+
+    # Restore the same edge markers created by Tiling(setup).
+    @inbounds for iphi in 1:n_tiles_phi
+        arrays.positions[1, iphi] = tile_left
+        arrays.positions[n_tiles_eta, iphi] = tile_right
+    end
+
+    return Tiling(setup,
+                  arrays.tiles,
+                  arrays.positions,
+                  arrays.tags)
+end
 
 """
     struct Surrounding{N}
@@ -290,8 +437,8 @@ end
 """
     rightneighbours(center::Int, tiling::Tiling)
 
-Compute the indices of the right neighbors of a given center index in a tiling.
-This is used in the initial sweep to calculate the nearest neighbors, where the
+Compute the indices of the right neighbours of a given center index in a tiling.
+This is used in the initial sweep to calculate the nearest neighbours, where the
 search between jets for the nearest neighbour is bi-directional, thus when a
 tile is considered only the right neighbours are needed to compare jet
 distances as the left-hand tiles have been done from that tile already.
@@ -301,7 +448,7 @@ distances as the left-hand tiles have been done from that tile already.
 - `tiling::Tiling`: The tiling object.
 
 # Returns
-- `Surrounding`: An object containing the indices of the right neighbors.
+- `Surrounding`: An object containing the indices of the right neighbours.
 """
 function rightneighbours(center::Int, tiling::Tiling)
     #                         |1|4
