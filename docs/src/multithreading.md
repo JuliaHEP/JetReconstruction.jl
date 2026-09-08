@@ -34,8 +34,8 @@ end
 
 The callback receives a complete `ClusterSequence`, so history, constituent,
 and exclusive-jet queries remain available. Its jets and history borrow storage
-from the workspace and are overwritten by the next reconstruction using that
-workspace. Copy any data that must outlive the callback or use an ordinary
+from the workspace *and are overwritten by the next reconstruction using that
+workspace*. Copy any data that must outlive the callback or use an ordinary
 owning interface instead.
 
 ## Concurrent use

@@ -251,20 +251,29 @@ function add_step_to_history!(clusterseq::ClusterSequence, parent1, parent2, jet
 end
 
 """
-    inclusive_jets(
-        clusterseq::ClusterSequence{U},
-        ::Type{T}=LorentzVector{Float64};
-        ptmin=0.0,
-    )
+    inclusive_jets(clusterseq::ClusterSequence{U}, ::Type{T} = LorentzVectorCyl{Float64}; ptmin = 0.0) where {T, U}
 
-Return all inclusive jets of a `ClusterSequence` with transverse momentum
-greater than or equal to `ptmin`.
+Return all inclusive jets of a ClusterSequence with pt > ptmin.
 
-Valid return types are `LorentzVector`, `LorentzVectorCyl`, or the jet type of
-the input `clusterseq` (`U`, either `PseudoJet` or `EEJet` depending on the
-algorithm).
+# Arguments
+- `clusterseq::ClusterSequence`: The `ClusterSequence` object containing the
+  clustering history and jets.
+- `::Type{T} = LorentzVectorCyl{Float64}`: The return type used for the selected jets.
+- `ptmin::Float64 = 0.0`: The minimum transverse momentum (pt) threshold for the
+  inclusive jets.
 
-The returned vector is independently owned.
+# Returns
+An array of `T` objects representing the inclusive jets.
+
+# Description
+This function computes the inclusive jets from a given `ClusterSequence` object.
+It iterates over the clustering history and checks the transverse momentum of
+each parent jet. If the transverse momentum is greater than or equal to `ptmin`,
+the jet is added to the array of inclusive jets.
+
+Valid return types are `LorentzVector` `LorentzVectorCyl` or the jet type of the
+input `clusterseq` (`U` - either `PseudoJet` or `EEJet` depending which
+algorithm was used).
 
 # Example
 ```julia

@@ -96,7 +96,7 @@ function main(args = ARGS)
                                                     ptmin = options[:ptmin])
 
     println("Processed $(length(events)) events with $(Threads.nthreads()) Julia threads; " *
-            "selected $(sum(length, selected_jets)) jets.")
+            "selected inclusive $(sum(length, selected_jets)) jets.")
 
     return nothing
 end
