@@ -66,10 +66,12 @@ include("ClusterSequence.jl")
 export ClusterSequence, inclusive_jets, exclusive_jets, n_exclusive_jets, constituents,
        constituent_indexes, parent_jets
 
+include("PlainAlgoStructs.jl")
+
 ## N2Plain algorithm
 # Algorithmic part for simple sequential implementation
 include("PlainAlgo.jl")
-export plain_jet_reconstruct
+export N2PlainWorkspace, plain_jet_reconstruct, with_n2plain_reconstruction
 
 ## N2Tiled algorithm
 # Common pieces

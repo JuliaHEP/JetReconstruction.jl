@@ -1,9 +1,10 @@
 # Multithreaded Reconstruction
 
-The ordinary `jet_reconstruct` and `tiled_jet_reconstruct` interfaces return an
-independently owned `ClusterSequence`. They are the recommended interfaces for
-ordinary, single-threaded reconstruction: their allocation overhead is small,
-and the returned result can be retained freely.
+The ordinary `jet_reconstruct`, `plain_jet_reconstruct`, and
+`tiled_jet_reconstruct` interfaces return an independently owned
+`ClusterSequence`. They are the recommended interfaces for ordinary,
+single-threaded reconstruction: their allocation overhead is small, and the
+returned result can be retained freely.
 
 ## High-throughput multi-threaded reconstruction
 
@@ -37,6 +38,31 @@ and exclusive-jet queries remain available. Its jets and history borrow storage
 from the workspace *and are overwritten by the next reconstruction using that
 workspace*. Copy any data that must outlive the callback or use an ordinary
 owning interface instead.
+
+For pp events where the N2Plain strategy is appropriate, the same workspace
+pattern is available through `N2PlainWorkspace`:
+
+```julia
+workspace = N2PlainWorkspace(PseudoJet)
+
+for event in events
+    with_n2plain_reconstruction(
+        workspace,
+        event;
+        algorithm = JetAlgorithm.AntiKt,
+        R = 0.4,
+    ) do clusterseq
+        jets = inclusive_jets(clusterseq; ptmin = 5.0)
+        # Consume `jets` here, or copy any values that must be retained.
+    end
+end
+```
+
+`N2PlainWorkspace(EEJet)` provides the same reusable storage for e⁺e⁻
+algorithms such as Durham, EEKt, and Valencia. Both workspace types expose a
+complete borrowed `ClusterSequence`, including history, constituent, parent,
+inclusive-jet, and exclusive-jet queries. Create one workspace per long-lived
+worker task; a workspace must not be shared concurrently or used reentrantly.
 
 ## Concurrent use
 
