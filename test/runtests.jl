@@ -21,6 +21,7 @@ function main()
     include("test-pp-reconstruction.jl")
 
     include("test-n2plain-kernel.jl")
+    include("test-workspace-equivalence.jl")
 
     include("test-ee-reconstruction.jl")
 

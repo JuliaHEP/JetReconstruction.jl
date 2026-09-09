@@ -71,8 +71,7 @@ include("PlainAlgoStructs.jl")
 ## N2Plain algorithm
 # Algorithmic part for simple sequential implementation
 include("PlainAlgo.jl")
-export N2PlainWorkspace, plain_jet_reconstruct, release_n2plain_workspace_capacity!,
-       with_n2plain_reconstruction
+export N2PlainWorkspace, plain_jet_reconstruct, with_n2plain_reconstruction
 
 ## N2Tiled algorithm
 # Common pieces

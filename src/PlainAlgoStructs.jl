@@ -63,10 +63,8 @@ Reusable full-semantics storage for one N2Plain reconstruction worker.
 
 The `ClusterSequence` produced inside [`with_n2plain_reconstruction`](@ref)
 borrows the workspace's jets and history and is overwritten by its next
-reconstruction. Callers may provide their own reusable output vectors to
-post-processing functions such as [`inclusive_jets!`](@ref). Copy values that
-must outlive those operations. A workspace must not be used concurrently or
-reentrantly.
+reconstruction. Copy values that must outlive that operation. A workspace must
+not be used concurrently or reentrantly.
 """
 mutable struct N2PlainWorkspace{J, S}
     scratch::S
