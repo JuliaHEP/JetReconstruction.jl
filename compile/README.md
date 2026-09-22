@@ -3,7 +3,7 @@
 Minimal C bindings for JetReconstruction.jl
 
 - [C-header](include/JetReconstruction.h.in)
-- shared library compiled with [PackageCompiler.jl](https://github.com/JuliaLang/PackageCompiler.jl) or juliac
+- shared library compiled with [PackageCompiler.jl](https://github.com/JuliaLang/PackageCompiler.jl) or [JuliaC.jl](https://github.com/JuliaLang/JuliaC.jl)
 
 ## Building library
 
@@ -14,20 +14,9 @@ julia --project=compile compile/build.jl --output-dir JetReconstructionCompiled
 ```
 
 > [!NOTE]  
-> Since Julia 1.12 `--juliac` can be specified to use the juliac compiler instead of PackageCompiler.
-> Before Julia 1.12, nightlies can be used instead (make sure to instantiate the main JetReconstruction and `compile` projects with the same version of Julia):
+> Since Julia 1.12 `--juliac` can be specified to use the JuliaC compiler instead of PackageCompiler.
 >
-> ```sh
-> julia +1.12-nightly --project=compile compile/build.jl --juliac
-> ```
->
-> or
->
-> ```sh
-> julia +nightly --project=compile compile/build.jl --juliac
-> ```
->
-> Packages compiled with `PackageCompiler.jl` will have `JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER` defined. Packages compiled with `juliac` will have `JETRECONSTRUCTION_COMPILER_JULIAC` defined.
+> Packages compiled with `PackageCompiler.jl` will have `JETRECONSTRUCTION_COMPILER_PACKAGECOMPILER` defined. Packages compiled with `JuliaC.jl` will have `JETRECONSTRUCTION_COMPILER_JULIAC` defined.
 
 
 > [!CAUTION]
@@ -111,7 +100,7 @@ target_link_libraries(myTarget PUBLIC JetReconstruction::JetReconstruction)
 
 Currently it's not possible to create libraries for different platforms - no cross-compilation!
 
-With the current state of `juliac` compilation works reliably on Linux. However, on OS X it is not possible currently to compile with the `LoopVectorization` package. To compile on OS X one must
+With the current state of `JuliaC.jl` compilation works reliably on Linux. However, on OS X it is not possible currently to compile with the `LoopVectorization` package. To compile on OS X one must
 
 - Remove the `LoopVectorization` dependency
 - Remove the `@turbo` macro from the `fast_findmin()` function in `src/Utils.jl`
