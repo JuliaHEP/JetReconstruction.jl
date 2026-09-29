@@ -54,37 +54,37 @@ function ensure_length!(scratch::StructArray{EERecoJet}, N::Int)
 end
 
 """
-    N2PlainWorkspace([::Type{J} = PseudoJet])
+    N2PlainWorkspace(algorithm::JetAlgorithm.Algorithm)
 
-Reusable full-semantics storage for one N2Plain reconstruction worker.
+Reusable full-semantics storage for one N2Plain or electron-positron
+reconstruction worker.
 
-`J` selects the reconstruction family: use `PseudoJet` for pp algorithms and
-`EEJet` for electron-positron algorithms.
+`algorithm` selects the internal jet and scratch storage. Input particles may
+be any type supported by the corresponding reconstruction algorithm.
 
 The `ClusterSequence` produced inside [`with_n2plain_reconstruction`](@ref)
-borrows the workspace's jets and history and is overwritten by its next
-reconstruction. Copy values that must outlive that operation. A workspace must
-not be used concurrently or reentrantly.
+or [`with_ee_reconstruction`](@ref) borrows the workspace's jets and history
+and is overwritten by its next reconstruction. Copy values that must outlive
+that operation. A workspace must not be used concurrently or reentrantly.
 """
-mutable struct N2PlainWorkspace{J, S}
+mutable struct N2PlainWorkspace{A, J, S}
     scratch::S
     jets::Vector{J}
     history::Vector{HistoryElement}
 end
 
-N2PlainWorkspace() = N2PlainWorkspace(PseudoJet)
-
-function N2PlainWorkspace(::Type{PseudoJet})
-    return N2PlainWorkspace{PseudoJet, PPPlainScratch}(PPPlainScratch(),
-                                                       PseudoJet[],
-                                                       HistoryElement[])
-end
-
-function N2PlainWorkspace(::Type{EEJet})
-    scratch = StructArray{EERecoJet}(undef, 0)
-    return N2PlainWorkspace{EEJet, typeof(scratch)}(scratch,
-                                                    EEJet[],
-                                                    HistoryElement[])
+function N2PlainWorkspace(algorithm::JetAlgorithm.Algorithm)
+    if is_pp(algorithm)
+        return N2PlainWorkspace{algorithm, PseudoJet, PPPlainScratch}(PPPlainScratch(),
+                                                                      PseudoJet[],
+                                                                      HistoryElement[])
+    elseif is_ee(algorithm)
+        scratch = StructArray{EERecoJet}(undef, 0)
+        return N2PlainWorkspace{algorithm, EEJet, typeof(scratch)}(scratch,
+                                                                   EEJet[],
+                                                                   HistoryElement[])
+    end
+    throw(ArgumentError("Unsupported jet algorithm: $algorithm"))
 end
 
 function _prepare_n2plain_recombination_jets!(jets::Vector{J},
@@ -142,7 +142,47 @@ end
         f,
         workspace,
         particles;
-        algorithm,
+        p = nothing,
+        R = nothing,
+        recombine = addjets_escheme,
+        preprocess = preprocess_escheme,
+    )
+
+Run pp N2Plain reconstruction with workspace-owned storage and call `f` with
+the borrowed [`ClusterSequence`](@ref). Construct the workspace with the pp
+algorithm to use, for example `N2PlainWorkspace(JetAlgorithm.AntiKt)`.
+
+When `R` is omitted, reconstruction uses `R = 1.0`, matching
+[`plain_jet_reconstruct`](@ref).
+
+The sequence, its jets, and its history are valid only until the workspace's
+next reconstruction. Copy values that must escape the callback. Each
+concurrently executing worker must own a distinct workspace, and the caller
+must prevent concurrent or reentrant use of the same workspace.
+"""
+function with_n2plain_reconstruction(f::F,
+                                     workspace::N2PlainWorkspace{A, PseudoJet,
+                                                                 PPPlainScratch},
+                                     particles::AbstractVector;
+                                     p::Union{Real, Nothing} = nothing,
+                                     R = nothing,
+                                     recombine = addjets_escheme,
+                                     preprocess = preprocess_escheme) where {F, A}
+    clusterseq = _n2plain_reconstruct_with_workspace!(workspace,
+                                                      particles;
+                                                      p = p,
+                                                      R = R,
+                                                      recombine = recombine,
+                                                      preprocess = preprocess)
+
+    return f(clusterseq)
+end
+
+"""
+    with_ee_reconstruction(
+        f,
+        workspace,
+        particles;
         p = nothing,
         R = nothing,
         recombine = addjets_escheme,
@@ -151,32 +191,29 @@ end
         β = nothing,
     )
 
-Run N2Plain reconstruction with workspace-owned storage and call `f` with the
-borrowed [`ClusterSequence`](@ref).
+Run electron-positron reconstruction with workspace-owned storage and call
+`f` with the borrowed [`ClusterSequence`](@ref). Construct the workspace
+with the e⁺e⁻ algorithm to use, for example
+`N2PlainWorkspace(JetAlgorithm.Durham)`. Input particles may have any
+supported four-momentum type.
 
-When `R` is omitted, pp reconstruction uses `R = 1.0` and electron-positron
-reconstruction uses `R = 4.0`, matching [`plain_jet_reconstruct`](@ref) and
-[`ee_genkt_algorithm`](@ref), respectively. Durham always uses its conventional
-nominal value `R = 4.0`.
-
-The sequence, its jets, and its history are valid only until the workspace's
-next reconstruction. Copy values that must escape the callback. Each
-concurrently executing worker must own a distinct workspace, and the caller
-must prevent concurrent or reentrant use of the same workspace.
+When `R` is omitted, reconstruction uses `R = 4.0`, matching
+[`ee_genkt_algorithm`](@ref). Durham always uses its conventional nominal
+value `R = 4.0`. The sequence, its jets, and its history are overwritten by
+the next reconstruction using this workspace. Copy values that must outlive
+that operation, and do not use one workspace concurrently or reentrantly.
 """
-function with_n2plain_reconstruction(f::F,
-                                     workspace::N2PlainWorkspace,
-                                     particles::AbstractVector;
-                                     algorithm::JetAlgorithm.Algorithm,
-                                     p::Union{Real, Nothing} = nothing,
-                                     R = nothing,
-                                     recombine = addjets_escheme,
-                                     preprocess = preprocess_escheme,
-                                     γ::Union{Real, Nothing} = nothing,
-                                     β::Union{Real, Nothing} = nothing) where {F}
+function with_ee_reconstruction(f::F,
+                                workspace::N2PlainWorkspace{A, EEJet},
+                                particles::AbstractVector;
+                                p::Union{Real, Nothing} = nothing,
+                                R = nothing,
+                                recombine = addjets_escheme,
+                                preprocess = preprocess_escheme,
+                                γ::Union{Real, Nothing} = nothing,
+                                β::Union{Real, Nothing} = nothing) where {F, A}
     clusterseq = _n2plain_reconstruct_with_workspace!(workspace,
                                                       particles;
-                                                      algorithm = algorithm,
                                                       p = p,
                                                       R = R,
                                                       recombine = recombine,
@@ -198,7 +235,8 @@ Release all event-size-dependent capacity retained by `workspace`.
 
 The caller must ensure that `workspace` is not in use by another task.
 """
-function release_n2plain_workspace_capacity!(workspace::N2PlainWorkspace{J}) where {J}
+function release_n2plain_workspace_capacity!(workspace::N2PlainWorkspace{A, J}) where {A,
+                                                                                       J}
     workspace.scratch = _release_capacity!(workspace.scratch)
     workspace.jets = J[]
     workspace.history = HistoryElement[]

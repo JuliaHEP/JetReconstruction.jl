@@ -18,14 +18,12 @@ end
 
 function run_pp_n2plain_workspace!(workspace,
                                    event;
-                                   algorithm = JetAlgorithm.AntiKt,
                                    p = nothing,
                                    R = 0.4,
                                    preprocess = nothing,
                                    recombine = addjets_escheme)
     return with_n2plain_reconstruction(workspace,
                                        event;
-                                       algorithm = algorithm,
                                        p = p,
                                        R = R,
                                        preprocess = preprocess,
@@ -36,20 +34,18 @@ end
 
 function run_ee_n2plain_workspace!(workspace,
                                    event;
-                                   algorithm = JetAlgorithm.Durham,
                                    p = nothing,
                                    R = 4.0,
                                    γ = nothing,
                                    preprocess = nothing,
                                    recombine = addjets_escheme)
-    return with_n2plain_reconstruction(workspace,
-                                       event;
-                                       algorithm = algorithm,
-                                       p = p,
-                                       R = R,
-                                       γ = γ,
-                                       preprocess = preprocess,
-                                       recombine = recombine) do clusterseq
+    return with_ee_reconstruction(workspace,
+                                  event;
+                                  p = p,
+                                  R = R,
+                                  γ = γ,
+                                  preprocess = preprocess,
+                                  recombine = recombine) do clusterseq
         return inclusive_jets(clusterseq; ptmin = 5.0)
     end
 end
@@ -57,7 +53,6 @@ end
 function run_pp_n2plain_reconstruction_only!(workspace, event)
     return with_n2plain_reconstruction(workspace,
                                        event;
-                                       algorithm = JetAlgorithm.AntiKt,
                                        R = 0.4,
                                        preprocess = nothing) do _
         return nothing
@@ -102,7 +97,6 @@ end
     large_ee = ee_events[argmax(ee_sizes)]
 
     @testset "pp owning/workspace ClusterSequence equivalence" begin
-        workspace = N2PlainWorkspace(PseudoJet)
         cases = ((PseudoJet[], JetAlgorithm.AntiKt, nothing, 0.4),
                  (small_pp[1:1], JetAlgorithm.Kt, nothing, 0.8),
                  (small_pp, JetAlgorithm.AntiKt, nothing, 0.4),
@@ -111,6 +105,7 @@ end
                  (large_pp, JetAlgorithm.GenKt, 1.5, 0.4))
 
         for (event, algorithm, power, radius) in cases
+            workspace = N2PlainWorkspace(algorithm)
             expected = plain_jet_reconstruct(event;
                                              algorithm = algorithm,
                                              p = power,
@@ -120,7 +115,6 @@ end
 
             with_n2plain_reconstruction(workspace,
                                         event;
-                                        algorithm = algorithm,
                                         p = power,
                                         R = radius,
                                         preprocess = nothing) do actual
@@ -134,7 +128,6 @@ end
     end
 
     @testset "e+e- owning/workspace ClusterSequence equivalence" begin
-        workspace = N2PlainWorkspace(EEJet)
         cases = ((EEJet[], JetAlgorithm.Durham, nothing, 4.0, nothing),
                  (small_ee[1:1], JetAlgorithm.Durham, nothing, 4.0, nothing),
                  (small_ee, JetAlgorithm.Durham, nothing, 4.0, nothing),
@@ -143,6 +136,7 @@ end
                  (large_ee, JetAlgorithm.Valencia, 1.2, 0.8, 1.2))
 
         for (event, algorithm, power, radius, gamma) in cases
+            workspace = N2PlainWorkspace(algorithm)
             expected = ee_genkt_algorithm(event;
                                           algorithm = algorithm,
                                           p = power,
@@ -151,13 +145,12 @@ end
                                           preprocess = nothing)
             expected_inclusive = inclusive_jets(expected; ptmin = 5.0)
 
-            with_n2plain_reconstruction(workspace,
-                                        event;
-                                        algorithm = algorithm,
-                                        p = power,
-                                        R = radius,
-                                        γ = gamma,
-                                        preprocess = nothing) do actual
+            with_ee_reconstruction(workspace,
+                                   event;
+                                   p = power,
+                                   R = radius,
+                                   γ = gamma,
+                                   preprocess = nothing) do actual
                 @test actual.jets === workspace.jets
                 @test actual.history === workspace.history
                 test_n2plain_clustersequence_equality(actual, expected)
@@ -168,7 +161,7 @@ end
     end
 
     @testset "Preprocessing and recombination compatibility" begin
-        workspace = N2PlainWorkspace(PseudoJet)
+        workspace = N2PlainWorkspace(JetAlgorithm.AntiKt)
         configurations = ((preprocess_escheme, addjets_escheme),
                           (preprocess_ptscheme, addjets_ptscheme),
                           (preprocess_pt2scheme, addjets_pt2scheme))
@@ -182,7 +175,6 @@ end
 
             with_n2plain_reconstruction(workspace,
                                         small_pp;
-                                        algorithm = JetAlgorithm.AntiKt,
                                         R = 0.4,
                                         preprocess = preprocess,
                                         recombine = recombine) do actual
@@ -190,21 +182,27 @@ end
             end
         end
 
+        pp_lorentz_event = lorentzvector.(small_pp)
+        pp_expected = plain_jet_reconstruct(pp_lorentz_event;
+                                            algorithm = JetAlgorithm.AntiKt)
+
+        with_n2plain_reconstruction(workspace, pp_lorentz_event) do actual
+            test_n2plain_clustersequence_equality(actual, pp_expected)
+        end
+
         lorentz_event = lorentzvector.(small_ee)
-        ee_workspace = N2PlainWorkspace(EEJet)
+        ee_workspace = N2PlainWorkspace(JetAlgorithm.Durham)
         expected = ee_genkt_algorithm(lorentz_event;
                                       algorithm = JetAlgorithm.Durham)
 
-        with_n2plain_reconstruction(ee_workspace,
-                                    lorentz_event;
-                                    algorithm = JetAlgorithm.Durham) do actual
+        with_ee_reconstruction(ee_workspace, lorentz_event) do actual
             test_n2plain_clustersequence_equality(actual, expected)
         end
     end
 
     @testset "Borrowed full ClusterSequence queries" begin
         event = first(pp_events)
-        workspace = N2PlainWorkspace(PseudoJet)
+        workspace = N2PlainWorkspace(JetAlgorithm.Kt)
         expected = plain_jet_reconstruct(event;
                                          algorithm = JetAlgorithm.Kt,
                                          R = 1.0,
@@ -214,7 +212,6 @@ end
 
         with_n2plain_reconstruction(workspace,
                                     event;
-                                    algorithm = JetAlgorithm.Kt,
                                     R = 1.0,
                                     preprocess = nothing) do actual
             @test exclusive_jets(actual, PseudoJet; njets = 4) == expected_exclusive
@@ -229,15 +226,16 @@ end
     end
 
     @testset "Workspace family validation" begin
-        pp_workspace = N2PlainWorkspace(PseudoJet)
-        ee_workspace = N2PlainWorkspace(EEJet)
+        pp_workspace = N2PlainWorkspace(JetAlgorithm.AntiKt)
+        ee_workspace = N2PlainWorkspace(JetAlgorithm.Durham)
 
-        @test_throws ArgumentError run_pp_n2plain_workspace!(ee_workspace, small_pp)
-        @test_throws ArgumentError run_ee_n2plain_workspace!(pp_workspace, small_ee)
+        @test_throws MethodError run_pp_n2plain_workspace!(ee_workspace, small_pp)
+        @test_throws MethodError run_ee_n2plain_workspace!(pp_workspace, small_ee)
+        @test_throws MethodError N2PlainWorkspace(PseudoJet)
     end
 
     @testset "Exact scratch lengths, reuse, and release" begin
-        pp_workspace = N2PlainWorkspace(PseudoJet)
+        pp_workspace = N2PlainWorkspace(JetAlgorithm.AntiKt)
 
         run_pp_n2plain_workspace!(pp_workspace, large_pp)
         retained_pp_jets = pp_workspace.jets
@@ -264,7 +262,7 @@ end
         @test isempty(pp_workspace.history)
         @test all(isempty, pp_scratch_vectors(pp_workspace))
 
-        ee_workspace = N2PlainWorkspace(EEJet)
+        ee_workspace = N2PlainWorkspace(JetAlgorithm.Durham)
 
         run_ee_n2plain_workspace!(ee_workspace, large_ee)
         retained_ee_jets = ee_workspace.jets
@@ -299,13 +297,12 @@ end
                                               preprocess = nothing)
         owning_jets = copy(owning_result.jets)
         owning_history = copy(owning_result.history)
-        workspace = N2PlainWorkspace(PseudoJet)
+        workspace = N2PlainWorkspace(JetAlgorithm.AntiKt)
         borrowed_result = Ref{Any}()
         borrowed_output = Ref{Any}()
 
         with_n2plain_reconstruction(workspace,
                                     small_pp;
-                                    algorithm = JetAlgorithm.AntiKt,
                                     R = 0.4,
                                     preprocess = nothing) do clusterseq
             borrowed_result[] = clusterseq
@@ -322,7 +319,7 @@ end
     end
 
     @testset "Workspace allocation regression" begin
-        pp_workspace = N2PlainWorkspace(PseudoJet)
+        pp_workspace = N2PlainWorkspace(JetAlgorithm.AntiKt)
 
         run_pp_n2plain_reconstruction_only!(pp_workspace, large_pp)
         plain_jet_reconstruct(large_pp;
@@ -352,7 +349,7 @@ end
 
         @sync for _ in 1:worker_count
             Threads.@spawn begin
-                workspace = N2PlainWorkspace(PseudoJet)
+                workspace = N2PlainWorkspace(JetAlgorithm.AntiKt)
 
                 while true
                     event_index = Threads.atomic_add!(next_index, 1)
@@ -360,7 +357,6 @@ end
 
                     with_n2plain_reconstruction(workspace,
                                                 sample_events[event_index];
-                                                algorithm = JetAlgorithm.AntiKt,
                                                 R = 0.4,
                                                 preprocess = nothing) do clusterseq
                         results[event_index] = inclusive_jets(clusterseq;

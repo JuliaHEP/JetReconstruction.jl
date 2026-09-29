@@ -446,24 +446,14 @@ Reconstruct a pp event using storage owned by `workspace`.
 This is the pp implementation behind [`with_n2plain_reconstruction`](@ref).
 The returned sequence borrows `workspace.jets` and `workspace.history`.
 """
-function _n2plain_reconstruct_with_workspace!(workspace::N2PlainWorkspace{PseudoJet,
+function _n2plain_reconstruct_with_workspace!(workspace::N2PlainWorkspace{A, PseudoJet,
                                                                           PPPlainScratch},
                                               particles::AbstractVector;
-                                              algorithm::JetAlgorithm.Algorithm,
                                               p::Union{Real, Nothing} = nothing,
                                               R = nothing,
                                               recombine = addjets_escheme,
-                                              preprocess = preprocess_escheme,
-                                              γ::Union{Real, Nothing} = nothing,
-                                              β::Union{Real, Nothing} = nothing)
-    is_pp(algorithm) ||
-        throw(ArgumentError("algorithm $algorithm requires an EEJet N2PlainWorkspace"))
-    isnothing(β) ||
-        throw(ArgumentError("β is only supported by the Valencia algorithm"))
-    isnothing(γ) ||
-        throw(ArgumentError("γ is only supported by the Valencia algorithm"))
-
-    resolved_power = get_algorithm_power(p = p, algorithm = algorithm)
+                                              preprocess = preprocess_escheme) where {A}
+    resolved_power = get_algorithm_power(p = p, algorithm = A)
     resolved_power = round(resolved_power) == resolved_power ? Int(resolved_power) :
                      resolved_power
     resolved_R = something(R, 1.0)
@@ -472,7 +462,7 @@ function _n2plain_reconstruct_with_workspace!(workspace::N2PlainWorkspace{Pseudo
                                                preprocess = preprocess)
 
     return _plain_jet_reconstruct!(jets;
-                                   algorithm = algorithm,
+                                   algorithm = A,
                                    p = resolved_power,
                                    R = resolved_R,
                                    recombine = recombine,

@@ -82,7 +82,7 @@ export N2TiledWorkspace, tiled_jet_reconstruct, with_n2tiled_reconstruction
 
 ## E+E- algorithms
 include("EEAlgorithm.jl")
-export ee_genkt_algorithm
+export ee_genkt_algorithm, with_ee_reconstruction
 
 ## SoftKiller
 include("SoftKiller.jl")

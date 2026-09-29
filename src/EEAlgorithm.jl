@@ -578,39 +578,35 @@ end
 Reconstruct an electron-positron event using storage owned by `workspace`.
 
 This is the electron-positron implementation behind
-[`with_n2plain_reconstruction`](@ref). The returned sequence borrows
+[`with_ee_reconstruction`](@ref). The returned sequence borrows
 `workspace.jets` and `workspace.history`.
 """
-function _n2plain_reconstruct_with_workspace!(workspace::N2PlainWorkspace{EEJet},
+function _n2plain_reconstruct_with_workspace!(workspace::N2PlainWorkspace{A, EEJet},
                                               particles::AbstractVector;
-                                              algorithm::JetAlgorithm.Algorithm,
                                               p::Union{Real, Nothing} = nothing,
                                               R = nothing,
                                               recombine = addjets_escheme,
                                               preprocess = preprocess_escheme,
                                               γ::Union{Real, Nothing} = nothing,
-                                              β::Union{Real, Nothing} = nothing)
-    is_ee(algorithm) ||
-        throw(ArgumentError("algorithm $algorithm requires a PseudoJet N2PlainWorkspace"))
-
-    if algorithm === JetAlgorithm.Valencia && !isnothing(β)
+                                              β::Union{Real, Nothing} = nothing) where {A}
+    if A === JetAlgorithm.Valencia && !isnothing(β)
         p = β
     end
 
-    resolved_power = get_algorithm_power(p = p, algorithm = algorithm)
-    if algorithm !== JetAlgorithm.Valencia
+    resolved_power = get_algorithm_power(p = p, algorithm = A)
+    if A !== JetAlgorithm.Valencia
         resolved_power = round(resolved_power) == resolved_power ? Int(resolved_power) :
                          resolved_power
     end
 
-    resolved_R = algorithm === JetAlgorithm.Durham ? 4.0 : something(R, 4.0)
+    resolved_R = A === JetAlgorithm.Durham ? 4.0 : something(R, 4.0)
     resolved_gamma = something(γ, 1.0)
     jets = prepare_n2plain_recombination_jets!(workspace,
                                                particles;
                                                preprocess = preprocess)
 
     return _ee_genkt_algorithm!(jets;
-                                algorithm = algorithm,
+                                algorithm = A,
                                 p = resolved_power,
                                 R = resolved_R,
                                 invR2 = inv(resolved_R * resolved_R),
