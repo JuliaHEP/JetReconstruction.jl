@@ -262,59 +262,6 @@ function TiledScratch()
 end
 
 """
-Reusable state for one full-semantics N2Tiled reconstruction worker.
-
-The workspace owns reusable:
-
-- tiled scratch;
-- reconstructed jets;
-- complete clustering history.
-
-The ClusterSequence produced from this workspace is borrowed. It is overwritten
-by the next reconstruction using the same workspace. Post-processing functions
-such as `inclusive_jets` return independently owned results.
-
-A workspace must never be used concurrently or reentrantly.
-"""
-mutable struct N2TiledWorkspace
-    scratch::TiledScratch
-    jets::Vector{PseudoJet}
-    history::Vector{HistoryElement}
-end
-
-function N2TiledWorkspace()
-    return N2TiledWorkspace(TiledScratch(),
-                            PseudoJet[],
-                            HistoryElement[])
-end
-
-"""
-    release_n2tiled_workspace_capacity!(workspace)
-
-Release storage retained by `workspace`.
-
-The small fixed-size `tile_union` buffer is retained. All event-size-dependent
-vectors and cached tiling matrices become eligible for garbage collection.
-
-The caller must ensure that `workspace` is not in use by another task.
-"""
-function release_n2tiled_workspace_capacity!(workspace::N2TiledWorkspace)
-    workspace.jets = PseudoJet[]
-    workspace.history = HistoryElement[]
-
-    scratch = workspace.scratch
-
-    scratch.eta = Float64[]
-    scratch.tiledjets = TiledJet[]
-    scratch.NNs = TiledJet[]
-    scratch.dij = Float64[]
-
-    scratch.tiling_cache = Dict{Tuple{Int, Int}, TilingArrays}()
-
-    return nothing
-end
-
-"""
 Resize the event-sized vectors in `scratch` for an event with `N` particles.
 
 Every vector has logical length `N` on return. Existing `TiledJet` objects are

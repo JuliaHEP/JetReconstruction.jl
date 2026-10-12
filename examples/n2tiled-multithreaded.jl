@@ -20,7 +20,7 @@ using LorentzVectorHEP
     threaded_n2tiled_reconstruction(events; R=0.4, ptmin=5.0)
 
 Reconstruct `events` using dynamically scheduled worker tasks. Each worker owns
-one `N2TiledWorkspace`; only independently owned inclusive-jet selections are
+one `TiledWorkspace`; only independently owned inclusive-jet selections are
 stored after the callback returns.
 """
 function threaded_n2tiled_reconstruction(events;
@@ -41,7 +41,7 @@ function threaded_n2tiled_reconstruction(events;
 
     @sync for _ in 1:nworkers
         Threads.@spawn begin
-            workspace = N2TiledWorkspace()
+            workspace = TiledWorkspace()
 
             for event_index in jobs
                 selected_jets[event_index] = with_n2tiled_reconstruction(workspace,

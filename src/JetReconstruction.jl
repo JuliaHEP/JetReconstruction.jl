@@ -66,21 +66,24 @@ include("ClusterSequence.jl")
 export ClusterSequence, inclusive_jets, exclusive_jets, n_exclusive_jets, constituents,
        constituent_indexes, parent_jets
 
+# Reconstruction storage definitions, in dependency order
+include("TiledAlgoUtils.jl")
+include("TiledAlgoLLStructs.jl")
+include("Workspace.jl")
+
 ## N2Plain algorithm
 # Algorithmic part for simple sequential implementation
 include("PlainAlgo.jl")
-export plain_jet_reconstruct
+export PlainWorkspace, plain_jet_reconstruct, with_n2plain_reconstruction
 
 ## N2Tiled algorithm
-# Common pieces
-include("TiledAlgoUtils.jl")
 # Algorithmic part, tiled reconstruction strategy with linked list jet objects
 include("TiledAlgoLL.jl")
-export N2TiledWorkspace, tiled_jet_reconstruct, with_n2tiled_reconstruction
+export TiledWorkspace, tiled_jet_reconstruct, with_n2tiled_reconstruction
 
 ## E+E- algorithms
 include("EEAlgorithm.jl")
-export ee_genkt_algorithm
+export ee_genkt_algorithm, with_ee_reconstruction
 
 ## SoftKiller
 include("SoftKiller.jl")

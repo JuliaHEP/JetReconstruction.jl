@@ -41,7 +41,7 @@ function run_owning_n2tiled_event(event)
 end
 
 @testset "Reusable N2Tiled reconstruction" begin
-    @test :release_n2tiled_workspace_capacity! ∉ names(JetReconstruction)
+    @test :release_tiled_workspace_capacity! ∉ names(JetReconstruction)
 
     events = read_final_state_particles(events_file_pp)
     event_sizes = length.(events)
@@ -49,7 +49,7 @@ end
     large_event = events[argmax(event_sizes)]
 
     @testset "Exact owning/workspace equivalence" begin
-        workspace = N2TiledWorkspace()
+        workspace = TiledWorkspace()
 
         cases = ((small_event[1:1], JetAlgorithm.AntiKt, nothing, 0.8),
                  (small_event, JetAlgorithm.AntiKt, nothing, 0.4),
@@ -84,7 +84,7 @@ end
     end
 
     @testset "Preprocessing and recombination compatibility" begin
-        workspace = N2TiledWorkspace()
+        workspace = TiledWorkspace()
         event = small_event
 
         configurations = ((preprocess_escheme, addjets_escheme),
@@ -142,7 +142,7 @@ end
         owning_jets = copy(owning_result.jets)
         owning_history = copy(owning_result.history)
 
-        workspace = N2TiledWorkspace()
+        workspace = TiledWorkspace()
         borrowed_result = Ref{Any}()
         owned_output = Ref{Any}()
         retained_result = Ref{Any}()
@@ -181,7 +181,7 @@ end
     end
 
     @testset "Capacity reuse and release" begin
-        workspace = N2TiledWorkspace()
+        workspace = TiledWorkspace()
 
         run_workspace_event!(workspace, large_event)
         retained_jets = workspace.jets
@@ -213,7 +213,7 @@ end
         @test length(workspace.scratch.NNs) == length(small_event)
         @test length(workspace.scratch.dij) == length(small_event)
 
-        JetReconstruction.release_n2tiled_workspace_capacity!(workspace)
+        JetReconstruction.release_tiled_workspace_capacity!(workspace)
         @test workspace.jets !== retained_jets
         @test workspace.history !== retained_history
         @test workspace.scratch.eta !== retained_eta
@@ -236,7 +236,7 @@ end
         @test_throws ErrorException JetReconstruction._sizehint_for_reuse!(Int[], -1)
 
         event = large_event
-        workspace = N2TiledWorkspace()
+        workspace = TiledWorkspace()
 
         run_owning_n2tiled_event(event)
         run_workspace_event!(workspace,

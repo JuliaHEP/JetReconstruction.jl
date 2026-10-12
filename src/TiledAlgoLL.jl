@@ -7,9 +7,6 @@ using Logging
 using Accessors
 using LoopVectorization
 
-# Include struct definitions and basic operations
-include("TiledAlgoLLStructs.jl")
-
 """
     _tj_dist(jetA, jetB)
 
@@ -585,13 +582,13 @@ Run full-semantics N2Tiled reconstruction using workspace-owned storage.
 
 The caller must ensure exclusive ownership of the workspace.
 """
-function _n2tiled_reconstruct_with_workspace!(workspace::N2TiledWorkspace,
-                                              particles::AbstractVector;
-                                              algorithm::JetAlgorithm.Algorithm,
-                                              p::Union{Real, Nothing} = nothing,
-                                              R = 1.0,
-                                              recombine = addjets_escheme,
-                                              preprocess = preprocess_escheme)
+function _reconstruct_with_workspace!(workspace::TiledWorkspace,
+                                      particles::AbstractVector;
+                                      algorithm::JetAlgorithm.Algorithm,
+                                      p::Union{Real, Nothing} = nothing,
+                                      R = 1.0,
+                                      recombine = addjets_escheme,
+                                      preprocess = preprocess_escheme)
     resolved_power = get_algorithm_power(p = p,
                                          algorithm = algorithm)
 
@@ -642,20 +639,20 @@ Use ordinary `jet_reconstruct` or `tiled_jet_reconstruct` when an independently
 owned ClusterSequence is required.
 """
 function with_n2tiled_reconstruction(f::F,
-                                     workspace::N2TiledWorkspace,
+                                     workspace::TiledWorkspace,
                                      particles::AbstractVector{T};
                                      algorithm::JetAlgorithm.Algorithm,
                                      p::Union{Real, Nothing} = nothing,
                                      R = 1.0,
                                      recombine = addjets_escheme,
                                      preprocess = preprocess_escheme) where {F, T}
-    clusterseq = _n2tiled_reconstruct_with_workspace!(workspace,
-                                                      particles;
-                                                      algorithm = algorithm,
-                                                      p = p,
-                                                      R = R,
-                                                      recombine = recombine,
-                                                      preprocess = preprocess)
+    clusterseq = _reconstruct_with_workspace!(workspace,
+                                              particles;
+                                              algorithm = algorithm,
+                                              p = p,
+                                              R = R,
+                                              recombine = recombine,
+                                              preprocess = preprocess)
 
     return f(clusterseq)
 end
