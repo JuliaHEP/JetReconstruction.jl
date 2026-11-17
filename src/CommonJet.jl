@@ -321,6 +321,63 @@ function _addjets_with_scale(scale1::Real, scale2::Real, jet1::T, jet2::T,
     T(pt = new_pt, rap = new_rap, phi = new_phi; cluster_hist_index = cluster_hist_index)
 end
 
+"""
+    addjets_wta_ptscheme(jet1::T, jet2::T;
+                         cluster_hist_index::Int = 0) where {T <: FourMomentum}
+
+Use the ``p_T``-ordered winner-takes-all (WTA) scheme for combining two jets,
+setting the appropriate cluster history index for the new jet.
+
+The new jet takes the rapidity, azimuth and mass of the input jet with the
+larger ``p_T`` (`jet1` if they are equal), and its ``p_T`` is the sum of the
+two. A jet's axis is thus the direction of the particle at the end of its
+hardest branch, which is insensitive to soft recoil.
+
+# Details
+
+This is the `WTA_pt_scheme` of FastJet. Input particles need no preprocessing
+beyond setting the history index, so it is used with
+[`preprocess_escheme`](@ref).
+"""
+function addjets_wta_ptscheme(jet1::T, jet2::T;
+                              cluster_hist_index::Int = 0) where {T <: FourMomentum}
+    harder = pt2(jet1) >= pt2(jet2) ? jet1 : jet2
+    T(pt = pt(jet1) + pt(jet2), rap = rapidity(harder), phi = phi(harder),
+      m = mass(harder); cluster_hist_index = cluster_hist_index)
+end
+
+"""
+    addjets_wta_modpscheme(jet1::T, jet2::T;
+                           cluster_hist_index::Int = 0) where {T <: FourMomentum}
+
+Use the ``|\\mathbf{p}|``-ordered winner-takes-all (WTA) scheme for combining
+two jets, setting the appropriate cluster history index for the new jet.
+
+The new jet takes the 3-momentum direction and the mass of the input jet with
+the larger ``|\\mathbf{p}|`` (`jet1` if they are equal), and its
+``|\\mathbf{p}|`` is the sum of the two. If the harder input jet is at rest, the
+new jet is at rest with an energy equal to that jet's mass.
+
+# Details
+
+This is the `WTA_modp_scheme` of FastJet, the usual WTA scheme for ``e^+e^-``
+reconstruction. Input particles need no preprocessing beyond setting the
+history index, so it is used with [`preprocess_escheme`](@ref).
+"""
+function addjets_wta_modpscheme(jet1::T, jet2::T;
+                                cluster_hist_index::Int = 0) where {T <: FourMomentum}
+    p2_jet1 = p2(jet1)
+    p2_jet2 = p2(jet2)
+    harder, p2_harder = p2_jet1 >= p2_jet2 ? (jet1, p2_jet1) : (jet2, p2_jet2)
+    if p2_harder == 0
+        return T(0.0, 0.0, 0.0, mass(harder); cluster_hist_index = cluster_hist_index)
+    end
+    p_sum = sqrt(p2_jet1) + sqrt(p2_jet2)
+    scale = p_sum / sqrt(p2_harder)
+    T(px(harder) * scale, py(harder) * scale, pz(harder) * scale,
+      sqrt(p_sum^2 + mass2(harder)); cluster_hist_index = cluster_hist_index)
+end
+
 import Base.show
 """
     show(io::IO, jet::FourMomentum)

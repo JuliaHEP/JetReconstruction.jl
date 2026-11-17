@@ -131,8 +131,10 @@ See [Jet Recombination](@ref) page for more details.
 - `ESchemeRaw`: The E-scheme recombination scheme using [`addjets_escheme`](@ref) function and no preprocessing.
 - `PtScheme`: The Pt-scheme recombination scheme using [`addjets_ptscheme`](@ref) and [`preprocess_ptscheme`](@ref) functions.
 - `Pt2Scheme`: The Pt2-scheme recombination scheme using [`addjets_pt2scheme`](@ref) and [`preprocess_pt2scheme`](@ref) functions.
+- `WTAPtScheme`: The ``p_T``-ordered winner-takes-all scheme using [`addjets_wta_ptscheme`](@ref) and [`preprocess_escheme`](@ref) functions.
+- `WTAModpScheme`: The ``|\\mathbf{p}|``-ordered winner-takes-all scheme using [`addjets_wta_modpscheme`](@ref) and [`preprocess_escheme`](@ref) functions.
 """
-@enumx T=Recombine RecombinationScheme ESchemeRaw EScheme PtScheme Pt2Scheme
+@enumx T=Recombine RecombinationScheme ESchemeRaw EScheme PtScheme Pt2Scheme WTAPtScheme WTAModpScheme
 const AllRecombinationSchemes = [String(Symbol(x))
                                  for x in instances(RecombinationScheme.Recombine)]
 
@@ -146,4 +148,8 @@ const RecombinationMethods = Dict(RecombinationScheme.EScheme => (recombine = ad
                                   RecombinationScheme.PtScheme => (recombine = addjets_ptscheme,
                                                                    preprocess = preprocess_ptscheme),
                                   RecombinationScheme.Pt2Scheme => (recombine = addjets_pt2scheme,
-                                                                    preprocess = preprocess_pt2scheme))
+                                                                    preprocess = preprocess_pt2scheme),
+                                  RecombinationScheme.WTAPtScheme => (recombine = addjets_wta_ptscheme,
+                                                                      preprocess = preprocess_escheme),
+                                  RecombinationScheme.WTAModpScheme => (recombine = addjets_wta_modpscheme,
+                                                                        preprocess = preprocess_escheme))

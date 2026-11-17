@@ -55,8 +55,8 @@ end
 
 Construct an EEJet from `(pt, y, ϕ, m)` with the cluster index
 `cluster_hist_index`. This is not recommended, as the performance is quite
-poor, but is included for completeness and to allow support for PtScheme and
-Pt2Scheme.
+poor, but is included for completeness and to allow support for PtScheme,
+Pt2Scheme and WTAPtScheme.
 
 # Details
 
