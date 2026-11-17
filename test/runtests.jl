@@ -22,6 +22,9 @@ function main()
     include("test-n2tiled-kernel.jl")
     include("test-ee-reconstruction.jl")
 
+    # Winner-takes-all recombination schemes
+    include("test-wta-recombination.jl")
+
     # Valencia algorithm tests
     include("test-valencia.jl")
 

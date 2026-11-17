@@ -347,7 +347,7 @@ myscheme = RecombinationMethods[RecombinationScheme.PtScheme]
 cs = jet_reconstruct(particles; R=1.0, algorithm=JetAlgorithm.AntiKt, myscheme...)
 ```
 
-Available schemes: `EScheme`, `ESchemeRaw`, `PtScheme`, `Pt2Scheme`
+Available schemes: `EScheme`, `ESchemeRaw`, `PtScheme`, `Pt2Scheme`, `WTAPtScheme`, `WTAModpScheme`
 
 ### Jet Substructure
 

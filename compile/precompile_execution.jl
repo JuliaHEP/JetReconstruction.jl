@@ -39,7 +39,9 @@ for algorithm in [JetAlgorithm.AntiKt, JetAlgorithm.CA, JetAlgorithm.Kt, JetAlgo
     recombination in [
         RecombinationScheme.EScheme,
         RecombinationScheme.PtScheme,
-        RecombinationScheme.Pt2Scheme
+        RecombinationScheme.Pt2Scheme,
+        RecombinationScheme.WTAPtScheme,
+        RecombinationScheme.WTAModpScheme
     ]
 
     assert_ok(jetreconstruction_jet_reconstruct(jets_ptr, jets_len, algorithm, power, R,

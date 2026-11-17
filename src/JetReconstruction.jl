@@ -54,8 +54,8 @@ include("PseudoJet.jl")
 include("EEJet.jl")
 include("JetUtils.jl")
 export PseudoJet, EEJet, pt_fraction, kt_scale, lorentzvector, lorentzvector_cyl, addjets,
-       addjets_escheme, addjets_ptscheme, addjets_pt2scheme, preprocess_escheme,
-       preprocess_ptscheme, preprocess_pt2scheme
+       addjets_escheme, addjets_ptscheme, addjets_pt2scheme, addjets_wta_ptscheme,
+       addjets_wta_modpscheme, preprocess_escheme, preprocess_ptscheme, preprocess_pt2scheme
 
 # Jet reconstruction strategies and algorithms (enums!)
 include("AlgorithmStrategyEnums.jl")
