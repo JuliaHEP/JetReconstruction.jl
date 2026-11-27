@@ -74,7 +74,7 @@ function tile_index(tiling_setup, eta::Float64, phi::Float64)
                  1,
                  tiling_setup._n_tiles_eta)
     iphi = clamp(unsafe_trunc(Int, phi / tiling_setup._tile_size_phi), 0,
-                 tiling_setup._n_tiles_phi)
+                 tiling_setup._n_tiles_phi - 1)
     return iphi * tiling_setup._n_tiles_eta + ieta
 end
 

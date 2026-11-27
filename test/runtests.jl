@@ -58,6 +58,9 @@ function main()
     # Test with Aqua (https://juliatesting.github.io/Aqua.jl/stable/)
     include("test-aqua.jl")
 
+    # Jet areas tests
+    include("test-jet-areas.jl")
+
     # C-interface tests
     include("test-c-interface.jl")
 end
