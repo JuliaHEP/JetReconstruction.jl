@@ -47,6 +47,26 @@ energy equal to the (three) momentum sum.
 (In fact `preprocess_pt2scheme` is just an alias for `preprocess_ptscheme` as
 the rescaling is identical.)
 
+### Winner-Takes-All Schemes
+
+In the winner-takes-all (WTA) schemes the merged jet takes its direction from
+the *harder* of the two parent jets, rather than from a sum or a weighted
+average. A jet's axis is then the direction of the particle at the end of its
+hardest branch of the clustering history, which is insensitive to the recoil of
+soft emissions. Two orderings are supported, matching FastJet:
+
+- `recombine =` [`addjets_wta_ptscheme`](@ref) (FastJet's `WTA_pt_scheme`): the
+  merged jet takes the rapidity, azimuth and mass of the parent with the larger
+  ``p_T``, and its ``p_T`` is the sum of the parents' ``p_T``.
+- `recombine =` [`addjets_wta_modpscheme`](@ref) (FastJet's `WTA_modp_scheme`):
+  the merged jet takes the 3-momentum direction and mass of the parent with the
+  larger ``|\mathbf{p}|``, and its ``|\mathbf{p}|`` is the sum of the parents'
+  ``|\mathbf{p}|``. This ordering is the natural one for ``e^+e^-``
+  reconstruction.
+
+Neither scheme modifies the input particles, so they are used with
+`preprocess =` [`preprocess_escheme`](@ref).
+
 ### Named Recombination Schemes
 
 To simplify the usage of different recombination schemes supported directly,
@@ -71,6 +91,8 @@ The supported values in the enum are:
 | `ESchemeRaw` | Four-momentum addition without preprocessing history index |
 | `PtScheme` | Massless weighted average of momentum |
 | `Pt2Scheme` | Massless weighted average of momentum squared |
+| `WTAPtScheme` | Winner-takes-all, ordered by transverse momentum |
+| `WTAModpScheme` | Winner-takes-all, ordered by 3-momentum magnitude |
 
 All schemes except for `ESchemeRaw` include the necessary preprocessing to set
 the history index of the input particles. (Should other schemes prove to be
